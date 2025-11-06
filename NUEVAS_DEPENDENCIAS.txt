@@ -1,0 +1,68 @@
+# =============================================================================
+# DEPENDENCIAS ADICIONALES PARA MODELOS AVANZADOS
+# =============================================================================
+#
+# Instalar con: pip install -r NUEVAS_DEPENDENCIAS.txt
+#
+# Nota: Estas dependencias se suman a las existentes en requirements.txt
+#
+# =============================================================================
+
+# --- MODELO NER (Named Entity Recognition) ---
+spacy>=3.7.0
+en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.0/en_core_web_sm-3.7.0-py3-none-any.whl
+
+# Modelos adicionales de SpaCy (opcional - instalar según necesidad):
+# en-core-web-md @ https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.7.0/en_core_web_md-3.7.0-py3-none-any.whl
+# en-core-web-lg @ https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.7.0/en_core_web_lg-3.7.0-py3-none-any.whl
+
+# --- BERTOPIC (Topic Modeling) ---
+bertopic>=0.16.0
+sentence-transformers>=2.2.2
+umap-learn>=0.5.5
+hdbscan>=0.8.33
+
+# --- MODELADO DE TEMAS CLÁSICO ---
+gensim>=4.3.2              # Para LDA, pLSA
+pyLDAvis>=3.4.1           # Visualización de LDA
+
+# --- REDUCCIÓN DE DIMENSIONALIDAD ---
+# scikit-learn (ya incluido en requirements.txt principal)
+umap-learn>=0.5.5         # UMAP
+# plotly (ya incluido)      # Para visualizaciones interactivas
+
+# --- MODELOS DE DEEP LEARNING (opcional - requiere mucha memoria) ---
+# torch>=2.1.0              # PyTorch para RNN/LSTM/Transformers
+# transformers>=4.35.0      # Hugging Face Transformers para LLMs
+# tensorflow>=2.15.0        # TensorFlow (alternativa a PyTorch)
+
+# =============================================================================
+# INSTALACIÓN PASO A PASO RECOMENDADA:
+# =============================================================================
+#
+# 1. Modelos básicos (NER, Topic Modeling clásico):
+#    pip install spacy gensim pyLDAvis
+#    python -m spacy download en_core_web_sm
+#
+# 2. BERTopic y reducción de dimensionalidad:
+#    pip install bertopic sentence-transformers umap-learn hdbscan
+#
+# 3. Deep Learning (SOLO si tienes GPU y memoria suficiente):
+#    pip install torch transformers
+#
+# =============================================================================
+# NOTAS IMPORTANTES:
+# =============================================================================
+#
+# - Los modelos de Deep Learning (torch, transformers) son OPCIONALES
+#   y requieren:
+#   * GPU con CUDA (recomendado)
+#   * Mínimo 8GB de RAM (16GB recomendado)
+#   * 5-10GB de espacio en disco para modelos preentrenados
+#
+# - Para ambiente de producción ligero, instalar solo los modelos
+#   básicos (NER + Topic Modeling clásico)
+#
+# - BERTopic funciona bien en CPU pero es más lento
+#
+# =============================================================================
