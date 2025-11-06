@@ -1,0 +1,856 @@
+﻿Análisis automático de contenido textual a partir de métodos de Procesamiento de Lenguaje Natural (PLN) para la identificación de factores relevantes en la transformación digital en educación superior
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+MODALIDAD DE TRABAJO DE GRADO
+ESTUDIANTE EN PROYECTO DE INVESTIGACIÓN - EPI
+
+
+
+
+
+
+
+
+Juan José Moreno Guerra
+Hugo Alejandro Mondragon Valencia
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+UNIVERSIDAD DE LOS LLANOS
+FACULTAD DE CIENCIAS BÁSICAS E INGENIERÍA
+INGENIERÍA DE SISTEMAS
+2024
+
+
+
+
+
+
+Análisis automático de contenido textual a partir de métodos de Procesamiento de Lenguaje Natural (PLN) para la identificación de factores relevantes en la transformación digital en educación superior
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+MODALIDAD DE TRABAJO DE GRADO
+ESTUDIANTE EN PROYECTO DE INVESTIGACIÓN - EPI
+
+
+
+
+
+
+
+
+
+
+Ing. DIANA MARCELA CARDONA ROMAN, M.Sc., Ph.D
+DIRECTORA
+
+
+Ing. ANGEL ALFONSO CRUZ ROA, M.Sc., Ph.D
+CODIRECTOR
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+UNIVERSIDAD DE LOS LLANOS
+FACULTAD DE CIENCIAS BÁSICAS E INGENIERÍA
+INGENIERÍA DE SISTEMAS
+2024
+
+
+
+
+Análisis automático de contenido textual a partir de métodos de  Procesamiento de Lenguaje Natural (PLN) para la identificación de factores relevantes en la transformación digital en educación superior 
+1.        IDENTIFICACIÓN DE LOS PARTICIPANTES
+ 
+·      Estudiante: Juan José Moreno Guerra
+Perfil: Estudiante de Ingeniería de Sistemas, cursando décimo semestre en la Universidad de los Llanos, con habilidades en la resolución de problemas y rápida adaptabilidad en diferentes escenarios, con conocimientos y experiencia en los lenguajes de programación Java, JavaScript, R, Matlab y Python al igual con conocimientos en bases de datos relacionales como Postgresql y Mysql. Email: juan.moreno.guerra@unillanos.edu.co
+
+
+·      Estudiante: Hugo Alejandro Mondragon Valencia
+Perfil: Estudiante de Ingeniería de Sistemas, cursando décimo semestre en la Universidad de los Llanos, con habilidades en la resolución de problemas y rápida adaptabilidad en diferentes escenarios, con conocimientos y experiencia en los lenguajes de programación Java, JavaScript, R, Matlab y Python al igual con conocimientos en bases de datos relacionales como Postgresql y MySQL. Email: hugo.mondragon@unillanos.edu.co
+
+
+Directora: Ing. Diana Marcela Cardona Román, M.Sc, Ph.D
+Perfil: Ingeniera de Sistemas de la Universidad de los Llanos, Magíster en Ingeniería de Sistemas y Computación y Doctora en Ingeniería - Industria y Organizaciones de la Universidad Nacional de Colombia, Sede Bogotá́ (Becaria 2013-2018 Conv. 567/2012 formación de doctorado nacional). Postdoc 2021- 2022 Fundación Cardiovascular de Colombia (FCV) - Universidad Corporativa (Conv. 891 de 2020 Mecanismo 2 MinCiencias). Reconocida como Investigador Junior (IJ) y par evaluador de MinCiencias. Investigadora visitante en la Universidad Oberta de Catalunya (UOC) de Barcelona-España, en CEPADE de la Universidad Politécnica de Madrid en Madrid-España y en la Universidad Autónoma de Baja California (UABC) en Tecate-México. Investigadora y colaboradora en los grupos de investigación GRIEGO (Grupo de investigación en Gestión Organizacional - Categoría A1 - MinCiencias) de la Universidad Nacional de Colombia, en el grupo de investigación GUANE (Categoría C - MinCiencias) de la Universidad Nacional Abierta y a Distancia-UNAD, actualmente, miembro del grupo de Investigación GITECX (Categoría C - MinCiencias) de la Universidad de los Llanos. Participó en la construcción del documento maestro de la Maestría en Gestión de Tecnologías de la Información de la UNAD para renovación de registro calificado y cuyo énfasis de su plan de estudios fue en la transformación digital. Tiene experiencia profesional en la construcción de agendas del conocimiento en la UNAL, en el análisis de información del proyecto e-learning Colombia RENATA, en construcción del ecosistema de innovación y emprendimiento en AvanCiencia (anteriormente ACAC) y MinCiencias, y en la construcción de un modelo de gestión de conocimiento para la Universidad Corporativa de la FCV. Experiencia docente en UNILLANOS, UNAD y UNAL en cursos de pregrado (Ingeniería de Sistemas) y posgrado (Especialización de Gobierno Electrónico, Maestría en Administración de Negocios, Maestría en Gestión de Tecnologías de Información, Maestría en Ingeniería - Ingeniería de Sistemas y Computación, Maestría en Ingeniería Industrial, Maestría en Telecomunicaciones). Ha dirigido trabajos de grado en pregrado y maestría, igualmente ha sido jurado de trabajos de pregrado, maestría y propuestas doctorales. Ha escrito capítulos de libro y artículos científicos para revistas indexadas, working papers y eventos académicos nacionales e internacionales, entre otros. Actualmente está vinculada como profesora de planta de la Universidad de los Llanos en la Facultad de Ciencias Básicas e Ingeniería. Actualmente a cargo de los cursos Lenguajes de programación e Introducción a la analítica de datos. Email: dcardona@unillanos.edu.co 
+
+
+Co-Director: Ing. Angel Alfonso Cruz Roa, M.Sc, Ph.D
+Perfil: Ingeniero de Sistemas de la Universidad de los Llanos, Magíster en Ingeniería Biomédica y Doctor en Ingeniería de Sistemas y Computación de la Universidad Nacional de Colombia. Profesor asociado de la Universidad de los Llanos, Investigador Asociado (IA) y par evaluador de MinCiencias. Experiencia en proyectos de investigación en Computación Inteligente, Procesamiento y Análisis de Imágenes, Visión por Computador y Computación de Alto Desempeño. Investigador visitante y colaborador con el Grupo de Investigación Machine Learning, Perception and Discovery Lab - MindLab (Categoría A1 - MinCiencias) de la Universidad Nacional de Colombia. Experiencia docente en los cursos de Métodos Numéricos, Teoría de la Computación, Teoría de Lenguajes y Autómatas, Visión por Computador, Análisis de Información, Simulación Computacional, Seminario de Investigación y Trabajo de Grado. Actualmente a cargo del curso Simulación Computacional y Computación Inteligente del Programa de Ingeniería de Sistemas y miembro del Grupo de Investigación GITECX (Categoría C - MinCiencias). Email: aacruz@unillanos.edu.co.
+
+
+
+
+ 
+
+
+
+
+
+
+ 
+
+
+2.        RESUMEN  Y PALABRAS CLAVE
+ 
+La transformación digital (TD) es el proceso de adopción e integración de tecnologías digitales en todos los ámbitos de una organización. La TD está ganando relevancia en las Instituciones de Educación Superior (IES), impulsando la innovación en los métodos de enseñanza que permitan mayor flexibilidad, acceso remoto a la educación y eficiencia de los procesos académicos y administrativos, lo que presenta desafíos y oportunidades significativas. En el contexto actual, es necesario comprender cómo las IES están incursionando e implementando la TD en sus procesos, para lo cual se puede analizar antecedentes, referentes o casos de éxito de fuentes confiables como artículos científicos, libros o capítulos de libro, reportes técnicos o documentos finales de trabajos de grado o tesis, por medio del análisis del contenido textual completo de estos documentos. El enfoque convencional puede ser complejo pues requiere que se lea una gran cantidad de documentos y se haga su respectiva síntesis y análisis directamente por parte de los investigadores de forma manual y subjetiva. Este es un proceso lento y laborioso, especialmente cuando se trata de grandes volúmenes de datos como es la tendencia actual. Por lo cual la alternativa es aprovechar el potencial de otras áreas de aplicación en análisis automático de contenido textual como por ejemplo, métodos de aprendizaje automático usados para el análisis de sentimiento en redes sociales para determinar automáticamente si una publicación expresa una opinión positiva, negativa o neutral sobre un tema. Por lo tanto, este trabajo propone analizar el contenido de la literatura científica reciente de la TD en IES para identificar sus factores relevantes, haciendo uso de técnicas de procesamiento del lenguaje natural (PLN) como modelado de temas (topic modeling), entre otras, para realizar el análisis automático de texto, de un corpus de datos consolidado a partir de una variedad de documentos científicos recopilados de diferentes fuentes y bases de datos. Se tomaron 127 archivos de Scopus[1], 59 archivos de Sage Journals[2], 8 archivos de Sciencedirect[3], 50 archivos de Taylor & Francis Group[4] y 30 archivos de Redalyc[5]. Obteniendo un total de 274 archivos. Se llevará a cabo un proceso de ETL (Extract, transform, load) para limpiar y preparar los datos para el análisis de texto. Se utilizarán técnicas de procesamiento de PLN como  bolsa de palabras (Bag Of Words), el modelado de temas latentes (latent topic modeling) y los modelos de lenguaje (Language models) para identificar factores relevantes y posibles relaciones. El objetivo es identificar los principales factores, características y tendencias en este corpus de datos, junto con sus relaciones e importancia, para su presentación, visualización y análisis a partir de su contenido textual con el fin contribuir  en el conocimiento y apropiación de la transformación digital en las instituciones de educación superior.
+
+
+Palabras clave: Análisis de contenido, Analítica de texto, Aprendizaje automático, Transformación digital, Procesamiento de lenguaje natural.
+3.         PLANTEAMIENTO DEL PROBLEMA
+
+
+ 
+La transformación digital (TD) se puede definir como el proceso de integración e incorporación de tecnologías digitales en todas las áreas de una organización, provocando cambios profundos en sus operaciones, procesos, cultura corporativa y propuestas de valor, con el objetivo de mejorar la experiencia de clientes y empleados, impulsar la innovación y obtener mayores beneficios [3], y en las instituciones educativas no es la excepción. Según el Informe GEM 2023 de la UNESCO, la tecnología en la educación puede democratizar el conocimiento, ofrecer oportunidades ilimitadas y mejorar la calidad de la enseñanza. Sin embargo, también puede agudizar la desigualdad y presentar desafíos en términos de acceso y equidad [4]. En la era digital actual, la TD se ha vuelto indispensable para el desarrollo y la eficiencia de las instituciones de educación superior (IES) a nivel global. Esta transformación no solo implica la incorporación de tecnologías digitales en las operaciones administrativas, sino también un cambio en la mentalidad y la cultura organizacional [5]. 
+En la educación superior, la integración de los procesos con Tecnologías de Información y Comunicación (TIC) es necesaria porque, además de su incorporación en los procesos de la organización para su mejora, permite optimizar las estrategias de enseñanza-aprendizaje, lo cual requiere de inversión financiera para adquirir la infraestructura necesaria y una comprensión clara de cómo incorporar la tecnología en la educación. Además, requiere cambios en los roles de la comunidad educativa, donde tanto docentes como estudiantes deben adaptarse a los avances tecnológicos y desarrollar habilidades tecnológicas [6]. Por ejemplo, la incorporación de las TIC en el plan de estudios de las universidades ayuda a preparar a los profesionales para enfrentar los desafíos del mundo actual [6], casos como el de dos universidades, una privada y la otra pública, en el departamento del Valle en Colombia muestran cómo se han incorporado las TIC en su planes de estudio y procesos educativos [6]. De un lado,  la universidad privada, ha incluido una asignatura sobre las TIC en la Sociedad del Conocimiento, ha adquirido diversos medios audiovisuales telemáticos e informáticos para mejorar el proceso de enseñanza-aprendizaje [6]. Por otro lado, el caso de la universidad pública ha creado una unidad dedicada a la inclusión de las TIC en la educación, ha adecuado salas de cómputo y ha optado por una política de software libre con recursos de apoyo para el aprendizaje virtual [6]. 
+El tema de la transformación digital en las instituciones de educación superior es de gran importancia a nivel regional e internacional. A nivel regional, la transformación digital en la educación superior en América Latina y el Caribe ha permitido a las instituciones considerar su futuro a la luz de los impactos del COVID-19 [7]. A nivel internacional, la UNESCO considera importante la innovación digital en la educación ya que las tecnologías digitales se han convertido en una necesidad social para garantizar la educación como un derecho humano básico [8].
+Esta problemática aún no ha recibido un análisis completo y sistemático a pesar de la abundante documentación, investigación, implementaciones e información sobre el tema. Lo anterior conlleva a identificar la necesidad de las universidades de una rápida pero acertada inclusión de las tendencias tecnológicas en sus procesos de enseñanza-aprendizaje y en su gestión académico-administrativa de casos de éxito reportados. Identificar las tendencias tecnológicas o factores relevantes de casos de éxito reportados puede hacerse a través del análisis de contenido textual de fuentes secundarias como los artículos científicos por su confiabilidad y detalle. Sin embargo, esta puede ser una tarea desafiante y laboriosa en el tiempo al realizarse con el enfoque convencional, toda vez que requiere que el investigador se lea una gran cantidad de documentos completos en el contexto científico y académico, para que realice el respectivo análisis y síntesis de forma manual y seleccione posibles factores, características o tendencias tecnológicas de acuerdo con su experticia, lo que podría resultar en un proceso subjetivo y lento. 
+Esta brecha representa una oportunidad significativa para contribuir a la generación de nuevo conocimiento, en particular para IES como la Universidad de los Llanos o IES colombianas, considerando que los factores relevantes en TD pueden ser extraídos de forma automática a través del análisis de contenido textual de documentos como artículos científicos, artículos de memorias de eventos científicos, libros o capítulos de libro y reportes técnicos. Sin embargo, no hay que desconocer los desafíos computacionales presentes en los procesos de extracción, transformación y carga (ETL) de grandes volúmenes de datos (Big Data).
+El análisis automático de contenido textual es útil para este tipo de desafíos, especialmente en la identificación de tendencias [38]. Esta técnica proporciona una herramienta que al emplear algoritmos computacionales avanzados, puede examinar de manera eficiente y sistemática el contenido de un documento o corpus de datos, extrayendo tendencias y relaciones subyacentes que podrían pasar desapercibidos para el análisis humano. Al hacerlo, permite descubrir información clave de manera rápida y precisa, facilitando la comprensión y la toma de decisiones informadas[69].  
+Por lo tanto, la pregunta de investigación de este trabajo es: ¿Qué factores, características y relaciones son comunes o relevantes en los procesos de transformación digital de las instituciones de educación superior a partir de literatura científica que se puedan detectar a partir de análisis automático de contenido textual?
+Al ofrecer una perspectiva desde el análisis automático del contenido textual de documentos sobre la transformación digital en instituciones de educación superior, este proyecto contribuirá a la generación de conocimiento del análisis automático de texto en el contexto educativo y organizacional. Esto beneficiará tanto a los investigadores como a los profesionales que toman decisiones en el campo de la educación superior. Además, proporcionará una línea base para investigaciones futuras para el diseño e implementación de estrategias institucionales para la aplicación de transformación digital en IES. 
+5.        OBJETIVOS:
+5.1 Objetivo general (OG)
+
+
+* Identificar automáticamente factores, características y relaciones más comunes o relevantes en literatura científica sobre la transformación digital en educación superior mediante técnicas de análisis de contenido textual y procesamiento de lenguaje natural. 
+5.2  Objetivos específicos (OE)
+
+
+* Consolidar un conjunto de datos de literatura científica sobre TD en educación superior.
+* Implementar una estrategia computacional basada en PLN para identificar factores relevantes de la TD en educación superior a partir de métodos de análisis automático de contenido textual.
+* Seleccionar los factores relevantes identificados y sus relaciones por medio de métodos cuantitativos y cualitativos de análisis y visualización de datos para la consolidación de un science mapping o landscape de la TD en educación superior.
+* Evaluar el desempeño de la estrategia computacional propuesta de análisis de contenido textual y procesamiento de lenguaje natural en la identificación de factores relevantes.
+6          JUSTIFICACIÓN:
+
+
+La transformación digital es un proceso fundamental para las IES porque establece el camino hacia una estrategia de gestión educativa sostenible [11]. La TD puede mejorar la calidad y la relevancia del aprendizaje, fortalecer la inclusión, mejorar la administración y gobernanza de la educación [12]. La integración efectiva de estas tecnologías en las IES no solo ha mejorado la enseñanza y el aprendizaje al ofrecer experiencias más accesibles y personalizadas, sino que también ha revolucionado la investigación al facilitar la colaboración y el acceso a recursos [13]. Además, la administración de las IES se ha beneficiado al optimizar procesos y mejorar la comunicación interna y externa. Estas oportunidades de mejora, sin embargo, coexisten con desafíos, como la necesidad de abordar la desigualdad en el acceso y asegurarse de seguir ofreciendo una educación de calidad [13].
+La gestión del cambio en el contexto de la digitalización de la educación superior implica planificar, implementar y controlar la transición a sistemas y procesos digitales [14]. Es importante entender e investigar cómo se ha implementado el proceso de TD en las IES, pues proporciona una visión clara de cómo las universidades se están transformando, descubriendo las iniciativas de TD más relevantes que han aplicado y si lo están haciendo a través de un plan integrado alineado con una estrategia digital [15]. Además, ayuda a las universidades a construir ventajas competitivas [16] y a cumplir con su papel en la sociedad [17]. Los resultados de estas investigaciones ayudan a cambiar las prácticas de gestión estratégica en las IES al proporcionar conocimientos empíricos para determinar los cambios impactantes y su conexión con el aprendizaje evolutivo [16].
+
+El análisis automático del contenido textual de documentos sobre la TD en las IES permite a las instituciones, estudiantes y funcionarios comprender y evaluar la eficacia de sus estrategias digitales, identificar áreas de mejora y adaptarse a las cambiantes necesidades y expectativas de los estudiantes [39]. Este trabajo es importante, toda vez que brinda una visión profunda y objetiva de los procesos de TD en la educación superior. Al automatizar el análisis textual, se identificarán tendencias emergentes, patrones, factores, características y relaciones, o desafíos comunes, lo que permite apoyar la toma de decisiones y ayuda a las instituciones a mantenerse a la vanguardia en un entorno educativo cambiante y cada vez más digitalizado para su apropiación.
+
+
+7. MARCO DE REFERENCIA, TEÓRICO O CONCEPTUAL:
+  
+7.1 Transformación digital (TD): 
+La transformación digital se refiere a los cambios asociados con la aplicación de tecnología digital en todos los aspectos de la sociedad humana. Implica la integración de tecnologías digitales y procesos comerciales en una economía digital. La TD no se limita a la automatización trivial, sino que implica la creación de nuevas capacidades fundamentales en los negocios, el gobierno público y la vida de las personas y la sociedad. También implica el uso de nuevas tecnologías digitales, como las redes sociales, la tecnología móvil, la analítica y los dispositivos integrados, para mejorar las operaciones comerciales, la experiencia del cliente y los modelos de negocio [18].
+Según Veldhoven & Vanthienen [19], para establecer una estrategia de TD exitosa, es importante considerar varios aspectos clave: 
+* Tener una visión clara de los objetivos y resultados deseados de la TD. Esto implica identificar las áreas de la organización que se beneficiarán más de la digitalización y establecer metas específicas para cada una de ellas.
+* Contar con el apoyo y compromiso de todos los niveles de la organización. La TD requiere un cambio cultural y una mentalidad abierta hacia la adopción de nuevas tecnologías y formas de trabajar. Esto puede lograrse a través de la comunicación efectiva, la capacitación y el fomento de una cultura de innovación y colaboración.
+* Identificación y selección de las tecnologías adecuadas para impulsar la transformación digital. Esto implica evaluar las necesidades y desafíos específicos de la organización y buscar soluciones tecnológicas alineadas con esos requisitos. Además, es importante considerar la integración de estas tecnologías con los sistemas y procesos existentes de la organización.
+* Establecer métricas e Indicadores Clave de Rendimiento o KPIs por sus siglas en inglés (Key Performance Indicators) para medir el progreso y el impacto de la transformación digital. Esto permitirá evaluar la efectividad de la estrategia.
+
+
+7.2 Transformación Digital en la educación superior: 
+La TD en la educación superior se refiere a la adaptación de las instituciones de educación superior (IES) a la nueva realidad digital para trascender la innovación en varios aspectos y llegar a la transformación [29]. La TD en la educación superior ofrece una solución a los desafíos que enfrentan las instituciones de educación superior en un mundo cada vez más digital [28].
+
+
+La TD en la educación superior es un proceso relativamente reciente que se ha acelerado en los últimos años debido a la necesidad de adaptarse a los cambios tecnológicos y a la evolución de las demandas de los estudiantes [27]. Las IES han utilizado diversas tecnologías a lo largo de las décadas para mejorar la enseñanza y el aprendizaje, y recientemente la pandemia de COVID-19 ha acelerado el proceso de transformación digital en la educación superior [40][41] En la tabla 1, se presentan algunos hitos importantes en la historia de la transformación digital en la educación superior:
+
+
+Tabla 1. Hitos de la transformación digital en la educación superior. Fuente:Elaboración propia.
+DÉCADA
+	HITO
+	Años 90
+	En esta década, las instituciones de educación superior comenzaron a utilizar tecnologías como el correo electrónico y la World Wide Web para mejorar la comunicación y el acceso a la información [23].
+	Años 2000
+	En esta década, las instituciones de educación superior comenzaron a utilizar tecnologías como los sistemas de gestión del aprendizaje (LMS por sus siglas en inglés) y la videoconferencia para mejorar la enseñanza y el aprendizaje [23].
+	Años 2010
+	En esta década, las instituciones de educación superior comenzaron a utilizar tecnologías como la inteligencia artificial, la analítica de datos y la realidad virtual para mejorar la enseñanza y el aprendizaje [23].
+	Años 2020
+	En esta década, las instituciones de educación superior se vieron obligadas a impulsar procesos de transformación digital debido a la pandemia de COVID-19 para no parar los procesos de formación [26]. La transformación digital se ha convertido en una prioridad para las instituciones de educación superior, ya que les permite mejorar el acceso y la flexibilidad educativa, personalizar el aprendizaje, fomentar la innovación y la investigación, y preparar a los estudiantes para el futuro del trabajo [28].
+	    
+Al aprovechar la tecnología, las instituciones pueden mejorar el acceso y la flexibilidad educativa, personalizar el aprendizaje, fomentar la innovación y la investigación, y preparar a los estudiantes para el futuro del trabajo [28].
+Entre los beneficios que ofrece la TD en el ámbito de la educación superior están que  puede ayudar a las instituciones de educación superior a ser más competitivas en un mercado cada vez más digital [30]. La TD es una inversión a largo plazo que puede asegurar una rentabilidad sostenible en un espacio cada vez más competitivo [30], la tecnología puede ayudar a las universidades a llegar a más estudiantes, independientemente de su ubicación geográfica o situación personal. Por ejemplo, las clases en línea y los programas de aprendizaje a distancia permiten a los estudiantes estudiar desde cualquier lugar del mundo [28], y finalmente, puede ayudar a las universidades a preparar a los estudiantes para el trabajo futuro. Por ejemplo, las universidades pueden ofrecer cursos y programas que enseñen habilidades digitales y técnicas relevantes, como la programación, la analítica de datos, la inteligencia artificial y la ciberseguridad [28].
+
+
+
+
+
+
+7.3. Extraer, Transformar y Cargar datos (Extract, Transform and Load, ETL)
+El proceso ETL se refiere al proceso de combinar datos de diferentes fuentes en un repositorio central, utilizando un conjunto de reglas comerciales para limpiar, organizar y preparar los datos para su almacenamiento, análisis y uso [42]. 
+El proceso ETL es un conjunto de pasos utilizados para integrar datos de múltiples fuentes, transformarlos en un formato adecuado y cargarlos en un almacén de datos o data warehouse para su análisis. A continuación, se detallan las fases y características clave de este proceso:
+
+
+7.3.1. Fases del Proceso ETL
+El proceso comprende las fases de extracción, transformación y carga descritas a continuación [43].
+* Extracción (Extract): En esta fase, los datos se recopilan y extraen de diversas fuentes, como bases de datos, archivos, aplicaciones o sistemas externos. Los datos extraídos suelen estar en bruto y no estructurados, y se transfieren a un área de preparación para su posterior procesamiento.
+* Transformación (Transform): Durante esta etapa, los datos extraídos se someten a diversas operaciones de limpieza, integración, reestructuración y enriquecimiento para prepararlos para su análisis. Esto puede incluir la eliminación de datos duplicados, la conversión de formatos, el enriquecimiento con datos adicionales, la aplicación de reglas de negocio y la creación de claves primarias.
+* Carga (Load): En la fase final, los datos transformados se cargan en el almacén de datos o data warehouse, donde están disponibles para consultas y análisis. La carga puede ser incremental (solo los datos nuevos o modificados) o completa (todos los datos transformados). 
+
+
+7.3.2. Importancia del Proceso ETL
+* Integración de datos: Permite la incorporación de datos de múltiples fuentes, lo que es fundamental para el análisis holístico de la información.
+* Calidad de datos: Facilita la limpieza, enriquecimiento y estandarización de los datos, lo que mejora su calidad y utilidad para el análisis.
+* Preparación para el análisis: Los datos transformados y cargados están listos para ser utilizados en informes, paneles y análisis de inteligencia empresarial.
+
+
+7.4 Procesamiento de lenguaje natural (PLN): 
+El procesamiento de lenguaje natural (PLN) es la intersección entre los campos de la lingüística y la informática que se encarga de permitir a las computadoras comprender y manipular el lenguaje humano, combina técnicas de diversos campos como la inteligencia artificial, la lingüística, la estadística y el aprendizaje automático [20]. PLN se basa en una combinación de enfoques, que van desde modelos basados en reglas del lenguaje humano hasta técnicas estadísticas, de aprendizaje automático y de aprendizaje profundo. Su objetivo es permitir a las computadoras no solo reconocer palabras y frases, sino también comprender el significado completo de un texto o discurso, incluyendo la intención y el sentimiento del interlocutor [20]. 
+Las primeras investigaciones en PLN surgieron poco después de la aparición de las computadoras digitales en la década de 1950 [21]. En la década de 1990, hubo un fuerte énfasis en la evaluación y se desarrollaron temas de investigación clave, como la desambiguación del significado de las palabras y el procesamiento del lenguaje estadístico, también se produjo un cambio hacia metodologías empíricas y el uso de datos de rendimiento. Este cambio condujo al desarrollo de sistemas de PLN capaces de manejar eficazmente el texto general y de tener en cuenta la variabilidad y ambigüedad del lenguaje [40]. Luego, en la década de 2000, se introdujo el modelado del lenguaje neural, y las redes neuronales desempeñaron un papel fundamental en el ámbito del PLN. Además, se crearon diversas herramientas y sistemas, como los analizadores de sentimientos y los etiquetadores de partes del discurso, que contribuyeron al avance del PLN [39]. Uno de los factores clave que contribuyó al avance del PLN fue la disponibilidad de grandes conjuntos de documentos electrónicos, gracias a la Web. Esto permitió a los investigadores acceder a una gran cantidad de texto para su análisis. Además, el énfasis en enfoques empíricos y en estadísticas de corpus reemplazó la dependencia de la teoría lingüística [40]. El auge de Internet también desempeñó un papel importante en la evolución del PLN. La demanda de software capaz de procesar diversos tipos de texto aumentó, y aplicaciones como la traducción automática, la corrección ortográfica y la revisión gramatical se volvieron más comunes. Internet también proporcionó acceso a grandes cantidades de texto electrónico, incluyendo diccionarios, enciclopedias, bibliotecas y archivos [40]. No obstante, los avances más significativos de los últimos años han sido impulsados por el aprendizaje automático, una rama de la inteligencia artificial (IA) que se enfoca en desarrollar sistemas capaces de aprender y generalizar a partir de datos [21]. 
+PLN es un área con muchas aplicaciones y una amplia variedad de técnicas y disciplinas involucradas, entendimiento del lenguaje natural, generación de lenguaje natural, construcción de conocimiento base, sistemas de gestión de diálogos, procesamiento de discursos, minería de texto, analitica de texto, modelado de temas, recuperación de la información, modelos de lenguaje, entre otros [38].
+
+
+7.4.1 Análisis o analítica de texto (TA): 
+El análisis de texto (TA por sus siglas en inglés), también llamado minería de texto o analítica de texto, es un campo interdisciplinar dentro del procesamiento de lenguaje natural, que abarca la comprensión del lenguaje natural, la minería de datos y el aprendizaje automático. En los últimos años, ha experimentado un crecimiento exponencial, impulsado por el aumento de los datos no estructurados, como las redes sociales, los blogs y los comentarios de los clientes [38].  El análisis de texto se utiliza en una amplia gama de aplicaciones, desde la detección de fraudes hasta el marketing personalizado [38]. En el ámbito empresarial, puede ayudar a las organizaciones a comprender mejor a sus clientes, identificar tendencias de mercado y tomar decisiones más informadas [38]. 
+
+
+
+
+
+
+7.4.2. Bolsa de Palabras (Bag of Words, BoW)
+La metodología de la Bolsa de Palabras (BoW, por sus siglas en inglés) es una técnica utilizada en el procesamiento del lenguaje natural (PLN) para simplificar los datos de texto [44]. En este modelo, cada documento se representa como una bolsa que contiene algunas palabras, ignorando el orden de las palabras [45].
+ 
+El proceso generalmente implica los siguientes pasos:
+1. Preprocesamiento de texto: Este es el primer paso y consiste en limpiar y preparar los datos de texto para obtener una mejor representación [46]. Algunas de las tareas de preprocesamiento incluyen la eliminación de ruido (como el formato del texto), la tokenización (dividir el texto en componentes pequeños), la normalización (que puede incluir la lematización, el cambio a minúsculas y la eliminación de palabras de parada –stop-words–), entre otros [46].
+2. Creación de la bolsa de palabras: Una vez que el texto ha sido preprocesado, se crea una matriz término-documento en la que cada fila representa un documento y cada columna una palabra [44]. Además de la creación de la matriz término-documento, la representación de frecuencia de términos y el TF-IDF requieren la construcción de un diccionario de términos (palabras). El diccionario de términos es una lista de todas las palabras únicas encontradas en el conjunto de documentos, y cada palabra en el diccionario se asigna un índice único. La construcción del diccionario de términos es un paso importante en el preprocesamiento del texto, ya que permite crear una matriz término-documento y asignar valores a cada palabra en el conjunto de documentos. [43]
+* Frecuencia de términos: La representación de frecuencia de términos es una forma de representar texto en números, creando vectores que contienen el recuento de ocurrencias de palabras en un documento [67].
+* TF-IDF (Term Frequency-Inverse Document Frequency): Por otro lado, el TF-IDF es una fórmula utilizada para calcular la relevancia de una palabra clave en un documento en relación a un conjunto de documentos, compuesta por dos partes: TF (Term Frequency) y IDF (Inverse Document Frequency).
+El TF calcula la frecuencia de aparición de una palabra clave en un documento, mientras que la IDF tiene en cuenta la cantidad de documentos en los que la palabra clave aparece. La fórmula ayuda a evitar prácticas como el keyword stuffing y a identificar los términos realmente relacionados con las búsquedas que hacen los usuarios, lo que permite a los motores de búsqueda rankear las webs de manera más efectiva [67].
+En la figura 1, se utiliza la representación de frecuencia de términos para evaluar la relevancia de las palabras clave en un conjunto de documentos.
+3. Análisis de texto: Con la representación numérica del texto por medio de la matriz término-documento, se pueden aplicar técnicas de análisis de datos, como el aprendizaje automático [47].
+  
+
+Figura 1. Representación de Bolsa de Palabras por frecuencia de términos. Adaptado de [47].
+
+
+7.4.3. Modelado de Temas (Topic Modeling)
+El modelado de temas (Topic modeling) es una metodología utilizada en el análisis de texto que busca identificar y representar los conceptos ocultos, las características predominantes o las variables latentes de los datos, dentro de un corpus de datos [59]. Esta metodología la podemos dividir en dos tipos de enfoques, los enfoques probabilísticos y los no probabilísticos. Los enfoques no probabilísticos, como el Análisis Semántico Latente (LSA) y la Factorización de Matrices no Negativas (NMF), se basan en métodos algebraicos de factorización de matrices y surgieron a principios de la década de 1990 [60]. Estos enfoques trabajan bajo la metodología de la bolsa de palabras (BoW), en donde convierten el corpus de datos en una matriz, donde el orden de los términos se ignora por completo y solo cuenta el conteo de términos en el documento. Por otro lado, los modelos probabilísticos, como el análisis probabilístico semántico latente (pLSA) y la Asignación Latente de Dirichlet (LDA), fueron desarrollados para mejorar los modelos algebraicos (enfoques no probabilísticos) incorporando la estadística y haciendo uso de modelos generativos [61].
+
+
+Métodos de modelado de temas no probabilísticos:
+   * Análisis semántico latente (LSA): Es un método algebraico usado en el PLN y el TA, basado en la descomposición en valores singulares (SVD) por sus siglas en inglés), donde su fundamento teórico es la hipótesis distribucional, este nos dice que el significado de un tema está definido por el contexto en el que aparece, además de que temas con un significado similar ocurren muy cerca contextualmente [62]. Representando el corpus como vectores y analizando su similaridad, LSA puede organizar el texto en clusters semánticos e inferir relaciones semánticas entre textos [63]. LSA es aplicado en campos como la minería de textos, la calificación automática de ensayos, sistemas de tutoría inteligente, recuperación de información, análisis de redes sociales y resumen de textos [63].
+   * Factorización de matrices no negativas (NMF): NMF es una técnica de reducción de dimensiones, que aborda el problema de los números negativos presentes en el corpus de datos poniendo restricciones de no negatividad en el modelo de datos [63]. NMF intenta resolver el problema de los componentes negativos en los modelos de datos, porque en la mayoría de las aplicaciones, los componentes negativos contradicen la realidad física [63]. En resumen NMF es una representación de un corpus de datos confinado en vectores no negativos [63]. Es usado en campos como la segmentación, reducción de dimensiones, reconocimiento de patrones, procesamiento de imágenes, modelado de lenguajes [63]. 
+
+
+Métodos de modelado de tema probabilísticos:
+* pLSA: Es una técnica de reducción en minería de texto basada en BoW, usada para identificar la coocurrencia semántica de términos [64]. Asignando una probabilidad a cada relación, pLSA descubre los temas subyacentes en un corpus de datos [63]. Se basa en el concepto donde cada palabra se genera a partir de un tema y cada documento es una mezcla de temas, reduciendo cada documento a una distribución de probabilidad de una cantidad finita de temas [63]. 
+* LDA: Es un método probabilístico que busca identificar los temas que subyacen en un corpus de datos [63]. Funciona bajo la idea de que cada documento es una mezcla de diferentes temas, y cada tema se define como una distribución de palabras [63]. A partir de la co-ocurrencia de las palabras, LDA estima la probabilidad de que cada palabra pertenezca a un tema específico y viceversa, descubriendo así la estructura temática del corpus sin depender del orden de las palabras [63].
+
+
+7.4.4. Modelos de Lenguaje (Language Models, LM)
+Los modelos de lenguaje son herramientas fundamentales en el campo del procesamiento del lenguaje natural. Son algoritmos y técnicas diseñadas para permitir a las máquinas entender y generar texto de manera inteligente y contextual [50]. Los modelos de lenguaje asignan una probabilidad a una secuencia de palabras mediante una distribución de probabilidad. [51]
+
+
+        Tipos de Modelos de Lenguaje:
+   * BoW (Bag of Words): Representación de texto basada en la frecuencia de palabras, ignorando el orden y la estructura gramatical.
+   * Word N-grams: Representación de texto basada en secuencias de palabras de longitud N.
+   * Modelos estadísticos: Modelos basados en técnicas de aprendizaje automático, como Naive Bayes, Máquinas de Vectores de Soporte (Support Vector Machines, SVM) o K Vecinos más Cercanos (K-Nearest Neighbors, KNN).
+   * RNN (Recurrent Neural Networks): Redes neuronales recurrentes que mantienen la memoria del contexto en el tiempo.
+   * LSTM (Long Short Term Memory): Variación de RNN que mejoran la memoria del contexto y la capacidad de aprender patrones complejos.
+   * Transformers: Arquitecturas de redes neuronales que utilizan mecanismos de autoatención para capturar relaciones y dependencias contextuales entre elementos de una secuencia de datos.
+   * LLM (Large Language Models): Modelos de lenguaje de gran tamaño que emplean técnicas de aprendizaje profundo y arquitecturas de transformers para procesar y generar texto.
+
+
+7.4.4.1. Tendencias Actuales
+Actualmente, los modelos de lenguaje de gran tamaño (LLM) basados en redes neuronales y aprendizaje profundo son una tendencia creciente en la inteligencia artificial. Estos modelos, como GPT-3 y GPT-4, han demostrado ser capaces de realizar una amplia variedad de tareas de lenguaje natural, incluyendo la generación de texto, la traducción de idiomas y la respuesta a preguntas. Sin embargo, estos modelos también presentan desafíos, como el costo de desarrollo, la privacidad y la seguridad, y la necesidad de grandes cantidades de datos para su entrenamiento [52][49].
+
+
+7.4.5. Reducción de Dimensionalidad para Visualización de Datos
+El número de características de entrada, variables o columnas presentes en un conjunto de datos dado se conoce como dimensionalidad, y el proceso para reducir estas características se denomina reducción de dimensionalidad. [53]
+La técnica de reducción de dimensionalidad se puede definir como, "... una forma de convertir el conjunto de datos de dimensiones más altas en un conjunto de datos de dimensiones menores asegurando que proporcione información similar." [53]
+  
+
+Figura 2. Representación técnicas de reducción de dimensionalidad. Adaptada de [53].
+
+
+En el diagrama anterior (figura 2) explica las técnicas de reducción de dimensionalidad en el análisis de datos. Hay dos formas de aplicar la técnica de reducción de dimensiones, que se dan a continuación:
+
+
+1. Selección de características: Es el proceso de seleccionar el subconjunto de las características relevantes y dejar de lado las características relevantes presentes en un conjunto de datos para construir un modelo de alta precisión [53]. Los métodos específicos mencionados en la imagen incluyen:
+* Relación de valores faltantes: Este método elimina las características que tienen un alto porcentaje de valores faltantes [54].
+* Filtro de baja varianza: Este método elimina las características que tienen una varianza baja, ya que no aportan mucha información [55].
+* Filtro de alta correlación: Este método elimina una de las dos características que están altamente correlacionadas entre sí, ya que ambas contienen información similar [55].
+2. Reducción de dimensionalidad: Esta técnica se utiliza para reducir el número de características en un conjunto de datos transformándose en un nuevo conjunto de características [53]. Hay dos subcategorías:
+* Basada en componentes/factores: Los métodos en esta categoría, como el Análisis de Factores y el Análisis de Componentes Principales, transforman el conjunto de datos en un nuevo conjunto de características que son combinaciones lineales de las características originales.
+* Basada en proyecciones: Los métodos en esta categoría, como ISOMAP, t-SNE y UMAP, transforman el conjunto de datos en un nuevo conjunto de características que son combinaciones no lineales de las características originales.
+
+
+Análisis de Componentes Principales (PCA): Transforma las observaciones de características correlacionadas en un conjunto de características linealmente no correlacionadas, reduciendo así la dimensionalidad [53]. En la figura 3, se ilustra cómo el PCA puede reducir la dimensionalidad de los datos (de tres dimensiones a dos en este caso) mientras conserva la mayor cantidad de información posible.
+
+
+  
+
+Figura 3. Representación de PCA. Adaptada de [56].
+
+
+t-Distributed Stochastic Neighbor Embedding (t-SNE): Una técnica de mapeado no supervisado que busca preservar la topología local de distancias interpuestas en un conjunto de datos de alta dimensionalidad [53]. La figura 4 muestra una proyección t-SNE de 448 documentos, esta figura ilustra cómo la proyección t-SNE puede ser utilizada para visualizar la similitud entre diferentes documentos en un espacio de menor dimensión. Cada punto en el gráfico representa un documento, y los documentos similares se agrupan juntos. Esto puede ser útil para entender las relaciones entre diferentes tipos de documentos. [68]
+  
+
+Figura 4. Representación de t-SNE. Adaptada de [68].
+
+
+Uniform Manifold Approximation and Projection (UMAP): Una alternativa a t-SNE que ofrece mejores propiedades matemáticas y gráficas, siendo más robusta ante la presencia de outliers y manteniendo mejor la topología local de los datos [53]. El algoritmo UMAP construye un grafo en el espacio de alta dimensión, donde cada nodo representa un punto de datos y las aristas representan la similitud o disimilitud entre los puntos. Seguidamente, el gráfico se incrusta en un espacio de menor dimensión, conservando las relaciones topológicas entre los nodos. El resultado es una representación visual de los datos que capta la estructura y los patrones subyacentes como se muestra en la figura 5 [58].
+
+
+  
+
+Figura 5. Ilustración esquemática del marco UMAP. La parte superior izquierda representa la distribución de puntos de datos en el espacio tridimensional original, y la parte superior derecha es el espacio de dimensionalidad reducida. Adaptada de [59].
+
+
+En la tabla 2 encontramos un breve resumen de los pros y contras de la reducción de la dimensionalidad en el análisis de datos.
+
+
+Tabla 2. Pros y contra de la reducción de la dimensionalidad. Fuente: Elaboración propia.
+
+
+Pros
+	Contras
+	Reducir las dimensiones de las características implica una reducción del espacio requerido para almacenar el conjunto de datos, porque este también se reduce.
+	Se pueden perder algunos datos debido a la reducción de la dimensionalidad.
+	El tiempo de entrenamiento de modelos es menor para dimensiones reducidas.
+	En la técnica de reducción de dimensionalidad de PCA, en ocasiones no se conocen los componentes principales que se deben considerar.
+	Se facilita la visualización de datos más rápidamente gracias a la reducción de características del conjunto de datos.
+	
+
+	Desaparecen las características redundantes en el ámbito de la multicolinealidad.
+	
+
+	
+
+
+
+7.5. Antecedentes y trabajos previos de analítica de texto en transformación digital o educación superior
+Estos son algunos trabajos relacionados que se consideraron pertinentes por su naturaleza, metodología y aplicabilidad del modelado de temas en artículos científicos, como medio para comprender el  área de investigación de un determinado conjunto de datos. 
+
+La transformación digital en la educación superior: un análisis de tendencias a partir de un análisis bibliométrico 
+Patiño, J et Moreno, G.. Octubre, 2022.
+Este estudio busca suministrar información sobre aspectos fundamentales de la TD en el dominio de las IES. Analiza la literatura disponible a través de una búsqueda bibliométrica en Scopus y procesa los datos en Excel para extraer métricas como el número total de publicaciones y tendencias pptemáticas. Los resultados indican que la TD en IES es un campo emergente, especialmente desde el año 2021, donde se encuentran temáticas como el aprendizaje electrónico, gestión de recursos humanos y experiencia digital. [68]
+
+
+Digital transformation in education: a bibliometric analysis using Scopus 
+Thao, T. T. P., Nguyen, T., Minh, N. T. H., Van Dinh, N., Luong, H. D., Van Thang Nguyen, L., & Tran, T. (2023). 
+Este estudio presenta una revisión de estudios sobre la TD en la educación superior, mediante el análisis bibliométrico. Se realizó una búsqueda en la base de datos Scopus buscando documentos desde el inicio de la base de datos hasta el 1 de enero de 2023 utilizando términos de búsqueda específicos. Se recuperaron 1329 estudios relevantes, mostrando un aumento significativo en publicaciones en los últimos 4 años a comparación de los años iniciales. Los países desarrollados como la Federación de Rusia, Alemania y Estados Unidos son los más influyentes en este campo. La mayoría de los artículos se publican en revistas con un rango más bajo dentro de la base de datos de Scopus. Utilizando herramientas como VOSviewer, se identificaron cuatro tendencias de investigación principales: transformación digital en la educación superior durante la pandemia de COVID-19, aplicación de tecnologías de la Cuarta Revolución Industrial en educación, digitalización y competencia digital en educación, y formas de aprendizaje utilizando tecnología en instituciones de educación superior. [70]
+
+
+Bibliometric Analysis of Existing Knowledge on Digital Transformation in Higher Education 
+Cruz-Cárdenas, J., Ramos-Galarza, C., Guadalupe-Lanas, J., Palacio-Fierro, A., & Galarraga-Carvajal, M. (2022).
+Este estudio realiza un análisis bibliométrico sobre la TD en las IES, debido a la presión ejercida por la pandemia de COVID-19. Se identificaron 643 documentos relevantes de la base de datos de Scopus en enero de 2022, mostrando un crecimiento acelerado en la literatura sobre el tema. Se destacan tres áreas temáticas principales: transformación digital en la enseñanza, influencias ambientales en las IES y tecnologías habilitadoras. Además, se observó un cambio en el enfoque principal de la investigación, desde cuestiones económicas hasta la pandemia por el COVID-19. El estudio concluye discutiendo las implicaciones teóricas y prácticas de los hallazgos, y sugiere como área de interés futuro la transformación digital de las IES en un escenario post-COVID.[71]
+
+
+Digitalization and digital transformation in higher education: A bibliometric analysis 
+Díaz-García, V., Montero-Navarro, A., Rodríguez-Sánchez, J., & Losada, R. G. (2022).
+Este estudio aborda el proceso de transformación que están experimentando las IES debido al uso masivo de tecnologías de la información y la comunicación (TIC). Se realizó un análisis bibliométrico que abarca el período de 1900 a 2021, con una muestra de 469 artículos de la base de datos de Web of Science (WoS). Los resultados muestran la naturaleza multidisciplinaria del tema, su estrecha relación con temas como la innovación, la gobernanza y las metodologías ágiles, y destaca las principales áreas de investigación que podrían recibir más atención en el futuro. [72]
+
+
+Scientific production of the relationship between leadership, higher education and digital transformation: a bibliometric analysis
+Contreras, F. G., Amaya, W. S., Henríquez, N. A., Viancos, P., Fuentes, F. H., & Romero, J. A. (2024). 
+Este estudio aborda la importancia de la TD y el liderazgo en las IES, ha establecido como un objetivo central, llevar a cabo un análisis bibliométrico de la producción de artículos científicos que aborden la relación entre el liderazgo, la educación superior y la transformación digital en la base de datos de Web of Science (Wos), con el fin de identificar el estado del arte del conocimiento, las contribuciones sobre el tema y las futuras líneas de investigación. La metodología utilizada es una revisión documental a través de indicadores bibliométricos que muestran tendencias en la producción científica. Entre los resultados más significativos, se puede mencionar que se encontró que la transformación digital es un tema emergente, en crecimiento sostenido y escasamente abordado en el campo de la educación superior, por lo que representa una oportunidad para desarrollar investigaciones sobre el tema. [73]
+
+
+Análisis automático de contenido textual de colecciones de artículos científicos como apoyo al análisis documental y la gestión del conocimiento de una IES de la Orinoquía colombiana.
+Porras García, Y. F. (2021).
+El trabajo presenta un análisis automático de temas en artículos científicos de la Universidad de los Llanos (Unillanos), utilizando Latent Dirichlet Allocation (LDA) para el análisis semántico y temático. Se recolectaron 137 artículos en inglés disponibles en SCOPUS y se aplicó LDA, evaluando el desempeño con Coherence Measure (CM). Se estableció un proceso sistemático de parametrización y se construyó un instrumento web llamado "whatTopic" para la evaluación cualitativa por expertos. Cuantitativamente, el modelo obtuvo un CM de 0.639 para 10 temas. Cualitativamente, se compararon los temas identificados con etiquetas preestablecidas por SCOPUS, destacando "Experimentación e Investigación" como el tema principal, relacionado con recursos naturales, agropecuarios, física y telecomunicaciones en la Unillanos. [74]
+
+
+Aplicación del aprendizaje automático en la clasificación de textos cortos: un caso de estudio en el conflicto armado colombiano
+Páramo Lozada, J. P., & Espitia Betancourt, C. A. (2018).
+El proyecto aborda el conflicto armado en Colombia, con un enfoque en las FARC-EP (Fuerzas Armadas Revolucionarias de Colombia-Ejército del Pueblo) y su presencia en redes sociales tras los acuerdos de paz. Utiliza técnicas de aprendizaje automático para analizar tweets y comprender las posturas de los actores del conflicto. Se diferencian entre aprendizaje supervisado y no supervisado para clasificar datos. Se propone desarrollar una interfaz gráfica que permita una fácil interacción con los algoritmos y facilite el análisis de datos. Este enfoque busca contribuir al proceso de paz en el país al proporcionar una comprensión más profunda de las dinámicas en línea relacionadas con el conflicto. [75]
+
+
+8.   METODOLOGÍA PROPUESTA:
+ 
+El desarrollo de este proyecto se llevará a cabo mediante una metodología estructurada de corte cuantitativo que comprende cuatro fases, desde la recopilación de datos hasta la presentación de resultados. Se utilizará Python como lenguaje principal para el análisis de datos y se aprovecharán tecnologías libres o licenciadas como Matplotlib, Seaborn, Tableau o Power BI. En la figura 6, encontraremos un diagrama de flujo que representa el proceso estructurado por el cual irán las fases de desarrollo del proyecto.
+  
+
+Figura 6. Esquema general de la metodología para el desarrollo del trabajo de
+grado.
+
+
+Fase 1: Consolidación del Conjunto de Datos: Esta fase consiste en la obtención del conjunto de datos de literatura científica (artículos en revistas, artículos de memorias de conferencias o eventos científicos, capítulos de libros, trabajos de grado, entre otros) necesario para desarrollar el trabajo de grado, donde se hará uso de ecuaciones de búsqueda en las bases de datos científicas como Scopus, Sage Journals, Sciencedirect, Springerlink, Taylor & Francis Group. Para ello, se descargarán los documentos por medio de algoritmos que permitan automatizar la descarga de documentos en formato PDF sobre transformación digital en educación superior en Inglés.
+
+
+Actividades:
+1. Selección de bases de datos académicas relevantes para la temática de transformación digital en la educación superior entre: Scopus, Sage Journals, Sciencedirect,, Taylor & Francis Group.
+2. Diseñar y ajustar las ecuaciones de búsqueda de los artículos científicos para cada una de las bases de datos seleccionadas.
+3. Implementar un algoritmo en Python para automatizar la descarga de los documentos académicos o científicos en formato PDF, utilizando bibliotecas como BeautifulSoup, Selenium o similares.
+4. Limpieza de datos para eliminar duplicados y datos irrelevantes para la consolidación del conjunto de datos con los documentos en PDF y los metadatos principales disponibles asociados a los documentos.
+
+
+Entregable:
+* Conjunto de datos consolidado y organizado con los documentos académicos y científicos relevantes sobre la transformación digital en la educación superior
+
+
+Fase 2: Representación de documentos textuales: En esta fase se realizará toda la transformación y preparación de los datos en su representación vectorial o matricial de los documentos textuales para su procesamiento y análisis, por medio de los algoritmos de análisis de texto.
+
+
+Actividades:
+5. Transformación de los documentos académicos o científicos en formato PDF del conjunto de datos en formato de texto plano (.txt) para su procesamiento.
+6. Depurar el conjunto de datos de texto plano eliminando acentos, errores, caracteres incorrectos, entre otros.
+7. Implementar diferentes configuraciones de la bolsa de palabras para construir la representación textual de los documentos, con sus respectivos procesos de tokenización, eliminación de stop-words, normalización de frecuencia de términos (e.g. TF-IDF), entre otros.
+Entregable:
+* Conjunto de datos en su representación vectorial o matricial de bolsa de palabras (o vector space model) del contenido textual de los documentos académicos y científicos..
+
+
+Fase 3: Análisis de Texto: En esta fase se aplicará al menos un método de análisis de texto de modelado de temas (topic modeling) como LDA, pLSA o NMF, o de modelos de lenguajes estadísticos, de redes neuronales o aprendizaje profundo, análisis basados en N-gramas, Recurrent Neural Networks (RNN) o Long Short Term Memory (LSTM) o Transformers. Finalmente, aplicar un método de visualización de datos para análisis de texto basado en aprendizaje automático (PCA, t-SNE, U-MAP) para el análisis e identificación de términos, temas o tendencias, factores o conceptos relevantes y sus relaciones.
+
+
+Actividades:
+8. Implementar un método de modelado de temas entre LDA, pLSA o NMF para identificar los temas latentes y los términos (palabras o N-gramas) asociados más relevantes del conjunto de datos.
+9. Implementar un método de modelo de lenguaje entre N-gramas, Recurrent Neural Networks (RNN) o Long Short Term Memory (LSTM) o Transformers para identificar términos relevantes o sus relaciones.
+10. Implementar un método de reducción de la dimensionalidad y visualización de datos para análisis de texto basado en aprendizaje automático como Principal Component Analysis (PCA), t-Distributed Stochastic Neighbor Embedding (t-SNE) o Uniform Manifold Approximation and Projection (UMAP) para el análisis e identificación de términos, temas, factores o conceptos relevantes y sus relaciones.
+Entregable:
+* Repositorio de código con las implementaciones de los métodos adaptadas y usadas con el conjunto de datos para la generación de los modelos de análisis de texto.
+* Modelos obtenidos del proceso de entrenamiento y aprendizaje automático de modelado de temas o modelos de lenguaje.
+* Capítulo del documento de trabajo de grado con la descripción metodología desarrollada para el análisis de texto, evaluación experimental y visualización de resultados de los factores más relevantes identificados de la transformación digital en educación a partir del conjunto de datos.
+
+
+Fase 4: Presentación y análisis de resultados: En esta fase se presentarán y analizarán los resultados obtenidos de este trabajo para contribuir con el análisis de contenido del conjunto de datos sobre transformación digital en educación superior para la comunidad en general. 
+
+
+Actividades:
+11. Consolidar el trabajo y resultado de las fases anteriores en un documento técnico, académico y científico como el trabajo de grado y un borrador del manuscrito de artículo científico.
+12. Desplegar un sitio Web por medio de una infografía, science mapping, dashboard o storytelling con la síntesis del trabajo realizado, las fases, los resultados, visualizaciones y conclusiones para su divulgación a la comunidad.
+13. Realizar un video entre 1 a 5 minutos con la descripción del trabajo y los resultados para su divulgación.
+Entregable:
+* Borrador de trabajo de grado y manuscrito de artículo científico con los resultados parciales o finales. 
+* Video de síntesis del trabajo de grado para divulgación.
+* Sitio web con la síntesis del trabajo realizado, resultados y visualizaciones con su respectivo manual de usuario y manual técnico.
+
+
+
+
+
+
+
+
+
+
+9          RESULTADOS ESPERADOS:
+
+
+ 
+Tabla 9.1         Generación de nuevo conocimiento
+Resultado/Producto esperado
+	Indicador
+	Beneficiario
+	 Documento manuscrito del trabajo de grado con resultados parciales o finales en forma de artículo científico para su sometimiento a una revista académica o científica 
+	Manuscrito borrador del trabajo para someter a una revista académica o científica
+	Comunidad académica, investigadores 
+	 
+Tabla 9.2         Fortalecimiento de la comunidad científica
+Resultado/Producto esperado
+	Indicador
+	Beneficiario
+	Conjunto de datos de los documentos consolidados de TD en IES
+	Disponibilidad del conjunto de datos
+	Comunidad académica, investigadores 
+	Software científico del código de la implementación y experimentación del desarrollo del trabajo de grado
+	Enlace de repositorio de código o registro de software 
+	Comunidad académica y científica
+	 
+Tabla 9.3 Conducentes al fortalecimiento de la capacidad científica institucional o nacional:
+Resultado/Producto esperado
+	Indicador
+	Beneficiario
+	Trabajo de grado de los estudiantes en modalidad EPI.
+
+
+	 Acta de sustentación
+	Estudiantes de Ingeniería de Sistemas proponentes.
+
+
+	 
+Tabla 9.4         Apropiación social del conocimiento
+Resultado/Producto esperado
+	Indicador
+	Beneficiario
+	Ponencia en un Evento académico
+	 Certificado de ponencia o registro fotográfico
+	 Comunidad académica, público especializado
+	
+
+  10. CRONOGRAMA DE ACTIVIDADES
+ 
+
+
+Id
+	Actividad
+	Mes
+	1
+	2
+	3
+	4
+	5
+	6
+	1
+	Fase 1: Consolidación del conjunto de datos
+	x
+	x
+	
+
+	
+
+	
+
+	
+
+	2
+	Fase 2: Representación de documentos textuales
+	x
+	x
+	x
+	x
+	
+
+	
+
+	3
+	Fase 3: Análisis de texto
+	
+
+	
+
+	x
+	x
+	x
+	
+
+	4
+	Fase 4: Presentación y análisis de Resultados
+	
+
+	
+
+	
+
+	x
+	x
+	x
+	6
+	Escritura de artículos y elaboración de documento de trabajo grado
+	
+
+	
+
+	x
+	x
+	x
+	x
+	Duración del proyecto 6 meses. 
+11   PRESUPUESTO
+ 
+Tabla 11.1 Presupuesto global del Proyecto por tipo de recurso (Col$)
+ 
+RUBROS
+	Tipo de recurso
+	TOTAL
+	Efectivo
+	En especie
+	GASTOS DE PERSONAL
+	 0
+	 18’912.000
+	 18’912.000
+	MATERIALES Y SUMINISTROS
+	 0
+	 350.000
+	 350.000
+	COMPRA Y USO DE HARDWARE/SOFTWARE U OTROS
+	 0
+	 3’000.000
+	 3’000.000
+	ADQUISICIÓN DE BIBLIOGRAFÍA
+	 0
+	 0
+	 0
+	GASTOS EN PUBLICACIONES
+	 0
+	 0
+	 0
+	PARTICIPACIÓN EN EVENTOS
+	 0
+	 3’000.000
+	 3’000.000
+	TOTAL
+	0
+	25’262.000
+	25’262.000 
+	
+
+Tabla 11.2 Descripción de los gastos de personal
+ 
+DIRECTOR / EXPERTO/ ESTUDIANTE / AUXILIAR
+	Formación Académica
+	Función Dentro del Proyecto
+	DEDICACIÓN Horas/semana
+	Fuente de Financiación
+	Tipo de recurso
+	En efectivo
+	En especie
+	 Estudiante de investigación
+	Estudiante de
+Ingeniería de
+Sistemas de la
+Universidad de
+los Llanos
+	 Estudiante
+de proyecto
+de
+investigación
+(EPI)
+	 40
+	Propia
+	0
+	$6’000.000
+	 Estudiante de investigación
+	Estudiante de
+Ingeniería de
+Sistemas de la
+Universidad de
+los Llanos
+	 Estudiante
+de proyecto
+de
+investigación
+(EPI)
+	 40
+	Propia
+	0
+	$6’000.000
+	Directora de trabajo de grado
+	Doctora en ingeniería -  industria y organizaciones, Magíster en ingeniería de sistemas y computación e Ingeniera de sistemas
+	Orientadora del proyecto e investigadora principal
+	2
+	Propia
+	
+
+	$3’456.000
+	CoDirector de trabajo de grado
+	Doctor en ingeniería, Magíster en ingeniería biomédica e Ingeniero de sistemas
+	co-orientador del proyecto
+	2
+	Propia
+	
+
+	$3’456.000
+	TOTAL
+	 
+	0 
+	18’912.000
+	 
+Tabla 12.3 Materiales y suministros
+ 
+MATERIALES
+	VALOR
+	Papelería
+	250.000
+	Servicio de impresión del documento final
+	100.000
+	TOTAL
+	350.000
+	 
+
+
+ 
+Tabla 11.4 Compra y uso de equipos de Hardware/Software u otros
+ 
+HARDWARE/SOFTWARE
+	Tipo de recurso
+	Fuente de Financ.
+	TOTAL
+	En efectivo
+	En especie
+	Computador portatil HP AMD Athlon-3050 u CPU @2.30Ghz, SSD 256GB, DDR4 4GB
+	0 
+	1’500.000
+	Recursos propios del estudiante
+	1’500.000
+	Computador portatil Asus X442UA
+Intel(R) Core(™)  i7-7500u CPU 
+@ 2,70GHz, SSD 256GB, DDR4 4GB
+
+	0
+	1’500.000
+	Recursos propios del estudiante
+	1’500.000
+	TOTAL
+	0 
+	3’000.000
+	 
+	 3’000.000
+	 
+Tabla 11.5 Adquisición bibliografía
+ 
+DESCRIPCIÓN DE LA BIBLIOGRAFÍA
+	Fuente de Financ.
+	VALOR
+	Libros de investigación 
+	 Fondos de investigación 
+	0 
+	Páginas de Universidades 
+	 Fondos de investigación 
+	 0
+	TOTAL
+	 
+	 0
+	 
+12   BIBLIOGRAFÍA:
+
+
+1. Pak, A., & Paroubek, P. (2010). Twitter as a corpus for sentiment analysis and opinion mining. In Proceedings of the Seventh International Conference on Language Resources and Evaluation (LREC’10) (pp. 1320-1326).
+2. F. Sebastiani, “Machine learning in automated text categorization,” ACM Computing Surveys, vol. 34, no. 1, pp. 1–47, Mar. 2002, doi: 10.1145/505282.505283.
+3. A. Pucihar, M. K. Borštnar, C. Kittl, P. Ravesteijn, R. Clarke, and R. Bons, “Digital Transformation – Form Connecting Things to Transforming Our Lives: (conference proceedings) / 30th Bled eConference, (June 18 - 21, 2017, Bled, Slovenia),” Jul. 19, 2017. https://press.um.si/index.php/ump/catalog/book/234.
+4. UNESCO, “Informe GEM 2023: Tecnología en la Educación,” UNESCO, p. Bit.ly/2023gemreport, 2023, [Online]. Available: https://www.unesco.org/gem-report/sites/default/files/medias/fichiers/2023/07/2023reportflyer_SP.pdf
+5. M. Keshavarz and Z. Mirmoghtadaie, “Book Review: Teaching in a Digital Age: Guidelines for Designing Teaching and Learning–Third Edition, authored by Anthony William (Tony) Bates (Tony Bates Associates Ltd., 2022),” The International Review of Research in Open and Distributed Learning, vol. 24, no. 2, pp. 192–195, Mar. 2023, doi: 10.19173/irrodl.v24i2.7063.
+6. D. M. Quintero, G. P. Ávila, and S. C. Riascos, “INCLUSIÓN DE LAS TIC EN LA EDUCACION SUPERIOR,” Segundo Congreso Iberoamericano De Calidad En Eduacion a Distancia, 2009, [Online]. Available: http://eduqa2009.eduqa.net/eduqa2009/images/ponencias/eje3/3_INCLUSION_DE_LAS_TIC_EN_LA_EDUCACION_SUPERIOR_ESTUDIO_DE_CASOS_Quintero_Avila_Riascos.pdf
+7. Ó. Delgado and Y. Y. M. Delgado, “Transformación digital en las instituciones de educación superior a partir del Covid-19: madurez tecnológica de los estudiantes en Colombia,” Universidad Y Empresa, vol. 23, no. 41, Jan. 2022, doi: 10.12804/revistas.urosario.edu.co/empresa/a.10606.
+8. UNESCO. (2024, February 6). Qué necesita saber acerca del aprendizaje digital y la transformación de la educación | UNESCO. UNESCO. https://www.unesco.org/es/digital-education/need-know
+9. Marina, O., Palmera, M., José, T., Borrero, C., Del, A., Granados, C., Hilda, O., Guerrero, R., Judith, C. /, Martínez, C., Viviana, R. /, Parra, E., Wilfrido, C., Charris Flórez, A., Rafael, /, Simancas, E., Aracelli, G. /, & Britton Huffington, F. (2021). Realidades y tendencias de la educación superior desde la globalización, innovación y gestión educativa (C. Corporación Universidad de la Costa, Ed.; 1st ed.). Editorial Universitaria de la Costa S.A.S. https://repositorio.cuc.edu.co/bitstream/handle/11323/8592/Libro%20Realidades%20y%20tendencias%20-%20versi%C3%B3n%20final%2027%20de%20agosto%20de%202021.pdf?sequence=1&isAllowed=y
+10. E. M. Salcedo, “Massive online courses, MOOC: courses for the whole minorities?: a review from positions about the impact of virtual education and the reducing of the social gap,” Revista Investigación & Desarrollo, vol. 26, no. 2, pp. 109–124, Apr. 2019, doi: 10.14482/indes.26.2.371.35.
+11. M. A. M. Hashim, I. Tlemsani, and R. Matthews, “Higher education strategy in digital transformation,” Education and Information Technologies, vol. 27, no. 3, pp. 3171–3195, Sep. 2021, doi: 10.1007/s10639-021-10739-1.
+12. “Digital learning and transformation of education,” UNESCO, Mar. 15, 2024. https://www.unesco.org/en/digital-education
+13. Jisc Homepage. (2020, November 2). Reimagining digital teaching in higher education. Jisc Homepage. https://www.jisc.ac.uk/guides/reimagining-digital-teaching-in-higher-education
+14. ACADEMIA ERP / SIS. (2023). The Importance of Change Management in Higher Education Digitization (ACADEMIA ERP / SIS, Ed.). https://www.academiaerp.com/blog/the-importance-of-change-management-in-higher-education-digitization/
+15. A. Fernández, B. P. Gómez, K. Binjaku, and E. K. Meçe, “Digital transformation initiatives in higher education institutions: A multivocal literature review,” Education and Information Technologies, vol. 28, no. 10, pp. 12351–12382, Mar. 2023, doi: 10.1007/s10639-022-11544-0.
+16. A. Rof, A. Bikfalvi, and P. Marquès, “Digital Transformation in Higher Education: intelligence in systems and business models,” in Lecture notes in networks and systems, 2022, pp. 429–452. doi: 10.1007/978-3-031-16598-6_18.
+17. S. Kraus, P. Jones, N. Kailer, A. Weinmann, N. Chaparro‐Banegas, and N. Roig‐Tierno, “Digital Transformation: An overview of the current state of the art of research,” SAGE Open, vol. 11, no. 3, p. 215824402110475, Jul. 2021, doi: 10.1177/21582440211047576.
+18. Z. Van Veldhoven and J. Vanthienen, “Digital transformation as an interaction-driven perspective between business, society, and technology,” Electronic Markets, vol. 32, no. 2, pp. 629–644, Mar. 2021, doi: 10.1007/s12525-021-00464-5.
+19. P. M. Nadkarni, L. Ohno-Machado, and W. W. Chapman, “Natural language processing: an introduction,” Journal of the American Medical Informatics Association, vol. 18, no. 5, pp. 544–551, Sep. 2011, doi: 10.1136/amiajnl-2011-000464.
+20. D. Bermudez, “Preprocesamiento de texto en NLP: Tokenización | aprender-libre.com | (2024 - marzo),” aprender-libre.com, Jun. 30, 2023. https://aprender-libre.com/preprocesamiento-de-texto-en-nlp-tokenizacion/        q1w2 
+21. D. E. L. Fonseca and L. J. G. Pineda, “Innovación educativa y transformación digital en educación superior: una apuesta por el futuro del sector,” ResearchGate, May 2022, [Online]. Available: https://www.researchgate.net/publication/361620986_Innovacion_educativa_y_transformacion_digital_en_educacion_superior_una_apuesta_por_el_futuro_del_sector
+22. Ministerio de educación and Laboratorio de innovación educación superior, “LA TRANSFORMACIÓN DIGITAL: UN CAMINO HACIA EL FUTURO DE LA EDUCACIÓN SUPERIOR,” Segundo Encuentro CO-LAB, p. hps://colab.colombiaaprende.edu.co, 2021, [Online]. Available: https://colab.colombiaaprende.edu.co/wp-content/uploads/2022/08/MEN22_CII_DOC_2_Encuentro_Co-Lab_2021_VF.pdf
+23. Transformación Digital en Instituciones de Educación Superior. Modelo de Implementación. (2023). Universidad Nacional de Colombia Facultad de Ingeniería y Arquitectura, Departamento de Ingeniería Industrial Manizales, Caldas, Colombia. https://repositorio.unal.edu.co/bitstream/handle/unal/84029/41942253.2023.pdf?isAllowed=y&sequence=2
+24. Mejía Delgado, Y. Y., & Mejía Delgado, O. A. (2021). Transformación digital en las instituciones de educación superior a partir del Covid-19: madurez tecnológica de los estudiantes en Colombia. Revista Universidad & Empresa, 23(41), 1-36. https://doi.org/10.12804/revistas.urosario.edu.co/empresa/a.10606
+25. Kimberly Sarahi Flores Tuco, Mateo Rojas Samper. "La transformación de la Universidad Nacional de Colombia para abordar los requerimientos de la era digital." Revista de Educación Superior y Sociedad, 2023. DOI: 10.0000/https://www.uta.cl/index.php/2023/10/20/las-claves-de-la-transformacion-digital-en-las-universidades-segun-expertos/
+26. De Giusti. "Transformación Digital en Educación Superior. Posibilidades y Desafíos." TEyET, 2023. DOI: 10.0000/teyet-revista.info.unlp.edu.ar/TEyET/article/view/2802
+27. U. O. De Catalunya, “Transformaci�n digital en la educaci�n superior - Universitat Oberta de Catalunya.” https://www.uoc.edu/portal/es/elearning-innovation-center/observatori-tendencies/sharing-learning/transformacio-digital/index.html
+28. Ministerio de Educación Nacional, C. (2022). INNOVACIÓN EDUCATIVA Y TRANSFORMACIÓN DIGITAL EN EDUCACIÓN SUPERIOR: UNA APUESTA POR EL FUTURO DEL SECTOR. https://www.mineducacion.gov.co/1780/articles-363488_recurso_22.pdf
+29. Alejandro Florean, & Oscar Guzman. (2022, February). Impacto de la Madurez Digital en la Educación Superior: Hacia un Modelo de Educación Híbrida. INFORME TÉCNICO DE IDC. https://www.idglat.com/afiliacion2021/whitepapers/AWSPS_idc-education-latam-whitepaper_spanish_Mar-2022.pdf?tk=%2F%3A
+30. Universidad EAFIT, & MiniEducación. (2021). RECOMENDACIONES PARA EL DESARROLLO DE ESTRATEGIAS DE TRANSFORMACIÓN DIGITAL EN INSTITUCIONES DE EDUCACIÓN SUPERIOR. https://colab.colombiaaprende.edu.co/wp-content/uploads/2021/12/RECOMENDACIONES_PARA_EL_DESARROLLO_DE_ESTRATEGIAS_DE_TD_EN_IS.pdf
+31. Jurafsky, Daniel y Martin, James. Speech and Language Processing. 3ª edición. Pearson Education :60-61, 2020. 
+32. D. Khurana, A. Koli, K. Khatter, and S. Singh, “Natural language processing: state of the art, current trends and challenges,” Multimedia Tools and Applications, vol. 82, no. 3, pp. 3713–3744, doi: 10.1007/s11042-022-13428-4.
+33. Joseph, S. R., Hlomani, H., Letsholo, K., Kaniwa, F., & Sedimo, K. (2016). Natural Language Processing: A Review. International Journal of Research in Engineering and Applied Sciences, 6(3). http://www.euroasiapub.org
+34. Giraldo Forero, A. F., Orozco Duque, A. F., Giraldo Forero, A. F., & Orozco Duque, A. F. (2023). Evolución del procesamiento natural del lenguaje. TecnoLógicas, 26(56), e2687. https://doi.org/10.22430/22565337.2687
+35. I. De Ingeniería Del Conocimiento, “Text Analytics: the convergence of Big Data and Artificial Intelligence,” Instituto De Ingeniería Del Conocimiento, Apr. 11, 2017. https://www.iic.uam.es/publicaciones/text-analytics-the-convergence-of-big-data-and-artificial-intelligence/
+36. gestiodocumental. (2023, August 21). Tendencias emergentes en gestión documental, el papel de la inteligencia artificial y el aprendizaje automático. Gestión Documental. https://www.gestiodocumental.net/tendencias-emergentes-en-gestion-documental-el-papel-de-la-inteligencia-artificial-y-el-aprendizaje-automatico/
+37. Monzonís, N. C., Méndez, C. G., Martín, A. R., & Ariza, A. C. (2022). Tecnología y educación superior en tiempos de pandemia: revisión de la literatura. Hachetetepé. Revista Científica de Educación y Comunicación, 24, 1105–1105. https://doi.org/10.25267/HACHETETEPE.2022.I24.1105
+38. uPlanner. (2015, October 27). Beneficios de la tecnología en la educación superior. UPlanner. https://uplanner.com/es/beneficios-de-la-tecnologia-en-la-educacion-superior/
+39. AWS. (n.d.). ¿Qué es ETL? - Explicación de extracción, transformación y carga (ETL) - AWS. Retrieved February 21, 2024, from https://aws.amazon.com/es/what-is/etl/
+40. ¿Qué son los procesos ETL? - Platzi. (n.d.). Retrieved February 21, 2024, from https://platzi.com/blog/que-es-un-etl/
+41. Blakeley. (n.d.). Bolsa de Palabras (BoW) - Definición y explicación. Retrieved February 21, 2024, from https://techlib.net/techedu/bolsa-de-palabras-bow/
+42. Tsai, C.-F. (2012). Bag-of-Words Representation in Image Annotation: A Review. ISRN Artificial Intelligence, 2012, 1–19. https://doi.org/10.5402/2012/376804
+43. Rosso, A. (n.d.). Pre-Procesamiento y Representación de texto. El enfoque de la bolsa de palabras en la minería de textos: definición .... https://estudyando.com/el-enfoque-de-la-bolsa-de-palabras-en-la-mineria-de-textos-definicion-y-ejemplo/.
+44. Perrier, A. (n.d.). Apply a Simple Bag-of-Words Approach - Introduction to Natural Language Processing - OpenClassrooms. Retrieved February 21, 2024, from https://openclassrooms.com/en/courses/6532301-introduction-to-natural-language-processing/8081284-apply-a-simple-bag-of-words-approach
+45. Vayansky, I., & Kumar, S. A. (2020). A review of topic modeling methods. Information Systems, 94, 101582. https://doi.org/10.1016/j.is.2020.101582
+46. ¿Qué son los modelos de lenguaje en el procesamiento de texto? (n.d.). Retrieved February 22, 2024, from https://keepcoding.io/blog/modelos-de-lenguaje-procesamiento-texto/
+47. INTELIGENCIA ARTIFICIAL GENERATIVA – Academia de Ciencias de la Región de Murcia. (n.d.). Retrieved February 22, 2024, from https://www.um.es/acc/inteligencia-artificial-generativa/
+48. ¿Qué son los modelos de lenguaje de gran tamaño? (n.d.). Retrieved February 22, 2024, from https://www.redhat.com/es/topics/cloud/large-language-models
+49. Los mejores modelos de lenguaje grandes (LLM) para 2024. (n.d.). Retrieved February 22, 2024, from https://www.hostinger.es/tutoriales/modelos-grandes-de-lenguaje-llm
+50. Aplicando el procesamiento del lenguaje natural para clasificar artículos del coronavirus - Abierto al público. (n.d.). Retrieved February 22, 2024, from https://blogs.iadb.org/conocimiento-abierto/es/aplicando-el-procesamiento-del-lenguaje-natural-para-clasificar-articulos-del-coronavirus/
+51. Blakeley. (n.d.). Bolsa de Palabras (BoW) - Definición y explicación. Retrieved February 21, 2024, from https://techlib.net/techedu/bolsa-de-palabras-bow/
+52. Tsai, C.-F. (2012). Bag-of-Words Representation in Image Annotation: A Review. ISRN Artificial Intelligence, 2012, 1–19. https://doi.org/10.5402/2012/376804
+53. PCA - Principal Component Analysis. (n.d.). Retrieved February 22, 2024, from http://www.nlpca.org/pca_principal_component_analysis.html
+54. What is t-SNE?. t-SNE ( t-Distributed Stochastic… | by Saurav Jadhav | Analytics Vidhya | Medium. (n.d.). Retrieved February 22, 2024, from https://medium.com/analytics-vidhya/what-is-t-sne-37bfb920e431
+55. UMAP (Uniform Manifold Approximation and Projection) 5 | BioRender Science Templates. (n.d.). Retrieved February 22, 2024, from https://www.biorender.com/template/umap-uniform-manifold-approximation-and-projection-5
+56. Cao, J., Xia, T., Li, J., Zhang, Y., & Tang, S. (2009). A density-based method for adaptive LDA model selection. Neurocomputing, 72(7–9), 1775–1781. https://doi.org/10.1016/j.neucom.2008.06.011
+57. Deerwester, S., Dumais, S. T., Furnas, G. W, Landauer, T. K., & Harshman, R. (1990) Indexing by latent semantic analysis, Journal of the American society for information science, 41(6): 391.
+58. Blei, D. M. (2012) Probabilistic topic models. Communications of the ACM, 55(4): pp.77_84.
+59. Protein Folding Intermediates on the Dimensionality Reduced Landscape with UMAP and Native Contact Likelihood - Scientific Figure on ResearchGate. Available from: https://www.researchgate.net/figure/Schematic-illustration-of-UMAP-framework-Left-top-represents-the-data-point-distribution_fig2_362249820
+60. Kherwa, P. (2019, July 24). Topic Modeling: A Comprehensive review. EUDL. https://eudl.eu/doi/10.4108/eai.13-7-2018.159623
+61. Hofmann, T. (1999) Probabilistic latent semantic analysis, In Proceedings of the Fifteenth conference on Uncertainty in artificial intelligence, pp.289_296.Morgan Kaufmann Publishers Inc.
+62. Chinkes, E. ., & Julien, D. . (2019). Las instituciones de educación superior y su rol en la era digital. La transformación digital de la universidad: ¿transformadas o transformadoras?. Ciencia Y Educación, 3(1), 21–33. https://doi.org/10.22206/cyed.2019.v3i1.pp21-33
+63. Transformación digital en la educación superior América Latina y el Caribe | Publications. (n.d.). Retrieved February 22, 2024, from https://publications.iadb.org/publications/spanish/viewer/Transformacion-digital-en-la-educacion-superior-America-Latina-y-el-Caribe.pdf
+64. Yasmín, Y., Delgado, M., & Armando, Ó. (2021). Transformación digital en las instituciones de educación superior a partir del Covid-19: madurez tecnológica de los estudiantes en Colombia. Revista Universidad y Empresa, 23(41). https://doi.org/10.12804/REVISTAS.UROSARIO.EDU.CO/EMPRESA/A.10606
+65. Abd-Elhafiez, W. M., & Amin, H. H. (2021). The digital transformation effects in distance education in light of the epidemics (COVID-19) in Egypt. Information Sciences Letters, 10(1), 141–152. https://doi.org/10.18576/ISL/100116
+66. Restrepo Carvajal, C. A. ., y Gómez Arenas, N. A. . (2022). Aproximación a la transformación digital en instituciones de educación superior mediante la teoría del cambio. Revista En-Contexto, 10(17). https://doi.org/10.53995/23463279.1163
+67. Rosso, A. (n.d.). Pre-Procesamiento y Representación de texto. Retrieved April 6, 2024, from https://unstats.un.org/capacity-development/data-for-now/training-materials/preprocess_text_representation.pdf
+68. «t-SNE Corpus Visualization — documentación de Yellowbrick - v1.4». https://yellowbrick-es.readthedocs.io/es/latest/api/text/tsne.html
+69. M. Mihailescu, “Content analysis,” ResearchGate, Jun. 2019, doi: 10.13140/RG.2.2.21296.61441.
+70. T. T. P. Thao et al., “Digital transformation in education: a bibliometric analysis using Scopus,” European Science Editing, vol. 49, Dec. 2023, doi: 10.3897/ese.2023.e107138.
+71. J. Cruz-Cárdenas, C. Ramos-Galarza, J. Guadalupe-Lanas, A. Palacio-Fierro, and M. Galarraga-Carvajal, “Bibliometric analysis of existing knowledge on digital transformation in higher education,” in Lecture notes in computer science, 2022, pp. 231–240. doi: 10.1007/978-3-031-22131-6_17.
+72. V. Díaz-García, A. Montero-Navarro, J.-L. Rodríguez-Sánchez, and R. G. Losada, “Digitalization and digital transformation in higher education: A bibliometric analysis,” Frontiers in Psychology, vol. 13, Dec. 2022, doi: 10.3389/fpsyg.2022.1081595.
+73. F. G. Contreras, W. S. Amaya, N. A. Henríquez, P. Viancos, F. H. Fuentes, and J. A. Romero, “Producción científica de la relación entre liderazgo, educación superior y transformación digital: Un análisis bibliométrico,” Dialnet, 2024. https://dialnet.unirioja.es/servlet/articulo?codigo=9287560
+74. Porras García, Y. F. (2021). Análisis automático de contenido textual de colecciones de artículos científicos como apoyo al análisis documental y la gestión del conocimiento de una IES de la Orinoquía colombiana. https://repositorio.unal.edu.co/handle/unal/79809
+75. Páramo Lozada, J. P., & Espitia Betancourt, C. A. (2018). APLICACIÓN DEL APRENDIZAJE AUTOMÁTICO EN LA CLASIFICACIÓN DE TEXTOS CORTOS: UN CASO DE ESTUDIO EN EL CONFLICTO ARMADO COLOMBIANO. 1–117. https://repository.unab.edu.co/handle/20.500.12749/14040
+
+
+
+
+
+
+ 
+
+
+ 
+
+
+________________
+[1] https://www.scopus.com/home.uri
+[2] https://journals.sagepub.com/
+[3] https://www.sciencedirect.com/
+[4] https://taylorandfrancis.com/
+[5] https://www.redalyc.org/

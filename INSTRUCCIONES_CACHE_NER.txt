@@ -1,0 +1,165 @@
+================================================================================
+                    SISTEMA DE CACHÉ AUTOMÁTICO PARA NER
+                         ¡AHORA ES MUCHO MÁS RÁPIDO!
+================================================================================
+
+¿QUÉ CAMBIÓ?
+------------
+Antes: El análisis NER tardaba 5-15 minutos CADA VEZ que lo ejecutabas
+Ahora:  - Primera vez: 5-15 minutos (procesa y guarda)
+        - Siguiente vez: ¡2-5 SEGUNDOS! (carga desde caché)
+
+CÓMO FUNCIONA
+-------------
+1. PRIMERA VEZ que ejecutas el análisis NER:
+   - Procesa todos los documentos
+   - Identifica todas las entidades (países, años, organizaciones, etc.)
+   - AUTOMÁTICAMENTE guarda todo en una carpeta especial (caché)
+   - Tarda varios minutos
+
+2. SIGUIENTES VECES:
+   - Detecta que ya existe un análisis guardado
+   - Carga TODO instantáneamente desde el caché
+   - ¡Listo en segundos!
+
+CÓMO USARLO
+-----------
+► CASO 1: USO NORMAL (todos los días)
+   1. Abre la aplicación: streamlit run app.py
+   2. Ve a "Modelos Avanzados" → "Análisis NER"
+   3. Clic en "Ejecutar Análisis NER"
+   4. ¡Listo! Se carga automáticamente desde caché
+
+► CASO 2: AGREGASTE NUEVOS DOCUMENTOS
+   1. Ve a la pestaña "Configuración"
+   2. Marca la casilla "🔄 Forzar re-procesamiento"
+   3. Clic en "Ejecutar Análisis NER"
+   4. Procesa TODO de nuevo (incluye documentos nuevos)
+   5. Guarda el caché actualizado
+
+► CASO 3: CAMBIASTE EL MODELO DE SPACY
+   1. Selecciona el nuevo modelo (ej: "lg" en vez de "sm")
+   2. Marca "🔄 Forzar re-procesamiento"
+   3. Clic en "Ejecutar Análisis NER"
+   4. Procesa con el nuevo modelo y guarda
+
+► CASO 4: PROBLEMAS CON EL CACHÉ
+   1. Clic en el botón "🗑️ Limpiar Caché"
+   2. Vuelve a ejecutar el análisis
+   3. Se creará un caché nuevo
+
+QUÉ VERÁS EN LA PANTALLA
+-------------------------
+Si hay caché guardado, verás este mensaje:
+
+    ┌─────────────────────────────────────────────┐
+    │ ✓ Caché encontrado                          │
+    │ - Fecha: 2025-10-18 14:30:45                │
+    │ - Documentos: 150                           │
+    │ - Caracteres procesados: 2,456,789          │
+    │                                             │
+    │ El análisis se cargará automáticamente      │
+    │ desde el caché sin necesidad de re-procesar.│
+    └─────────────────────────────────────────────┘
+
+Cuando carga desde caché, verás:
+
+    ═══════════════════════════════════════════════
+    ✓ ANÁLISIS CARGADO DESDE CACHÉ
+    ═══════════════════════════════════════════════
+    Fecha de análisis: 2025-10-18 14:30:45
+    Documentos analizados: 150
+    Caracteres procesados: 2,456,789
+    ═══════════════════════════════════════════════
+
+Cuando guarda el caché, verás:
+
+    ═══════════════════════════════════════════════
+    💾 GUARDANDO ANÁLISIS EN CACHÉ
+    ═══════════════════════════════════════════════
+    ✓ Análisis guardado correctamente
+      En la próxima ejecución se cargará automáticamente
+    ═══════════════════════════════════════════════
+
+DÓNDE SE GUARDA EL CACHÉ
+-------------------------
+Los archivos se guardan en:
+
+    cache/ner_analysis_cache/
+    ├── ner_metadata.json    (información del análisis)
+    └── ner_results.pkl      (resultados completos)
+
+¡NO BORRES ESTA CARPETA! A menos que quieras limpiar el caché manualmente.
+
+VENTAJAS
+--------
+✓ Súper rápido: De 15 minutos a 5 segundos
+✓ Automático: No tienes que hacer nada especial
+✓ Transparente: Siempre sabes qué está haciendo
+✓ Flexible: Puedes forzar re-procesamiento cuando quieras
+
+PREGUNTAS FRECUENTES
+--------------------
+P: ¿Tengo que hacer algo especial para activar el caché?
+R: ¡No! Ya está activado automáticamente.
+
+P: ¿Cómo sé si está usando el caché?
+R: Verás el mensaje "✓ ANÁLISIS CARGADO DESDE CACHÉ" en la pantalla.
+
+P: ¿Qué pasa si agrego documentos nuevos?
+R: Marca "Forzar re-procesamiento" para que los incluya.
+
+P: ¿Puedo desactivar el caché?
+R: Sí, solo marca "Forzar re-procesamiento" cada vez.
+
+P: ¿Qué pasa si borro la carpeta cache/?
+R: No hay problema. La próxima vez que ejecutes el análisis,
+   procesará todo de nuevo y creará un nuevo caché.
+
+P: ¿El caché se sincroniza con Google Drive?
+R: Por ahora es solo local. Sincronización con Drive vendrá después.
+
+PROBAR QUE FUNCIONA
+-------------------
+Hay un script de prueba que puedes ejecutar:
+
+    python test_cache_ner.py
+
+Esto verificará:
+- ✓ Primera ejecución sin caché
+- ✓ Segunda ejecución con caché
+- ✓ Comparación de tiempos
+- ✓ Consistencia de resultados
+- ✓ Re-procesamiento forzado
+
+SOLUCIÓN DE PROBLEMAS
+---------------------
+Si algo no funciona:
+
+1. Limpia el caché desde la interfaz:
+   - Botón "🗑️ Limpiar Caché"
+
+2. O borra la carpeta manualmente:
+   - Elimina: cache/ner_analysis_cache/
+
+3. Reinicia la aplicación:
+   - Ctrl+C para detener
+   - streamlit run app.py para iniciar
+
+4. Si sigue sin funcionar:
+   - Revisa que la carpeta cache/ tenga permisos de escritura
+   - Verifica que haya espacio en disco
+
+DOCUMENTACIÓN ADICIONAL
+------------------------
+- Guía rápida:           CACHE_NER_README.md
+- Documentación técnica: docs/SISTEMA_CACHE_NER.md
+- Resumen completo:      RESUMEN_SISTEMA_CACHE.md
+- Script de prueba:      test_cache_ner.py
+
+================================================================================
+                         ¡Disfruta del NER rápido!
+================================================================================
+
+Implementado: 18 de Octubre, 2025
+Versión: 1.0

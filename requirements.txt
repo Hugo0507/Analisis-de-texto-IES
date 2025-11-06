@@ -1,0 +1,73 @@
+# ==================== CORE - Visualización y aplicación web ====================
+streamlit>=1.31.0,<2.0.0
+
+# ==================== NLP - Procesamiento de Lenguaje Natural ====================
+# NOTA: Si usas Python 3.13, algunas librerías pueden requerir compilación
+# Se recomienda Python 3.11 o 3.12 para mejor compatibilidad
+
+nltk>=3.8.1,<4.0.0
+
+# spaCy - Usar versión más reciente compatible
+spacy>=3.7.0,<3.8.0
+
+# Transformers - Usar versión más reciente
+transformers>=4.36.0,<5.0.0
+
+# Sentence Transformers
+sentence-transformers>=2.3.0,<3.0.0
+
+# ==================== DATA - Análisis de datos ====================
+# Instalar numpy primero con wheel precompilado
+numpy>=1.24.0,<2.0.0
+pandas>=2.1.0,<3.0.0
+
+# ==================== VIZ - Visualización ====================
+plotly>=5.18.0,<6.0.0
+matplotlib>=3.8.0,<4.0.0
+seaborn>=0.13.0,<1.0.0
+wordcloud>=1.9.0,<2.0.0
+
+# ==================== ML - Machine Learning ====================
+scikit-learn>=1.4.0,<2.0.0
+
+# ==================== NETWORK - Network Analysis ====================
+networkx>=3.1,<4.0.0
+
+# ==================== UTILS - Utilidades ====================
+openpyxl>=3.1.0,<4.0.0
+python-docx>=1.1.0,<2.0.0
+PyPDF2>=3.0.0,<4.0.0
+prettytable>=3.9.0,<4.0.0
+
+# ==================== GOOGLE - Google Drive ====================
+google-auth>=2.26.0,<3.0.0
+google-auth-oauthlib>=1.2.0,<2.0.0
+google-auth-httplib2>=0.2.0,<1.0.0
+google-api-python-client>=2.115.0,<3.0.0
+
+# ==================== LANG - Detección de idioma ====================
+langdetect>=1.0.9,<2.0.0
+langid>=1.1.6,<2.0.0
+
+# ==================== DOCS - Conversión de documentos ====================
+pdfplumber>=0.10.0,<1.0.0
+pdfminer.six>=20221105
+pypandoc>=1.12,<2.0.0
+python-magic-bin>=0.4.14,<1.0.0
+
+# ==================== PROGRESS - Progress bars ====================
+tqdm>=4.66.0,<5.0.0
+
+# ==================== NEW - Nuevas dependencias (mejoras) ====================
+
+# Variables de entorno
+python-dotenv>=1.0.0,<2.0.0
+
+# Testing (para desarrollo) - OPCIONAL
+pytest>=7.4.0,<8.0.0
+pytest-cov>=4.1.0,<5.0.0
+pytest-mock>=3.12.0,<4.0.0
+
+# Type checking - OPCIONAL
+mypy>=1.7.0,<2.0.0
+types-requests>=2.31.0
