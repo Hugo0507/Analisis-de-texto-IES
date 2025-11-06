@@ -878,6 +878,60 @@ class GoogleDriveConnector:
             logger.error(f"Error creando archivo JSON '{file_name}': {e}", exc_info=True)
             return None
 
+    def upload_file(self, folder_id: str, file_name: str, content: bytes, mime_type: str) -> Optional[str]:
+        """
+        Sube un archivo genérico a Google Drive
+
+        Args:
+            folder_id: ID de la carpeta donde subir el archivo
+            file_name: Nombre del archivo
+            content: Contenido del archivo en bytes
+            mime_type: Tipo MIME del archivo (ej: 'text/csv', 'application/octet-stream')
+
+        Returns:
+            ID del archivo creado, o None si hay error
+        """
+        if not self.service:
+            logger.error("Debe autenticarse primero antes de subir archivos")
+            return None
+
+        try:
+            logger.info(f"Subiendo archivo '{file_name}' a carpeta {folder_id}")
+
+            file_metadata = {
+                'name': file_name,
+                'parents': [folder_id],
+                'mimeType': mime_type
+            }
+
+            from googleapiclient.http import MediaIoBaseUpload
+
+            # Convertir a BytesIO si es necesario
+            if isinstance(content, bytes):
+                content = io.BytesIO(content)
+            elif isinstance(content, str):
+                content = io.BytesIO(content.encode('utf-8'))
+
+            media = MediaIoBaseUpload(
+                content,
+                mimetype=mime_type,
+                resumable=True
+            )
+
+            file = self.service.files().create(
+                body=file_metadata,
+                media_body=media,
+                fields='id, name'
+            ).execute()
+
+            file_id = file.get('id')
+            logger.info(f"Archivo '{file_name}' subido exitosamente con ID: {file_id}")
+            return file_id
+
+        except Exception as e:
+            logger.error(f"Error subiendo archivo '{file_name}': {e}", exc_info=True)
+            return None
+
     def read_json_file(self, file_id: str) -> Optional[Union[Dict, List]]:
         """
         Lee un archivo JSON desde Google Drive

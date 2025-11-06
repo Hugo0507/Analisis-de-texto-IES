@@ -215,7 +215,7 @@ def render_manual_labeling(texts):
     with col2:
         st.write("")
         st.write("")
-        if st.button("💾 Guardar", use_container_width=True):
+        if st.button("💾 Guardar", width='stretch'):
             if new_label.strip():
                 st.session_state.document_labels[selected_doc] = new_label.strip().lower()
                 st.success(f"✓ Etiqueta guardada: {new_label}")
@@ -265,7 +265,7 @@ def render_batch_labeling(texts):
         with col2:
             st.write("")
             st.write("")
-            if st.button("💾 Aplicar a todos", use_container_width=True):
+            if st.button("💾 Aplicar a todos", width='stretch'):
                 if batch_label.strip():
                     for doc in selected_docs:
                         st.session_state.document_labels[doc] = batch_label.strip().lower()
@@ -422,7 +422,7 @@ def render_configuration_tab():
         col1, col2 = st.columns([1, 2])
 
         with col1:
-            st.dataframe(df_dist, use_container_width=True)
+            st.dataframe(df_dist, width='stretch')
 
         with col2:
             fig = px.bar(
@@ -431,7 +431,7 @@ def render_configuration_tab():
                 y='Cantidad',
                 title='Documentos por Categoría'
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
     st.markdown("---")
 
@@ -543,7 +543,7 @@ def render_configuration_tab():
         default=["Naive Bayes", "SVM", "KNN"]
     )
 
-    if st.button("🚀 Entrenar Modelos Seleccionados", type="primary", use_container_width=True):
+    if st.button("🚀 Entrenar Modelos Seleccionados", type="primary", width='stretch'):
 
         with st.spinner("Entrenando modelos..."):
 
@@ -679,7 +679,7 @@ def render_model_results_tab(model_key, model_name):
             height=500
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     # Métricas por clase
     if 'classification_report' in results:
@@ -697,7 +697,7 @@ def render_model_results_tab(model_key, model_name):
             'Support': [report[k].get('support', 0) for k in report.keys()]
         })
 
-        st.dataframe(df_report, use_container_width=True)
+        st.dataframe(df_report, width='stretch')
 
     # Feature importance (solo para NB y SVM lineal)
     if 'feature_importance' in results and results['feature_importance']:
@@ -720,7 +720,7 @@ def render_model_results_tab(model_key, model_name):
                 )
                 fig.update_yaxes(autorange="reversed")
 
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
 
 def render_comparison_tab():
@@ -765,7 +765,7 @@ def render_comparison_tab():
             subset=['Accuracy', 'Precision', 'Recall', 'F1-Score'],
             color='lightgreen'
         ),
-        use_container_width=True
+        width='stretch'
     )
 
     st.markdown("---")
@@ -796,7 +796,7 @@ def render_comparison_tab():
             title='Comparación de Modelos'
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     # Mejor modelo
     st.markdown("---")
@@ -893,7 +893,7 @@ def render_direct_prediction(model_key):
                     for k, v in sorted(proba_dict.items(), key=lambda x: -x[1])
                 ])
 
-                st.dataframe(df_proba, use_container_width=True)
+                st.dataframe(df_proba, width='stretch')
 
         except Exception as e:
             st.error(f"Error en predicción: {e}")
@@ -939,7 +939,7 @@ def render_unlabeled_prediction(model_key):
 
                 st.success("✓ Predicciones completadas")
 
-                st.dataframe(results_df, use_container_width=True)
+                st.dataframe(results_df, width='stretch')
 
                 # Opción de guardar predicciones como etiquetas
                 if st.button("💾 Guardar Predicciones como Etiquetas"):

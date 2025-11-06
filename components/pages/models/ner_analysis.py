@@ -81,7 +81,7 @@ def render():
         col1, col2 = st.columns(2)
 
         with col1:
-            if st.button("▶️ Ejecutar Análisis NER", type="primary", use_container_width=True):
+            if st.button("▶️ Ejecutar Análisis NER", type="primary", width='stretch'):
                 st.session_state.ner_config = {
                     'model': selected_model,
                     'force_recompute': force_recompute
@@ -93,7 +93,7 @@ def render():
                 st.rerun()
 
         with col2:
-            if cache_info and st.button("🗑️ Limpiar Caché", use_container_width=True):
+            if cache_info and st.button("🗑️ Limpiar Caché", width='stretch'):
                 if cache.clear_cache():
                     st.success("✓ Caché eliminado correctamente")
                     st.rerun()
@@ -291,7 +291,7 @@ def render():
             col1, col2 = st.columns([1, 1])
 
             with col1:
-                st.dataframe(cat_df, use_container_width=True, height=400)
+                st.dataframe(cat_df, width='stretch', height=400)
 
             with col2:
                 fig = px.treemap(
@@ -302,7 +302,7 @@ def render():
                     color='Total Menciones',
                     color_continuous_scale='Viridis'
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
         st.markdown("---")
 
@@ -326,7 +326,7 @@ def render():
                 color_continuous_scale='Blues'
             )
             fig.update_layout(yaxis={'categoryorder': 'total ascending'}, height=500)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         with col2:
             fig = px.scatter(
@@ -345,7 +345,7 @@ def render():
                 color_continuous_scale='Plasma'
             )
             fig.update_layout(height=500)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         st.markdown("---")
 
@@ -357,12 +357,12 @@ def render():
         with col1:
             st.markdown("**Por Total de Entidades**")
             top_by_entities = pd.DataFrame(diversity_insights['top_docs_by_entities'])
-            st.dataframe(top_by_entities, use_container_width=True)
+            st.dataframe(top_by_entities, width='stretch')
 
         with col2:
             st.markdown("**Por Densidad de Entidades**")
             top_by_density = pd.DataFrame(diversity_insights['top_docs_by_density'])
-            st.dataframe(top_by_density, use_container_width=True)
+            st.dataframe(top_by_density, width='stretch')
 
     # Tab 3: Análisis Geográfico
     with tabs[2]:
@@ -390,7 +390,7 @@ def render():
             col1, col2 = st.columns([1, 1])
 
             with col1:
-                st.dataframe(countries_df, use_container_width=True, height=400)
+                st.dataframe(countries_df, width='stretch', height=400)
 
             with col2:
                 fig = px.bar(
@@ -403,7 +403,7 @@ def render():
                     color_continuous_scale='Blues'
                 )
                 fig.update_layout(yaxis={'categoryorder': 'total ascending'}, height=400)
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
             st.markdown("---")
 
@@ -418,7 +418,7 @@ def render():
             col1, col2 = st.columns([1, 1])
 
             with col1:
-                st.dataframe(continent_df, use_container_width=True)
+                st.dataframe(continent_df, width='stretch')
 
             with col2:
                 fig = go.Figure(data=[go.Pie(
@@ -427,7 +427,7 @@ def render():
                     hole=0.3
                 )])
                 fig.update_layout(title='Distribución de Publicaciones por Continente')
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
             # Insights
             st.markdown("---")
@@ -470,7 +470,7 @@ def render():
             col1, col2 = st.columns([1, 1])
 
             with col1:
-                st.dataframe(years_df, use_container_width=True, height=400)
+                st.dataframe(years_df, width='stretch', height=400)
 
             with col2:
                 fig = px.line(
@@ -481,7 +481,7 @@ def render():
                     markers=True
                 )
                 fig.update_layout(height=400)
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
             st.markdown("---")
 
@@ -497,7 +497,7 @@ def render():
             col1, col2 = st.columns([1, 1])
 
             with col1:
-                st.dataframe(decade_df, use_container_width=True)
+                st.dataframe(decade_df, width='stretch')
 
             with col2:
                 fig = px.bar(
@@ -508,7 +508,7 @@ def render():
                     color='Menciones',
                     color_continuous_scale='Viridis'
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
             # Insights temporales
             st.markdown("---")
@@ -546,7 +546,7 @@ def render():
         col1, col2 = st.columns([1, 1])
 
         with col1:
-            st.dataframe(categories_df, use_container_width=True)
+            st.dataframe(categories_df, width='stretch')
 
         with col2:
             fig = px.pie(
@@ -555,7 +555,7 @@ def render():
                 names='Categoría',
                 title='Distribución de Categorías de Entidades'
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         st.markdown("---")
 
@@ -596,7 +596,7 @@ def render():
                     col1, col2 = st.columns([1, 1])
 
                     with col1:
-                        st.dataframe(entities_df, use_container_width=True)
+                        st.dataframe(entities_df, width='stretch')
 
                     with col2:
                         fig = px.bar(
@@ -609,7 +609,7 @@ def render():
                             color_continuous_scale='Teal'
                         )
                         fig.update_layout(yaxis={'categoryorder': 'total ascending'})
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, width='stretch')
 
     # Tab 6: Co-ocurrencias
     with tabs[5]:
@@ -645,7 +645,7 @@ def render():
             col1, col2 = st.columns([1, 1])
 
             with col1:
-                st.dataframe(pairs_df, use_container_width=True, height=600)
+                st.dataframe(pairs_df, width='stretch', height=600)
 
             with col2:
                 # Gráfico de barras de top co-ocurrencias
@@ -660,7 +660,7 @@ def render():
                     color_continuous_scale='Sunset'
                 )
                 fig.update_layout(yaxis={'categoryorder': 'total ascending'}, height=600)
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
             st.markdown("---")
 
@@ -737,7 +737,7 @@ def render():
                                 height=700
                                 ))
 
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
                 st.info("""
                 **💡 Interpretación:**
@@ -757,7 +757,7 @@ def render():
         st.markdown("**📊 Tabla Completa de Métricas**")
         st.dataframe(
             doc_df.sort_values('total_entities', ascending=False),
-            use_container_width=True,
+            width='stretch',
             height=400
         )
 
@@ -777,7 +777,7 @@ def render():
                 labels={'total_entities': 'Total Entidades', 'count': 'Frecuencia'},
                 color_discrete_sequence=['#636EFA']
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         with col2:
             fig = px.histogram(
@@ -788,7 +788,7 @@ def render():
                 labels={'entity_density': 'Densidad (por 1K)', 'count': 'Frecuencia'},
                 color_discrete_sequence=['#EF553B']
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         with col3:
             fig = px.histogram(
@@ -799,7 +799,7 @@ def render():
                 labels={'unique_countries': 'Países Únicos', 'count': 'Frecuencia'},
                 color_discrete_sequence=['#00CC96']
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         st.markdown("---")
 
@@ -814,7 +814,7 @@ def render():
             labels={'total_entities': 'Total Entidades'}
         )
         fig.update_traces(marker_color='lightblue', marker_line_color='blue', marker_line_width=1.5)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
         st.markdown("---")
 

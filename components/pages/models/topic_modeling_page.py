@@ -166,7 +166,7 @@ def render_configuration_tab():
     col_btn1, col_btn2 = st.columns(2)
 
     with col_btn1:
-        if st.button("▶️ Ejecutar Análisis de Temas", type="primary", use_container_width=True):
+        if st.button("▶️ Ejecutar Análisis de Temas", type="primary", width='stretch'):
             st.session_state.topic_modeling_config = {
                 'n_topics': n_topics,
                 'max_features': max_features,
@@ -181,7 +181,7 @@ def render_configuration_tab():
             st.rerun()
 
     with col_btn2:
-        if cache_info and st.button("🗑️ Limpiar Caché", use_container_width=True):
+        if cache_info and st.button("🗑️ Limpiar Caché", width='stretch'):
             if cache.clear():
                 st.success("✓ Caché eliminado")
                 st.rerun()
@@ -422,7 +422,7 @@ def render_lda_results(lda_results):
                 height=400,
                 yaxis={'categoryorder': 'total ascending'}
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
     # Distribución de temas en documentos
     st.markdown("---")
@@ -432,7 +432,7 @@ def render_lda_results(lda_results):
     doc_topics_df = doc_topics_df[['document', 'dominant_topic', 'dominant_probability']]
     doc_topics_df['dominant_topic'] = doc_topics_df['dominant_topic'].apply(lambda x: f"Tema {x+1}")
 
-    st.dataframe(doc_topics_df, use_container_width=True)
+    st.dataframe(doc_topics_df, width='stretch')
 
     # Gráfico de distribución
     topic_counts = doc_topics_df['dominant_topic'].value_counts()
@@ -442,7 +442,7 @@ def render_lda_results(lda_results):
         labels={'x': 'Tema', 'y': 'Número de Documentos'},
         title='Distribución de Documentos por Tema (LDA)'
     )
-    st.plotly_chart(fig_dist, use_container_width=True)
+    st.plotly_chart(fig_dist, width='stretch')
 
 
 def render_nmf_results(nmf_results):
@@ -486,7 +486,7 @@ def render_nmf_results(nmf_results):
                 height=400,
                 yaxis={'categoryorder': 'total ascending'}
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
     # Distribución
     st.markdown("---")
@@ -496,7 +496,7 @@ def render_nmf_results(nmf_results):
     doc_topics_df = doc_topics_df[['document', 'dominant_topic', 'dominant_probability']]
     doc_topics_df['dominant_topic'] = doc_topics_df['dominant_topic'].apply(lambda x: f"Tema {x+1}")
 
-    st.dataframe(doc_topics_df, use_container_width=True)
+    st.dataframe(doc_topics_df, width='stretch')
 
 
 def render_lsa_results(lsa_results):
@@ -540,7 +540,7 @@ def render_lsa_results(lsa_results):
                 height=400,
                 yaxis={'categoryorder': 'total ascending'}
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
     # Varianza explicada por componente
     st.markdown("---")
@@ -557,7 +557,7 @@ def render_lsa_results(lsa_results):
         y='Varianza',
         title='Varianza Explicada por cada Componente LSA'
     )
-    st.plotly_chart(fig_var, use_container_width=True)
+    st.plotly_chart(fig_var, width='stretch')
 
 
 def render_plsa_results(plsa_results):
@@ -608,7 +608,7 @@ def render_plsa_results(plsa_results):
                 height=400,
                 yaxis={'categoryorder': 'total ascending'}
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
     # Distribución de temas en documentos
     st.markdown("---")
@@ -618,7 +618,7 @@ def render_plsa_results(plsa_results):
     doc_topics_df = doc_topics_df[['document', 'dominant_topic', 'dominant_probability']]
     doc_topics_df['dominant_topic'] = doc_topics_df['dominant_topic'].apply(lambda x: f"Tema {x+1}")
 
-    st.dataframe(doc_topics_df, use_container_width=True)
+    st.dataframe(doc_topics_df, width='stretch')
 
     # Gráfico de distribución
     topic_counts = doc_topics_df['dominant_topic'].value_counts()
@@ -629,7 +629,7 @@ def render_plsa_results(plsa_results):
         title='Distribución de Documentos por Tema (pLSA)',
         color_discrete_sequence=['mediumpurple']
     )
-    st.plotly_chart(fig_dist, use_container_width=True)
+    st.plotly_chart(fig_dist, width='stretch')
 
     # Convergencia del algoritmo EM
     if 'log_likelihoods' in plsa_results and len(plsa_results['log_likelihoods']) > 1:
@@ -649,7 +649,7 @@ def render_plsa_results(plsa_results):
             markers=True
         )
         fig_conv.update_traces(line_color='mediumpurple')
-        st.plotly_chart(fig_conv, use_container_width=True)
+        st.plotly_chart(fig_conv, width='stretch')
 
         st.caption("""
         El gráfico muestra cómo el log-likelihood aumenta con cada iteración del algoritmo EM.
@@ -697,7 +697,7 @@ def render_comparison(results):
         metrics_data.append(row)
 
     metrics_df = pd.DataFrame(metrics_data)
-    st.dataframe(metrics_df, use_container_width=True)
+    st.dataframe(metrics_df, width='stretch')
 
     # Solapamiento de temas
     st.markdown("---")
@@ -710,7 +710,7 @@ def render_comparison(results):
         {'Comparación': 'NMF vs LSA', 'Similitud': f"{overlap['NMF_LSA']:.2%}"},
     ])
 
-    st.dataframe(overlap_df, use_container_width=True)
+    st.dataframe(overlap_df, width='stretch')
 
     st.markdown("""
     **Interpretación:**
@@ -765,7 +765,7 @@ def render_persistence_tab(results):
             data=csv_lda,
             file_name="lda_topics.csv",
             mime="text/csv",
-            use_container_width=True
+            width='stretch'
         )
 
     # Preparar CSV de temas NMF
@@ -786,7 +786,7 @@ def render_persistence_tab(results):
             data=csv_nmf,
             file_name="nmf_topics.csv",
             mime="text/csv",
-            use_container_width=True
+            width='stretch'
         )
 
     # Preparar CSV de temas LSA
@@ -807,7 +807,7 @@ def render_persistence_tab(results):
             data=csv_lsa,
             file_name="lsa_topics.csv",
             mime="text/csv",
-            use_container_width=True
+            width='stretch'
         )
 
     # Preparar CSV de temas pLSA
@@ -828,7 +828,7 @@ def render_persistence_tab(results):
             data=csv_plsa,
             file_name="plsa_topics.csv",
             mime="text/csv",
-            use_container_width=True
+            width='stretch'
         )
 
     st.markdown("---")

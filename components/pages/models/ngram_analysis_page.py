@@ -187,7 +187,7 @@ def render_configuration_tab():
     col1, col2, col3 = st.columns([2, 1, 1])
 
     with col1:
-        if st.button("🚀 Ejecutar Análisis de N-gramas", type="primary", use_container_width=True):
+        if st.button("🚀 Ejecutar Análisis de N-gramas", type="primary", width='stretch'):
             config = {
                 'max_n': max_n,
                 'top_k': top_k,
@@ -201,7 +201,7 @@ def render_configuration_tab():
             st.rerun()
 
     with col2:
-        if st.button("🔄 Forzar Re-cálculo", use_container_width=True):
+        if st.button("🔄 Forzar Re-cálculo", width='stretch'):
             config = {
                 'max_n': max_n,
                 'top_k': top_k,
@@ -217,7 +217,7 @@ def render_configuration_tab():
             st.rerun()
 
     with col3:
-        if cache_info and st.button("🗑️ Limpiar Caché", use_container_width=True):
+        if cache_info and st.button("🗑️ Limpiar Caché", width='stretch'):
             cache.clear()
             st.success("Caché limpiado")
             st.rerun()
@@ -374,7 +374,7 @@ def render_ngram_results(ngram_data: dict, title: str, icon: str):
     # Mostrar tabla
     st.dataframe(
         top_df[['ngram', 'frequency', 'doc_frequency', 'avg_tfidf']].head(20),
-        use_container_width=True
+        width='stretch'
     )
 
     # Gráfico de barras
@@ -387,7 +387,7 @@ def render_ngram_results(ngram_data: dict, title: str, icon: str):
         labels={'frequency': 'Frecuencia', 'ngram': 'N-grama'}
     )
     fig.update_layout(height=800, yaxis={'categoryorder': 'total ascending'})
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
     # Distribución de frecuencias
     st.markdown("---")
@@ -400,7 +400,7 @@ def render_ngram_results(ngram_data: dict, title: str, icon: str):
         title=f'Distribución de Frecuencias de {title}',
         labels={'frequency': 'Frecuencia', 'count': 'Cantidad de N-gramas'}
     )
-    st.plotly_chart(fig_dist, use_container_width=True)
+    st.plotly_chart(fig_dist, width='stretch')
 
 
 def render_collocations(collocations: list):
@@ -434,7 +434,7 @@ def render_collocations(collocations: list):
 
     # Tabla de top colocaciones
     st.markdown("**🏆 Top Colocaciones**")
-    st.dataframe(coll_df.head(30), use_container_width=True)
+    st.dataframe(coll_df.head(30), width='stretch')
 
     # Gráfico
     if 'pmi' in coll_df.columns:
@@ -447,7 +447,7 @@ def render_collocations(collocations: list):
             labels={'pmi': 'PMI Score', 'ngram': 'Bigrama'}
         )
         fig.update_layout(height=800, yaxis={'categoryorder': 'total ascending'})
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
 
 def render_comparison(results: dict):
@@ -472,7 +472,7 @@ def render_comparison(results: dict):
         y='N-gramas Únicos',
         title='Número de N-gramas Únicos por Tipo'
     )
-    st.plotly_chart(fig_vocab, use_container_width=True)
+    st.plotly_chart(fig_vocab, width='stretch')
 
     # Diversidad
     st.markdown("---")
@@ -489,7 +489,7 @@ def render_comparison(results: dict):
         })
 
     diversity_df = pd.DataFrame(diversity_data)
-    st.dataframe(diversity_df, use_container_width=True)
+    st.dataframe(diversity_df, width='stretch')
 
     # Gráfico de radar para diversidad
     fig_radar = go.Figure()
@@ -506,7 +506,7 @@ def render_comparison(results: dict):
         polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
         title='Comparación de Diversidad entre Tipos de N-gramas'
     )
-    st.plotly_chart(fig_radar, use_container_width=True)
+    st.plotly_chart(fig_radar, width='stretch')
 
 
 def render_patterns(patterns: dict):
@@ -522,14 +522,14 @@ def render_patterns(patterns: dict):
     if 'repeated_words' in patterns and patterns['repeated_words']:
         st.markdown("**🔁 Bigramas con Palabras Repetidas**")
         repeated_df = pd.DataFrame(patterns['repeated_words'])
-        st.dataframe(repeated_df, use_container_width=True)
+        st.dataframe(repeated_df, width='stretch')
 
     # N-gramas largos
     if 'long_ngrams' in patterns and patterns['long_ngrams']:
         st.markdown("---")
         st.markdown("**📏 N-gramas Largos (4+ palabras)**")
         long_df = pd.DataFrame(patterns['long_ngrams'])
-        st.dataframe(long_df.head(20), use_container_width=True)
+        st.dataframe(long_df.head(20), width='stretch')
 
     # Palabras comunes al inicio
     if 'common_starters' in patterns and patterns['common_starters']:
@@ -547,7 +547,7 @@ def render_patterns(patterns: dict):
                 title='Top 20 Palabras al Inicio'
             )
             fig_start.update_layout(height=600, yaxis={'categoryorder': 'total ascending'})
-            st.plotly_chart(fig_start, use_container_width=True)
+            st.plotly_chart(fig_start, width='stretch')
 
         with col2:
             st.markdown("**⏹️ Palabras Comunes al Final de Bigramas**")
@@ -560,7 +560,7 @@ def render_patterns(patterns: dict):
                 title='Top 20 Palabras al Final'
             )
             fig_end.update_layout(height=600, yaxis={'categoryorder': 'total ascending'})
-            st.plotly_chart(fig_end, use_container_width=True)
+            st.plotly_chart(fig_end, width='stretch')
 
 
 def render_persistence_tab(results: dict):
@@ -589,7 +589,7 @@ def render_persistence_tab(results: dict):
                 data=csv_data,
                 file_name=f"{ngram_key}_analysis.csv",
                 mime="text/csv",
-                use_container_width=True
+                width='stretch'
             )
 
     # Colocaciones

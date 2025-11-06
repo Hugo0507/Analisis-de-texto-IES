@@ -39,7 +39,7 @@ def render():
 
         col1, col2 = st.columns([1, 3])
         with col1:
-            if st.button("Listar Archivos", type="primary", use_container_width=True):
+            if st.button("Listar Archivos", type="primary", width='stretch'):
                 folder_id = st.session_state.drive_connector.get_folder_id_from_url(folder_url)
                 st.session_state.source_folder_id = folder_id
 
@@ -74,7 +74,7 @@ def render():
             st.markdown("### Archivos por Directorio")
 
             table_df = st.session_state.drive_connector.create_directory_summary_table(files)
-            st.dataframe(table_df, use_container_width=True, hide_index=True)
+            st.dataframe(table_df, width='stretch', hide_index=True)
 
             st.markdown("### Lista Detallada")
 
@@ -97,7 +97,7 @@ def render():
                 df_filtered = df_filtered[df_filtered['Nombre'].str.contains(search, case=False, na=False)]
 
             st.caption(f"Mostrando {len(df_filtered)} de {len(df_files)} archivos")
-            st.dataframe(df_filtered, use_container_width=True, height=400)
+            st.dataframe(df_filtered, width='stretch', height=400)
 
     with tab3:
         if len(st.session_state.drive_files) == 0:
@@ -115,7 +115,7 @@ def render():
             fig1 = px.bar(
                 dir_data, x='Cantidad', y='Directorio', orientation='h',
                 title='Archivos por Directorio')
-            st.plotly_chart(fig1, use_container_width=True)
+            st.plotly_chart(fig1, width='stretch')
 
             # Gráficos por extensión
             col1, col2 = st.columns(2)
@@ -129,11 +129,11 @@ def render():
                 fig2 = px.pie(
                     ext_data, values='Cantidad', names='Extensión',
                     title='Distribución por Extensión')
-                st.plotly_chart(fig2, use_container_width=True)
+                st.plotly_chart(fig2, width='stretch')
 
             with col2:
                 top_10 = ext_data.head(10)
                 fig3 = px.bar(
                     top_10, x='Cantidad', y='Extensión',
                     title='Top 10 Extensiones', orientation='h')
-                st.plotly_chart(fig3, use_container_width=True)
+                st.plotly_chart(fig3, width='stretch')
