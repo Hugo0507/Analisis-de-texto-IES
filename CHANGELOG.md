@@ -7,6 +7,82 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [3.1.1] - 2025-11-06
+
+### 🐛 Corregido
+
+#### Error: 'GoogleDriveConnector' object has no attribute 'upload_file'
+
+**Problema**: Al intentar guardar archivos CSV y pickle en Google Drive, la aplicación fallaba con el error:
+```
+Error guardando CSV en Drive: 'GoogleDriveConnector' object has no attribute 'upload_file'
+```
+
+**Causa**: El método `upload_file()` no existía en la clase `GoogleDriveConnector`, pero era llamado desde múltiples páginas para subir archivos binarios y CSV.
+
+**Solución**:
+- Agregado nuevo método `upload_file()` en `src/drive_connector.py` (líneas 881-933)
+- Método genérico que permite subir cualquier tipo de archivo con cualquier MIME type
+- Soporta archivos CSV, pickle, binarios y cualquier otro formato
+- Manejo robusto de diferentes tipos de entrada (bytes, string, BytesIO)
+
+**Código agregado**:
+```python
+def upload_file(self, folder_id: str, file_name: str, content: bytes, mime_type: str) -> Optional[str]:
+    """
+    Sube un archivo genérico a Google Drive
+
+    Args:
+        folder_id: ID de la carpeta donde subir el archivo
+        file_name: Nombre del archivo
+        content: Contenido del archivo en bytes
+        mime_type: Tipo MIME del archivo (ej: 'text/csv', 'application/octet-stream')
+    """
+```
+
+**Archivos afectados que ahora funcionan**:
+- `components/ui/helpers.py` - Subida de archivos pickle y CSV
+- `components/pages/models/bertopic_page.py` - Exportación de resultados
+- Todas las páginas que exportan resultados a Drive
+
+**Impacto**: Las funcionalidades de exportación a Google Drive ahora funcionan correctamente.
+
+---
+
+#### Warnings de Plotly (nuevamente - Streamlit cambió API)
+
+**Problema**: Después de actualizar a `use_container_width=True` en v3.1.0, aparecieron nuevos warnings:
+```
+Please replace `use_container_width` with `width`.
+`use_container_width` will be removed after 2025-12-31.
+```
+
+**Causa**: Streamlit deprecó `use_container_width` y ahora recomienda usar `width='stretch'` o `width='content'`.
+
+**Solución**:
+- Revertido cambio de v3.1.0: `use_container_width=True` → `width='stretch'`
+- Total de **160 reemplazos** en **12 archivos**
+
+**Archivos modificados**:
+- `components/pages/analisis_factores.py` (10 reemplazos)
+- `components/pages/preprocesamiento.py` (7 reemplazos)
+- `components/pages/estadisticas_archivos.py` (6 reemplazos)
+- `components/pages/deteccion_idiomas.py` (9 reemplazos)
+- `components/pages/bolsa_palabras.py` (5 reemplazos)
+- `components/pages/analisis_tfidf.py` (8 reemplazos)
+- `components/pages/models/dimensionality_reduction_page.py` (29 reemplazos)
+- `components/pages/models/topic_modeling_page.py` (19 reemplazos)
+- `components/pages/models/ngram_analysis_page.py` (16 reemplazos)
+- `components/pages/models/ner_analysis.py` (28 reemplazos)
+- `components/pages/models/bertopic_page.py` (11 reemplazos)
+- `components/pages/models/classification_page.py` (12 reemplazos)
+
+**Impacto**: Los warnings de Plotly desaparecen. Los gráficos se muestran correctamente.
+
+**Nota**: Esta es una reversión necesaria por cambios en la API de Streamlit. La API de visualización de Plotly en Streamlit ha tenido varios cambios recientes.
+
+---
+
 ## [3.1.0] - 2025-11-06
 
 ### 🐛 Corregido
