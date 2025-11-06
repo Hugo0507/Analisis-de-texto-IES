@@ -307,7 +307,7 @@ def render_configuration_tab():
 
     st.markdown("---")
 
-    if st.button("🚀 Ejecutar Análisis de Factores", type="primary", use_container_width=True):
+    if st.button("🚀 Ejecutar Análisis de Factores", type="primary", width='stretch'):
         config = {
             'topic_top_words': topic_top_words,
             'topic_min_weight': topic_min_weight,
@@ -368,7 +368,7 @@ def render_summary_tab(results: Dict[str, Any]):
 
     st.dataframe(
         top_20,
-        use_container_width=True,
+        width='stretch',
         hide_index=True
     )
 
@@ -391,7 +391,7 @@ def render_summary_tab(results: Dict[str, Any]):
             title="Factores por Tipo",
             hole=0.4
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     with col2:
         st.markdown("#### 🔗 Distribución por Número de Fuentes")
@@ -410,7 +410,7 @@ def render_summary_tab(results: Dict[str, Any]):
             title="Factores por Número de Fuentes",
             labels={'Num Fuentes': 'Número de Fuentes PLN', 'Cantidad': 'Cantidad de Factores'}
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
 
 def render_factors_table_tab(results: Dict[str, Any]):
@@ -465,7 +465,7 @@ def render_factors_table_tab(results: Dict[str, Any]):
 
     st.dataframe(
         filtered_df[available_cols],
-        use_container_width=True,
+        width='stretch',
         height=600
     )
 
@@ -514,7 +514,7 @@ def render_network_tab(results: Dict[str, Any]):
             color_by='community',
             title="Red de Co-ocurrencia de Factores en Transformación Digital"
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
     except Exception as e:
         st.error(f"Error generando visualización de red: {e}")
         logger.error(f"Error en visualización de red: {e}", exc_info=True)
@@ -526,7 +526,7 @@ def render_network_tab(results: Dict[str, Any]):
 
         mapper = ScienceMapper()
         fig_centrality = mapper.create_centrality_comparison(metrics, top_n=20)
-        st.plotly_chart(fig_centrality, use_container_width=True)
+        st.plotly_chart(fig_centrality, width='stretch')
 
 
 def render_landscape_tab(results: Dict[str, Any]):
@@ -549,7 +549,7 @@ def render_landscape_tab(results: Dict[str, Any]):
             metrics,
             top_n=100
         )
-        st.plotly_chart(fig_landscape, use_container_width=True)
+        st.plotly_chart(fig_landscape, width='stretch')
 
         st.markdown("---")
 
@@ -561,7 +561,7 @@ def render_landscape_tab(results: Dict[str, Any]):
                 metrics,
                 max_factors=50
             )
-            st.plotly_chart(fig_sunburst, use_container_width=True)
+            st.plotly_chart(fig_sunburst, width='stretch')
 
     except Exception as e:
         st.error(f"Error generando landscape: {e}")
@@ -614,7 +614,7 @@ def render_export_tab(results: Dict[str, Any]):
     with tab1:
         st.markdown("**Top 20 Factores (CSV):**")
         preview_df = results['factors_df'].head(20)
-        st.dataframe(preview_df, use_container_width=True)
+        st.dataframe(preview_df, width='stretch')
 
     with tab2:
         st.markdown("**Resumen (JSON):**")

@@ -77,7 +77,7 @@ def render():
         """
         st.info(config_summary)
 
-        if st.button("▶️ Crear Bolsa de Palabras", type="primary", use_container_width=True):
+        if st.button("▶️ Crear Bolsa de Palabras", type="primary", width='stretch'):
             st.session_state.bow_config = {
                 'max_features': max_features,
                 'min_df': min_df,
@@ -267,7 +267,7 @@ def render():
         col1, col2 = st.columns([1, 1])
 
         with col1:
-            st.dataframe(top_terms_df, use_container_width=True, height=400)
+            st.dataframe(top_terms_df, width='stretch', height=400)
 
         with col2:
             # Bar chart of top terms
@@ -285,7 +285,7 @@ def render():
                 height=400,
                 yaxis={'categoryorder': 'total ascending'}
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
         st.markdown("---")
 
@@ -297,7 +297,7 @@ def render():
         # Show first 10 documents and top 20 terms
         preview_df = bow_df.iloc[:10, :20]
 
-        st.dataframe(preview_df, use_container_width=True)
+        st.dataframe(preview_df, width='stretch')
         st.caption(f"Mostrando primeros 10 documentos y primeros 20 términos de {bow['document_count']} x {bow['vocabulary_size']}")
 
         st.markdown("---")
@@ -348,7 +348,7 @@ def render():
             st.success("✓ Los resultados están listos para la siguiente etapa: " +
                        "**Análisis TF-IDF**")
         else:
-            if st.button("💾 Guardar Resultados BoW en Drive", type="primary", use_container_width=True):
+            if st.button("💾 Guardar Resultados BoW en Drive", type="primary", width='stretch'):
                 connector = get_connector()
                 if not connector:
                     st.error("❌ Error de conexión con Google Drive")

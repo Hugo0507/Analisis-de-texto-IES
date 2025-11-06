@@ -132,7 +132,7 @@ def render():
                             ascending=False
                         )
 
-                    st.dataframe(lang_df, use_container_width=True, height=300)
+                    st.dataframe(lang_df, width='stretch', height=300)
 
                 with col2:
                     fig = go.Figure(data=[go.Pie(
@@ -144,7 +144,7 @@ def render():
                         title='Distribución de Idiomas',
                         height=300
                     )
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
             else:
                 st.warning(
                     "⚠️ No se detectaron idiomas exitosamente en ningún "
@@ -193,7 +193,7 @@ def render():
                     )
                 ]
 
-            st.dataframe(df_filtered, use_container_width=True, height=400)
+            st.dataframe(df_filtered, width='stretch', height=400)
             st.caption(
                 f"Mostrando {len(df_filtered)} de {len(files_df)} archivos"
             )
@@ -211,7 +211,7 @@ def render():
                     error_df = pd.DataFrame(error_files)
                     error_df = error_df[['file_name']]
                     error_df.columns = ['Archivo con Error']
-                    st.dataframe(error_df, use_container_width=True)
+                    st.dataframe(error_df, width='stretch')
                     st.info(
                         "💡 Estos archivos no pudieron ser procesados. "
                         "Pueden ser PDFs corruptos, protegidos o sin texto."
@@ -226,7 +226,7 @@ def render():
                 if st.button(
                     "🔍 Filtrar Archivos PDF",
                     type="primary",
-                    use_container_width=True
+                    width='stretch'
                 ):
                     with st.spinner("Filtrando archivos PDF..."):
                         pdf_files = [
@@ -257,7 +257,7 @@ def render():
                     if st.button(
                         "🌍 Detectar Idiomas",
                         type="primary",
-                        use_container_width=True
+                        width='stretch'
                     ):
                         with st.spinner("Detectando idiomas..."):
                             progress_bar = st.progress(0)
@@ -460,7 +460,7 @@ def render():
                 df = df[['file_name', 'confidence']]
                 df.columns = ['Archivo', 'Confianza']
                 df['Confianza'] = df['Confianza'].apply(lambda x: f"{x:.2%}")
-                st.dataframe(df, use_container_width=True)
+                st.dataframe(df, width='stretch')
 
                 st.success(
                     "✓ Los archivos están listos para la siguiente etapa: "
@@ -477,7 +477,7 @@ def render():
                 if st.button(
                     "🔄 Recopiar todos los archivos",
                     type="primary",
-                    use_container_width=True
+                    width='stretch'
                 ):
                     with st.spinner("Copiando archivos..."):
                         progress_bar = st.progress(0)
@@ -508,7 +508,7 @@ def render():
                 if st.button(
                     "💾 Copiar PDFs en Inglés a Drive",
                     type="primary",
-                    use_container_width=True
+                    width='stretch'
                 ):
                     if not subfolder:
                         subfolder = connector.create_folder("02_PDF_EN_Detected", parent_folder)
