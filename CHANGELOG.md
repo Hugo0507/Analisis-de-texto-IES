@@ -7,6 +7,210 @@ y este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [3.4.0] - 2025-11-07
+
+### ✨ Nuevo - Reorganización del Flujo de Trabajo en 7 Fases
+
+**Problema**: El menú de navegación estaba desorganizado y no reflejaba el orden lógico de ejecución del análisis.
+
+**Solución Implementada**:
+
+**Archivo modificado**: `components/ui/layout.py` (líneas 28-55)
+
+- Reorganizado menú de navegación en **7 fases jerárquicas**:
+  - **FASE 1: PREPARACIÓN** (4 pasos) - Conexión Drive, Detección Idiomas, Conversión TXT, Preprocesamiento
+  - **FASE 2: REPRESENTACIÓN VECTORIAL** (3 pasos) - BoW, TF-IDF, N-gramas
+  - **FASE 3: ANÁLISIS LINGÜÍSTICO** (1 paso) - Named Entity Recognition
+  - **FASE 4: MODELADO DE TEMAS** (2 pasos) - Topic Modeling, BERTopic
+  - **FASE 5: DIMENSIONALIDAD Y CLASIFICACIÓN** (2 pasos) - Reducción Dimensionalidad, Clasificación
+  - **FASE 6: ANÁLISIS INTEGRADO** (1 paso) - Análisis de Factores
+  - **FASE 7: VISUALIZACIÓN** (1 paso) - Visualizaciones y Nubes de Palabras
+
+**Cambios Estructurales**:
+- Eliminada sección "Estadísticas de Archivos" (no esencial)
+- Movido "Análisis de Factores" a penúltimo lugar (integra todos los análisis previos)
+- Combinadas secciones "Visualizaciones" y "Nube de Palabras" en una sola página
+
+**Impacto**: Flujo lógico claro de preparación → análisis → integración → visualización
+
+---
+
+### 🔧 Cambios - Actualización de Carpetas de Persistencia
+
+**Problema**: Renumeración del flujo requería actualizar referencias de carpetas en múltiples archivos.
+
+**Archivo modificado**: `app.py` (líneas 121-141)
+
+**Carpetas renumeradas**:
+- `02_PDF_EN_Detected` → `02_Language_Detection`
+- `07_NER_Analysis` → `08_NER_Analysis`
+- `08_Topic_Modeling` → `09_Topic_Modeling`
+- `09_Ngram_Analysis` → `07_Ngram_Analysis`
+- `10_Factor_Analysis` → `13_Factor_Analysis`
+- `11_Classification_Results` → `12_Classification_Results`
+- `12_Dimensionality_Reduction` → `11_Dimensionality_Reduction`
+
+**Archivos actualizados con nuevas referencias** (vía script Python):
+1. `components/pages/deteccion_idiomas.py`
+2. `components/pages/models/ner_analysis.py`
+3. `components/pages/models/topic_modeling_page.py`
+4. `components/pages/models/ngram_analysis_page.py`
+5. `components/pages/analisis_factores.py`
+6. `components/pages/models/classification_page.py`
+
+**Método de actualización**: Script Python para reemplazo masivo garantizando consistencia.
+
+---
+
+### ✅ Mejorado - Validación de Configuración en Classification
+
+**Problema**: Classification NO validaba si los parámetros cambiaban antes de cargar caché, pudiendo mostrar resultados con configuración incorrecta.
+
+**Archivo modificado**: `components/pages/models/classification_page.py`
+
+**Mejoras Implementadas**:
+
+1. **Actualizada función `save_classification_cache()`** (líneas 125-139):
+   - Nuevo parámetro opcional `config` para guardar configuración
+   - Validación automática mediante `cache.save(data_to_save, config=config)`
+
+2. **Agregado tracking de configuración en inicio** (líneas 55-60):
+   ```python
+   # Guardar config en session_state para validar después
+   if 'classification_last_config' not in st.session_state:
+       metadata = cache.get_metadata()
+       if metadata and 'config' in metadata:
+           st.session_state.classification_last_config = metadata['config']
+   ```
+
+3. **Guardado de config después de entrenar** (líneas 656-678):
+   ```python
+   config = {
+       'vectorizer_type': vectorizer_type,
+       'max_features': max_features,
+       'test_size': test_size,
+       'models_trained': list(results.keys())
+   }
+   save_classification_cache(config=config)
+   ```
+
+4. **Mensaje informativo al usuario** (línea 476):
+   - Alerta cuando hay modelos entrenados previos y parámetros pueden cambiar
+   - Previene confusión sobre qué configuración está en uso
+
+**Impacto**: Classification ahora detecta cambios de configuración y fuerza recálculo cuando es necesario.
+
+---
+
+### ✅ Mejorado - Almacenamiento Pickle Selectivo en Classification
+
+**Problema**: Classification guardaba resultados en JSON pero NO guardaba los modelos sklearn entrenados como pickle en Drive, perdiendo modelos entre sesiones.
+
+**Archivo modificado**: `components/pages/models/classification_page.py`
+
+**Solución Implementada** (líneas 680-705):
+
+```python
+# Guardar modelos entrenados en Drive (pickle)
+from components.ui.helpers import get_connector, save_pickle_to_drive
+
+connector = get_connector()
+if connector and 'persistence_folders' in st.session_state:
+    folder_id = st.session_state.persistence_folders.get('12_Classification_Results')
+
+    if folder_id:
+        # Guardar cada modelo entrenado
+        for model_key in results.keys():
+            if 'model' in results[model_key]:
+                save_pickle_to_drive(
+                    folder_id,
+                    f'{model_key}_model.pkl',
+                    results[model_key]['model']
+                )
+
+        # Guardar vectorizador
+        if hasattr(classifier, 'vectorizer') and classifier.vectorizer:
+            save_pickle_to_drive(
+                folder_id,
+                'vectorizer.pkl',
+                classifier.vectorizer
+            )
+
+        st.info("💾 Modelos guardados en Google Drive")
+```
+
+**Modelos guardados**:
+- Logistic Regression (`Logistic Regression_model.pkl`)
+- Random Forest (`Random Forest_model.pkl`)
+- SVM (`SVM_model.pkl`)
+- Vectorizador TF-IDF/BoW (`vectorizer.pkl`)
+
+**Impacto**: Los modelos entrenados se preservan entre sesiones y usuarios, permitiendo colaboración.
+
+---
+
+### 🔧 Cambios - Combinación de Páginas de Visualización
+
+**Archivo modificado**: `app.py` (líneas 209-214)
+
+**Cambio**: Unificadas "Visualizaciones" y "Nube de Palabras" en una sola página:
+
+```python
+elif pagina == "14. Visualizaciones y Nubes de Palabras":
+    # Combinar ambas páginas de visualización
+    visualizaciones.render()
+    st.markdown("---")
+    st.markdown("## 🔤 Nube de Palabras")
+    nube_palabras.render()
+```
+
+**Razón**: Ambas son visualizaciones, no necesitan páginas separadas en la nueva estructura de 7 fases.
+
+---
+
+### 📊 Estado Final del Sistema (v3.4.0)
+
+| Etapa | LocalCache | Drive | Auto-Carga | Validación Config | Pickle Selectivo | Estado |
+|-------|-----------|-------|-----------|------------------|------------------|---------|
+| Preprocesamiento | ✅ | ✅ | ✅ | ✅ | N/A | ✅ Perfecto |
+| BoW | ✅ | ✅ | ✅ | ✅ | N/A | ✅ Perfecto |
+| TF-IDF | ✅ | ✅ | ✅ | ✅ | N/A | ✅ Perfecto |
+| NER | ✅ | ✅ | ✅ | ✅ | N/A | ✅ Perfecto |
+| Topic Modeling | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ Perfecto |
+| **Classification** | ✅ | ✅ | ✅ | **✅** | **✅** | **✅ Perfecto (v3.4)** |
+| N-gramas | ✅ | ✅ | ✅ | ✅ | N/A | ✅ Perfecto |
+| BERTopic | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ Perfecto |
+| Dimensionalidad | ✅ | ✅ | ✅ | ✅ | N/A | ✅ Perfecto |
+| Análisis Factores | ✅ | ✅ | ✅ | ✅ | N/A | ✅ Perfecto |
+
+**Resultado**: Sistema **100% completo** con validación universal y pickle selectivo donde corresponde.
+
+---
+
+### 🎯 Impacto General de v3.4
+
+**Mejoras de Usabilidad**:
+- Flujo de trabajo claro con 7 fases lógicas
+- Mejor organización visual del menú
+- Reducción de confusión sobre orden de ejecución
+
+**Mejoras Técnicas**:
+- Validación de configuración completa en Classification
+- Modelos sklearn persistentes entre sesiones
+- Referencias de carpetas consistentes con nuevo flujo
+
+**Archivos Modificados**:
+1. `components/ui/layout.py` - Reorganización de menú en 7 fases
+2. `app.py` - Routing actualizado y carpetas renumeradas
+3. `components/pages/models/classification_page.py` - Validación config + pickle selectivo
+4. 6 archivos actualizados con nuevas referencias de carpetas
+
+**Archivos Verificados (sin cambios necesarios)**:
+- `components/pages/models/bertopic_page.py` - Ya tenía validación y pickle
+- `components/pages/models/topic_modeling_page.py` - Ya tenía pickle selectivo
+
+---
+
 ## [3.3.0] - 2025-11-07
 
 ### ✨ Nuevo - Análisis de Factores con Persistencia Completa

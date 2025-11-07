@@ -114,23 +114,30 @@ def init_session_state() -> None:
     if 'parent_folder_id' not in st.session_state:
         st.session_state.parent_folder_id = None
 
-    # Sistema de carpetas de persistencia secuencial
+    # Sistema de carpetas de persistencia secuencial (actualizado con nuevo flujo)
     if 'project_folder_id' not in st.session_state:
         st.session_state.project_folder_id = None
     if 'persistence_folders' not in st.session_state:
         st.session_state.persistence_folders = {
+            # FASE 1: PREPARACIÓN
             '01_PDF_Files': None,
-            '02_PDF_EN_Detected': None,
+            '02_Language_Detection': None,
             '03_TXT_Converted': None,
             '04_TXT_Preprocessed': None,
+            # FASE 2: REPRESENTACIÓN VECTORIAL
             '05_BagOfWords_Results': None,
             '06_TFIDF_Results': None,
-            '07_NER_Analysis': None,
-            '08_Topic_Modeling': None,
-            '09_Ngram_Analysis': None,
+            '07_Ngram_Analysis': None,
+            # FASE 3: ANÁLISIS LINGÜÍSTICO
+            '08_NER_Analysis': None,
+            # FASE 4: MODELADO DE TEMAS
+            '09_Topic_Modeling': None,
             '10_BERTopic_Analysis': None,
-            '11_Classification_Results': None,
-            '12_Dimensionality_Reduction': None,
+            # FASE 5: DIMENSIONALIDAD Y CLASIFICACIÓN
+            '11_Dimensionality_Reduction': None,
+            '12_Classification_Results': None,
+            # FASE 6: ANÁLISIS INTEGRADO
+            '13_Factor_Analysis': None,
         }
 
     # Datos procesados por etapa
@@ -163,58 +170,96 @@ def main() -> None:
         pagina: Optional[str] = render_sidebar()
         logger.debug(f"Página seleccionada: {pagina}")
 
-        # Routing de páginas
+        # Routing de páginas - Reorganizado por flujo lógico
         if pagina == "Inicio":
             inicio.render()
+
+        # FASE 1: PREPARACIÓN
         elif pagina == "1. Conexión Google Drive":
             conexion_drive.render()
-        elif pagina == "2. Estadísticas de Archivos":
-            estadisticas_archivos.render()
-        elif pagina == "3. Detección de Idiomas":
+        elif pagina == "2. Detección de Idiomas":
             deteccion_idiomas.render()
-        elif pagina == "4. Conversión a TXT":
+        elif pagina == "3. Conversión a TXT":
             conversion_txt.render()
-        elif pagina == "5. Preprocesamiento":
+        elif pagina == "4. Preprocesamiento":
             preprocesamiento.render()
-        elif pagina == "6. Bolsa de Palabras":
+
+        # FASE 2: REPRESENTACIÓN VECTORIAL
+        elif pagina == "5. Bolsa de Palabras":
             bolsa_palabras.render()
-        elif pagina == "7. Análisis TF-IDF":
+        elif pagina == "6. Análisis TF-IDF":
             analisis_tfidf.render()
-        elif pagina == "8. Análisis de Factores":
-            analisis_factores.render()
-        elif pagina == "9. Visualizaciones":
-            visualizaciones.render()
-        elif pagina == "10. Nube de Palabras":
-            nube_palabras.render()
-        # Modelos Avanzados
-        elif pagina == "🤖 Análisis NER":
-            ner_analysis.render()
-        elif pagina == "🤖 Modelado de Temas":
-            topic_modeling_page.render()
-        elif pagina == "🤖 Análisis de N-gramas":
+        elif pagina == "7. Análisis de N-gramas":
             ngram_analysis_page.render()
-        elif pagina == "🤖 BERTopic":
+
+        # FASE 3: ANÁLISIS LINGÜÍSTICO
+        elif pagina == "8. Named Entity Recognition":
+            ner_analysis.render()
+
+        # FASE 4: MODELADO DE TEMAS
+        elif pagina == "9. Modelado de Temas":
+            topic_modeling_page.render()
+        elif pagina == "10. BERTopic":
             bertopic_page.render()
-        elif pagina == "🤖 Clasificación de Textos":
-            classification_page.render()
-        elif pagina == "🤖 Reducción de Dimensionalidad":
+
+        # FASE 5: DIMENSIONALIDAD Y CLASIFICACIÓN
+        elif pagina == "11. Reducción de Dimensionalidad":
             dimensionality_reduction_page.render()
-        # Manejo de separadores del menú
-        elif pagina in ["🤖 Modelos Avanzados", "---", None]:
-            st.info("👈 Selecciona una opción del menú lateral para comenzar")
+        elif pagina == "12. Clasificación de Textos":
+            classification_page.render()
+
+        # FASE 6: ANÁLISIS INTEGRADO
+        elif pagina == "13. Análisis de Factores":
+            analisis_factores.render()
+
+        # FASE 7: VISUALIZACIÓN
+        elif pagina == "14. Visualizaciones y Nubes de Palabras":
+            # Combinar ambas páginas de visualización
+            visualizaciones.render()
+            st.markdown("---")
+            st.markdown("## 🔤 Nube de Palabras")
+            nube_palabras.render()
+
+        # Manejo de separadores de fase (son solo títulos, mostrar página de inicio)
+        elif pagina.startswith("📁 FASE"):
+            st.info("👈 Selecciona una sección específica del menú lateral")
             st.markdown("""
-            ### Bienvenido al Análisis de Transformación Digital
+            ### 🎯 Flujo de Análisis Organizado por Fases
 
-            Esta aplicación te permite analizar textos usando técnicas avanzadas de NLP y Machine Learning.
+            El análisis está estructurado en **7 fases secuenciales**:
 
-            **Flujo de trabajo:**
-            1. Conéctate a Google Drive
-            2. Carga y procesa tus documentos
-            3. Aplica análisis avanzados
-            4. Visualiza los resultados
+            **📁 FASE 1: PREPARACIÓN**
+            - Conexión a Google Drive
+            - Detección de idiomas
+            - Conversión de documentos
+            - Preprocesamiento de texto
+
+            **📁 FASE 2: REPRESENTACIÓN VECTORIAL**
+            - Bolsa de Palabras (BoW)
+            - TF-IDF
+            - Análisis de N-gramas
+
+            **📁 FASE 3: ANÁLISIS LINGÜÍSTICO**
+            - Named Entity Recognition (NER)
+
+            **📁 FASE 4: MODELADO DE TEMAS**
+            - Topic Modeling clásico (LDA/NMF/LSA/pLSA)
+            - BERTopic (moderno)
+
+            **📁 FASE 5: DIMENSIONALIDAD Y CLASIFICACIÓN**
+            - Reducción de Dimensionalidad (PCA/t-SNE/UMAP)
+            - Clasificación de Textos
+
+            **📁 FASE 6: ANÁLISIS INTEGRADO**
+            - Análisis de Factores (consolida todos los análisis)
+
+            **📁 FASE 7: VISUALIZACIÓN**
+            - Visualizaciones y Nubes de Palabras
             """)
+
         else:
             logger.warning(f"Página desconocida: {pagina}")
+            st.error(f"❌ Página no encontrada: {pagina}")
 
     except Exception as e:
         logger.error(f"Error crítico en main(): {e}", exc_info=True)

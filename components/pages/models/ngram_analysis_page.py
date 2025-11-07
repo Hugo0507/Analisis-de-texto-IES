@@ -244,7 +244,7 @@ def execute_ngram_analysis():
 
         connector = get_connector()
         if connector and 'persistence_folders' in st.session_state:
-            folder_id = st.session_state.persistence_folders.get('09_Ngram_Analysis')
+            folder_id = st.session_state.persistence_folders.get('07_Ngram_Analysis')
 
             if folder_id:
                 with st.spinner("🔍 Buscando resultados previos en Google Drive..."):

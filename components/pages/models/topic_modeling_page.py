@@ -57,7 +57,7 @@ def render():
 
         connector = get_connector()
         if connector:
-            folder_topic = st.session_state.persistence_folders.get('08_Topic_Modeling')
+            folder_topic = st.session_state.persistence_folders.get('09_Topic_Modeling')
 
             if folder_topic:
                 with st.spinner("🔍 Buscando resultados previos en Google Drive..."):
@@ -364,9 +364,9 @@ def execute_topic_modeling():
         if connector and st.session_state.get('parent_folder_id'):
             folder_tm = connector.get_or_create_folder(
                 st.session_state.parent_folder_id,
-                "08_Topic_Modeling"
+                "09_Topic_Modeling"
             )
-            st.session_state.persistence_folders['08_Topic_Modeling'] = folder_tm
+            st.session_state.persistence_folders['09_Topic_Modeling'] = folder_tm
 
             # Preparar datos para Drive
             cache_data = {

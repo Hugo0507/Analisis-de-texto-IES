@@ -24,29 +24,32 @@ def render_sidebar():
 
         st.markdown("---")
 
-        # Menú de navegación simple
+        # Menú de navegación organizado por fases
         pagina = st.radio(
             "Navegación",
             [
                 "Inicio",
+                "📁 FASE 1: PREPARACIÓN",
                 "1. Conexión Google Drive",
-                "2. Estadísticas de Archivos",
-                "3. Detección de Idiomas",
-                "4. Conversión a TXT",
-                "5. Preprocesamiento",
-                "6. Bolsa de Palabras",
-                "7. Análisis TF-IDF",
-                "8. Análisis de Factores",
-                "9. Visualizaciones",
-                "10. Nube de Palabras",
-                "---",
-                "🤖 Modelos Avanzados",
-                "🤖 Análisis NER",
-                "🤖 Modelado de Temas",
-                "🤖 Análisis de N-gramas",
-                "🤖 BERTopic",
-                "🤖 Clasificación de Textos",
-                "🤖 Reducción de Dimensionalidad"
+                "2. Detección de Idiomas",
+                "3. Conversión a TXT",
+                "4. Preprocesamiento",
+                "📁 FASE 2: REPRESENTACIÓN VECTORIAL",
+                "5. Bolsa de Palabras",
+                "6. Análisis TF-IDF",
+                "7. Análisis de N-gramas",
+                "📁 FASE 3: ANÁLISIS LINGÜÍSTICO",
+                "8. Named Entity Recognition",
+                "📁 FASE 4: MODELADO DE TEMAS",
+                "9. Modelado de Temas",
+                "10. BERTopic",
+                "📁 FASE 5: DIMENSIONALIDAD Y CLASIFICACIÓN",
+                "11. Reducción de Dimensionalidad",
+                "12. Clasificación de Textos",
+                "📁 FASE 6: ANÁLISIS INTEGRADO",
+                "13. Análisis de Factores",
+                "📁 FASE 7: VISUALIZACIÓN",
+                "14. Visualizaciones y Nubes de Palabras"
             ],
             label_visibility="collapsed"
         )
