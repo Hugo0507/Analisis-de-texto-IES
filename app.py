@@ -177,43 +177,45 @@ def main() -> None:
         # FASE 1: PREPARACIÓN
         elif pagina == "1. Conexión Google Drive":
             conexion_drive.render()
-        elif pagina == "2. Detección de Idiomas":
+        elif pagina == "2. Estadísticas de Archivos":
+            estadisticas_archivos.render()
+        elif pagina == "3. Detección de Idiomas":
             deteccion_idiomas.render()
-        elif pagina == "3. Conversión a TXT":
+        elif pagina == "4. Conversión a TXT":
             conversion_txt.render()
-        elif pagina == "4. Preprocesamiento":
+        elif pagina == "5. Preprocesamiento":
             preprocesamiento.render()
 
         # FASE 2: REPRESENTACIÓN VECTORIAL
-        elif pagina == "5. Bolsa de Palabras":
+        elif pagina == "6. Bolsa de Palabras":
             bolsa_palabras.render()
-        elif pagina == "6. Análisis TF-IDF":
+        elif pagina == "7. Análisis TF-IDF":
             analisis_tfidf.render()
-        elif pagina == "7. Análisis de N-gramas":
+        elif pagina == "8. Análisis de N-gramas":
             ngram_analysis_page.render()
 
         # FASE 3: ANÁLISIS LINGÜÍSTICO
-        elif pagina == "8. Named Entity Recognition":
+        elif pagina == "9. Named Entity Recognition":
             ner_analysis.render()
 
         # FASE 4: MODELADO DE TEMAS
-        elif pagina == "9. Modelado de Temas":
+        elif pagina == "10. Modelado de Temas":
             topic_modeling_page.render()
-        elif pagina == "10. BERTopic":
+        elif pagina == "11. BERTopic":
             bertopic_page.render()
 
         # FASE 5: DIMENSIONALIDAD Y CLASIFICACIÓN
-        elif pagina == "11. Reducción de Dimensionalidad":
+        elif pagina == "12. Reducción de Dimensionalidad":
             dimensionality_reduction_page.render()
-        elif pagina == "12. Clasificación de Textos":
+        elif pagina == "13. Clasificación de Textos":
             classification_page.render()
 
         # FASE 6: ANÁLISIS INTEGRADO
-        elif pagina == "13. Análisis de Factores":
+        elif pagina == "14. Análisis de Factores":
             analisis_factores.render()
 
         # FASE 7: VISUALIZACIÓN
-        elif pagina == "14. Visualizaciones y Nubes de Palabras":
+        elif pagina == "15. Visualizaciones y Nubes de Palabras":
             # Combinar ambas páginas de visualización
             visualizaciones.render()
             st.markdown("---")
