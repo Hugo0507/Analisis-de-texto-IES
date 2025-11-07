@@ -50,11 +50,11 @@ from components.pages import (  # noqa: E402
 
 # Importar páginas de modelos avanzados
 from components.pages.models import ner_analysis  # noqa: E402
-from components.pages.models import topic_modeling_page  # noqa: E402
-from components.pages.models import ngram_analysis_page  # noqa: E402
-from components.pages.models import bertopic_page  # noqa: E402
-from components.pages.models import classification_page  # noqa: E402
-from components.pages.models import dimensionality_reduction_page  # noqa: E402
+from components.pages.models import topic_modeling as topic_modeling_page  # noqa: E402
+from components.pages.models import ngram_analysis as ngram_analysis_page  # noqa: E402
+from components.pages.models import bertopic as bertopic_page  # noqa: E402
+from components.pages.models import classification as classification_page  # noqa: E402
+from components.pages.models import dimensionality_reduction as dimensionality_reduction_page  # noqa: E402
 
 # ==================== CONFIGURACIÓN ====================
 
