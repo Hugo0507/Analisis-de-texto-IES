@@ -62,7 +62,7 @@ def render():
         """
         st.info(config_summary)
 
-        if st.button("▶️ Procesar Textos", type="primary", width='stretch'):
+        if st.button("▶️ Procesar Textos", type="primary", use_container_width=True):
             # Save config to session
             st.session_state.preprocessing_config = {
                 'remove_stopwords': remove_stopwords,
@@ -432,7 +432,7 @@ def render():
                 yaxis_title='Frecuencia',
                 height=300
             )
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
 
         with col2:
             # Pie chart: Distribución de tokens por documento
@@ -445,7 +445,7 @@ def render():
                 hole=0.3
             )])
             fig.update_layout(title='Distribución de Tokens (Top 10 Docs)', height=300)
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
 
         st.markdown("---")
 
@@ -463,7 +463,7 @@ def render():
             })
 
         report_df = pd.DataFrame(report_data)
-        st.dataframe(report_df, width='stretch')
+        st.dataframe(report_df, use_container_width=True)
 
         st.markdown("---")
 
@@ -490,7 +490,7 @@ def render():
                     yaxis_title='Frecuencia',
                     height=400
                 )
-                st.plotly_chart(fig, width='stretch')
+                st.plotly_chart(fig, use_container_width=True)
 
             with col2:
                 st.markdown("**Estadísticas del Documento**")
@@ -535,12 +535,12 @@ def render():
                 })
 
             saved_df = pd.DataFrame(saved_data)
-            st.dataframe(saved_df, width='stretch')
+            st.dataframe(saved_df, use_container_width=True)
 
             st.success("✓ Los archivos están listos para la siguiente etapa: **Bolsa de Palabras**")
         else:
             # Save button
-            if st.button("💾 Guardar Textos Preprocesados en Drive", type="primary", width='stretch'):
+            if st.button("💾 Guardar Textos Preprocesados en Drive", type="primary", use_container_width=True):
                 connector = get_connector()
                 if not connector:
                     st.error("❌ Error de conexión con Google Drive")

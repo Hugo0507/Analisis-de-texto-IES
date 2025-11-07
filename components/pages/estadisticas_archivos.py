@@ -39,7 +39,7 @@ def render():
 
         col1, col2 = st.columns([1, 3])
         with col1:
-            if st.button("Listar Archivos", type="primary", width='stretch'):
+            if st.button("Listar Archivos", type="primary", use_container_width=True):
                 folder_id = st.session_state.drive_connector.get_folder_id_from_url(folder_url)
                 st.session_state.source_folder_id = folder_id
 
@@ -115,7 +115,7 @@ def render():
             fig1 = px.bar(
                 dir_data, x='Cantidad', y='Directorio', orientation='h',
                 title='Archivos por Directorio')
-            st.plotly_chart(fig1, width='stretch')
+            st.plotly_chart(fig1, use_container_width=True)
 
             # Gráficos por extensión
             col1, col2 = st.columns(2)
@@ -129,11 +129,11 @@ def render():
                 fig2 = px.pie(
                     ext_data, values='Cantidad', names='Extensión',
                     title='Distribución por Extensión')
-                st.plotly_chart(fig2, width='stretch')
+                st.plotly_chart(fig2, use_container_width=True)
 
             with col2:
                 top_10 = ext_data.head(10)
                 fig3 = px.bar(
                     top_10, x='Cantidad', y='Extensión',
                     title='Top 10 Extensiones', orientation='h')
-                st.plotly_chart(fig3, width='stretch')
+                st.plotly_chart(fig3, use_container_width=True)
