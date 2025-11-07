@@ -52,6 +52,41 @@ def render():
 
     # Ejecutar análisis si no existe
     if 'topic_modeling_results' not in st.session_state:
+        # PASO 1: Intentar cargar desde Drive primero
+        from components.ui.helpers import get_connector, load_results_from_cache
+
+        connector = get_connector()
+        if connector:
+            folder_topic = st.session_state.persistence_folders.get('08_Topic_Modeling')
+
+            if folder_topic:
+                with st.spinner("🔍 Buscando resultados previos en Google Drive..."):
+                    cached_data = load_results_from_cache(folder_topic, "topic_modeling_results.json")
+
+                    if cached_data:
+                        # Verificar si la configuración coincide
+                        cached_config = cached_data.get('config', {})
+                        current_config = st.session_state.topic_modeling_config
+
+                        config_matches = (
+                            cached_config.get('n_topics') == current_config.get('n_topics') and
+                            cached_config.get('max_features') == current_config.get('max_features')
+                        )
+
+                        if config_matches:
+                            st.success(f"✅ Resultados cargados desde Google Drive (Fecha: {cached_data.get('timestamp', 'Desconocida')})")
+                            st.session_state.topic_modeling_results = cached_data
+
+                            # Guardar en caché local para próxima vez
+                            from src.utils.local_cache import LocalCache
+                            local_cache = LocalCache('topic_modeling')
+                            local_cache.save(cached_data, current_config)
+
+                            st.rerun()
+                        else:
+                            st.info("⚠️ Configuración cambió, recalculando...")
+
+        # PASO 2: Si no hay en Drive, ejecutar (intentará LocalCache automáticamente)
         execute_topic_modeling()
 
     # Mostrar resultados

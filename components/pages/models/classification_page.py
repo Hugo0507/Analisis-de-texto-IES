@@ -34,13 +34,48 @@ def render():
     if 'text_classifier' not in st.session_state:
         st.session_state.text_classifier = TextClassifier()
 
-    # Inicializar etiquetas
+    # Inicializar etiquetas y resultados con caché
     if 'document_labels' not in st.session_state:
-        st.session_state.document_labels = {}
+        # Intentar cargar desde caché local
+        from src.utils.local_cache import LocalCache
+        cache = LocalCache('text_classification')
 
-    # Inicializar resultados
-    if 'classification_results' not in st.session_state:
-        st.session_state.classification_results = {}
+        cached_data = cache.load()
+        if cached_data:
+            st.session_state.document_labels = cached_data.get('labels', {})
+            st.session_state.classification_results = cached_data.get('results', {})
+
+            if st.session_state.document_labels:
+                st.success(f"✅ Cargadas {len(st.session_state.document_labels)} etiquetas desde caché local")
+        else:
+            # Si no hay caché local, intentar Drive
+            from components.ui.helpers import get_connector, load_results_from_cache
+
+            connector = get_connector()
+            if connector:
+                folder_class = st.session_state.persistence_folders.get('11_Classification_Results')
+
+                if folder_class:
+                    cached_drive = load_results_from_cache(folder_class, "classification_data.json")
+
+                    if cached_drive:
+                        st.session_state.document_labels = cached_drive.get('labels', {})
+                        st.session_state.classification_results = cached_drive.get('results', {})
+
+                        # Guardar en caché local
+                        cache.save({
+                            'labels': st.session_state.document_labels,
+                            'results': st.session_state.classification_results
+                        })
+
+                        if st.session_state.document_labels:
+                            st.success(f"✅ Cargadas {len(st.session_state.document_labels)} etiquetas desde Google Drive")
+
+        # Si aún no existen, inicializar vacíos
+        if 'document_labels' not in st.session_state:
+            st.session_state.document_labels = {}
+        if 'classification_results' not in st.session_state:
+            st.session_state.classification_results = {}
 
     # Tabs principales
     tabs = st.tabs([
@@ -85,6 +120,17 @@ def render():
     # Tab 8: Persistencia
     with tabs[7]:
         render_persistence_tab()
+
+
+def save_classification_cache():
+    """Guarda automáticamente las etiquetas y resultados en caché"""
+    from src.utils.local_cache import LocalCache
+    cache = LocalCache('text_classification')
+
+    cache.save({
+        'labels': st.session_state.document_labels,
+        'results': st.session_state.classification_results
+    })
 
 
 def render_labeling_tab():
@@ -218,6 +264,7 @@ def render_manual_labeling(texts):
         if st.button("💾 Guardar", width='stretch'):
             if new_label.strip():
                 st.session_state.document_labels[selected_doc] = new_label.strip().lower()
+                save_classification_cache()  # Guardar automáticamente
                 st.success(f"✓ Etiqueta guardada: {new_label}")
                 st.rerun()
             else:
@@ -233,6 +280,7 @@ def render_manual_labeling(texts):
             with cols[idx % 5]:
                 if st.button(f"🏷️ {label}", key=f"label_{label}_{selected_doc}"):
                     st.session_state.document_labels[selected_doc] = label
+                    save_classification_cache()  # Guardar automáticamente
                     st.success(f"✓ Etiqueta '{label}' aplicada")
                     st.rerun()
 
@@ -269,6 +317,7 @@ def render_batch_labeling(texts):
                 if batch_label.strip():
                     for doc in selected_docs:
                         st.session_state.document_labels[doc] = batch_label.strip().lower()
+                    save_classification_cache()  # Guardar automáticamente
                     st.success(f"✓ Etiqueta '{batch_label}' aplicada a {len(selected_docs)} documentos")
                     st.rerun()
                 else:
