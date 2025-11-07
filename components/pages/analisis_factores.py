@@ -517,7 +517,7 @@ def render_summary_tab(results: Dict[str, Any]):
             title="Factores por Tipo",
             hole=0.4
         )
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(fig, use_container_width=True)
 
     with col2:
         st.markdown("#### 🔗 Distribución por Número de Fuentes")
@@ -536,7 +536,7 @@ def render_summary_tab(results: Dict[str, Any]):
             title="Factores por Número de Fuentes",
             labels={'Num Fuentes': 'Número de Fuentes PLN', 'Cantidad': 'Cantidad de Factores'}
         )
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(fig, use_container_width=True)
 
 
 def render_factors_table_tab(results: Dict[str, Any]):
@@ -556,10 +556,14 @@ def render_factors_table_tab(results: Dict[str, Any]):
             selected_type = 'Todos'
 
     with col2:
+        # Calcular max_value del slider, asegurando que sea mayor que min_value
+        max_sources = int(factors_df['source_count'].max()) if 'source_count' in factors_df.columns else 1
+        max_sources = max(2, max_sources)  # Asegurar que max_value sea al menos 2
+
         min_sources = st.slider(
             "Mínimo de fuentes",
             min_value=1,
-            max_value=int(factors_df['source_count'].max()) if 'source_count' in factors_df.columns else 1,
+            max_value=max_sources,
             value=1
         )
 
@@ -640,7 +644,7 @@ def render_network_tab(results: Dict[str, Any]):
             color_by='community',
             title="Red de Co-ocurrencia de Factores en Transformación Digital"
         )
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(fig, use_container_width=True)
     except Exception as e:
         st.error(f"Error generando visualización de red: {e}")
         logger.error(f"Error en visualización de red: {e}", exc_info=True)
@@ -652,7 +656,7 @@ def render_network_tab(results: Dict[str, Any]):
 
         mapper = ScienceMapper()
         fig_centrality = mapper.create_centrality_comparison(metrics, top_n=20)
-        st.plotly_chart(fig_centrality, width='stretch')
+        st.plotly_chart(fig_centrality, use_container_width=True)
 
 
 def render_landscape_tab(results: Dict[str, Any]):
@@ -675,7 +679,7 @@ def render_landscape_tab(results: Dict[str, Any]):
             metrics,
             top_n=100
         )
-        st.plotly_chart(fig_landscape, width='stretch')
+        st.plotly_chart(fig_landscape, use_container_width=True)
 
         st.markdown("---")
 
@@ -687,7 +691,7 @@ def render_landscape_tab(results: Dict[str, Any]):
                 metrics,
                 max_factors=50
             )
-            st.plotly_chart(fig_sunburst, width='stretch')
+            st.plotly_chart(fig_sunburst, use_container_width=True)
 
     except Exception as e:
         st.error(f"Error generando landscape: {e}")

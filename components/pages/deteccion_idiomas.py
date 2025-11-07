@@ -144,7 +144,7 @@ def render():
                         title='Distribución de Idiomas',
                         height=300
                     )
-                    st.plotly_chart(fig, width='stretch')
+                    st.plotly_chart(fig, use_container_width=True)
             else:
                 st.warning(
                     "⚠️ No se detectaron idiomas exitosamente en ningún "
@@ -211,7 +211,7 @@ def render():
                     error_df = pd.DataFrame(error_files)
                     error_df = error_df[['file_name']]
                     error_df.columns = ['Archivo con Error']
-                    st.dataframe(error_df, width='stretch')
+                    st.dataframe(error_df, use_container_width=True)
                     st.info(
                         "💡 Estos archivos no pudieron ser procesados. "
                         "Pueden ser PDFs corruptos, protegidos o sin texto."
@@ -460,7 +460,7 @@ def render():
                 df = df[['file_name', 'confidence']]
                 df.columns = ['Archivo', 'Confianza']
                 df['Confianza'] = df['Confianza'].apply(lambda x: f"{x:.2%}")
-                st.dataframe(df, width='stretch')
+                st.dataframe(df, use_container_width=True)
 
                 st.success(
                     "✓ Los archivos están listos para la siguiente etapa: "

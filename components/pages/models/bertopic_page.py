@@ -203,7 +203,7 @@ def render_configuration_tab():
     col1, col2 = st.columns([2, 1])
 
     with col1:
-        if st.button("🚀 Ejecutar Análisis BERTopic", type="primary", width='stretch'):
+        if st.button("🚀 Ejecutar Análisis BERTopic", type="primary", use_container_width=True):
             config = {
                 'embedding_model': embedding_model,
                 'n_topics': n_topics,
@@ -215,7 +215,7 @@ def render_configuration_tab():
             st.rerun()
 
     with col2:
-        if st.button("🔄 Forzar Re-cálculo", width='stretch'):
+        if st.button("🔄 Forzar Re-cálculo", use_container_width=True):
             config = {
                 'embedding_model': embedding_model,
                 'n_topics': n_topics,
@@ -438,7 +438,7 @@ def render_results(results: dict):
             # Top palabras
             st.markdown("**Top Palabras**:")
             words_df = pd.DataFrame(topic['top_words'])
-            st.dataframe(words_df, width='stretch')
+            st.dataframe(words_df, use_container_width=True)
 
             # Documentos del tema
             if topic.get('documents'):
@@ -461,7 +461,7 @@ def render_results(results: dict):
         labels={'x': 'Tema', 'y': 'Número de Documentos'},
         title='Distribución de Documentos por Tema'
     )
-    st.plotly_chart(fig_dist, width='stretch')
+    st.plotly_chart(fig_dist, use_container_width=True)
 
 
 def render_visualizations(results: dict):
@@ -485,7 +485,7 @@ def render_visualizations(results: dict):
         try:
             fig_topics = analyzer.visualize_topics()
             if fig_topics:
-                st.plotly_chart(fig_topics, width='stretch')
+                st.plotly_chart(fig_topics, use_container_width=True)
                 st.caption("Cada punto representa un tema. La distancia indica similitud semántica.")
             else:
                 st.info("Visualización de temas no disponible.")
@@ -502,7 +502,7 @@ def render_visualizations(results: dict):
         try:
             fig_bar = analyzer.visualize_barchart(top_n_topics=top_n)
             if fig_bar:
-                st.plotly_chart(fig_bar, width='stretch')
+                st.plotly_chart(fig_bar, use_container_width=True)
             else:
                 st.info("Gráfico de barras no disponible.")
         except Exception as e:
@@ -516,7 +516,7 @@ def render_visualizations(results: dict):
         try:
             fig_heat = analyzer.visualize_heatmap()
             if fig_heat:
-                st.plotly_chart(fig_heat, width='stretch')
+                st.plotly_chart(fig_heat, use_container_width=True)
                 st.caption("Colores más claros indican mayor similitud entre temas.")
             else:
                 st.info("Heatmap no disponible.")
@@ -575,7 +575,7 @@ def render_exploration(results: dict):
     col1, col2 = st.columns([1, 2])
 
     with col1:
-        st.dataframe(sizes_df, width='stretch')
+        st.dataframe(sizes_df, use_container_width=True)
 
     with col2:
         fig_sizes = px.pie(
@@ -584,7 +584,7 @@ def render_exploration(results: dict):
             names='Tema',
             title='Proporción de Documentos por Tema'
         )
-        st.plotly_chart(fig_sizes, width='stretch')
+        st.plotly_chart(fig_sizes, use_container_width=True)
 
 
 def render_persistence_tab(results: dict):
