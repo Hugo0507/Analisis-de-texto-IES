@@ -29,6 +29,7 @@ wordcloud>=1.9.0,<2.0.0
 
 # ==================== ML - Machine Learning ====================
 scikit-learn>=1.4.0,<2.0.0
+scipy>=1.10.0,<2.0.0
 
 # ==================== NETWORK - Network Analysis ====================
 networkx>=3.1,<4.0.0
@@ -44,6 +45,7 @@ google-auth>=2.26.0,<3.0.0
 google-auth-oauthlib>=1.2.0,<2.0.0
 google-auth-httplib2>=0.2.0,<1.0.0
 google-api-python-client>=2.115.0,<3.0.0
+requests>=2.31.0,<3.0.0
 
 # ==================== LANG - Detección de idioma ====================
 langdetect>=1.0.9,<2.0.0
@@ -51,9 +53,10 @@ langid>=1.1.6,<2.0.0
 
 # ==================== DOCS - Conversión de documentos ====================
 pdfplumber>=0.10.0,<1.0.0
-pdfminer.six>=20221105
-pypandoc>=1.12,<2.0.0
-python-magic-bin>=0.4.14,<1.0.0
+pdfminer.six>=20221105,<20241212
+
+# ==================== TOPIC MODELING - Modelado de temas avanzado ====================
+bertopic>=0.14.0,<1.0.0
 
 # ==================== PROGRESS - Progress bars ====================
 tqdm>=4.66.0,<5.0.0
