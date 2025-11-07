@@ -21,7 +21,7 @@ from src.models.dimensionality_reduction import DimensionalityReducer
 
 def load_from_cache(data_type):
     """
-    Carga datos desde caché local
+    Carga datos desde caché local (LocalCache)
 
     Args:
         data_type: 'tfidf' o 'bow'
@@ -30,41 +30,31 @@ def load_from_cache(data_type):
         (matrix, feature_names) o (None, None)
     """
     try:
-        # Buscar archivos de caché
-        cache_dir = Path('.cache')
+        # Usar LocalCache directamente
+        from src.utils.local_cache import LocalCache
 
-        if not cache_dir.exists():
-            return None, None
-
-        # Buscar el archivo más reciente
         if data_type == 'tfidf':
-            pattern = 'tfidf_*.pkl'
+            cache = LocalCache('tfidf')
+            cache_name = 'tfidf'
         else:
-            pattern = 'bow_*.pkl'
+            cache = LocalCache('bow')
+            cache_name = 'bow'
 
-        cache_files = list(cache_dir.glob(pattern))
+        # Cargar desde LocalCache
+        cached_data = cache.load()
 
-        if not cache_files:
-            return None, None
+        if cached_data:
+            # Estructura: {'sparse_matrix': matrix, 'feature_names': names, ...}
+            matrix = cached_data.get('sparse_matrix')
+            feature_names = cached_data.get('feature_names')
 
-        # Ordenar por fecha de modificación (más reciente primero)
-        cache_files.sort(key=lambda x: x.stat().st_mtime, reverse=True)
-        latest_cache = cache_files[0]
-
-        # Cargar desde pickle
-        with open(latest_cache, 'rb') as f:
-            data = pickle.load(f)
-
-        matrix = data.get('matrix')
-        feature_names = data.get('feature_names')
-
-        if matrix is not None and feature_names is not None:
-            return matrix, feature_names
+            if matrix is not None and feature_names is not None:
+                return matrix, feature_names
 
         return None, None
 
     except Exception as e:
-        print(f"Error cargando caché: {e}")
+        print(f"Error cargando caché {data_type}: {e}")
         return None, None
 
 
@@ -199,22 +189,30 @@ def render_preparation_tab():
     feature_names = None
 
     if data_source == "TF-IDF":
-        # Intentar cargar desde session_state
-        if 'tfidf_matrix' in st.session_state and st.session_state.tfidf_matrix is not None:
+        # PASO 1: Intentar cargar desde session_state (estructura nueva)
+        if 'tfidf_results' in st.session_state and st.session_state.tfidf_results is not None:
+            results = st.session_state.tfidf_results
+            if 'sparse_matrix' in results and results['sparse_matrix'] is not None:
+                matrix = results['sparse_matrix'].toarray()
+                feature_names = results.get('feature_names', [])
+                st.success("✓ Datos TF-IDF cargados desde sesión actual")
+
+        # PASO 2: Intentar cargar desde session_state (estructura antigua - retrocompatibilidad)
+        elif 'tfidf_matrix' in st.session_state and st.session_state.tfidf_matrix is not None:
             matrix = st.session_state.tfidf_matrix.toarray()
             feature_names = st.session_state.tfidf_feature_names
             st.success("✓ Datos TF-IDF cargados desde sesión actual")
-        # Auto-intentar cargar desde procesador (si existe)
-        elif 'procesador' in st.session_state and hasattr(st.session_state.procesador, 'tfidf_matrix'):
-            if st.session_state.procesador.tfidf_matrix is not None:
-                matrix = st.session_state.procesador.tfidf_matrix.toarray()
-                feature_names = st.session_state.procesador.tfidf_feature_names
-                # Guardar en session_state para siguiente uso
-                st.session_state.tfidf_matrix = st.session_state.procesador.tfidf_matrix
-                st.session_state.tfidf_feature_names = feature_names
-                st.success("✓ Datos TF-IDF cargados desde procesador de texto")
-        else:
-            # No hay datos disponibles
+
+        # PASO 3: Intentar cargar desde LocalCache
+        elif matrix is None:
+            cached_matrix, cached_features = load_from_cache('tfidf')
+            if cached_matrix is not None:
+                matrix = cached_matrix.toarray() if hasattr(cached_matrix, 'toarray') else cached_matrix
+                feature_names = cached_features
+                st.success("✓ Datos TF-IDF cargados desde caché local")
+
+        # PASO 4: No hay datos disponibles
+        if matrix is None:
             st.warning("⚠️ No hay datos TF-IDF disponibles en la sesión actual")
 
             st.info("""
@@ -279,22 +277,30 @@ def render_preparation_tab():
             return
 
     else:  # BoW
-        # Intentar cargar desde session_state
-        if 'bow_matrix' in st.session_state and st.session_state.bow_matrix is not None:
+        # PASO 1: Intentar cargar desde session_state (estructura nueva)
+        if 'bow_results' in st.session_state and st.session_state.bow_results is not None:
+            results = st.session_state.bow_results
+            if 'sparse_matrix' in results and results['sparse_matrix'] is not None:
+                matrix = results['sparse_matrix'].toarray()
+                feature_names = results.get('feature_names', [])
+                st.success("✓ Datos BoW cargados desde sesión actual")
+
+        # PASO 2: Intentar cargar desde session_state (estructura antigua - retrocompatibilidad)
+        elif 'bow_matrix' in st.session_state and st.session_state.bow_matrix is not None:
             matrix = st.session_state.bow_matrix.toarray()
             feature_names = st.session_state.bow_feature_names
             st.success("✓ Datos BoW cargados desde sesión actual")
-        # Auto-intentar cargar desde procesador (si existe)
-        elif 'procesador' in st.session_state and hasattr(st.session_state.procesador, 'bow_matrix'):
-            if st.session_state.procesador.bow_matrix is not None:
-                matrix = st.session_state.procesador.bow_matrix.toarray()
-                feature_names = st.session_state.procesador.bow_feature_names
-                # Guardar en session_state para siguiente uso
-                st.session_state.bow_matrix = st.session_state.procesador.bow_matrix
-                st.session_state.bow_feature_names = feature_names
-                st.success("✓ Datos BoW cargados desde procesador de texto")
-        else:
-            # No hay datos disponibles
+
+        # PASO 3: Intentar cargar desde LocalCache
+        elif matrix is None:
+            cached_matrix, cached_features = load_from_cache('bow')
+            if cached_matrix is not None:
+                matrix = cached_matrix.toarray() if hasattr(cached_matrix, 'toarray') else cached_matrix
+                feature_names = cached_features
+                st.success("✓ Datos BoW cargados desde caché local")
+
+        # PASO 4: No hay datos disponibles
+        if matrix is None:
             st.warning("⚠️ No hay datos BoW disponibles en la sesión actual")
 
             st.info("""

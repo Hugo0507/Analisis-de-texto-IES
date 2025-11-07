@@ -228,7 +228,7 @@ def execute_ngram_analysis():
 
     config = st.session_state.ngram_config
 
-    # Intentar cargar desde caché
+    # PASO 1: Intentar cargar desde caché local
     from src.utils.local_cache import LocalCache
     local_cache = LocalCache('ngram_analysis')
 
@@ -238,6 +238,46 @@ def execute_ngram_analysis():
             st.success("✅ Resultados cargados desde caché local")
             st.session_state.ngram_results = cached_results
             return
+
+        # PASO 2: Intentar cargar desde Drive si no está en caché local
+        from components.ui.helpers import get_connector, load_results_from_cache
+
+        connector = get_connector()
+        if connector and 'persistence_folders' in st.session_state:
+            folder_id = st.session_state.persistence_folders.get('09_Ngram_Analysis')
+
+            if folder_id:
+                with st.spinner("🔍 Buscando resultados previos en Google Drive..."):
+                    cached_data = load_results_from_cache(folder_id, 'ngram_analysis_results.json')
+
+                    if cached_data:
+                        # Verificar configuración
+                        cached_config = cached_data.get('config', {})
+
+                        # Comparar parámetros clave
+                        config_matches = (
+                            cached_config.get('max_n') == config.get('max_n') and
+                            cached_config.get('top_n') == config.get('top_n')
+                        )
+
+                        if config_matches:
+                            st.success(f"✅ Resumen cargado desde Google Drive (Fecha: {cached_data.get('analysis_date', 'Desconocida')})")
+
+                            # Reconstruir resultados (solo tenemos el resumen, no los datos completos)
+                            # Para carga completa, el usuario debe usar LocalCache
+                            st.info("💡 Para resultados completos, usa la caché local. Desde Drive solo se carga el resumen.")
+
+                            # Guardar en LocalCache para próxima vez
+                            if cached_data.get('ngrams_summary'):
+                                # Intentar reconstruir estructura básica
+                                reconstructed = {
+                                    'ngrams': cached_data['ngrams_summary'],
+                                    'collocations': cached_data.get('top_collocations', []),
+                                    'patterns': []
+                                }
+                                local_cache.save(reconstructed, config)
+                        else:
+                            st.info("⚠️ Configuración cambió, recalculando...")
 
     # Si no hay caché, procesar
     with st.spinner("🔍 Analizando n-gramas en el corpus... Esto puede tardar unos minutos."):

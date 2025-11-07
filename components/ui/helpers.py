@@ -31,10 +31,10 @@ def get_connector():
 
 def get_or_load_cached_results(folder_name, results_filename,
                                expected_count=None, source_files=None,
-                               validate_file_ids=True):
+                               validate_file_ids=True, config=None):
     """
     Verifica si existen resultados guardados en Drive y los carga
-    con validación completa de archivos (cantidad e IDs)
+    con validación completa de archivos (cantidad e IDs) y configuración
 
     Args:
         folder_name: Nombre de la carpeta (ej: "02_Language_Detection")
@@ -42,6 +42,7 @@ def get_or_load_cached_results(folder_name, results_filename,
         expected_count: Número esperado de archivos procesados (opcional)
         source_files: Lista de archivos fuente para validar (opcional)
         validate_file_ids: Si True, valida que los IDs coincidan (default)
+        config: Diccionario de configuración para validar (opcional)
 
     Returns:
         tuple: (results_dict or None, folder_id or None)
@@ -70,6 +71,26 @@ def get_or_load_cached_results(folder_name, results_filename,
         results = connector.read_json_file(results_file['id'])
 
         if results:
+            # Validar configuración si se especificó
+            if config is not None:
+                cached_config = results.get('config', {})
+                if cached_config:
+                    # Comparar parámetros clave
+                    config_mismatch = False
+                    mismatched_params = []
+
+                    for key, value in config.items():
+                        cached_value = cached_config.get(key)
+                        if cached_value is not None and cached_value != value:
+                            config_mismatch = True
+                            mismatched_params.append(f"{key}: {cached_value} → {value}")
+
+                    if config_mismatch:
+                        st.warning(
+                            f"⚠️ Configuración cambió, recalculando...\n"
+                            f"Parámetros diferentes: {', '.join(mismatched_params)}"
+                        )
+                        return None, folder
             # Validar cantidad de archivos si se especificó
             if expected_count is not None:
                 cached_count = results.get('total_files', 0)
@@ -126,6 +147,37 @@ def get_or_load_cached_results(folder_name, results_filename,
             return results, folder
 
     return None, folder
+
+
+def load_results_from_cache(folder_id, results_filename):
+    """
+    Carga resultados desde un archivo JSON en Drive (función simplificada)
+
+    Args:
+        folder_id: ID de la carpeta desde donde cargar
+        results_filename: Nombre del archivo JSON
+
+    Returns:
+        dict con resultados o None si no existe
+    """
+    connector = get_connector()
+    if not connector or not folder_id:
+        return None
+
+    try:
+        # Buscar archivo
+        results_file = connector.find_file_in_folder(folder_id, results_filename)
+
+        if results_file:
+            # Cargar resultados desde JSON
+            results = connector.read_json_file(results_file['id'])
+            return results
+
+        return None
+
+    except Exception as e:
+        print(f"Error cargando resultados desde cache: {e}")
+        return None
 
 
 def save_results_to_cache(folder_id, results_filename, results_data):
