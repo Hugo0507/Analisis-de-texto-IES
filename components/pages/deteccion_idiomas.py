@@ -430,7 +430,7 @@ def render():
         if parent_folder:
             # Buscar subcarpeta de PDFs en inglés
             subfolder = connector.get_or_create_folder(
-                parent_folder, "02_PDF_EN_Detected")
+                parent_folder, "02_Language_Detection")
 
             # Verificar si ya existen archivos en la carpeta
             folder_check = check_folder_has_files(
@@ -451,7 +451,7 @@ def render():
                 )
 
                 # Guardar en session state
-                st.session_state.persistence_folders['02_PDF_EN_Detected'] = (
+                st.session_state.persistence_folders['02_Language_Detection'] = (
                     subfolder)
                 st.session_state.english_pdf_files = english_pdfs
 
@@ -493,13 +493,13 @@ def render():
                         status_text.empty()
                         progress_bar.empty()
 
-                    st.session_state.persistence_folders['02_PDF_EN_Detected'] = (
+                    st.session_state.persistence_folders['02_Language_Detection'] = (
                         subfolder)
                     st.session_state.english_pdf_files = english_pdfs
 
                     st.success(
                         f"✓ {len(english_pdfs)} archivos copiados a "
-                        f"'02_PDF_EN_Detected'"
+                        f"'02_Language_Detection'"
                     )
                     st.balloons()
                     st.rerun()
@@ -511,7 +511,7 @@ def render():
                     width='stretch'
                 ):
                     if not subfolder:
-                        subfolder = connector.create_folder("02_PDF_EN_Detected", parent_folder)
+                        subfolder = connector.create_folder("02_Language_Detection", parent_folder)
 
                     with st.spinner("Copiando archivos..."):
                         progress_bar = st.progress(0)
@@ -527,10 +527,10 @@ def render():
                         status_text.empty()
                         progress_bar.empty()
 
-                    st.session_state.persistence_folders['02_PDF_EN_Detected'] = subfolder
+                    st.session_state.persistence_folders['02_Language_Detection'] = subfolder
                     st.session_state.english_pdf_files = english_pdfs
 
-                    st.success(f"✓ {len(english_pdfs)} archivos copiados a '02_PDF_EN_Detected'")
+                    st.success(f"✓ {len(english_pdfs)} archivos copiados a '02_Language_Detection'")
                     st.balloons()
                     st.rerun()
         else:

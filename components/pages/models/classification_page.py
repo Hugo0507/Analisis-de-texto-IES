@@ -42,18 +42,29 @@ def render():
 
         cached_data = cache.load()
         if cached_data:
+            # Cargar etiquetas (siempre válidas independiente de config)
             st.session_state.document_labels = cached_data.get('labels', {})
+
+            # Los resultados de modelos se invalidarán solo si el usuario
+            # intenta entrenar con diferentes parámetros (validación en render_configuration_tab)
             st.session_state.classification_results = cached_data.get('results', {})
 
             if st.session_state.document_labels:
                 st.success(f"✅ Cargadas {len(st.session_state.document_labels)} etiquetas desde caché local")
+
+                # Guardar config en session_state para validar después
+                if 'classification_last_config' not in st.session_state:
+                    # Intentar obtener config del caché
+                    metadata = cache.get_metadata()
+                    if metadata and 'config' in metadata:
+                        st.session_state.classification_last_config = metadata['config']
         else:
             # Si no hay caché local, intentar Drive
             from components.ui.helpers import get_connector, load_results_from_cache
 
             connector = get_connector()
             if connector:
-                folder_class = st.session_state.persistence_folders.get('11_Classification_Results')
+                folder_class = st.session_state.persistence_folders.get('12_Classification_Results')
 
                 if folder_class:
                     cached_drive = load_results_from_cache(folder_class, "classification_data.json")
@@ -122,15 +133,21 @@ def render():
         render_persistence_tab()
 
 
-def save_classification_cache():
-    """Guarda automáticamente las etiquetas y resultados en caché"""
+def save_classification_cache(config=None):
+    """Guarda automáticamente las etiquetas y resultados en caché con configuración"""
     from src.utils.local_cache import LocalCache
     cache = LocalCache('text_classification')
 
-    cache.save({
+    data_to_save = {
         'labels': st.session_state.document_labels,
         'results': st.session_state.classification_results
-    })
+    }
+
+    # Guardar con configuración si se proporciona
+    if config:
+        cache.save(data_to_save, config=config)
+    else:
+        cache.save(data_to_save)
 
 
 def render_labeling_tab():
@@ -454,6 +471,10 @@ def render_configuration_tab():
         st.warning("⚠️ No hay documentos etiquetados. Ve a la pestaña **Etiquetado** primero.")
         return
 
+    # Verificar si hay modelos entrenados con configuración diferente
+    if st.session_state.classification_results and 'classification_last_config' in st.session_state:
+        st.info("💡 Tienes modelos entrenados previamente. Si cambias parámetros críticos (vectorización, max_features, test_size), deberás reentrenar.")
+
     # Estadísticas
     labels_count = {}
     for label in st.session_state.document_labels.values():
@@ -646,6 +667,42 @@ def render_configuration_tab():
 
                 # Guardar resultados
                 st.session_state.classification_results = results
+
+                # Guardar en caché con configuración
+                config = {
+                    'vectorizer_type': vectorizer_type,
+                    'max_features': max_features,
+                    'test_size': test_size,
+                    'models_trained': list(results.keys())
+                }
+                save_classification_cache(config=config)
+
+                # Guardar modelos entrenados en Drive (pickle)
+                from components.ui.helpers import get_connector, save_pickle_to_drive
+
+                connector = get_connector()
+                if connector and 'persistence_folders' in st.session_state:
+                    folder_id = st.session_state.persistence_folders.get('12_Classification_Results')
+
+                    if folder_id:
+                        # Guardar cada modelo entrenado
+                        for model_key in results.keys():
+                            if 'model' in results[model_key]:
+                                save_pickle_to_drive(
+                                    folder_id,
+                                    f'{model_key}_model.pkl',
+                                    results[model_key]['model']
+                                )
+
+                        # Guardar vectorizador
+                        if hasattr(classifier, 'vectorizer') and classifier.vectorizer:
+                            save_pickle_to_drive(
+                                folder_id,
+                                'vectorizer.pkl',
+                                classifier.vectorizer
+                            )
+
+                        st.info("💾 Modelos guardados en Google Drive")
 
                 st.success("🎉 Todos los modelos entrenados exitosamente!")
                 st.balloons()
@@ -1090,7 +1147,7 @@ def render_persistence_tab():
 
     if st.button("💾 Guardar en Google Drive"):
 
-        folder_key = '11_Classification_Results'
+        folder_key = '12_Classification_Results'
 
         with st.spinner("Guardando en Google Drive..."):
             try:

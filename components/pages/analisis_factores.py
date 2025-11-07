@@ -235,7 +235,7 @@ def execute_factor_analysis(config: Dict[str, Any]) -> Dict[str, Any]:
 
         connector = get_connector()
         if connector and 'persistence_folders' in st.session_state:
-            folder_id = st.session_state.persistence_folders.get('10_Factor_Analysis')
+            folder_id = st.session_state.persistence_folders.get('13_Factor_Analysis')
 
             if folder_id:
                 import json
@@ -295,7 +295,7 @@ def try_load_from_cache(config: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
         connector = get_connector()
         if connector and 'persistence_folders' in st.session_state:
-            folder_id = st.session_state.persistence_folders.get('10_Factor_Analysis')
+            folder_id = st.session_state.persistence_folders.get('13_Factor_Analysis')
 
             if folder_id:
                 with st.spinner("🔍 Buscando resultados previos en Google Drive..."):

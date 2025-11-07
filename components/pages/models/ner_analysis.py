@@ -112,7 +112,7 @@ def render():
         # PASO 1: Intentar cargar desde Drive primero
         connector = get_connector()
         if connector:
-            folder_ner = st.session_state.persistence_folders.get('07_NER_Analysis')
+            folder_ner = st.session_state.persistence_folders.get('08_NER_Analysis')
 
             if folder_ner:
                 with st.spinner("🔍 Buscando resultados previos en Google Drive..."):
@@ -243,9 +243,9 @@ def render():
 
             folder_ner = connector.get_or_create_folder(
                 st.session_state.parent_folder_id,
-                "07_NER_Analysis"
+                "08_NER_Analysis"
             )
-            st.session_state.persistence_folders['07_NER_Analysis'] = folder_ner
+            st.session_state.persistence_folders['08_NER_Analysis'] = folder_ner
 
             # Preparar datos serializables para caché en Drive
             cache_data = {
