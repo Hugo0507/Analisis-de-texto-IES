@@ -818,10 +818,10 @@ def render_pca_tab():
 
                     with col2:
                         # Tabla
-                        st.write("**Loadings:**")
+                        st.write("**Cargas (Loadings):**")
                         st.dataframe(
                             df_loadings[['feature', 'loading']].round(4),
-                            width='stretch',
+                            use_container_width=True,
                             height=400
                         )
 
@@ -1347,10 +1347,10 @@ def render_factor_analysis_tab():
                     st.plotly_chart(fig, use_container_width=True)
 
                 with col2:
-                    st.write("**Loadings:**")
+                    st.write("**Cargas (Loadings):**")
                     st.dataframe(
                         df_loadings[['feature', 'loading']].round(4),
-                        width='stretch',
+                        use_container_width=True,
                         height=400
                     )
 
