@@ -59,7 +59,7 @@ def render():
 
         # Conversión
         if len(st.session_state.conversion_results) == 0:
-            if st.button("🔄 Convertir PDFs a TXT", type="primary", width='stretch'):
+            if st.button("🔄 Convertir PDFs a TXT", type="primary", use_container_width=True):
                 with st.spinner("Convirtiendo archivos..."):
                     progress_bar = st.progress(0)
                     results = []
@@ -157,7 +157,7 @@ def render():
                         'Exitosos': '#28a745', 'Fallidos': '#dc3545'
                     }
                 )
-                st.plotly_chart(fig1, width='stretch')
+                st.plotly_chart(fig1, use_container_width=True)
 
             with col2:
                 # Estadísticas de longitud de texto
@@ -203,7 +203,7 @@ def render():
                         }
                         for r in failed
                     ])
-                    st.dataframe(failed_df, width='stretch')
+                    st.dataframe(failed_df, use_container_width=True)
                     st.info(
                         "💡 Estos archivos no pudieron ser convertidos. "
                         "Pueden ser PDFs corruptos, protegidos, sin texto "

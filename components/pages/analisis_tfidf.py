@@ -69,7 +69,7 @@ def render():
             - Mismo método que en Colab
             """)
 
-            if st.button("▶️ Crear Matriz TF-IDF (Método Colab)", type="primary", width='stretch'):
+            if st.button("▶️ Crear Matriz TF-IDF (Método Colab)", type="primary", use_container_width=True):
                 st.session_state.tfidf_config = {
                     'method': 'colab_style'
                 }
@@ -350,7 +350,7 @@ def render():
                 height=400,
                 yaxis={'categoryorder': 'total ascending'}
             )
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
 
         st.markdown("---")
 
@@ -390,7 +390,7 @@ def render():
                     height=300,
                     yaxis={'categoryorder': 'total ascending'}
                 )
-                st.plotly_chart(fig, width='stretch')
+                st.plotly_chart(fig, use_container_width=True)
 
         st.markdown("---")
 
@@ -402,7 +402,7 @@ def render():
         # Show first 10 documents and top 20 terms
         preview_df = tfidf_df.iloc[:10, :20]
 
-        st.dataframe(preview_df, width='stretch')
+        st.dataframe(preview_df, use_container_width=True)
         st.caption(f"Mostrando primeros 10 documentos y primeros 20 términos de {tfidf['document_count']} x {tfidf['vocabulary_size']}")
 
         st.markdown("---")
@@ -444,7 +444,7 @@ def render():
                 xaxis={'tickangle': -45}
             )
 
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
 
         st.markdown("---")
 
@@ -509,7 +509,7 @@ def render():
             st.success("✓ Los resultados están listos para la siguiente etapa: " +
                        "**Análisis de Factores**")
         else:
-            if st.button("💾 Guardar Resultados TF-IDF en Drive", type="primary", width='stretch'):
+            if st.button("💾 Guardar Resultados TF-IDF en Drive", type="primary", use_container_width=True):
                 connector = get_connector()
                 if not connector:
                     st.error("❌ Error de conexión con Google Drive")

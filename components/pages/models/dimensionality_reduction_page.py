@@ -395,7 +395,7 @@ def render_preparation_tab():
                     xaxis_title='Valor',
                     yaxis_title='Frecuencia'
                 )
-                st.plotly_chart(fig, width='stretch')
+                st.plotly_chart(fig, use_container_width=True)
 
         with col2:
             # Top features por varianza
@@ -420,12 +420,12 @@ def render_preparation_tab():
                 title='Top 20 Features por Varianza'
             )
             fig.update_yaxes(autorange="reversed")
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("---")
 
     # Botón para preparar datos
-    if st.button("🚀 Preparar Datos para Reducción", type="primary", width='stretch'):
+    if st.button("🚀 Preparar Datos para Reducción", type="primary", use_container_width=True):
         with st.spinner("Preparando datos..."):
             reducer = st.session_state.dimensionality_reducer
 
@@ -539,13 +539,13 @@ def render_filters_tab():
                     annotation_text=f"Umbral: {threshold}"
                 )
 
-                st.plotly_chart(fig, width='stretch')
+                st.plotly_chart(fig, use_container_width=True)
 
                 # Tabla de features removidas
                 if results['removed_features'] > 0:
                     with st.expander("🗑️ Features Removidas", expanded=False):
                         df_removed = df_var[df_var['Estado'] == 'Removida']
-                        st.dataframe(df_removed, width='stretch')
+                        st.dataframe(df_removed, use_container_width=True)
 
     # Filtro de alta correlación
     with filter_tabs[1]:
@@ -585,7 +585,7 @@ def render_filters_tab():
                     df_pairs = pd.DataFrame(results['high_corr_pairs'])
                     df_pairs = df_pairs.sort_values('correlation', key=abs, ascending=False)
 
-                    st.dataframe(df_pairs, width='stretch')
+                    st.dataframe(df_pairs, use_container_width=True)
 
                     # Visualización
                     if st.checkbox("Mostrar matriz de correlación completa", key="show_corr_matrix"):
@@ -616,7 +616,7 @@ def render_filters_tab():
                             xaxis_tickangle=-45
                         )
 
-                        st.plotly_chart(fig, width='stretch')
+                        st.plotly_chart(fig, use_container_width=True)
 
 
 def render_pca_tab():
@@ -660,7 +660,7 @@ def render_pca_tab():
             help="Incluye loadings, varianza explicada, etc."
         )
 
-    if st.button("🚀 Aplicar PCA", type="primary", width='stretch'):
+    if st.button("🚀 Aplicar PCA", type="primary", use_container_width=True):
         with st.spinner("Aplicando PCA..."):
             results = reducer.apply_pca(n_components=n_components, analyze=analyze_detailed)
 
@@ -720,7 +720,7 @@ def render_pca_tab():
                 yaxis_tickformat='.0%'
             )
 
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
 
         with col2:
             # Varianza acumulada
@@ -749,7 +749,7 @@ def render_pca_tab():
                 yaxis_tickformat='.0%'
             )
 
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
 
         # Dimensionalidad óptima
         if 'optimal_dimensions' in results:
@@ -814,7 +814,7 @@ def render_pca_tab():
                         )
                         fig.update_yaxes(autorange="reversed")
 
-                        st.plotly_chart(fig, width='stretch')
+                        st.plotly_chart(fig, use_container_width=True)
 
                     with col2:
                         # Tabla
@@ -851,7 +851,7 @@ def render_pca_tab():
                 height=600
             )
 
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
 
         if results['n_components'] >= 3:
             # 3D plot
@@ -881,7 +881,7 @@ def render_pca_tab():
                     height=700
                 )
 
-                st.plotly_chart(fig, width='stretch')
+                st.plotly_chart(fig, use_container_width=True)
 
 
 def render_tsne_tab():
@@ -935,7 +935,7 @@ def render_tsne_tab():
 
     st.warning("⚠️ t-SNE puede tardar varios minutos con muchos documentos")
 
-    if st.button("🚀 Aplicar t-SNE", type="primary", width='stretch'):
+    if st.button("🚀 Aplicar t-SNE", type="primary", use_container_width=True):
         with st.spinner("Aplicando t-SNE... Esto puede tardar..."):
             results = reducer.apply_tsne(
                 n_components=n_components,
@@ -999,7 +999,7 @@ def render_tsne_tab():
                 height=600
             )
 
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
 
         else:  # 3D
             fig = go.Figure(data=[go.Scatter3d(
@@ -1027,7 +1027,7 @@ def render_tsne_tab():
                 height=700
             )
 
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
 
         # Análisis de distancias
         if 'distance_preservation' in results:
@@ -1118,7 +1118,7 @@ def render_umap_tab():
             ["euclidean", "cosine", "manhattan"]
         )
 
-    if st.button("🚀 Aplicar UMAP", type="primary", width='stretch'):
+    if st.button("🚀 Aplicar UMAP", type="primary", use_container_width=True):
         with st.spinner("Aplicando UMAP..."):
             results = reducer.apply_umap(
                 n_components=n_components,
@@ -1183,7 +1183,7 @@ def render_umap_tab():
                 height=600
             )
 
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
 
         else:  # 3D
             fig = go.Figure(data=[go.Scatter3d(
@@ -1211,7 +1211,7 @@ def render_umap_tab():
                 height=700
             )
 
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
 
 
 def render_factor_analysis_tab():
@@ -1255,7 +1255,7 @@ def render_factor_analysis_tab():
             format_func=lambda x: "Ninguna" if x is None else "Varimax"
         )
 
-    if st.button("🚀 Aplicar Factor Analysis", type="primary", width='stretch'):
+    if st.button("🚀 Aplicar Factor Analysis", type="primary", use_container_width=True):
         with st.spinner("Aplicando Factor Analysis..."):
             results = reducer.apply_factor_analysis(
                 n_factors=n_factors,
@@ -1304,11 +1304,11 @@ def render_factor_analysis_tab():
 
         with col1:
             st.write("**Top 10 Features (mejor explicadas):**")
-            st.dataframe(df_comm.head(10), width='stretch')
+            st.dataframe(df_comm.head(10), use_container_width=True)
 
         with col2:
             st.write("**Bottom 10 Features (peor explicadas):**")
-            st.dataframe(df_comm.tail(10), width='stretch')
+            st.dataframe(df_comm.tail(10), use_container_width=True)
 
         # Loadings por factor
         st.markdown("---")
@@ -1344,7 +1344,7 @@ def render_factor_analysis_tab():
                     )
                     fig.update_yaxes(autorange="reversed")
 
-                    st.plotly_chart(fig, width='stretch')
+                    st.plotly_chart(fig, use_container_width=True)
 
                 with col2:
                     st.write("**Loadings:**")
@@ -1384,7 +1384,7 @@ def render_factor_analysis_tab():
                 height=600
             )
 
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, use_container_width=True)
 
 
 def render_comparison_tab():
@@ -1446,7 +1446,7 @@ def render_comparison_tab():
         comparison_data.append(row)
 
     df_comparison = pd.DataFrame(comparison_data)
-    st.dataframe(df_comparison, width='stretch')
+    st.dataframe(df_comparison, use_container_width=True)
 
     # Visualización lado a lado
     if len(available_methods) >= 2:
@@ -1493,7 +1493,7 @@ def render_comparison_tab():
                             showlegend=False
                         )
 
-                        st.plotly_chart(fig, width='stretch')
+                        st.plotly_chart(fig, use_container_width=True)
 
     # Recomendaciones
     st.markdown("---")
@@ -1565,7 +1565,7 @@ def render_export_tab():
         df_export.insert(0, 'Document_ID', range(len(df_export)))
 
         st.write("**Preview:**")
-        st.dataframe(df_export.head(), width='stretch')
+        st.dataframe(df_export.head(), use_container_width=True)
 
         # Botón de descarga
         csv = df_export.to_csv(index=False)
