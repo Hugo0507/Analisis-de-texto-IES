@@ -109,7 +109,46 @@ def render():
 
     # Ejecutar análisis si no existe en session_state
     if 'ner_results' not in st.session_state:
-        with st.spinner("🔍 Verificando caché y analizando entidades nombradas..."):
+        # PASO 1: Intentar cargar desde Drive primero
+        connector = get_connector()
+        if connector:
+            folder_ner = st.session_state.persistence_folders.get('07_NER_Analysis')
+
+            if folder_ner:
+                with st.spinner("🔍 Buscando resultados previos en Google Drive..."):
+                    from components.ui.helpers import load_results_from_cache
+
+                    cached_data = load_results_from_cache(folder_ner, "ner_analysis_results.json")
+
+                    if cached_data:
+                        st.success(f"✅ Resultados cargados desde Google Drive (Fecha: {cached_data.get('analysis_date', 'Desconocida')})")
+
+                        # Reconstruir session_state desde caché
+                        from src.models.ner_analyzer import NERAnalyzer
+                        analyzer = NERAnalyzer(
+                            model_name=st.session_state.ner_config['model'],
+                            use_cache=True
+                        )
+
+                        st.session_state.ner_results = {
+                            'corpus_analysis': {
+                                'corpus_stats': cached_data['corpus_stats'],
+                                'country_distribution': cached_data['country_distribution'],
+                                'year_distribution': cached_data['year_distribution'],
+                                'top_entities_by_category': cached_data['top_entities_by_category']
+                            },
+                            'geographical_insights': cached_data['geographical_insights'],
+                            'temporal_insights': cached_data['temporal_insights'],
+                            'cooccurrence_insights': cached_data['cooccurrence_insights'],
+                            'diversity_insights': cached_data['diversity_insights'],
+                            'entity_stats': cached_data['entity_stats'],
+                            'analyzer': analyzer
+                        }
+
+                        st.rerun()
+
+        # PASO 2: Si no hay caché en Drive, procesar
+        with st.spinner("🔍 Verificando caché local y analizando entidades nombradas..."):
             from src.models.ner_analyzer import NERAnalyzer
 
             # Inicializar analizador con caché habilitado
