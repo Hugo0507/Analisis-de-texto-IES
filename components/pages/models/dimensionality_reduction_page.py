@@ -347,6 +347,11 @@ def render_preparation_tab():
     if matrix is None or feature_names is None:
         return
 
+    # Validar que feature_names tenga la longitud correcta antes de cualquier operación
+    if len(feature_names) != matrix.shape[1]:
+        st.warning(f"⚠️ Corrigiendo feature_names: matriz tiene {matrix.shape[1]} columnas pero feature_names tiene {len(feature_names)} elementos. Generando nombres genéricos.")
+        feature_names = [f"feature_{i}" for i in range(matrix.shape[1])]
+
     st.success(f"✓ Datos cargados: {matrix.shape[0]} documentos × {matrix.shape[1]} features")
 
     st.markdown("---")
@@ -397,6 +402,11 @@ def render_preparation_tab():
             variances = np.var(matrix, axis=0)
             top_indices = np.argsort(variances)[::-1][:20]
 
+            # Validar que feature_names tenga la longitud correcta
+            if len(feature_names) != matrix.shape[1]:
+                st.warning(f"⚠️ Discrepancia en feature_names: esperado {matrix.shape[1]}, encontrado {len(feature_names)}")
+                feature_names = [f"feature_{i}" for i in range(matrix.shape[1])]
+
             df_var = pd.DataFrame({
                 'Feature': [feature_names[i] for i in top_indices],
                 'Varianza': variances[top_indices]
@@ -418,6 +428,11 @@ def render_preparation_tab():
     if st.button("🚀 Preparar Datos para Reducción", type="primary", width='stretch'):
         with st.spinner("Preparando datos..."):
             reducer = st.session_state.dimensionality_reducer
+
+            # Validar que feature_names tenga la longitud correcta
+            if len(feature_names) != matrix.shape[1]:
+                st.warning(f"⚠️ Ajustando feature_names: esperado {matrix.shape[1]}, encontrado {len(feature_names)}")
+                feature_names = [f"feature_{i}" for i in range(matrix.shape[1])]
 
             stats = reducer.prepare_data(matrix, feature_names)
 
