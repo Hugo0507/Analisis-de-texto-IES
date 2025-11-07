@@ -216,7 +216,124 @@ def execute_factor_analysis(config: Dict[str, Any]) -> Dict[str, Any]:
     }
 
     logger.info("Análisis de factores completado")
+
+    # Guardar en LocalCache
+    try:
+        from src.utils.local_cache import LocalCache
+        cache = LocalCache('factor_analysis')
+
+        # Preparar datos para caché
+        cache_data = identifier.save_results_for_cache(results)
+        cache.save(cache_data, config)
+        logger.info("✅ Resultados guardados en LocalCache")
+    except Exception as e:
+        logger.warning(f"No se pudo guardar en LocalCache: {e}")
+
+    # Guardar en Google Drive
+    try:
+        from components.ui.helpers import get_connector
+
+        connector = get_connector()
+        if connector and 'persistence_folders' in st.session_state:
+            folder_id = st.session_state.persistence_folders.get('10_Factor_Analysis')
+
+            if folder_id:
+                import json
+
+                # Guardar datos serializables
+                cache_data = identifier.save_results_for_cache(results)
+
+                # Convertir a JSON
+                json_data = json.dumps(cache_data, indent=2, ensure_ascii=False)
+
+                # Subir a Drive
+                file_id = connector.upload_json(
+                    folder_id,
+                    'factor_analysis_results.json',
+                    json_data
+                )
+
+                if file_id:
+                    logger.info("✅ Resultados guardados en Google Drive")
+                    st.success("💾 Resultados guardados en Google Drive")
+    except Exception as e:
+        logger.warning(f"No se pudo guardar en Google Drive: {e}")
+
     return results
+
+
+def try_load_from_cache(config: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """
+    Intenta cargar resultados desde caché (LocalCache o Drive)
+
+    Args:
+        config: Configuración actual del análisis
+
+    Returns:
+        Resultados si se encuentran en caché, None si no
+    """
+    identifier = FactorIdentifier()
+
+    # PASO 1: Intentar LocalCache primero
+    try:
+        from src.utils.local_cache import LocalCache
+        cache = LocalCache('factor_analysis')
+
+        cached_data = cache.load(config=config)
+        if cached_data:
+            # Reconstruir resultados
+            results = identifier.load_results_from_cache(cached_data)
+            if results and results.get('factors_df') is not None:
+                st.success(f"✅ Resultados cargados desde caché local (Fecha: {results.get('timestamp', 'Desconocida')})")
+                return results
+    except Exception as e:
+        logger.warning(f"Error cargando desde LocalCache: {e}")
+
+    # PASO 2: Intentar Google Drive
+    try:
+        from components.ui.helpers import get_connector, load_results_from_cache
+
+        connector = get_connector()
+        if connector and 'persistence_folders' in st.session_state:
+            folder_id = st.session_state.persistence_folders.get('10_Factor_Analysis')
+
+            if folder_id:
+                with st.spinner("🔍 Buscando resultados previos en Google Drive..."):
+                    cached_data = load_results_from_cache(folder_id, 'factor_analysis_results.json')
+
+                    if cached_data:
+                        # Verificar si la configuración coincide
+                        cached_config = cached_data.get('config', {})
+
+                        # Comparar parámetros clave
+                        key_params = ['n_clusters', 'cooc_top_factors', 'network_top_nodes']
+                        config_matches = all(
+                            cached_config.get(param) == config.get(param)
+                            for param in key_params
+                        )
+
+                        if config_matches:
+                            # Reconstruir resultados
+                            results = identifier.load_results_from_cache(cached_data)
+                            if results and results.get('factors_df') is not None:
+                                st.success(f"✅ Resultados cargados desde Google Drive (Fecha: {results.get('timestamp', 'Desconocida')})")
+
+                                # Guardar en LocalCache para próxima vez
+                                try:
+                                    from src.utils.local_cache import LocalCache
+                                    local_cache = LocalCache('factor_analysis')
+                                    local_cache.save(cached_data, config)
+                                except Exception:
+                                    pass
+
+                                return results
+                        else:
+                            st.info("⚠️ Configuración cambió desde último análisis, recalculando...")
+
+    except Exception as e:
+        logger.warning(f"Error cargando desde Google Drive: {e}")
+
+    return None
 
 
 def render_configuration_tab():
@@ -324,13 +441,22 @@ def render_configuration_tab():
             'n_clusters': n_clusters
         }
 
-        with st.spinner("⏳ Analizando factores..."):
-            results = execute_factor_analysis(config)
+        # Primero intentar cargar desde caché
+        cached_results = try_load_from_cache(config)
 
-            if results:
-                st.session_state.factor_analysis_results = results
-                st.success("✅ Análisis completado exitosamente")
-                st.rerun()
+        if cached_results:
+            # Usar resultados en caché
+            st.session_state.factor_analysis_results = cached_results
+            st.rerun()
+        else:
+            # Si no hay caché, ejecutar análisis
+            with st.spinner("⏳ Analizando factores..."):
+                results = execute_factor_analysis(config)
+
+                if results:
+                    st.session_state.factor_analysis_results = results
+                    st.success("✅ Análisis completado exitosamente")
+                    st.rerun()
 
 
 def render_summary_tab(results: Dict[str, Any]):
@@ -642,6 +768,29 @@ def render():
         2. Al menos uno de: **Topic Modeling**, **TF-IDF**, **NER**, **N-gramas**
         """)
         return
+
+    # Auto-cargar resultados si no existen en session_state
+    if 'factor_analysis_results' not in st.session_state:
+        # Intentar cargar con configuración por defecto
+        default_config = {
+            'topic_top_words': 10,
+            'topic_min_weight': 0.01,
+            'tfidf_top_n': 100,
+            'tfidf_min_score': 0.1,
+            'ner_min_freq': 3,
+            'ngram_top_n': 50,
+            'ngram_min_freq': 5,
+            'similarity_threshold': 0.85,
+            'cooc_top_factors': 100,
+            'cooc_window_size': 50,
+            'network_top_nodes': 50,
+            'min_cooccurrence': 5,
+            'n_clusters': 8
+        }
+
+        cached_results = try_load_from_cache(default_config)
+        if cached_results:
+            st.session_state.factor_analysis_results = cached_results
 
     # Mostrar disponibilidad
     st.markdown("#### 📊 Datos Disponibles")

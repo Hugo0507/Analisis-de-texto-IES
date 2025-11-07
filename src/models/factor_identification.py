@@ -140,7 +140,7 @@ class FactorIdentifier:
         Extrae factores de Named Entity Recognition
 
         Args:
-            ner_results: Resultados de NER
+            ner_results: Resultados de NER (soporta múltiples estructuras)
             min_frequency: Frecuencia mínima de aparición
 
         Returns:
@@ -149,16 +149,33 @@ class FactorIdentifier:
         logger.info("Extrayendo factores de NER...")
         factors = []
 
-        if 'entity_summary' not in ner_results:
-            logger.warning("No se encontró resumen de entidades en NER")
+        # Soportar múltiples estructuras de datos
+        entity_summary = None
+
+        # Estructura 1: Directamente con 'entity_summary'
+        if 'entity_summary' in ner_results:
+            entity_summary = ner_results['entity_summary']
+
+        # Estructura 2: Con 'corpus_analysis' -> 'top_entities_by_category'
+        elif 'corpus_analysis' in ner_results:
+            corpus = ner_results['corpus_analysis']
+            if 'top_entities_by_category' in corpus:
+                entity_summary = corpus['top_entities_by_category']
+
+        # Estructura 3: Directamente con 'top_entities_by_category'
+        elif 'top_entities_by_category' in ner_results:
+            entity_summary = ner_results['top_entities_by_category']
+
+        if not entity_summary:
+            logger.warning("No se encontró resumen de entidades en NER (intenté entity_summary, corpus_analysis.top_entities_by_category)")
             return factors
 
-        entity_summary = ner_results['entity_summary']
-
+        # Extraer factores
         for entity_type, entities in entity_summary.items():
             if isinstance(entities, dict):
+                # Formato: {entity: count}
                 for entity, count in entities.items():
-                    if count >= min_frequency:
+                    if isinstance(count, (int, float)) and count >= min_frequency:
                         factor = {
                             'term': entity,
                             'source': 'ner',
@@ -167,6 +184,20 @@ class FactorIdentifier:
                             'entity_type': entity_type
                         }
                         factors.append(factor)
+            elif isinstance(entities, list):
+                # Formato: [(entity, count), ...]
+                for item in entities:
+                    if isinstance(item, tuple) and len(item) >= 2:
+                        entity, count = item[0], item[1]
+                        if isinstance(count, (int, float)) and count >= min_frequency:
+                            factor = {
+                                'term': entity,
+                                'source': 'ner',
+                                'weight': float(count),
+                                'type': 'named_entity',
+                                'entity_type': entity_type
+                            }
+                            factors.append(factor)
 
         logger.info(f"Extraídos {len(factors)} factores de NER")
         return factors
@@ -474,4 +505,118 @@ class FactorIdentifier:
 
         except Exception as e:
             logger.error(f"Error exportando resultados: {e}")
+            return {}
+
+    def save_results_for_cache(
+        self,
+        results: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Prepara resultados para guardar en caché (serializable)
+
+        Args:
+            results: Resultados completos del análisis
+
+        Returns:
+            Diccionario serializable para JSON
+        """
+        import json
+
+        cache_data = {}
+
+        try:
+            # Guardar factors_df como lista de diccionarios
+            if 'factors_df' in results and not results['factors_df'].empty:
+                cache_data['factors_df'] = results['factors_df'].to_dict('records')
+                cache_data['factors_df_columns'] = results['factors_df'].columns.tolist()
+
+            # Guardar cooccurrence_matrix
+            if 'cooccurrence_matrix' in results and not results['cooccurrence_matrix'].empty:
+                cache_data['cooccurrence_matrix'] = {
+                    'data': results['cooccurrence_matrix'].to_dict(),
+                    'index': results['cooccurrence_matrix'].index.tolist(),
+                    'columns': results['cooccurrence_matrix'].columns.tolist()
+                }
+
+            # Guardar summary (ya es serializable)
+            if 'summary' in results:
+                # Filtrar 'top_factors' que puede ser muy grande
+                summary_copy = results['summary'].copy()
+                if 'top_factors' in summary_copy:
+                    summary_copy['top_factors'] = summary_copy['top_factors'][:20]  # Solo top 20
+                cache_data['summary'] = summary_copy
+
+            # Guardar metadata de red
+            if 'network' in results:
+                network = results['network']
+                cache_data['network'] = {
+                    'n_nodes': network.get('n_nodes', 0),
+                    'n_edges': network.get('n_edges', 0)
+                }
+
+            # Guardar métricas
+            if 'metrics' in results:
+                cache_data['metrics'] = results['metrics']
+
+            # Timestamp y config
+            cache_data['timestamp'] = results.get('timestamp', '')
+            cache_data['config'] = results.get('config', {})
+
+            return cache_data
+
+        except Exception as e:
+            logger.error(f"Error preparando datos para caché: {e}")
+            return {}
+
+    def load_results_from_cache(
+        self,
+        cache_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Reconstruye resultados desde caché
+
+        Args:
+            cache_data: Datos cargados desde caché
+
+        Returns:
+            Diccionario con resultados reconstruidos
+        """
+        try:
+            results = {}
+
+            # Reconstruir factors_df
+            if 'factors_df' in cache_data and cache_data['factors_df']:
+                results['factors_df'] = pd.DataFrame(cache_data['factors_df'])
+                if 'factors_df_columns' in cache_data:
+                    results['factors_df'] = results['factors_df'][cache_data['factors_df_columns']]
+            else:
+                results['factors_df'] = pd.DataFrame()
+
+            # Reconstruir cooccurrence_matrix
+            if 'cooccurrence_matrix' in cache_data:
+                cooc = cache_data['cooccurrence_matrix']
+                results['cooccurrence_matrix'] = pd.DataFrame(
+                    cooc['data'],
+                    index=cooc.get('index', []),
+                    columns=cooc.get('columns', [])
+                )
+            else:
+                results['cooccurrence_matrix'] = pd.DataFrame()
+
+            # Cargar summary
+            results['summary'] = cache_data.get('summary', {})
+
+            # Cargar network y metrics
+            results['network'] = cache_data.get('network', {})
+            results['metrics'] = cache_data.get('metrics', {})
+
+            # Metadata
+            results['timestamp'] = cache_data.get('timestamp', '')
+            results['config'] = cache_data.get('config', {})
+
+            logger.info("Resultados reconstruidos desde caché correctamente")
+            return results
+
+        except Exception as e:
+            logger.error(f"Error reconstruyendo resultados desde caché: {e}")
             return {}
