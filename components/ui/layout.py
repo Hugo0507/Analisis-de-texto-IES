@@ -51,7 +51,9 @@ def render_sidebar():
                 "14. Análisis de Factores",
                 "15. Consolidación de Factores",
                 "📁 FASE 7: VISUALIZACIÓN",
-                "16. Visualizaciones y Nubes de Palabras"
+                "16. Visualizaciones y Nubes de Palabras",
+                "📁 FASE 8: EVALUACIÓN",
+                "17. Evaluación de Desempeño"
             ],
             label_visibility="collapsed"
         )

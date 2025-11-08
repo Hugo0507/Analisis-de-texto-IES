@@ -14,7 +14,8 @@ from . import (
     analisis_factores,
     consolidacion_factores,
     visualizaciones,
-    nube_palabras
+    nube_palabras,
+    evaluacion_desempeno
 )
 
 __all__ = [
@@ -29,5 +30,6 @@ __all__ = [
     'analisis_factores',
     'consolidacion_factores',
     'visualizaciones',
-    'nube_palabras'
+    'nube_palabras',
+    'evaluacion_desempeno'
 ]
