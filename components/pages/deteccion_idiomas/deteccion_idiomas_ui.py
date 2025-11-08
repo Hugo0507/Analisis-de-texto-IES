@@ -6,7 +6,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from components.ui.helpers import (
-    show_section_header, get_connector, get_or_load_cached_results,
+    show_section_header, show_chart_interpretation, get_connector, get_or_load_cached_results,
     save_results_to_cache, check_folder_has_files
 )
 
@@ -145,6 +145,30 @@ def render():
                         height=300
                     )
                     st.plotly_chart(fig, use_container_width=True)
+
+                    show_chart_interpretation(
+                        chart_type="Gráfico Circular con Hueco (Donut Chart)",
+                        title="Distribución de Idiomas Detectados",
+                        interpretation=(
+                            "Este gráfico muestra la **distribución porcentual de idiomas** detectados automáticamente "
+                            "en tu corpus de documentos. Cada segmento representa un idioma diferente, y su tamaño "
+                            "es proporcional a la cantidad de documentos escritos en ese idioma. Esto es crucial para "
+                            "determinar si necesitas modelos de procesamiento multilingüe o si tu corpus es predominantemente "
+                            "monolingüe."
+                        ),
+                        how_to_read=(
+                            "- Cada **segmento de color** representa un idioma detectado\n"
+                            "- El **tamaño del segmento** es proporcional al número de documentos en ese idioma\n"
+                            "- El **hueco central** (estilo donut) facilita la lectura de los porcentajes\n"
+                            "- Los **porcentajes** muestran la proporción de documentos en cada idioma"
+                        ),
+                        what_to_look_for=[
+                            "**Idioma dominante**: ¿Hay un idioma que representa > 80% del corpus? Esto indica un corpus monolingüe predominante",
+                            "**Multilingüismo**: ¿Hay múltiples idiomas con porcentajes significativos? Requerirás modelos y análisis específicos por idioma",
+                            "**Idiomas inesperados**: ¿Aparecen idiomas que no esperabas? Puede indicar errores de detección o contenido mixto en documentos",
+                            "**Implicaciones para análisis**: Solo documentos en el idioma objetivo (ej: inglés) pasarán a las siguientes fases de procesamiento"
+                        ]
+                    )
             else:
                 st.warning(
                     "⚠️ No se detectaron idiomas exitosamente en ningún "
