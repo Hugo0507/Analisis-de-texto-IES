@@ -1,5 +1,5 @@
 """
-Módulo de componentes UI
+Modulo de componentes UI
 """
 
 from .helpers import (
