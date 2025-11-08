@@ -322,17 +322,21 @@ class TextClassifier:
         }
 
         # AUC-ROC para clasificación binaria o multiclase
-        if y_proba is not None and len(self.label_names) == 2:
-            # Binaria
-            auc_score = roc_auc_score(self.y_test, y_proba[:, 1])
-            results['auc_roc'] = float(auc_score)
-        elif y_proba is not None and len(self.label_names) > 2:
-            # Multiclase (one-vs-rest)
+        if y_proba is not None:
+            # Binarizar etiquetas (funciona tanto para binario como multiclase)
             y_test_bin = label_binarize(self.y_test, classes=self.label_names)
+
             try:
-                auc_score = roc_auc_score(y_test_bin, y_proba, average='weighted', multi_class='ovr')
-                results['auc_roc'] = float(auc_score)
-            except:
+                if len(self.label_names) == 2:
+                    # Binaria: usar solo la columna de la clase positiva
+                    auc_score = roc_auc_score(y_test_bin, y_proba[:, 1])
+                    results['auc_roc'] = float(auc_score)
+                else:
+                    # Multiclase (one-vs-rest)
+                    auc_score = roc_auc_score(y_test_bin, y_proba, average='weighted', multi_class='ovr')
+                    results['auc_roc'] = float(auc_score)
+            except Exception as e:
+                logger.warning(f"No se pudo calcular AUC-ROC: {e}")
                 results['auc_roc'] = None
 
         return results
