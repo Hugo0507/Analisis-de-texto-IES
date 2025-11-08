@@ -615,6 +615,28 @@ def render_configuration_tab():
 
     if st.button("🚀 Entrenar Modelos Seleccionados", type="primary", use_container_width=True):
 
+        # Validar que haya al menos 2 clases diferentes
+        unique_labels = set(st.session_state.document_labels.values())
+        if len(unique_labels) < 2:
+            st.error(f"""
+            ❌ **Error: Se necesitan al menos 2 clases diferentes para entrenar**
+
+            Actualmente solo tienes documentos etiquetados con: **{', '.join(unique_labels)}**
+
+            **Solución:**
+            1. Ve a la pestaña "Etiquetado de Documentos"
+            2. Etiqueta documentos con al menos una clase adicional diferente
+            3. Por ejemplo, si tienes 'educacion', agrega documentos como 'tecnologia', 'salud', etc.
+            4. Necesitas al menos 2 documentos por cada clase
+
+            **Clases actuales:** {len(unique_labels)} clase(s)
+            **Documentos etiquetados:** {len(st.session_state.document_labels)}
+            """)
+            return
+
+        if len(unique_labels) == 2:
+            st.info(f"ℹ️ Tienes 2 clases: {', '.join(unique_labels)}. Se recomienda tener al menos 3-5 clases para mejores resultados.")
+
         with st.spinner("Entrenando modelos..."):
 
             # Preparar datos
