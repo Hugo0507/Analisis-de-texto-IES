@@ -1,13 +1,7 @@
 """
-Página de Visualizaciones
+Módulo de Lógica - Visualizaciones
+(Este módulo está reservado para lógica futura)
 """
 
-import streamlit as st
-from components.ui.helpers import show_section_header
-
-
-def render():
-    """Renderiza la página de visualizaciones"""
-
-    show_section_header("Visualizaciones", "Gráficos interactivos de resultados")
-    st.info("🚧 Sección en desarrollo")
+# Módulo reservado para lógica de visualizaciones
+# Por ahora solo contiene UI
