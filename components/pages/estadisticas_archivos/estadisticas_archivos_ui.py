@@ -5,7 +5,7 @@ Componentes visuales con Streamlit
 
 import streamlit as st
 import plotly.express as px
-from components.ui.helpers import show_section_header
+from components.ui.helpers import show_section_header, show_chart_interpretation
 from src.drive_connector import format_size
 from . import estadisticas_archivos as logic
 
@@ -103,6 +103,28 @@ def render_distribution_tab():
         title='Archivos por Directorio')
     st.plotly_chart(fig1, use_container_width=True)
 
+    show_chart_interpretation(
+        chart_type="Gráfico de Barras Horizontales",
+        title="Archivos por Directorio",
+        interpretation=(
+            "Esta gráfica muestra la **distribución de archivos** a través de las diferentes carpetas "
+            "en tu repositorio de Google Drive. Cada barra representa un directorio diferente, y su longitud "
+            "indica la cantidad de archivos que contiene. Esto te ayuda a identificar dónde se concentra "
+            "la mayor cantidad de documentos en tu corpus de análisis."
+        ),
+        how_to_read=(
+            "- El **eje Y** (vertical) lista los nombres de los directorios\n"
+            "- El **eje X** (horizontal) muestra la cantidad de archivos\n"
+            "- Las **barras más largas** indican directorios con más archivos\n"
+            "- Los directorios se ordenan de mayor a menor cantidad"
+        ),
+        what_to_look_for=[
+            "**Directorios dominantes**: ¿Qué carpeta tiene la mayor concentración de archivos?",
+            "**Distribución equilibrada vs concentrada**: ¿Los archivos están distribuidos uniformemente o concentrados en pocas carpetas?",
+            "**Implicaciones para el análisis**: Directorios con más archivos tendrán mayor peso en el análisis global"
+        ]
+    )
+
     # Gráficos por extensión
     col1, col2 = st.columns(2)
 
@@ -114,12 +136,56 @@ def render_distribution_tab():
             title='Distribución por Extensión')
         st.plotly_chart(fig2, use_container_width=True)
 
+        show_chart_interpretation(
+            chart_type="Gráfico Circular (Pie Chart)",
+            title="Distribución por Extensión",
+            interpretation=(
+                "Este gráfico circular muestra la **composición porcentual** de los archivos según "
+                "su tipo (extensión). Cada 'rebanada' representa un tipo de archivo diferente (PDF, DOCX, TXT, etc.), "
+                "y su tamaño es proporcional a la cantidad de archivos de ese tipo en tu corpus. "
+                "Esto te permite entender rápidamente qué formatos predominan en tu colección de documentos."
+            ),
+            how_to_read=(
+                "- Cada **segmento de color** representa un tipo de archivo diferente\n"
+                "- El **tamaño del segmento** es proporcional a la cantidad de archivos\n"
+                "- Los **porcentajes** muestran la proporción relativa de cada tipo\n"
+                "- Al pasar el cursor, verás el conteo exacto de archivos"
+            ),
+            what_to_look_for=[
+                "**Formato dominante**: ¿Qué extensión tiene la mayor porción del total?",
+                "**Homogeneidad del corpus**: ¿Predomina un solo formato o hay diversidad?",
+                "**Compatibilidad de procesamiento**: Algunos formatos (PDF) requieren conversión previa al análisis de texto"
+            ]
+        )
+
     with col2:
         top_10 = logic.get_top_n_extensions(ext_data, n=10)
         fig3 = px.bar(
             top_10, x='Cantidad', y='Extensión',
             title='Top 10 Extensiones', orientation='h')
         st.plotly_chart(fig3, use_container_width=True)
+
+        show_chart_interpretation(
+            chart_type="Gráfico de Barras Horizontales (Top 10)",
+            title="Top 10 Extensiones más Comunes",
+            interpretation=(
+                "Esta gráfica muestra las **10 extensiones de archivo más frecuentes** en tu corpus, "
+                "ordenadas de mayor a menor cantidad. A diferencia del gráfico circular, este formato "
+                "permite comparar fácilmente las cantidades exactas entre diferentes tipos de archivo "
+                "y ver claramente el ranking de formatos más utilizados."
+            ),
+            how_to_read=(
+                "- El **eje Y** (vertical) lista las extensiones de archivo\n"
+                "- El **eje X** (horizontal) muestra la cantidad exacta de archivos\n"
+                "- Las extensiones están **ordenadas de mayor a menor** frecuencia\n"
+                "- Solo se muestran las 10 extensiones más comunes"
+            ),
+            what_to_look_for=[
+                "**Extensiones dominantes**: ¿Los primeros 3-5 tipos concentran la mayoría de archivos?",
+                "**Diferencias de magnitud**: ¿Hay grandes gaps entre las extensiones o están más equilibradas?",
+                "**Formatos procesables**: ¿La mayoría son formatos que se pueden procesar para análisis de texto?"
+            ]
+        )
 
 
 def render():
