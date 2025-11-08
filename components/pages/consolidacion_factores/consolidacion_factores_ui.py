@@ -357,71 +357,244 @@ def render_science_mapping():
 
 
 def render_analisis_cualitativo():
-    """Renderiza panel de análisis cualitativo guiado"""
+    """Renderiza panel de análisis cualitativo formal guiado"""
 
-    st.subheader("💭 Análisis Cualitativo Guiado")
+    st.subheader("💭 Análisis Cualitativo Formal")
 
     if not hasattr(st.session_state, 'consolidation_insights'):
         st.info("ℹ️ Primero genera el Dashboard de Síntesis")
         return
 
+    consolidated_factors = st.session_state.consolidated_factors
     insights = st.session_state.consolidation_insights
 
     st.markdown("""
-    Este panel proporciona **interpretaciones automáticas** de los resultados del análisis,
-    ayudándote a comprender el significado y las implicaciones de los factores identificados.
+    Este panel proporciona un **marco metodológico completo** para el análisis cualitativo formal
+    de los factores identificados, incluyendo codificación teórica, interpretación guiada y validación metodológica.
     """)
 
-    st.markdown("---")
+    # Tabs para organizar el análisis cualitativo
+    tabs = st.tabs([
+        "📊 Insights Automáticos",
+        "🏛️ Matriz Temática",
+        "🔍 Codificación Cualitativa",
+        "❓ Guía de Interpretación",
+        "📖 Marco Metodológico"
+    ])
 
-    # Mostrar insights
-    for i, insight in enumerate(insights):
-        if insight['type'] == 'success':
-            st.success(f"**{insight['title']}**\n\n{insight['description']}")
-        elif insight['type'] == 'info':
-            st.info(f"**{insight['title']}**\n\n{insight['description']}")
-        elif insight['type'] == 'warning':
-            st.warning(f"**{insight['title']}**\n\n{insight['description']}")
-
-    st.markdown("---")
-
-    # Recomendaciones para el investigador
-    st.markdown("### 📝 Recomendaciones para el Investigador")
-
-    if hasattr(st.session_state, 'consolidated_factors') and not st.session_state.consolidated_factors.empty:
+    # Tab 1: Insights Automáticos
+    with tabs[0]:
+        st.markdown("### 💡 Interpretaciones Automáticas del Análisis")
         st.markdown("""
-        **Basado en tu análisis, te recomendamos:**
+        Estos insights se generan automáticamente a partir de los datos, proporcionando
+        una primera capa de interpretación que debe ser validada y profundizada por el investigador.
+        """)
+        st.markdown("---")
 
-        1. **Profundiza en los factores multi-fuente**: Los factores que aparecen en múltiples análisis
-           (TF-IDF, NER, Topics) tienen mayor validez y deberían ser prioritarios en tu investigación.
+        for i, insight in enumerate(insights):
+            if insight['type'] == 'success':
+                st.success(f"**{insight['title']}**\n\n{insight['description']}")
+            elif insight['type'] == 'info':
+                st.info(f"**{insight['title']}**\n\n{insight['description']}")
+            elif insight['type'] == 'warning':
+                st.warning(f"**{insight['title']}**\n\n{insight['description']}")
 
-        2. **Explora las relaciones en el Science Mapping**: El grafo de red muestra conexiones no obvias
-           entre factores que pueden revelar patrones emergentes en la transformación digital.
-
-        3. **Contrasta con tu marco teórico**: Compara los factores identificados automáticamente con
-           los reportados en tu marco de referencia para validar o descubrir nuevos hallazgos.
-
-        4. **Analiza las entidades organizacionales**: Las entidades NER tipo ORG pueden revelar
-           instituciones líderes o casos de estudio relevantes mencionados frecuentemente.
-
-        5. **Documenta tus hallazgos**: Utiliza la función de exportación para generar un reporte
-           completo que puedes incluir en tu tesis.
+    # Tab 2: Matriz Temática
+    with tabs[1]:
+        st.markdown("### 🏛️ Matriz de Análisis Temático")
+        st.markdown("""
+        Esta matriz organiza los factores identificados según **dimensiones teóricas** de transformación digital,
+        permitiendo un análisis estructurado y sistemático.
         """)
 
-        # Sugerencias específicas según los datos
-        top_3 = st.session_state.consolidated_factors.head(3)['Factor'].tolist()
+        # Generar categorización y matriz
+        categorized = logic.categorize_factors_by_dimension(consolidated_factors)
+        thematic_matrix = logic.build_thematic_matrix(consolidated_factors, categorized)
 
-        st.markdown(f"""
-        **Sugerencias específicas para tu corpus:**
+        if not thematic_matrix.empty:
+            # Mostrar resumen por dimensión
+            st.markdown("#### 📈 Distribución por Dimensión Teórica")
+            dimension_counts = thematic_matrix.groupby('Dimensión Teórica').size().reset_index(name='Cantidad')
+            dimension_counts = dimension_counts.sort_values('Cantidad', ascending=False)
 
-        - Los tres factores más relevantes identificados son: **{', '.join(top_3)}**.
-          Considera dedicar secciones específicas de tu análisis a cada uno de estos temas.
+            col1, col2 = st.columns([2, 1])
+            with col1:
+                fig = px.bar(
+                    dimension_counts,
+                    x='Dimensión Teórica',
+                    y='Cantidad',
+                    title='Factores por Dimensión Teórica',
+                    color='Cantidad',
+                    color_continuous_scale='Viridis'
+                )
+                fig.update_layout(height=400)
+                st.plotly_chart(fig, use_container_width=True)
 
-        - Revisa si estos factores se alinean con las dimensiones teóricas de tu marco conceptual
-          (tecnológica, organizacional, humana, estratégica, financiera, pedagógica, etc.).
+            with col2:
+                st.markdown("**Dimensiones identificadas:**")
+                for _, row in dimension_counts.iterrows():
+                    percentage = (row['Cantidad'] / len(thematic_matrix)) * 100
+                    st.metric(row['Dimensión Teórica'], f"{row['Cantidad']} factores", f"{percentage:.1f}%")
 
-        - Si encuentras factores inesperados o no cubiertos en tu marco teórico, esto puede
-          representar una **contribución original** de tu investigación.
+            # Mostrar matriz completa
+            st.markdown("#### 📋 Matriz Temática Completa")
+            st.dataframe(
+                thematic_matrix,
+                use_container_width=True,
+                height=400
+            )
+
+            # Botón de descarga
+            csv = thematic_matrix.to_csv(index=False, encoding='utf-8-sig')
+            st.download_button(
+                label="📥 Descargar Matriz Temática (CSV)",
+                data=csv,
+                file_name="matriz_tematica.csv",
+                mime="text/csv"
+            )
+        else:
+            st.warning("No se pudo generar la matriz temática")
+
+    # Tab 3: Codificación Cualitativa
+    with tabs[2]:
+        st.markdown("### 🔍 Codificación Cualitativa Automatizada")
+        st.markdown("""
+        La codificación cualitativa organiza y categoriza los factores según un esquema teórico,
+        facilitando el análisis sistemático y la triangulación metodológica.
+        """)
+
+        if not thematic_matrix.empty:
+            coding = logic.generate_qualitative_coding(thematic_matrix)
+
+            # Métricas principales
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric(
+                    "Dimensiones Cubiertas",
+                    coding['cobertura_teorica']['dimensiones_cubiertas'],
+                    help="Número de dimensiones teóricas identificadas en el corpus"
+                )
+            with col2:
+                st.metric(
+                    "Validación Multi-técnica",
+                    f"{coding['cobertura_teorica']['porcentaje_multitecnica']:.1f}%",
+                    help="Porcentaje de factores validados por múltiples técnicas"
+                )
+            with col3:
+                st.metric(
+                    "Dimensión Dominante",
+                    coding['dimension_dominante'],
+                    help="Dimensión con mayor número de factores"
+                )
+
+            st.markdown("---")
+
+            # Distribución detallada
+            st.markdown("#### 📊 Distribución de Factores por Dimensión")
+            for dim, count in coding['total_factores_por_dimension'].items():
+                percentage = (count / sum(coding['total_factores_por_dimension'].values())) * 100
+                st.write(f"**{dim}**: {count} factores ({percentage:.1f}%)")
+
+            st.markdown("---")
+
+            # Factores de alta validación
+            st.markdown("#### ⭐ Factores con Validación Multi-técnica")
+            st.markdown("""
+            Estos factores han sido identificados por **múltiples técnicas de análisis**,
+            lo que proporciona mayor confiabilidad y robustez científica.
+            """)
+
+            if coding['factores_alta_validacion']:
+                high_val_df = pd.DataFrame(coding['factores_alta_validacion'])
+                st.dataframe(high_val_df, use_container_width=True)
+            else:
+                st.info("No hay factores con validación multi-técnica en esta categorización")
+
+    # Tab 4: Guía de Interpretación
+    with tabs[3]:
+        st.markdown("### ❓ Guía de Preguntas para Interpretación Cualitativa")
+        st.markdown("""
+        Esta guía proporciona **preguntas orientadoras** para profundizar en la interpretación
+        de los resultados y conectarlos con tu marco teórico y objetivos de investigación.
+        """)
+
+        if not thematic_matrix.empty:
+            coding = logic.generate_qualitative_coding(thematic_matrix)
+            guide = logic.generate_interpretation_guide(consolidated_factors, thematic_matrix, coding)
+
+            for category, questions in guide.items():
+                with st.expander(f"📌 {category}", expanded=True):
+                    for i, question in enumerate(questions, 1):
+                        st.markdown(f"{i}. {question}")
+                    st.markdown("")
+
+            st.markdown("---")
+            st.info("""
+            **💡 Cómo usar esta guía:**
+            - Responde estas preguntas en tu análisis cualitativo
+            - Usa tus respuestas para conectar datos con teoría
+            - Documenta interpretaciones en tu tesis
+            - Identifica patrones emergentes y contribuciones originales
+            """)
+
+    # Tab 5: Marco Metodológico
+    with tabs[4]:
+        st.markdown("### 📖 Marco Metodológico del Análisis Cualitativo")
+        st.markdown("""
+        Este marco describe la **fundamentación metodológica** del análisis cualitativo implementado,
+        útil para la sección de metodología de tu tesis.
+        """)
+
+        st.markdown("""
+        #### 🎯 Enfoque Metodológico
+
+        El análisis cualitativo implementado sigue un enfoque de **análisis temático** combinado con
+        **triangulación metodológica**, fundamentado en:
+
+        1. **Codificación Teórica**: Los factores se categorizan en dimensiones teóricas predefinidas
+           basadas en la literatura de transformación digital en educación superior.
+
+        2. **Triangulación de Técnicas**: Se integran resultados de TF-IDF, Topic Modeling y NER para
+           validar hallazgos mediante convergencia metodológica.
+
+        3. **Análisis Temático**: Identificación y organización de patrones temáticos en el corpus
+           mediante técnicas computacionales y categorización teórica.
+
+        4. **Validación Cruzada**: Factores identificados por múltiples técnicas reciben mayor peso
+           interpretativo por su validación empírica convergente.
+
+        #### 📊 Dimensiones Teóricas Utilizadas
+
+        Las dimensiones teóricas empleadas para categorizar factores son:
+
+        - **Tecnológica**: Infraestructura, plataformas, herramientas digitales, datos
+        - **Pedagógica/Educativa**: Aprendizaje, enseñanza, currículo, competencias
+        - **Organizacional/Institucional**: Gestión, gobernanza, estrategia, políticas
+        - **Humana/Social**: Personas, cultura, colaboración, adopción
+        - **Innovación/Investigación**: Transformación, desarrollo, tendencias emergentes
+        - **Calidad/Evaluación**: Desempeño, impacto, resultados, indicadores
+
+        #### 🔬 Proceso de Análisis
+
+        1. **Consolidación**: Integración de resultados de múltiples técnicas de análisis
+        2. **Categorización**: Asignación de factores a dimensiones teóricas
+        3. **Matriz Temática**: Organización sistemática de factores por dimensión y relevancia
+        4. **Codificación**: Identificación de patrones y validación metodológica
+        5. **Interpretación**: Generación de insights y conexión con marco teórico
+
+        #### 📝 Criterios de Calidad
+
+        - **Triangulación**: Uso de múltiples técnicas para validar hallazgos
+        - **Sistematicidad**: Proceso estructurado y replicable
+        - **Fundamentación teórica**: Categorización basada en literatura
+        - **Transparencia**: Documentación completa del proceso
+        - **Validación**: Verificación cruzada entre técnicas
+        """)
+
+        st.markdown("---")
+        st.success("""
+        **✅ Este marco metodológico puede incluirse en tu tesis** en la sección de metodología
+        para justificar el enfoque cualitativo computacional utilizado.
         """)
 
 
@@ -495,14 +668,20 @@ def render_exportacion():
         st.metric("Total de Factores", resumen['total_factores_identificados'])
         st.metric("Factores Multi-fuente", resumen['factores_multifuente'])
         st.metric("Insights Generados", resumen['total_insights'])
+        st.metric("Dimensiones Teóricas", resumen['dimensiones_teoricas_cubiertas'])
 
         st.info("""
-        **Datos incluidos en la exportación:**
+        **Datos incluidos en la exportación JSON:**
         - Factores TF-IDF top 20
         - Topics principales (top 5)
         - Entidades NER top 15
         - Factores consolidados con relevancia integrada
-        - Insights cualitativos
+        - Insights cualitativos profundos
+        - **Análisis cualitativo formal:**
+          - Matriz de análisis temático
+          - Factores categorizados por dimensión teórica
+          - Codificación cualitativa automatizada
+          - Guía de interpretación con preguntas orientadoras
         """)
 
 
