@@ -247,12 +247,192 @@ def calculate_factor_relevance(
     return consolidated
 
 
+def categorize_factors_by_dimension(consolidated_factors: pd.DataFrame) -> Dict[str, List[str]]:
+    """
+    Categoriza factores en dimensiones teóricas de transformación digital
+
+    Args:
+        consolidated_factors: DataFrame con factores consolidados
+
+    Returns:
+        Diccionario con factores categorizados por dimensión
+    """
+    # Diccionario de palabras clave por dimensión teórica
+    dimension_keywords = {
+        'Tecnológica': [
+            'digital', 'technology', 'platform', 'cloud', 'software', 'system', 'data',
+            'infrastructure', 'internet', 'web', 'mobile', 'application', 'tool',
+            'artificial', 'intelligence', 'machine', 'learning', 'ai', 'ict', 'technologies'
+        ],
+        'Pedagógica/Educativa': [
+            'learning', 'education', 'teaching', 'student', 'teacher', 'course', 'curriculum',
+            'pedagogy', 'didactic', 'assessment', 'competence', 'skill', 'training',
+            'knowledge', 'instruction', 'academic', 'educational'
+        ],
+        'Organizacional/Institucional': [
+            'university', 'institution', 'organization', 'management', 'governance',
+            'strategy', 'leadership', 'structure', 'policy', 'process', 'administrative',
+            'organizational', 'institutional', 'strategic'
+        ],
+        'Humana/Social': [
+            'people', 'user', 'human', 'social', 'collaboration', 'communication',
+            'community', 'culture', 'behavior', 'interaction', 'engagement', 'experience',
+            'adoption', 'acceptance', 'change'
+        ],
+        'Innovación/Investigación': [
+            'innovation', 'research', 'development', 'transformation', 'digital transformation',
+            'change', 'innovation', 'creative', 'novel', 'emerging', 'future', 'trend'
+        ],
+        'Calidad/Evaluación': [
+            'quality', 'evaluation', 'assessment', 'performance', 'effectiveness',
+            'impact', 'outcome', 'result', 'measure', 'metric', 'indicator'
+        ]
+    }
+
+    categorized = {dim: [] for dim in dimension_keywords.keys()}
+    categorized['Otros'] = []
+
+    for _, row in consolidated_factors.iterrows():
+        factor = row['Factor'].lower()
+        assigned = False
+
+        for dimension, keywords in dimension_keywords.items():
+            if any(keyword in factor for keyword in keywords):
+                categorized[dimension].append(row['Factor'])
+                assigned = True
+                break
+
+        if not assigned:
+            categorized['Otros'].append(row['Factor'])
+
+    # Filtrar dimensiones vacías
+    return {k: v for k, v in categorized.items() if v}
+
+
+def build_thematic_matrix(
+    consolidated_factors: pd.DataFrame,
+    categorized_factors: Dict[str, List[str]]
+) -> pd.DataFrame:
+    """
+    Construye una matriz de análisis temático con factores y dimensiones
+
+    Args:
+        consolidated_factors: DataFrame con factores consolidados
+        categorized_factors: Factores categorizados por dimensión
+
+    Returns:
+        DataFrame con matriz temática
+    """
+    matrix_data = []
+
+    for dimension, factors in categorized_factors.items():
+        for factor in factors:
+            # Buscar el factor en consolidated_factors
+            factor_data = consolidated_factors[consolidated_factors['Factor'] == factor]
+            if not factor_data.empty:
+                matrix_data.append({
+                    'Dimensión Teórica': dimension,
+                    'Factor': factor,
+                    'Relevancia': factor_data.iloc[0]['Relevancia Total'],
+                    'Fuentes': factor_data.iloc[0]['Fuentes'],
+                    'Validación': 'Multi-técnica' if ',' in factor_data.iloc[0]['Fuentes'] else 'Única técnica'
+                })
+
+    df = pd.DataFrame(matrix_data)
+    if not df.empty:
+        df = df.sort_values(['Dimensión Teórica', 'Relevancia'], ascending=[True, False])
+
+    return df
+
+
+def generate_qualitative_coding(thematic_matrix: pd.DataFrame) -> Dict[str, Any]:
+    """
+    Genera codificación cualitativa automatizada de factores
+
+    Args:
+        thematic_matrix: Matriz temática de factores
+
+    Returns:
+        Diccionario con códigos cualitativos y análisis
+    """
+    if thematic_matrix.empty:
+        return {}
+
+    coding = {
+        'dimensiones_identificadas': thematic_matrix['Dimensión Teórica'].unique().tolist(),
+        'total_factores_por_dimension': thematic_matrix.groupby('Dimensión Teórica').size().to_dict(),
+        'factores_alta_validacion': thematic_matrix[thematic_matrix['Validación'] == 'Multi-técnica'].to_dict('records'),
+        'dimension_dominante': thematic_matrix.groupby('Dimensión Teórica').size().idxmax() if len(thematic_matrix) > 0 else None,
+        'cobertura_teorica': {
+            'dimensiones_cubiertas': len(thematic_matrix['Dimensión Teórica'].unique()),
+            'porcentaje_multitecnica': (thematic_matrix['Validación'] == 'Multi-técnica').sum() / len(thematic_matrix) * 100
+        }
+    }
+
+    return coding
+
+
+def generate_interpretation_guide(
+    consolidated_factors: pd.DataFrame,
+    thematic_matrix: pd.DataFrame,
+    qualitative_coding: Dict[str, Any]
+) -> Dict[str, List[str]]:
+    """
+    Genera guía de preguntas para interpretación cualitativa profunda
+
+    Args:
+        consolidated_factors: Factores consolidados
+        thematic_matrix: Matriz temática
+        qualitative_coding: Codificación cualitativa
+
+    Returns:
+        Diccionario con preguntas guía organizadas por categoría
+    """
+    guide = {}
+
+    # Preguntas sobre factores identificados
+    guide['Sobre los factores identificados'] = [
+        f"¿Cómo se relacionan los factores principales ({', '.join(consolidated_factors.head(3)['Factor'].tolist())}) con el marco teórico de transformación digital en IES?",
+        "¿Qué factores identificados confirman o contradicen la literatura existente?",
+        "¿Existen factores emergentes no contemplados en el marco teórico inicial?",
+        "¿Qué factores aparecen validados por múltiples técnicas y por qué esto es significativo?"
+    ]
+
+    # Preguntas sobre dimensiones teóricas
+    if qualitative_coding and 'dimension_dominante' in qualitative_coding:
+        dim_dominante = qualitative_coding['dimension_dominante']
+        guide['Sobre las dimensiones teóricas'] = [
+            f"¿Por qué la dimensión '{dim_dominante}' es la más prominente en el corpus analizado?",
+            "¿Qué implica la distribución de factores entre dimensiones para la transformación digital en IES?",
+            "¿Existen dimensiones subrepresentadas que deberían explorarse más?",
+            "¿Cómo interactúan las diferentes dimensiones entre sí según los datos?"
+        ]
+
+    # Preguntas metodológicas
+    guide['Sobre la validez metodológica'] = [
+        "¿Qué nivel de triangulación metodológica se logró con las múltiples técnicas de análisis?",
+        "¿Los factores multi-técnica confirman la robustez del análisis?",
+        "¿Existen sesgos potenciales en la identificación de factores?",
+        "¿Cómo se comparan los resultados cuantitativos con la interpretación cualitativa?"
+    ]
+
+    # Preguntas para la discusión
+    guide['Para la discusión de resultados'] = [
+        "¿Qué patrones emergentes revela la red de co-ocurrencias entre factores?",
+        "¿Cómo contribuyen estos hallazgos al conocimiento sobre transformación digital en educación superior?",
+        "¿Qué recomendaciones prácticas se derivan de los factores identificados?",
+        "¿Qué líneas futuras de investigación sugieren estos resultados?"
+    ]
+
+    return guide
+
+
 def generate_qualitative_insights(
     consolidated_factors: pd.DataFrame,
     classification_results: Dict[str, Any] = None
 ) -> List[Dict[str, str]]:
     """
-    Genera insights cualitativos basados en los factores identificados
+    Genera insights cualitativos profundos basados en los factores identificados
 
     Args:
         consolidated_factors: DataFrame con factores consolidados
@@ -271,43 +451,77 @@ def generate_qualitative_insights(
         })
         return insights
 
-    # Insight 1: Factores dominantes
+    # Insight 1: Factores dominantes con análisis profundo
     top_factor = consolidated_factors.iloc[0]
     insights.append({
         'type': 'success',
         'title': f'Factor más relevante: {top_factor["Factor"]}',
         'description': f'Este factor aparece en: {top_factor["Fuentes"]} con una relevancia total de {top_factor["Relevancia Total"]:.3f}. '
-                      f'Esto sugiere que es un tema central en la transformación digital según tu corpus de documentos.'
+                      f'La convergencia de múltiples técnicas de análisis en este factor sugiere que es un **tema central** '
+                      f'en la transformación digital según tu corpus. Esto indica que merece atención prioritaria en la '
+                      f'interpretación y discusión de resultados.'
     })
 
-    # Insight 2: Diversidad de fuentes
+    # Insight 2: Validación multi-técnica (triangulación metodológica)
     multi_source = consolidated_factors[consolidated_factors['Fuentes'].str.contains(',')]
     if not multi_source.empty:
+        percentage = (len(multi_source) / len(consolidated_factors)) * 100
         insights.append({
-            'type': 'info',
-            'title': f'Factores validados por múltiples técnicas: {len(multi_source)}',
-            'description': f'Hay {len(multi_source)} factores que aparecen en múltiples análisis (TF-IDF, NER, Topics), '
-                          f'lo que indica alta consistencia y confiabilidad en su identificación.'
+            'type': 'success',
+            'title': f'Triangulación metodológica: {percentage:.1f}% de factores validados',
+            'description': f'**{len(multi_source)} de {len(consolidated_factors)} factores** ({percentage:.1f}%) han sido '
+                          f'identificados por múltiples técnicas (TF-IDF, NER, Topics), lo que proporciona **validación cruzada** '
+                          f'y aumenta la confiabilidad de los hallazgos. Esta triangulación metodológica fortalece '
+                          f'la robustez científica del análisis.'
         })
 
-    # Insight 3: Top 5 factores
-    top_5 = consolidated_factors.head(5)['Factor'].tolist()
+    # Insight 3: Distribución y cobertura de factores
+    top_10 = consolidated_factors.head(10)
+    relevance_concentration = (top_10['Relevancia Total'].sum() / consolidated_factors['Relevancia Total'].sum()) * 100
     insights.append({
         'type': 'info',
-        'title': 'Top 5 factores clave identificados',
-        'description': f'Los cinco factores más relevantes son: {", ".join(top_5)}. '
-                      f'Estos representan los conceptos más importantes en tu análisis de transformación digital en IES.'
+        'title': f'Concentración de relevancia: {relevance_concentration:.1f}% en top 10',
+        'description': f'Los 10 factores principales concentran el **{relevance_concentration:.1f}%** de la relevancia total. '
+                      f'Una concentración {"alta" if relevance_concentration > 60 else "moderada" if relevance_concentration > 40 else "baja"} '
+                      f'sugiere {"un enfoque temático bien definido" if relevance_concentration > 60 else "una diversidad temática equilibrada"}. '
+                      f'Factores clave: {", ".join(top_10.head(5)["Factor"].tolist())}.'
     })
 
-    # Insight 4: Clasificación (si está disponible)
+    # Insight 4: Análisis de fuentes y técnicas
+    source_distribution = {}
+    for sources in consolidated_factors['Fuentes']:
+        for source in sources.split(', '):
+            source_type = 'TF-IDF' if 'TF-IDF' in source else 'NER' if 'NER' in source else 'Topic Modeling'
+            source_distribution[source_type] = source_distribution.get(source_type, 0) + 1
+
+    dominant_technique = max(source_distribution, key=source_distribution.get)
+    insights.append({
+        'type': 'info',
+        'title': f'Técnica predominante: {dominant_technique}',
+        'description': f'La técnica **{dominant_technique}** identificó el mayor número de factores únicos '
+                      f'({source_distribution[dominant_technique]} factores). Distribución: {", ".join([f"{k}: {v}" for k, v in source_distribution.items()])}. '
+                      f'Esta información es útil para comprender qué enfoque metodológico fue más efectivo en tu corpus.'
+    })
+
+    # Insight 5: Clasificación (si está disponible)
     if classification_results and 'document_labels' in classification_results:
         unique_classes = len(set(classification_results['document_labels'].values()))
         insights.append({
             'type': 'success',
-            'title': f'Documentos clasificados en {unique_classes} categorías',
-            'description': f'El análisis de clasificación ha organizado los documentos en {unique_classes} grupos temáticos, '
-                          f'facilitando la identificación de patrones y tendencias específicas.'
+            'title': f'Organización documental: {unique_classes} categorías temáticas',
+            'description': f'El análisis de clasificación ha organizado el corpus en **{unique_classes} categorías temáticas** '
+                          f'distintas, facilitando la identificación de patrones, tendencias y agrupaciones conceptuales. '
+                          f'Esto permite un análisis comparativo entre grupos documentales.'
         })
+
+    # Insight 6: Recomendación de profundización
+    insights.append({
+        'type': 'info',
+        'title': 'Recomendación metodológica',
+        'description': 'Para un **análisis cualitativo formal**, se recomienda: (1) Contrastar factores con marco teórico, '
+                      '(2) Analizar factores multi-técnica prioritariamente, (3) Explorar relaciones en el science mapping, '
+                      '(4) Codificar factores en dimensiones teóricas, (5) Documentar interpretaciones en la matriz temática.'
+    })
 
     return insights
 
@@ -320,7 +534,7 @@ def prepare_export_data(
     insights: List[Dict]
 ) -> Dict[str, Any]:
     """
-    Prepara datos consolidados para exportación
+    Prepara datos consolidados para exportación incluyendo análisis cualitativo completo
 
     Args:
         tfidf_df: DataFrame TF-IDF
@@ -332,17 +546,31 @@ def prepare_export_data(
     Returns:
         Diccionario con todos los datos organizados para exportar
     """
+    # Generar análisis cualitativo completo
+    categorized = categorize_factors_by_dimension(consolidated_factors)
+    thematic_matrix = build_thematic_matrix(consolidated_factors, categorized)
+    qualitative_coding = generate_qualitative_coding(thematic_matrix)
+    interpretation_guide = generate_interpretation_guide(consolidated_factors, thematic_matrix, qualitative_coding)
+
     export_data = {
         'resumen': {
             'total_factores_identificados': len(consolidated_factors),
             'factores_multifuente': len(consolidated_factors[consolidated_factors['Fuentes'].str.contains(',')]),
-            'total_insights': len(insights)
+            'total_insights': len(insights),
+            'dimensiones_teoricas_cubiertas': qualitative_coding.get('cobertura_teorica', {}).get('dimensiones_cubiertas', 0),
+            'porcentaje_validacion_multitecnica': qualitative_coding.get('cobertura_teorica', {}).get('porcentaje_multitecnica', 0)
         },
         'tfidf': tfidf_df.to_dict('records') if not tfidf_df.empty else [],
         'topics': topics_list,
         'entities': entities_df.to_dict('records') if not entities_df.empty else [],
         'factores_consolidados': consolidated_factors.to_dict('records') if not consolidated_factors.empty else [],
-        'insights': insights
+        'insights': insights,
+        'analisis_cualitativo': {
+            'matriz_tematica': thematic_matrix.to_dict('records') if not thematic_matrix.empty else [],
+            'factores_por_dimension': categorized,
+            'codificacion_cualitativa': qualitative_coding,
+            'guia_interpretacion': interpretation_guide
+        }
     }
 
     return export_data
