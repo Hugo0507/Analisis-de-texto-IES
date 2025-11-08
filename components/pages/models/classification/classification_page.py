@@ -205,6 +205,16 @@ def render_labeling_tab():
         else:
             st.metric("Categorías", 0)
 
+    # Botón para limpiar todas las etiquetas
+    if st.session_state.document_labels:
+        col_a, col_b = st.columns([3, 1])
+        with col_b:
+            if st.button("🗑️ Limpiar todas las etiquetas", type="secondary", use_container_width=True):
+                st.session_state.document_labels = {}
+                save_classification_cache()
+                st.success("✓ Todas las etiquetas eliminadas")
+                st.rerun()
+
     st.markdown("---")
 
     # Método de etiquetado
