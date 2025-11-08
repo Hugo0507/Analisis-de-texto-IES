@@ -1,2 +1,5 @@
 """Módulo analisis_tfidf"""
-from .analisis_tfidf import *
+# Exportar función render desde el módulo UI
+from .analisis_tfidf_ui import render
+
+__all__ = ['render']
