@@ -1,2 +1,5 @@
 """Módulo estadisticas_archivos"""
-from .estadisticas_archivos import *
+# Exportar función render desde el módulo UI
+from .estadisticas_archivos_ui import render
+
+__all__ = ['render']
