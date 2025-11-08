@@ -1,2 +1,5 @@
 """Módulo analisis_factores"""
-from .analisis_factores import *
+# Exportar función render desde el módulo UI
+from .analisis_factores_ui import render
+
+__all__ = ['render']
