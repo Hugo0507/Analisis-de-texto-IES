@@ -12,6 +12,7 @@ from . import (
     bolsa_palabras,
     analisis_tfidf,
     analisis_factores,
+    consolidacion_factores,
     visualizaciones,
     nube_palabras
 )
@@ -26,6 +27,7 @@ __all__ = [
     'bolsa_palabras',
     'analisis_tfidf',
     'analisis_factores',
+    'consolidacion_factores',
     'visualizaciones',
     'nube_palabras'
 ]

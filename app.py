@@ -44,6 +44,7 @@ from components.pages import (  # noqa: E402
     bolsa_palabras,
     analisis_tfidf,
     analisis_factores,
+    consolidacion_factores,
     visualizaciones,
     nube_palabras
 )
@@ -213,9 +214,11 @@ def main() -> None:
         # FASE 6: ANÁLISIS INTEGRADO
         elif pagina == "14. Análisis de Factores":
             analisis_factores.render()
+        elif pagina == "15. Consolidación de Factores":
+            consolidacion_factores.render()
 
         # FASE 7: VISUALIZACIÓN
-        elif pagina == "15. Visualizaciones y Nubes de Palabras":
+        elif pagina == "16. Visualizaciones y Nubes de Palabras":
             # Combinar ambas páginas de visualización
             visualizaciones.render()
             st.markdown("---")
