@@ -46,7 +46,8 @@ from components.pages import (  # noqa: E402
     analisis_factores,
     consolidacion_factores,
     visualizaciones,
-    nube_palabras
+    nube_palabras,
+    evaluacion_desempeno
 )
 
 # Importar páginas de modelos avanzados
@@ -225,13 +226,17 @@ def main() -> None:
             st.markdown("## 🔤 Nube de Palabras")
             nube_palabras.render()
 
+        # FASE 8: EVALUACIÓN
+        elif pagina == "17. Evaluación de Desempeño":
+            evaluacion_desempeno.render()
+
         # Manejo de separadores de fase (son solo títulos, mostrar página de inicio)
         elif pagina.startswith("📁 FASE"):
             st.info("👈 Selecciona una sección específica del menú lateral")
             st.markdown("""
             ### 🎯 Flujo de Análisis Organizado por Fases
 
-            El análisis está estructurado en **7 fases secuenciales**:
+            El análisis está estructurado en **8 fases secuenciales**:
 
             **📁 FASE 1: PREPARACIÓN**
             - Conexión a Google Drive
@@ -260,6 +265,9 @@ def main() -> None:
 
             **📁 FASE 7: VISUALIZACIÓN**
             - Visualizaciones y Nubes de Palabras
+
+            **📁 FASE 8: EVALUACIÓN**
+            - Evaluación de Desempeño del Pipeline Completo
             """)
 
         else:
