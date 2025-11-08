@@ -1,2 +1,2 @@
 """Módulo ner_analysis"""
-from .ner_analysis import *
+from .ner_analysis_ui import *

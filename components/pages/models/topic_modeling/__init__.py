@@ -1,2 +1,2 @@
 """Módulo topic_modeling"""
-from .topic_modeling_page import *
+from .topic_modeling_page_ui import *

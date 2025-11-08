@@ -1,2 +1,2 @@
 """Módulo classification"""
-from .classification_page import *
+from .classification_page_ui import *

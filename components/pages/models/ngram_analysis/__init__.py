@@ -1,2 +1,2 @@
 """Módulo ngram_analysis"""
-from .ngram_analysis_page import *
+from .ngram_analysis_page_ui import *
