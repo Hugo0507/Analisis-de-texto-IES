@@ -77,7 +77,7 @@ def render():
                         cache.save({
                             'labels': st.session_state.document_labels,
                             'results': st.session_state.classification_results
-                        })
+                        }, config={})
 
                         if st.session_state.document_labels:
                             st.success(f"✅ Cargadas {len(st.session_state.document_labels)} etiquetas desde Google Drive")
@@ -143,11 +143,11 @@ def save_classification_cache(config=None):
         'results': st.session_state.classification_results
     }
 
-    # Guardar con configuración si se proporciona
+    # Guardar con configuración (siempre pasar config, aunque sea vacío)
     if config:
         cache.save(data_to_save, config=config)
     else:
-        cache.save(data_to_save)
+        cache.save(data_to_save, config={})
 
 
 def render_labeling_tab():
