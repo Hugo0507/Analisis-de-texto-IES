@@ -5,6 +5,56 @@ Funciones auxiliares para la interfaz de usuario
 import streamlit as st
 
 
+def show_chart_interpretation(chart_type, title, interpretation, how_to_read=None, what_to_look_for=None):
+    """
+    Muestra una interpretación guiada de una gráfica
+
+    Args:
+        chart_type (str): Tipo de gráfica (ej: "Gráfico de Barras", "Diagrama de Venn")
+        title (str): Título de la interpretación
+        interpretation (str): Interpretación principal de la gráfica
+        how_to_read (str, optional): Cómo leer/interpretar la gráfica
+        what_to_look_for (list, optional): Lista de elementos clave a buscar en la gráfica
+    """
+    with st.expander(f"📊 Interpretación: {title}", expanded=False):
+        # Tipo de gráfica
+        st.markdown(f"**Tipo de visualización:** {chart_type}")
+        st.markdown("---")
+
+        # Interpretación principal
+        st.markdown("### 🎯 ¿Qué nos muestra esta gráfica?")
+        st.info(interpretation)
+
+        # Cómo leer (opcional)
+        if how_to_read:
+            st.markdown("### 📖 ¿Cómo leer esta gráfica?")
+            st.markdown(how_to_read)
+
+        # Qué buscar (opcional)
+        if what_to_look_for:
+            st.markdown("### 🔍 ¿Qué elementos clave observar?")
+            for i, item in enumerate(what_to_look_for, 1):
+                st.markdown(f"{i}. {item}")
+
+
+def show_quick_interpretation(interpretation_text, interpretation_type="info"):
+    """
+    Muestra una interpretación rápida debajo de una gráfica
+
+    Args:
+        interpretation_text (str): Texto de interpretación
+        interpretation_type (str): Tipo de mensaje ("info", "success", "warning", "error")
+    """
+    if interpretation_type == "info":
+        st.info(f"💡 **Interpretación:** {interpretation_text}")
+    elif interpretation_type == "success":
+        st.success(f"✅ **Interpretación:** {interpretation_text}")
+    elif interpretation_type == "warning":
+        st.warning(f"⚠️ **Interpretación:** {interpretation_text}")
+    elif interpretation_type == "error":
+        st.error(f"❌ **Interpretación:** {interpretation_text}")
+
+
 def show_section_header(title, description):
     """
     Muestra el encabezado estándar de una sección
