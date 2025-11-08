@@ -49,8 +49,9 @@ def render_sidebar():
                 "13. Clasificación de Textos",
                 "📁 FASE 6: ANÁLISIS INTEGRADO",
                 "14. Análisis de Factores",
+                "15. Consolidación de Factores",
                 "📁 FASE 7: VISUALIZACIÓN",
-                "15. Visualizaciones y Nubes de Palabras"
+                "16. Visualizaciones y Nubes de Palabras"
             ],
             label_visibility="collapsed"
         )
