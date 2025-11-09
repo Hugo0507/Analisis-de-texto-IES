@@ -10,6 +10,7 @@ import plotly.express as px
 from datetime import datetime
 from components.ui.helpers import (
     show_section_header,
+    show_chart_interpretation,
     get_connector,
     save_results_to_cache,
     save_pickle_to_drive
@@ -459,6 +460,31 @@ def render_lda_results(lda_results):
             )
             st.plotly_chart(fig, use_container_width=True)
 
+            show_chart_interpretation(
+                chart_type="Gráfico de Barras Horizontales (Pesos de Palabras)",
+                title="Palabras Más Representativas del Tema",
+                interpretation=(
+                    "Esta gráfica muestra las **palabras más características** de este tema específico, ordenadas por su "
+                    "**peso o importancia** en la definición del tema. En Topic Modeling, cada tema se representa como una "
+                    "distribución de probabilidad sobre el vocabulario completo. Las palabras con mayor peso son las que "
+                    "mejor definen y diferencian este tema de los demás. Estas palabras clave te permiten **interpretar** "
+                    "de qué trata el tema y asignarle una etiqueta semántica significativa."
+                ),
+                how_to_read=(
+                    "- El **eje Y** (vertical) lista las palabras más importantes del tema\n"
+                    "- El **eje X** (horizontal) muestra el peso/probabilidad de cada palabra en el tema\n"
+                    "- Las **palabras en la parte superior** tienen mayor peso y son más características\n"
+                    "- Los pesos suman aproximadamente 1.0 para todo el vocabulario del tema"
+                ),
+                what_to_look_for=[
+                    "**Coherencia semántica**: ¿Las palabras están relacionadas temáticamente?",
+                    "**Interpretabilidad**: ¿Puedes identificar claramente de qué trata el tema?",
+                    "**Palabras distintivas**: ¿Son palabras específicas del dominio o muy generales?",
+                    "**Balance de pesos**: ¿Hay palabras claramente dominantes o están más equilibradas?",
+                    "**Calidad del tema**: Temas con palabras inconexas pueden indicar necesidad de ajustar parámetros"
+                ]
+            )
+
     # Distribución de temas en documentos
     st.markdown("---")
     st.markdown("**📑 Distribución de Temas por Documento**")
@@ -478,6 +504,32 @@ def render_lda_results(lda_results):
         title='Distribución de Documentos por Tema (LDA)'
     )
     st.plotly_chart(fig_dist, use_container_width=True)
+
+    show_chart_interpretation(
+        chart_type="Gráfico de Barras Verticales",
+        title="Distribución de Documentos por Tema Dominante",
+        interpretation=(
+            "Esta gráfica muestra **cuántos documentos han sido asignados a cada tema** identificado por el "
+            "modelo LDA (Latent Dirichlet Allocation). Cada documento se clasifica en su 'tema dominante', "
+            "es decir, el tema con la mayor probabilidad de pertenencia. Esta visualización te permite "
+            "identificar si los temas están **balanceados** (similar cantidad de documentos por tema) o si "
+            "hay temas dominantes que agrupan la mayoría de documentos, lo cual indica la estructura temática "
+            "de tu corpus."
+        ),
+        how_to_read=(
+            "- El **eje X** (horizontal) muestra los IDs de los temas (Topic 0, Topic 1, etc.)\n"
+            "- El **eje Y** (vertical) indica el número de documentos asignados a ese tema\n"
+            "- Las **barras más altas** representan temas que agrupan más documentos\n"
+            "- Una distribución uniforme indica temas balanceados; grandes diferencias indican temas desiguales"
+        ),
+        what_to_look_for=[
+            "**Balance temático**: ¿Los documentos están distribuidos uniformemente o hay temas dominantes?",
+            "**Temas minoritarios**: ¿Hay temas con muy pocos documentos? Pueden ser subtemas especializados",
+            "**Tema dominante**: ¿Un tema agrupa significativamente más documentos que los demás?",
+            "**Cantidad adecuada**: ¿El número de temas (k) parece apropiado o debería aumentarse/reducirse?",
+            "**Coherencia**: Temas con muy pocos documentos (<5) pueden indicar ruido o necesidad de ajustar k"
+        ]
+    )
 
 
 def render_nmf_results(nmf_results):
