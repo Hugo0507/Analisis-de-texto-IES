@@ -7,7 +7,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime
-from components.ui.helpers import show_section_header, get_connector
+from components.ui.helpers import show_section_header, show_chart_interpretation, get_connector
 
 
 def render():
@@ -342,6 +342,31 @@ def render():
                     color_continuous_scale='Viridis'
                 )
                 st.plotly_chart(fig, use_container_width=True)
+
+                show_chart_interpretation(
+                    chart_type="Treemap (Mapa de Árbol Jerárquico)",
+                    title="Distribución Jerárquica de Categorías de Entidades",
+                    interpretation=(
+                        "Este treemap muestra la **distribución proporcional** de las diferentes categorías de "
+                        "entidades nombradas detectadas en el corpus. Cada rectángulo representa una categoría "
+                        "(Personas, Organizaciones, Ubicaciones, Fechas, etc.), y su **tamaño es proporcional** "
+                        "al número total de menciones de esa categoría. El **color** también refleja la intensidad, "
+                        "permitiendo identificar rápidamente qué tipos de entidades predominan en tu corpus de "
+                        "transformación digital."
+                    ),
+                    how_to_read=(
+                        "- Cada **rectángulo** representa una categoría de entidad (PERSON, ORG, GPE, etc.)\n"
+                        "- El **tamaño del rectángulo** es proporcional al número total de menciones\n"
+                        "- El **color** (escala Viridis) indica la intensidad: oscuro = muchas menciones, claro = pocas\n"
+                        "- Al pasar el cursor, verás el conteo exacto de menciones"
+                    ),
+                    what_to_look_for=[
+                        "**Categoría dominante**: ¿Qué tipo de entidad ocupa más espacio? (ej: ORG para instituciones)",
+                        "**Balance entre categorías**: ¿Hay diversidad o predomina un solo tipo?",
+                        "**Relevancia temática**: En transformación digital en IES, esperarías ver ORG (universidades), PERSON (investigadores), GPE (países)",
+                        "**Categorías inesperadas**: ¿Aparecen tipos de entidades sorprendentes para tu dominio?"
+                    ]
+                )
 
         st.markdown("---")
 
