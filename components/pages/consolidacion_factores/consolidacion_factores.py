@@ -27,7 +27,8 @@ def consolidate_tfidf_factors(tfidf_results: Dict[str, Any], top_n: int = 20) ->
     # Recopilar todos los términos con sus puntajes
     all_terms = []
     for doc_terms in tfidf_results['top_terms_per_doc'].values():
-        for term, score in doc_terms:
+        # doc_terms es un diccionario {término: puntaje}
+        for term, score in doc_terms.items():
             all_terms.append({'term': term, 'score': score})
 
     if not all_terms:
