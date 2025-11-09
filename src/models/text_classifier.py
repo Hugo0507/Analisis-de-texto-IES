@@ -285,8 +285,9 @@ class TextClassifier:
         # Métricas básicas
         accuracy = accuracy_score(self.y_test, y_pred)
 
-        # Para clasificación multiclase
-        avg_method = 'weighted' if len(self.label_names) > 2 else 'binary'
+        # Usar 'weighted' para ambos casos (binario y multiclase)
+        # Evita problemas con pos_label cuando las etiquetas son strings
+        avg_method = 'weighted'
 
         precision = precision_score(self.y_test, y_pred, average=avg_method, zero_division=0)
         recall = recall_score(self.y_test, y_pred, average=avg_method, zero_division=0)
