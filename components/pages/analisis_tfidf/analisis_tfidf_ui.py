@@ -7,6 +7,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from components.ui.helpers import (
     show_section_header,
+    show_chart_interpretation,
     get_connector,
     get_or_load_cached_results,
     save_results_to_cache,
@@ -352,6 +353,31 @@ def render():
             )
             st.plotly_chart(fig, use_container_width=True)
 
+            show_chart_interpretation(
+                chart_type="Gráfico de Barras Horizontales con Escala de Color",
+                title="Top 20 Términos Más Relevantes por TF-IDF",
+                interpretation=(
+                    "Esta gráfica muestra los **20 términos más relevantes** según su puntuación **TF-IDF** "
+                    "(Term Frequency-Inverse Document Frequency). A diferencia de la simple frecuencia, TF-IDF "
+                    "identifica palabras que son importantes en documentos específicos pero no tan comunes en todo "
+                    "el corpus. Los colores representan la intensidad del puntaje TF-IDF, permitiendo identificar "
+                    "**términos distintivos** que caracterizan mejor el contenido único de tus documentos."
+                ),
+                how_to_read=(
+                    "- El **eje Y** (vertical) lista los términos ordenados por relevancia TF-IDF\n"
+                    "- El **eje X** (horizontal) muestra el puntaje TF-IDF (promedio o máximo según configuración)\n"
+                    "- La **escala de color** (Plasma) indica la intensidad: colores más cálidos = mayor relevancia\n"
+                    "- Los **términos en la parte superior** tienen mayor puntuación TF-IDF global"
+                ),
+                what_to_look_for=[
+                    "**Términos distintivos**: Palabras con alto TF-IDF son características del dominio específico",
+                    "**Diferencia con BoW**: ¿Aparecen términos diferentes a los más frecuentes de Bolsa de Palabras?",
+                    "**Conceptos técnicos**: TF-IDF suele destacar terminología especializada sobre palabras generales",
+                    "**Distribución de puntajes**: ¿Hay términos claramente dominantes o están más equilibrados?",
+                    "**Relevancia temática**: ¿Los términos top reflejan los temas clave de transformación digital esperados?"
+                ]
+            )
+
         st.markdown("---")
 
         # Top terms per document
@@ -391,6 +417,30 @@ def render():
                     yaxis={'categoryorder': 'total ascending'}
                 )
                 st.plotly_chart(fig, use_container_width=True)
+
+                show_chart_interpretation(
+                    chart_type="Gráfico de Barras Horizontales (por Documento)",
+                    title="Top Términos Distintivos del Documento Seleccionado",
+                    interpretation=(
+                        "Esta gráfica muestra los **términos más característicos** de un documento específico "
+                        "según su puntaje TF-IDF. Estos son los términos que mejor definen el contenido único "
+                        "de este documento en comparación con el resto del corpus. Un puntaje TF-IDF alto indica "
+                        "que la palabra es **frecuente en este documento** pero **rara en los demás**, lo que la "
+                        "hace especialmente distintiva para caracterizar su contenido."
+                    ),
+                    how_to_read=(
+                        "- Selecciona un documento del menú desplegable para ver sus términos distintivos\n"
+                        "- El **eje Y** lista los términos más característicos del documento\n"
+                        "- El **eje X** muestra el puntaje TF-IDF específico para ese documento\n"
+                        "- Los términos se ordenan de mayor a menor relevancia"
+                    ),
+                    what_to_look_for=[
+                        "**Términos únicos**: ¿Qué palabras caracterizan exclusivamente este documento?",
+                        "**Tema del documento**: ¿Los términos top permiten identificar claramente el tema tratado?",
+                        "**Comparación entre documentos**: Al cambiar de documento, ¿aparecen términos completamente diferentes?",
+                        "**Especificidad**: Términos con TF-IDF muy alto son extremadamente característicos de ese documento"
+                    ]
+                )
 
         st.markdown("---")
 
@@ -445,6 +495,33 @@ def render():
             )
 
             st.plotly_chart(fig, use_container_width=True)
+
+            show_chart_interpretation(
+                chart_type="Mapa de Calor (Heatmap)",
+                title="Distribución de Términos Relevantes por Documento",
+                interpretation=(
+                    "Este mapa de calor muestra la **distribución de los términos más relevantes** a través "
+                    "de todos los documentos del corpus. Cada celda representa el puntaje TF-IDF de un término "
+                    "específico en un documento específico. Los colores más intensos (azul oscuro) indican mayor "
+                    "relevancia, mientras que colores claros (amarillo) indican baja o nula presencia. Esta visualización "
+                    "permite identificar rápidamente **patrones de términos** que aparecen juntos en ciertos documentos "
+                    "y detectar la especialización temática de cada documento."
+                ),
+                how_to_read=(
+                    "- El **eje X** (horizontal) lista los términos más relevantes del corpus\n"
+                    "- El **eje Y** (vertical) lista los documentos\n"
+                    "- El **color de cada celda** indica el puntaje TF-IDF: azul oscuro = alta relevancia, amarillo = baja\n"
+                    "- **Columnas verticales oscuras** indican términos presentes en muchos documentos\n"
+                    "- **Filas horizontales oscuras** indican documentos ricos en términos relevantes"
+                ),
+                what_to_look_for=[
+                    "**Agrupaciones de color**: ¿Hay conjuntos de términos que tienden a aparecer juntos en los mismos documentos?",
+                    "**Documentos especializados**: ¿Algunos documentos muestran alta intensidad solo en ciertos términos?",
+                    "**Términos omnipresentes**: ¿Hay columnas completamente oscuras (términos importantes en todos los documentos)?",
+                    "**Patrones temáticos**: Grupos de documentos con patrones similares pueden indicar subtemas dentro del corpus",
+                    "**Distribución desigual**: ¿La mayoría de celdas son claras (términos específicos) o hay mucha intensidad general?"
+                ]
+            )
 
         st.markdown("---")
 
