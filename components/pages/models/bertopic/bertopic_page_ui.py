@@ -9,6 +9,7 @@ import plotly.express as px
 from datetime import datetime
 from components.ui.helpers import (
     show_section_header,
+    show_chart_interpretation,
     get_connector,
     download_folder_from_drive,
     upload_folder_to_drive,
@@ -463,6 +464,18 @@ def render_results(results: dict):
     )
     st.plotly_chart(fig_dist, use_container_width=True)
 
+    show_chart_interpretation(
+        chart_type="Grafico de Barras Verticales",
+        title="Distribucion de Documentos por Tema",
+        interpretation="Esta grafica muestra cuantos documentos fueron asignados a cada tema identificado por BERTopic. BERTopic es un modelo de topic modeling basado en transformers (BERT) que descubre temas semanticamente coherentes usando embeddings densos y clustering. A diferencia de LDA/NMF que usan bag-of-words, BERTopic captura relaciones semanticas profundas entre palabras.",
+        what_to_look_for=[
+            "**Temas dominantes**: ¿Hay temas con muchos mas documentos que otros? Esto indica tematicas centrales en el corpus.",
+            "**Distribucion equilibrada vs. concentrada**: Una distribucion equilibrada sugiere diversidad tematica, mientras que concentracion indica especializacion del corpus.",
+            "**Temas con pocos documentos**: Pueden representar nichos especializados o ruido. Considera si son relevantes o deben fusionarse.",
+            "**Comparacion con otros modelos**: Compara con LDA/NMF para validar consenso tematico y evaluar complementariedad de metodos."
+        ]
+    )
+
 
 def render_visualizations(results: dict):
     """Renderiza visualizaciones de BERTopic"""
@@ -487,6 +500,18 @@ def render_visualizations(results: dict):
             if fig_topics:
                 st.plotly_chart(fig_topics, use_container_width=True)
                 st.caption("Cada punto representa un tema. La distancia indica similitud semántica.")
+
+                show_chart_interpretation(
+                    chart_type="Diagrama de Dispersion 2D (Reduccion Dimensional)",
+                    title="Distribucion de Temas en Espacio 2D",
+                    interpretation="Esta visualizacion proyecta los temas en un espacio bidimensional usando reduccion dimensional (UMAP/t-SNE). Cada punto representa un tema, y su posicion refleja la similitud semantica con otros temas basada en los embeddings de BERT. Los temas cercanos comparten vocabulario y contexto semantico similar.",
+                    what_to_look_for=[
+                        "**Clusters de temas**: ¿Se forman grupos de temas cercanos? Esto indica super-categorias tematicas o areas de conocimiento relacionadas.",
+                        "**Temas aislados**: Temas muy separados representan tematicas distintivas o especializadas sin mucha relacion con otros.",
+                        "**Densidad espacial**: Regiones densas indican diversidad de sub-temas dentro de un area, regiones dispersas muestran heterogeneidad tematica.",
+                        "**Tamano de puntos**: Si varia, puede indicar el numero de documentos por tema (validar temas grandes vs. pequenos)."
+                    ]
+                )
             else:
                 st.info("Visualización de temas no disponible.")
         except Exception as e:
@@ -503,6 +528,18 @@ def render_visualizations(results: dict):
             fig_bar = analyzer.visualize_barchart(top_n_topics=top_n)
             if fig_bar:
                 st.plotly_chart(fig_bar, use_container_width=True)
+
+                show_chart_interpretation(
+                    chart_type="Grafico de Barras Agrupadas (Top Temas)",
+                    title="Top Temas por Tamano",
+                    interpretation="Este grafico muestra los temas mas importantes ordenados por numero de documentos asignados. Cada tema se representa con sus palabras clave mas representativas, permitiendo una comprension rapida de las tematicas principales del corpus. La longitud de las barras indica la prevalencia de cada tema.",
+                    what_to_look_for=[
+                        "**Palabras clave por tema**: ¿Las palabras clave tienen coherencia semantica? Temas coherentes indican buena calidad del modelado.",
+                        "**Diferencias de tamano**: ¿Hay un tema dominante o varios temas de tamano similar? Esto refleja la estructura tematica del corpus.",
+                        "**Interpretabilidad**: ¿Puedes asignar un nombre significativo a cada tema basandote en sus palabras clave?",
+                        "**Ajuste del top_n**: Experimenta con diferentes valores para ver mas o menos temas y encontrar el nivel de granularidad optimo."
+                    ]
+                )
             else:
                 st.info("Gráfico de barras no disponible.")
         except Exception as e:
@@ -518,6 +555,18 @@ def render_visualizations(results: dict):
             if fig_heat:
                 st.plotly_chart(fig_heat, use_container_width=True)
                 st.caption("Colores más claros indican mayor similitud entre temas.")
+
+                show_chart_interpretation(
+                    chart_type="Heatmap (Mapa de Calor de Similitud)",
+                    title="Similitud entre Temas",
+                    interpretation="Este heatmap muestra la similitud coseno entre pares de temas basada en sus representaciones vectoriales (embeddings). Colores mas claros/calidos indican mayor similitud semantica entre temas, mientras que colores oscuros/frios muestran temas disimiles. La diagonal siempre es maxima (un tema consigo mismo).",
+                    what_to_look_for=[
+                        "**Bloques de colores claros**: Grupos de temas muy similares que podrian fusionarse para reducir redundancia o representan sub-categorias de un tema mayor.",
+                        "**Temas disimiles**: Filas/columnas predominantemente oscuras indican temas unicos y distintivos sin relacion con otros.",
+                        "**Patron de similitud**: ¿La similitud sigue una estructura (ej. temas contiguos son similares)? Esto sugiere una jerarquia tematica.",
+                        "**Validacion de clustering**: Compara con la visualizacion 2D para validar coherencia espacial y semantica de los agrupamientos."
+                    ]
+                )
             else:
                 st.info("Heatmap no disponible.")
         except Exception as e:
@@ -586,6 +635,18 @@ def render_exploration(results: dict):
                 title='Proporción de Documentos por Tema'
             )
             st.plotly_chart(fig_sizes, use_container_width=True)
+
+        show_chart_interpretation(
+            chart_type="Grafico de Pastel (Pie Chart)",
+            title="Proporcion de Documentos por Tema",
+            interpretation="Este grafico de pastel muestra la proporcion relativa de documentos asignados a cada tema. Cada segmento representa un tema, y su tamano es proporcional al numero de documentos que contiene. Permite visualizar rapidamente cuales temas dominan el corpus y cuales son minoritarios.",
+            what_to_look_for=[
+                "**Tema dominante**: ¿Hay un segmento que ocupa mas de la mitad del circulo? Esto indica un tema central que abarca la mayoria del corpus.",
+                "**Distribucion balanceada**: Segmentos de tamano similar sugieren diversidad tematica equilibrada sin dominancia de un solo tema.",
+                "**Temas pequenos**: Segmentos muy pequenos (< 5%) pueden ser temas especializados, ruido o candidatos para fusion con temas relacionados.",
+                "**Comparacion con graficas anteriores**: Valida coherencia con el grafico de barras de distribucion y con los tamanos en la visualizacion 2D."
+            ]
+        )
     else:
         st.warning("⚠️ No hay datos de temas disponibles para mostrar el grafico de proporcion.")
 
