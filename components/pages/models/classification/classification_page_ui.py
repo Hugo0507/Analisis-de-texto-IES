@@ -1124,7 +1124,45 @@ def render_unlabeled_prediction(model_key):
 
                 st.success("✓ Predicciones completadas")
 
+                # Mostrar tabla de resultados
                 st.dataframe(results_df, use_container_width=True)
+
+                # Visualización: Gráfico de barras de distribución
+                st.markdown("---")
+                st.markdown("### 📊 Distribución de Predicciones")
+
+                # Contar predicciones por clase
+                prediction_counts = results_df['Predicción'].value_counts().reset_index()
+                prediction_counts.columns = ['Clase', 'Cantidad']
+
+                # Crear gráfico de barras
+                fig = px.bar(
+                    prediction_counts,
+                    x='Clase',
+                    y='Cantidad',
+                    text='Cantidad',
+                    title='Distribución de Documentos Clasificados',
+                    labels={'Cantidad': 'Número de Documentos', 'Clase': 'Categoría'},
+                    color='Clase',
+                    color_discrete_sequence=px.colors.qualitative.Set2
+                )
+
+                fig.update_traces(texttemplate='%{text}', textposition='outside')
+                fig.update_layout(showlegend=False, height=400)
+
+                st.plotly_chart(fig, use_container_width=True)
+
+                show_chart_interpretation(
+                    chart_type="Grafico de Barras Verticales",
+                    title="Distribucion de Predicciones del Clasificador",
+                    interpretation="Esta grafica muestra como el modelo clasifico los documentos sin etiquetar entre las categorias disponibles. Cada barra representa una clase (ej. grupo_a, grupo_b) y su altura indica cuantos documentos fueron asignados a esa categoria por el clasificador entrenado.",
+                    what_to_look_for=[
+                        "**Distribucion equilibrada**: ¿Las clases tienen cantidades similares de documentos? Esto podria indicar que ambos grupos estan igualmente representados en los datos sin etiquetar.",
+                        "**Clase dominante**: Si una clase tiene muchos mas documentos, podria sugerir que esa categoria es mas comun, o que el modelo tiene sesgo hacia ella.",
+                        "**Validacion necesaria**: Estas son predicciones automaticas. Considera revisar manualmente algunos documentos de cada clase para validar la calidad de las predicciones.",
+                        "**Comparacion con datos de entrenamiento**: Compara esta distribucion con la distribucion original de etiquetas de entrenamiento para detectar posibles inconsistencias."
+                    ]
+                )
 
                 # Opción de guardar predicciones como etiquetas
                 if st.button("💾 Guardar Predicciones como Etiquetas"):
