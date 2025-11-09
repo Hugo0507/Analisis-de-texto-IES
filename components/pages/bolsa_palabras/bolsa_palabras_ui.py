@@ -7,6 +7,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from components.ui.helpers import (
     show_section_header,
+    show_chart_interpretation,
     get_connector,
     get_or_load_cached_results,
     save_results_to_cache,
@@ -286,6 +287,31 @@ def render():
                 yaxis={'categoryorder': 'total ascending'}
             )
             st.plotly_chart(fig, use_container_width=True)
+
+            show_chart_interpretation(
+                chart_type="Gráfico de Barras Horizontales",
+                title="Top 20 Términos más Frecuentes",
+                interpretation=(
+                    "Esta gráfica muestra los **20 términos más frecuentes** en todo el corpus después del preprocesamiento. "
+                    "La **Bolsa de Palabras (BoW)** es una representación simple pero fundamental que cuenta cuántas veces "
+                    "aparece cada palabra en el conjunto de documentos, ignorando el orden y la gramática. "
+                    "Esta visualización te ayuda a identificar los conceptos más recurrentes en tu corpus de "
+                    "transformación digital en IES."
+                ),
+                how_to_read=(
+                    "- El **eje Y** (vertical) lista los términos ordenados por frecuencia\n"
+                    "- El **eje X** (horizontal) muestra el número total de apariciones\n"
+                    "- Los **términos en la parte superior** son los más frecuentes\n"
+                    "- Las **barras más largas** indican mayor presencia en el corpus"
+                ),
+                what_to_look_for=[
+                    "**Términos dominantes**: ¿Qué palabras aparecen con mucha más frecuencia que las demás?",
+                    "**Conceptos clave**: ¿Los términos reflejan los temas centrales de transformación digital esperados?",
+                    "**Palabras genéricas vs específicas**: ¿Predominan términos generales o conceptos específicos del dominio?",
+                    "**Stopwords residuales**: ¿Quedaron palabras muy comunes que deberían haberse filtrado en preprocesamiento?",
+                    "**Distribución de frecuencias**: ¿Hay una caída pronunciada o gradual entre los términos más y menos frecuentes?"
+                ]
+            )
 
         st.markdown("---")
 
