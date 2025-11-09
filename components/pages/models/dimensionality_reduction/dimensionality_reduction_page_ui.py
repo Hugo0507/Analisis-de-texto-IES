@@ -15,7 +15,7 @@ import pickle
 import os
 from pathlib import Path
 
-from components.ui.helpers import get_or_load_cached_results
+from components.ui.helpers import get_or_load_cached_results, show_chart_interpretation
 from src.models.dimensionality_reduction import DimensionalityReducer
 
 
@@ -422,6 +422,18 @@ def render_preparation_tab():
             fig.update_yaxes(autorange="reversed")
             st.plotly_chart(fig, use_container_width=True)
 
+            show_chart_interpretation(
+                chart_type="Grafico de Barras Horizontales (Varianza de Features)",
+                title="Top 20 Features por Varianza",
+                interpretation="Esta grafica muestra las 20 caracteristicas (terminos) con mayor varianza en el conjunto de datos. La varianza mide cuanto varian los valores de cada feature entre documentos. Features con alta varianza contienen mas informacion discriminante y son mas importantes para reduccion dimensional, mientras que features con baja varianza (valores constantes) aportan poco.",
+                what_to_look_for=[
+                    "**Distribucion de varianzas**: ¿Hay unas pocas features con varianza mucho mayor que otras? Esto indica que la informacion esta concentrada en pocos terminos.",
+                    "**Features dominantes**: ¿Que terminos tienen mayor varianza? Estos seran los mas influyentes en PCA y otras tecnicas de reduccion.",
+                    "**Diferencias de escala**: Grandes diferencias de varianza pueden requerir normalizacion/estandarizacion antes de reduccion dimensional.",
+                    "**Filtrado de features**: Features con varianza muy baja (< umbral) pueden eliminarse sin perder informacion significativa."
+                ]
+            )
+
     st.markdown("---")
 
     # Botón para preparar datos
@@ -751,6 +763,18 @@ def render_pca_tab():
 
             st.plotly_chart(fig, use_container_width=True)
 
+        show_chart_interpretation(
+            chart_type="Grafico de Linea con Marcadores (Curva de Codo - Elbow Curve)",
+            title="Varianza Explicada Acumulada (PCA)",
+            interpretation="Este grafico muestra la varianza acumulada explicada conforme se agregan mas componentes principales. PCA transforma los datos a un nuevo sistema de coordenadas donde cada componente captura la maxima varianza restante. La curva muestra cuantos componentes se necesitan para retener un porcentaje objetivo de informacion (tipicamente 90-95%). La linea roja marca el 90%.",
+            what_to_look_for=[
+                "**Punto de codo (elbow)**: ¿Donde la curva se aplana? Ese punto indica el numero optimo de componentes que capturan la mayor parte de la varianza sin redundancia.",
+                "**Umbral del 90%**: ¿Cuantos componentes se necesitan para explicar 90% de varianza? Menos componentes es mejor (mayor reduccion dimensional).",
+                "**Primera componente**: ¿PC1 captura mucha varianza (>30-40%)? Esto indica que hay una direccion dominante de variabilidad en los datos.",
+                "**Curva suave vs empinada**: Curva empinada inicial y luego plana indica que pocos componentes capturan casi toda la informacion (ideal para reduccion)."
+            ]
+        )
+
         # Dimensionalidad óptima
         if 'optimal_dimensions' in results:
             st.markdown("---")
@@ -852,6 +876,18 @@ def render_pca_tab():
             )
 
             st.plotly_chart(fig, use_container_width=True)
+
+            show_chart_interpretation(
+                chart_type="Diagrama de Dispersion 2D (Proyeccion PCA)",
+                title="Proyeccion PCA en 2 Dimensiones",
+                interpretation="Esta visualizacion proyecta los documentos en las dos primeras componentes principales (PC1 y PC2), que capturan la mayor varianza de los datos. Cada punto representa un documento en el espacio reducido. PCA es una transformacion lineal que maximiza la varianza, permitiendo visualizar similitudes y agrupaciones en los datos de alta dimension. El color indica la posicion en PC1.",
+                what_to_look_for=[
+                    "**Clusters de documentos**: ¿Se forman grupos visibles? Esto indica que documentos similares se proyectan cerca en el espacio PCA.",
+                    "**Distribucion espacial**: Documentos dispersos indican alta diversidad tematica, mientras que concentracion sugiere homogeneidad.",
+                    "**Outliers**: Puntos muy alejados pueden ser documentos atipicos o de temas muy distintos al resto del corpus.",
+                    "**Porcentaje de varianza**: Observa cuanta varianza explican PC1+PC2 (en los ejes). Si es >50%, esta proyeccion 2D es muy representativa."
+                ]
+            )
 
         if results['n_components'] >= 3:
             # 3D plot
@@ -1000,6 +1036,18 @@ def render_tsne_tab():
             )
 
             st.plotly_chart(fig, use_container_width=True)
+
+            show_chart_interpretation(
+                chart_type="Diagrama de Dispersion 2D (t-SNE)",
+                title="Proyeccion t-SNE en 2 Dimensiones",
+                interpretation="t-SNE (t-Distributed Stochastic Neighbor Embedding) es una tecnica no-lineal de reduccion dimensional especialmente efectiva para visualizacion. A diferencia de PCA, t-SNE preserva similitudes locales (vecindad) en lugar de varianza global, revelando clusters y estructuras complejas. Cada punto es un documento, y documentos similares aparecen cerca. El parametro perplexity controla cuantos vecinos considera (5-50).",
+                what_to_look_for=[
+                    "**Clusters bien definidos**: t-SNE es excelente para revelar agrupaciones naturales. ¿Se forman clusters compactos y separados?",
+                    "**Distancias relativas**: Solo distancias locales (dentro de clusters) son significativas. Distancias entre clusters distantes NO son interpretables en t-SNE.",
+                    "**Efecto del perplexity**: Perplexity bajo (5-15) enfatiza estructura local, perplexity alto (30-50) enfatiza estructura global. Experimenta para encontrar el mejor.",
+                    "**Comparacion con PCA**: ¿t-SNE revela clusters que PCA no muestra? t-SNE puede descubrir estructuras no-lineales ocultas."
+                ]
+            )
 
         else:  # 3D
             fig = go.Figure(data=[go.Scatter3d(
@@ -1184,6 +1232,18 @@ def render_umap_tab():
             )
 
             st.plotly_chart(fig, use_container_width=True)
+
+            show_chart_interpretation(
+                chart_type="Diagrama de Dispersion 2D (UMAP)",
+                title="Proyeccion UMAP en 2 Dimensiones",
+                interpretation="UMAP (Uniform Manifold Approximation and Projection) es una tecnica moderna de reduccion dimensional no-lineal similar a t-SNE pero mas rapida y escalable. UMAP preserva tanto estructura local como global mejor que t-SNE. Parametros clave: n_neighbors (cuantos vecinos considera, 5-50) controla local vs global, min_dist (0.0-0.99) controla compactacion de clusters.",
+                what_to_look_for=[
+                    "**Clusters y estructura global**: UMAP preserva mejor la estructura global que t-SNE. ¿La disposicion de clusters refleja relaciones reales?",
+                    "**Compactacion de clusters**: min_dist bajo (0.0-0.1) produce clusters densos, min_dist alto (0.5-0.99) produce distribucion mas uniforme.",
+                    "**Efecto de n_neighbors**: n_neighbors bajo enfatiza estructura local fina, n_neighbors alto revela estructura global (similar a perplexity en t-SNE).",
+                    "**Ventajas vs t-SNE**: UMAP es mas rapido, mas reproducible (menos aleatorio), y mejor para grandes datasets. Ideal para embeddings de ML."
+                ]
+            )
 
         else:  # 3D
             fig = go.Figure(data=[go.Scatter3d(
