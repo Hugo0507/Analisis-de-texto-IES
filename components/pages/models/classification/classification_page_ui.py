@@ -55,9 +55,8 @@ def render():
                 # Guardar config en session_state para validar después
                 if 'classification_last_config' not in st.session_state:
                     # Intentar obtener config del caché
-                    metadata = cache.get_metadata()
-                    if metadata and 'config' in metadata:
-                        st.session_state.classification_last_config = metadata['config']
+                    if cached_data and 'config' in cached_data:
+                        st.session_state.classification_last_config = cached_data['config']
         else:
             # Si no hay caché local, intentar Drive
             from components.ui.helpers import get_connector, load_results_from_cache
