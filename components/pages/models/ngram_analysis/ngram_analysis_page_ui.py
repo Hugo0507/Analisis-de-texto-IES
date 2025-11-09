@@ -10,6 +10,7 @@ import plotly.express as px
 from datetime import datetime
 from components.ui.helpers import (
     show_section_header,
+    show_chart_interpretation,
     get_connector,
     save_results_to_cache,
     save_csv_to_drive
@@ -428,6 +429,31 @@ def render_ngram_results(ngram_data: dict, title: str, icon: str):
     )
     fig.update_layout(height=800, yaxis={'categoryorder': 'total ascending'})
     st.plotly_chart(fig, use_container_width=True)
+
+    show_chart_interpretation(
+        chart_type="Gráfico de Barras Horizontales (N-gramas)",
+        title=f"Top 30 {title} más Frecuentes",
+        interpretation=(
+            f"Esta gráfica muestra los **{title} más frecuentes** en el corpus completo. Los N-gramas son secuencias "
+            f"de palabras consecutivas que aparecen juntas (bigramas = 2 palabras, trigramas = 3 palabras, etc.). "
+            "A diferencia de palabras individuales, los N-gramas capturan **expresiones multi-palabra** y **contexto léxico**, "
+            "permitiendo identificar frases comunes, terminología compuesta, y patrones lingüísticos característicos de tu "
+            "dominio de transformación digital en IES."
+        ),
+        how_to_read=(
+            "- El **eje Y** (vertical) lista los N-gramas ordenados por frecuencia\n"
+            "- El **eje X** (horizontal) muestra el número de veces que aparece cada N-grama\n"
+            "- Los **N-gramas en la parte superior** son los más frecuentes\n"
+            "- Observa si son frases significativas o combinaciones triviales"
+        ),
+        what_to_look_for=[
+            "**Expresiones multi-palabra**: ¿Aparecen términos compuestos significativos? (ej: 'digital transformation', 'higher education')",
+            "**Frases técnicas**: ¿Los N-gramas capturan terminología especializada del dominio?",
+            "**Combinaciones triviales**: ¿Hay combinaciones poco informativas que deberían filtrarse?",
+            "**Patrones lingüísticos**: ¿Se repiten estructuras sintácticas específicas?",
+            "**Comparación con unigramas**: ¿Los bigramas/trigramas añaden información nueva vs palabras individuales?"
+        ]
+    )
 
     # Distribución de frecuencias
     st.markdown("---")
