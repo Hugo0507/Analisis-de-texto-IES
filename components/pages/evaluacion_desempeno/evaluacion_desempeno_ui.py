@@ -7,7 +7,7 @@ import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
-from components.ui.helpers import show_section_header
+from components.ui.helpers import show_section_header, show_chart_interpretation
 from . import evaluacion_desempeno as logic
 import json
 
@@ -86,6 +86,18 @@ def render_pipeline_completeness():
 
     st.plotly_chart(fig, use_container_width=True)
 
+    show_chart_interpretation(
+        chart_type="Grafico de Barras Horizontales con Escala de Color",
+        title="Completitud del Pipeline por Fase",
+        interpretation="Esta grafica muestra el porcentaje de completitud de cada fase del pipeline de analisis de texto. El color varia de rojo (baja completitud) a verde (alta completitud), permitiendo identificar rapidamente que etapas del flujo estan completas y cuales requieren atencion. Cada fase tiene tareas asociadas que contribuyen al porcentaje total.",
+        what_to_look_for=[
+            "**Fases completas (100%)**: Verde indica que todas las tareas de esa fase estan ejecutadas. Fases completas son solidas para la tesis.",
+            "**Fases parciales (50-99%)**: Amarillo indica progreso pero con tareas pendientes. Identifica que falta para completarlas.",
+            "**Fases incompletas (<50%)**: Rojo indica fases con muchas tareas pendientes que requieren priorizacion inmediata.",
+            "**Completitud general**: ¿Que porcentaje del pipeline esta completo? Esto indica la madurez global del sistema de analisis."
+        ]
+    )
+
     # Detalle de tareas por fase
     st.markdown("### Detalle de Tareas por Fase")
 
@@ -157,6 +169,18 @@ def render_data_quality():
             ))
             st.plotly_chart(fig, use_container_width=True)
 
+            show_chart_interpretation(
+                chart_type="Indicador de Gauge (Medidor)",
+                title="Tasa de Deteccion de Idiomas",
+                interpretation="Este medidor muestra el porcentaje de documentos en los que se detecto exitosamente el idioma. Una tasa alta (>95%) indica que el sistema de deteccion de idiomas funciona correctamente. La linea roja marca el umbral objetivo del 95%. El delta muestra la diferencia con respecto a este objetivo.",
+                what_to_look_for=[
+                    "**Zona verde (>90%)**: Tasa excelente de deteccion. La mayoria de documentos tienen idioma identificado correctamente.",
+                    "**Zona amarilla (70-90%)**: Tasa aceptable pero con margen de mejora. Revisar documentos sin deteccion.",
+                    "**Zona roja (<70%)**: Tasa problematica que requiere atencion. Puede indicar problemas con la calidad de los PDFs o configuracion del detector.",
+                    "**Delta vs 95%**: ¿Estas por encima o debajo del objetivo? Un delta positivo (verde) es ideal."
+                ]
+            )
+
         with col2:
             # Gráfico de conversión PDF
             conv_data = quality['pdf_conversion']
@@ -180,6 +204,18 @@ def render_data_quality():
                 }
             ))
             st.plotly_chart(fig, use_container_width=True)
+
+            show_chart_interpretation(
+                chart_type="Indicador de Gauge (Medidor)",
+                title="Tasa de Conversion PDF a TXT",
+                interpretation="Este medidor muestra el porcentaje de archivos PDF que se convirtieron exitosamente a texto plano (TXT). La conversion PDF→TXT es critica para el analisis, ya que el texto debe extraerse correctamente. El umbral objetivo es 90% (linea roja). Tasas bajas pueden indicar PDFs corruptos, escaneados sin OCR, o protegidos.",
+                what_to_look_for=[
+                    "**Zona verde (>90%)**: Conversion excelente. La mayoria de PDFs se procesan correctamente y el texto es extraible.",
+                    "**Zona amarilla (70-90%)**: Conversion aceptable pero con perdidas. Identifica archivos problematicos para revision manual.",
+                    "**Zona roja (<70%)**: Conversion deficiente que compromete el analisis. Revisa calidad de PDFs o usa herramientas OCR para documentos escaneados.",
+                    "**Delta vs 90%**: Un delta positivo indica que superas el objetivo minimo de calidad de conversion."
+                ]
+            )
 
 
 def render_model_performance():
@@ -250,6 +286,18 @@ def render_model_performance():
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+        show_chart_interpretation(
+            chart_type="Grafico de Radar (Spider Chart / Polar Plot)",
+            title="Comparacion Multi-dimensional de Modelos",
+            interpretation="Este grafico de radar compara multiples modelos de clasificacion (Naive Bayes, SVM, KNN) en 5 dimensiones de desempeno simultaneamente: Accuracy, Precision, Recall, F1-Score y CV Mean. Cada modelo es una linea/area de color. Formas mas grandes (areas que cubren mas del centro) indican mejor desempeno global. Permite identificar fortalezas y debilidades de cada modelo.",
+            what_to_look_for=[
+                "**Modelo dominante**: ¿Hay un modelo cuya forma abarca consistentemente areas mas grandes en todas las metricas? Ese es el mejor globalmente.",
+                "**Especializacion**: ¿Algun modelo sobresale en metricas especificas (ej. Precision alta pero Recall bajo)? Esto indica trade-offs utiles segun el caso de uso.",
+                "**Balance**: Modelos con formas regulares (pentagon equilibrado) tienen desempeno balanceado. Formas irregulares muestran desbalance entre metricas.",
+                "**CV Mean**: Esta metrica indica estabilidad del modelo. Alto CV Mean sugiere consistencia en cross-validation (menos overfitting)."
+            ]
+        )
 
     # Topic Modeling
     if 'topic_modeling' in model_perf:
@@ -351,6 +399,18 @@ def render_technique_consistency():
 
             st.plotly_chart(fig, use_container_width=True)
 
+            show_chart_interpretation(
+                chart_type="Diagrama de Venn Conceptual",
+                title="Overlap de Terminos: TF-IDF vs Topics",
+                interpretation="Este diagrama de Venn muestra la interseccion entre los terminos mas importantes identificados por TF-IDF y los terminos representativos de Topics (LDA/NMF/BERTopic). La zona de overlap (verde) indica consenso entre ambos metodos. TF-IDF identifica terminos estadisticamente relevantes, mientras que Topic Modeling agrupa terminos semanticamente. Alto overlap valida que ambos metodos convergen en terminos clave.",
+                what_to_look_for=[
+                    "**Alto overlap (>50%)**: Fuerte consenso entre metodos. Los terminos importantes son consistentes desde multiples perspectivas (estadistica y semantica).",
+                    "**Terminos TF-IDF unicos**: Palabras relevantes por frecuencia que no aparecen en topics. Pueden ser terminos generales o transversales.",
+                    "**Terminos Topics unicos**: Palabras clave de temas especificos que no destacan en TF-IDF. Representan vocabulario semantico especializado.",
+                    "**Validacion cruzada**: Overlap alto aumenta confianza en los resultados. Terminos en la interseccion son los mas robustos para la tesis."
+                ]
+            )
+
         with col2:
             st.metric("Términos TF-IDF", metrics['tfidf_unique_terms'])
             st.metric("Términos Topics", metrics['topic_unique_terms'])
@@ -427,6 +487,19 @@ def render_global_score():
 
     fig.update_layout(height=400)
     st.plotly_chart(fig, use_container_width=True)
+
+    show_chart_interpretation(
+        chart_type="Indicador de Gauge Principal (Score Global)",
+        title="Score Global de Desempeno del Sistema",
+        interpretation="Este medidor principal resume el desempeno global de toda la estrategia computacional en un score unico (0-100). Combina metricas de completitud del pipeline, calidad de datos, desempeno de modelos y consistencia entre tecnicas. Es el KPI (Key Performance Indicator) mas importante del sistema. Colores: rojo (<40), amarillo (40-60), verde claro (60-80), verde intenso (80-100).",
+        what_to_look_for=[
+            "**Excelente (80-100)**: Sistema maduro y robusto. Todas las fases funcionan bien, modelos tienen buen desempeno y hay validacion cruzada solida.",
+            "**Bueno (60-80)**: Sistema funcional con margen de mejora. Mayoria de componentes operativos pero algunos requieren optimizacion.",
+            "**Regular (40-60)**: Sistema en desarrollo con deficiencias. Multiples areas necesitan atencion antes de considerarse production-ready.",
+            "**Deficiente (<40)**: Sistema incompleto o con problemas criticos. Revision fundamental necesaria en pipeline, datos o modelos.",
+            "**Delta vs 80%**: Un delta positivo (verde) indica que superas el umbral de calidad para la tesis. Delta negativo (rojo) muestra areas de mejora prioritarias."
+        ]
+    )
 
     # Interpretación del score
     if global_score >= 80:
