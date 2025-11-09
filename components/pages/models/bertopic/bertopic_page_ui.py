@@ -572,19 +572,22 @@ def render_exploration(results: dict):
         for tid, size in sorted(topic_sizes.items(), key=lambda x: x[1], reverse=True)
     ])
 
-    col1, col2 = st.columns([1, 2])
+    if not sizes_df.empty and 'Tema' in sizes_df.columns and 'Tamaño' in sizes_df.columns:
+        col1, col2 = st.columns([1, 2])
 
-    with col1:
-        st.dataframe(sizes_df, use_container_width=True)
+        with col1:
+            st.dataframe(sizes_df, use_container_width=True)
 
-    with col2:
-        fig_sizes = px.pie(
-            sizes_df,
-            values='Tamaño',
-            names='Tema',
-            title='Proporción de Documentos por Tema'
-        )
-        st.plotly_chart(fig_sizes, use_container_width=True)
+        with col2:
+            fig_sizes = px.pie(
+                sizes_df,
+                values='Tamaño',
+                names='Tema',
+                title='Proporción de Documentos por Tema'
+            )
+            st.plotly_chart(fig_sizes, use_container_width=True)
+    else:
+        st.warning("⚠️ No hay datos de temas disponibles para mostrar el grafico de proporcion.")
 
 
 def render_persistence_tab(results: dict):
