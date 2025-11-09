@@ -12,7 +12,7 @@ from datetime import datetime
 import json
 import io
 
-from components.ui.helpers import get_or_load_cached_results, get_connector
+from components.ui.helpers import get_or_load_cached_results, get_connector, show_chart_interpretation
 from src.models.text_classifier import TextClassifier
 
 
@@ -513,6 +513,18 @@ def render_configuration_tab():
             )
             st.plotly_chart(fig, use_container_width=True)
 
+        show_chart_interpretation(
+            chart_type="Grafico de Barras Verticales",
+            title="Documentos por Categoria",
+            interpretation="Esta grafica muestra la distribucion de documentos etiquetados en cada categoria para el entrenamiento del modelo de clasificacion supervisada. Un dataset balanceado (categorias con cantidades similares) generalmente produce mejores modelos, mientras que datasets desbalanceados pueden sesgar el modelo hacia la clase mayoritaria.",
+            what_to_look_for=[
+                "**Balanceo de clases**: ¿Las categorias tienen cantidades similares de documentos? El desbalanceo puede afectar el desempeno del clasificador.",
+                "**Categorias minoritarias**: Clases con muy pocos documentos (< 10-20) pueden no tener suficientes ejemplos para entrenamiento efectivo.",
+                "**Categoria dominante**: Si una categoria tiene 3-4x mas documentos que otras, el modelo puede estar sesgado hacia ella.",
+                "**Suficiencia de datos**: ¿Hay suficientes documentos en total? Para clasificacion de texto, se recomiendan al menos 50-100 ejemplos por clase."
+            ]
+        )
+
     st.markdown("---")
 
     # Configuración de entrenamiento
@@ -819,6 +831,18 @@ def render_model_results_tab(model_key, model_name):
 
         st.plotly_chart(fig, use_container_width=True)
 
+        show_chart_interpretation(
+            chart_type="Heatmap (Matriz de Confusion)",
+            title="Matriz de Confusion",
+            interpretation="La matriz de confusion muestra el desempeno detallado del clasificador comparando las predicciones con las etiquetas reales. Cada celda [i,j] indica cuantos documentos de la clase i fueron clasificados como clase j. La diagonal principal representa predicciones correctas, mientras que valores fuera de la diagonal son errores de clasificacion.",
+            what_to_look_for=[
+                "**Diagonal dominante**: Valores altos en la diagonal y bajos fuera de ella indican buen desempeno del modelo.",
+                "**Confusiones sistematicas**: ¿Hay pares de clases que se confunden frecuentemente? Esto sugiere similitud semantica o necesidad de mas features discriminantes.",
+                "**Clases problematicas**: Filas con muchos errores indican categorias dificiles de predecir (analizar por que: pocos ejemplos, ambiguedad, etc.).",
+                "**Precision vs Recall por clase**: Analiza errores de falsos positivos (columna) vs falsos negativos (fila) para cada categoria."
+            ]
+        )
+
     # Métricas por clase
     if 'classification_report' in results:
         st.markdown("---")
@@ -859,6 +883,18 @@ def render_model_results_tab(model_key, model_name):
                 fig.update_yaxes(autorange="reversed")
 
                 st.plotly_chart(fig, use_container_width=True)
+
+                show_chart_interpretation(
+                    chart_type="Grafico de Barras Horizontales (Feature Importance)",
+                    title=f"Top 20 Features para {class_name}",
+                    interpretation="Este grafico muestra las caracteristicas (palabras/terminos) mas importantes para identificar documentos de esta categoria. La importancia refleja cuanto contribuye cada termino a la decision del clasificador. Features con alta importancia son discriminantes clave que el modelo usa para predecir esta clase.",
+                    what_to_look_for=[
+                        "**Coherencia semantica**: ¿Los terminos mas importantes tienen sentido para esta categoria? Features coherentes validan que el modelo aprende patrones legitimos.",
+                        "**Especificidad**: ¿Son terminos especificos de la categoria o genericos? Terminos demasiado genericos pueden indicar overfitting o falta de discriminacion.",
+                        "**Comparacion entre clases**: Compara features importantes de diferentes categorias para identificar vocabulario distintivo vs compartido.",
+                        "**Features sorprendentes**: Terminos inesperados pueden revelar sesgos en los datos o patrones ocultos interesantes."
+                    ]
+                )
 
 
 def render_comparison_tab():
@@ -935,6 +971,18 @@ def render_comparison_tab():
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+        show_chart_interpretation(
+            chart_type="Grafico de Barras Agrupadas (Comparacion de Modelos)",
+            title="Comparacion de Modelos de Clasificacion",
+            interpretation="Este grafico compara el desempeno de diferentes algoritmos de clasificacion (Naive Bayes, SVM, KNN, etc.) usando multiples metricas (Accuracy, Precision, Recall, F1-Score). Cada grupo de barras representa un modelo, y los colores distinguen las metricas evaluadas. Permite identificar rapidamente cual modelo tiene mejor desempeno global o en metricas especificas.",
+            what_to_look_for=[
+                "**Mejor modelo global**: ¿Hay un modelo que supera consistentemente a otros en todas las metricas? Este seria el candidato ideal.",
+                "**Trade-offs**: ¿Algun modelo tiene alta Precision pero bajo Recall o viceversa? Esto indica especializacion que puede ser util segun el objetivo.",
+                "**Diferencias significativas**: ¿Las diferencias entre modelos son sustanciales (>5%) o marginales? Diferencias pequenas pueden no justificar complejidad adicional.",
+                "**Seleccion de metrica**: Considera cual metrica es mas importante para tu caso de uso (ej. Recall alto si el costo de falsos negativos es alto)."
+            ]
+        )
 
     # Mejor modelo
     st.markdown("---")
