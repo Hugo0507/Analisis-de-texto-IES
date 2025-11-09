@@ -214,85 +214,99 @@ def render_science_mapping():
         st.markdown("#### Visualización de Red de Co-ocurrencias")
         st.caption("Muestra las relaciones entre factores basadas en su aparición conjunta en el corpus")
 
-        # Crear grafo con networkx
-        G = nx.Graph()
+        # Validar que network_data tenga la estructura correcta
+        if not network_data or 'nodes' not in network_data or 'edges' not in network_data:
+            st.warning("⚠️ No se pudieron generar datos de red. Verifica que haya suficientes factores y documentos.")
+            return
 
-        # Agregar nodos
-        for node in network_data['nodes']:
-            G.add_node(node['id'], label=node['label'], size=node['size'])
+        if not network_data['nodes']:
+            st.info("ℹ️ No hay nodos disponibles para visualizar la red.")
+            return
 
-        # Agregar edges
-        for edge in network_data['edges']:
-            G.add_edge(edge['source'], edge['target'], weight=edge['weight'])
+        try:
+            # Crear grafo con networkx
+            G = nx.Graph()
 
-        # Calcular layout
-        pos = nx.spring_layout(G, k=0.5, iterations=50)
+            # Agregar nodos
+            for node in network_data['nodes']:
+                G.add_node(node['id'], label=node['label'], size=node['size'])
 
-        # Crear visualización con plotly
-        edge_trace = []
-        for edge in G.edges(data=True):
-            x0, y0 = pos[edge[0]]
-            x1, y1 = pos[edge[1]]
-            edge_trace.append(
-                go.Scatter(
-                    x=[x0, x1, None],
-                    y=[y0, y1, None],
-                    mode='lines',
-                    line=dict(width=edge[2]['weight']/10, color='#888'),
-                    hoverinfo='none',
-                    showlegend=False
+            # Agregar edges
+            for edge in network_data['edges']:
+                G.add_edge(edge['source'], edge['target'], weight=edge['weight'])
+
+            # Calcular layout
+            pos = nx.spring_layout(G, k=0.5, iterations=50)
+
+            # Crear visualización con plotly
+            edge_trace = []
+            for edge in G.edges(data=True):
+                x0, y0 = pos[edge[0]]
+                x1, y1 = pos[edge[1]]
+                edge_trace.append(
+                    go.Scatter(
+                        x=[x0, x1, None],
+                        y=[y0, y1, None],
+                        mode='lines',
+                        line=dict(width=edge[2]['weight']/10, color='#888'),
+                        hoverinfo='none',
+                        showlegend=False
+                    )
                 )
+
+            # Nodos
+            node_x = []
+            node_y = []
+            node_text = []
+            node_size = []
+
+            for node in G.nodes():
+                x, y = pos[node]
+                node_x.append(x)
+                node_y.append(y)
+                node_text.append(G.nodes[node]['label'])
+                node_size.append(G.nodes[node]['size'] / 10)
+
+            node_trace = go.Scatter(
+                x=node_x,
+                y=node_y,
+                mode='markers+text',
+                text=node_text,
+                textposition="top center",
+                marker=dict(
+                    size=node_size,
+                    color=node_size,
+                    colorscale='Viridis',
+                    showscale=True,
+                    colorbar=dict(title="Importancia")
+                ),
+                hoverinfo='text'
             )
 
-        # Nodos
-        node_x = []
-        node_y = []
-        node_text = []
-        node_size = []
+            # Crear figura
+            fig = go.Figure(data=edge_trace + [node_trace])
+            fig.update_layout(
+                title='Red de Co-ocurrencias de Factores Clave',
+                showlegend=False,
+                hovermode='closest',
+                height=700,
+                xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
+            )
 
-        for node in G.nodes():
-            x, y = pos[node]
-            node_x.append(x)
-            node_y.append(y)
-            node_text.append(G.nodes[node]['label'])
-            node_size.append(G.nodes[node]['size'] / 10)
+            st.plotly_chart(fig, use_container_width=True)
 
-        node_trace = go.Scatter(
-            x=node_x,
-            y=node_y,
-            mode='markers+text',
-            text=node_text,
-            textposition="top center",
-            marker=dict(
-                size=node_size,
-                color=node_size,
-                colorscale='Viridis',
-                showscale=True,
-                colorbar=dict(title="Importancia")
-            ),
-            hoverinfo='text'
-        )
+            st.info("""
+            💡 **Interpretación:**
+            - **Nodos**: Representan factores clave identificados
+            - **Tamaño del nodo**: Indica la importancia/frecuencia del factor
+            - **Conexiones**: Muestran relaciones por co-ocurrencia en documentos
+            - **Grosor de línea**: Indica fuerza de la relación
+            """)
 
-        # Crear figura
-        fig = go.Figure(data=edge_trace + [node_trace])
-        fig.update_layout(
-            title='Red de Co-ocurrencias de Factores Clave',
-            showlegend=False,
-            hovermode='closest',
-            height=700,
-            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
-
-        st.info("""
-        💡 **Interpretación:**
-        - **Nodos**: Representan factores clave identificados
-        - **Tamaño del nodo**: Indica la importancia/frecuencia del factor
-        - **Conexiones**: Muestran relaciones por co-ocurrencia en documentos
-        - **Grosor de línea**: Indica fuerza de la relación
-        """)
+        except Exception as e:
+            st.error(f"Error generando visualización de red: {str(e)}")
+            st.info("Intenta ajustar los parámetros o verifica que haya suficientes datos.")
 
     with tab2:
         st.markdown("#### Mapa de Calor de Co-ocurrencias")
