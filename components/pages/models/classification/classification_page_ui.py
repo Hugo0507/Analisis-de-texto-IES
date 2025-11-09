@@ -1069,7 +1069,7 @@ def render_direct_prediction(model_key):
                 st.write("**Probabilidades por clase:**")
 
                 proba_dict = {
-                    classifier.label_encoder.inverse_transform([i])[0]: proba[0][i]
+                    classifier.label_names[i]: proba[0][i]
                     for i in range(len(proba[0]))
                 }
 
