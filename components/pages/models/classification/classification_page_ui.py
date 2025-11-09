@@ -781,7 +781,7 @@ def render_model_results_tab(model_key, model_name):
         st.metric("Recall", f"{metrics['recall']:.4f}")
 
     with col4:
-        st.metric("F1-Score", f"{metrics['f1']:.4f}")
+        st.metric("F1-Score", f"{metrics['f1_score']:.4f}")
 
     # Validación cruzada
     if 'cv_scores' in metrics:
@@ -926,7 +926,7 @@ def render_comparison_tab():
             'Accuracy': metrics['accuracy'],
             'Precision': metrics['precision'],
             'Recall': metrics['recall'],
-            'F1-Score': metrics['f1'],
+            'F1-Score': metrics['f1_score'],
             'CV Mean': np.mean(metrics.get('cv_scores', [0])),
             'CV Std': np.std(metrics.get('cv_scores', [0]))
         })
