@@ -1,21 +1,41 @@
-# 📚 Índice de Documentación
+# 📚 Documentación del Proyecto
 
-Documentación completa del proyecto de Análisis de Transformación Digital.
+Índice completo de la documentación del sistema de Análisis de Transformación Digital.
 
 ---
 
-## 📂 Estructura de Documentación
+## 🎯 Documentos Principales
+
+### 📖 Guías Esenciales
+
+- **[🔄 Flujo de Trabajo Completo](FLUJO_DE_TRABAJO.md)** ⭐ **RECOMENDADO**
+  - Guía detallada de las 7 fases del sistema
+  - Proceso paso a paso de cada módulo
+  - 20+ visualizaciones con interpretaciones
+  - Sistema de persistencia y caché explicado
+  - Buenas prácticas y resolución de problemas
+
+- **[📋 Índice de Documentación](INDICE_DOCUMENTACION.md)**
+  - Navegación completa por todos los documentos
+  - Organizado por categorías
+  - Enlaces directos a cada sección
+
+---
+
+## 📂 Documentación por Categoría
 
 ### 🔧 [Instalación](instalacion/)
 
 Guías para instalar y configurar el proyecto:
 
-- **[GUIA_INSTALACION_PYTHON_3.11.md](instalacion/GUIA_INSTALACION_PYTHON_3.11.md)** - Instalación de Python 3.11 paso a paso
-- **[INICIO_RAPIDO.md](instalacion/INICIO_RAPIDO.md)** - Guía de inicio rápido (5 minutos)
-- **[INSTALACION_COMPLETADA.md](instalacion/INSTALACION_COMPLETADA.md)** - Verificación de instalación
-- **[SOLUCION_INSTALACION.md](instalacion/SOLUCION_INSTALACION.md)** - Solución de problemas comunes
-- **[MEJORAS_INSTALACION.md](instalacion/MEJORAS_INSTALACION.md)** - Mejoras al proceso de instalación
-- **[RESUMEN_MEJORAS.md](instalacion/RESUMEN_MEJORAS.md)** - Resumen de mejoras implementadas
+- **[INICIO_RAPIDO.md](instalacion/INICIO_RAPIDO.md)** ⭐ - Guía de inicio (5 minutos)
+- **[GUIA_INSTALACION_PYTHON_3.11.md](instalacion/GUIA_INSTALACION_PYTHON_3.11.md)** - Instalación paso a paso
+- **[INSTALACION.md](instalacion/INSTALACION.md)** - Guía detallada completa
+- **[CONFIGURACION_DRIVE.md](instalacion/CONFIGURACION_DRIVE.md)** - Configurar Google Drive API
+- **[SOLUCION_INSTALACION.md](instalacion/SOLUCION_INSTALACION.md)** - Solución de problemas
+- **[INSTALACION_COMPLETADA.md](instalacion/INSTALACION_COMPLETADA.md)** - Verificación
+- **[MEJORAS_INSTALACION.md](instalacion/MEJORAS_INSTALACION.md)** - Mejoras al proceso
+- **[RESUMEN_MEJORAS.md](instalacion/RESUMEN_MEJORAS.md)** - Resumen de mejoras
 
 ---
 
@@ -24,55 +44,65 @@ Guías para instalar y configurar el proyecto:
 Documentación de testing y calidad de código:
 
 - **[README_TESTS.md](testing/README_TESTS.md)** - Guía completa de testing
-- **[TESTING_IMPLEMENTADO.md](testing/TESTING_IMPLEMENTADO.md)** - Fase 1 de testing
-- **[TESTING_FASE2_COMPLETO.md](testing/TESTING_FASE2_COMPLETO.md)** - Fase 2 de testing (98 tests, 80% coverage)
+- **[TESTING_IMPLEMENTADO.md](testing/TESTING_IMPLEMENTADO.md)** - Fase 1
+- **[TESTING_FASE2_COMPLETO.md](testing/TESTING_FASE2_COMPLETO.md)** - Fase 2 (98 tests, 80% coverage)
 
 **Estadísticas:**
 - 98 tests implementados
 - ~80% cobertura de código
 - Tests unitarios e integración
-- Fixtures reutilizables
 
 ---
 
 ### 🚀 [Implementaciones](implementaciones/)
 
-Documentación de features y modelos implementados:
+Documentación de features y modelos:
 
 #### Modelos Avanzados
-- **[MODELOS_AVANZADOS_README.md](implementaciones/MODELOS_AVANZADOS_README.md)** - Overview de modelos
-- **[TOPIC_MODELING_COMPLETO.md](implementaciones/TOPIC_MODELING_COMPLETO.md)** - LDA, PLSA, Coherencia
+- **[MODELOS_AVANZADOS_README.md](implementaciones/MODELOS_AVANZADOS_README.md)** - Overview
+- **[TOPIC_MODELING_COMPLETO.md](implementaciones/TOPIC_MODELING_COMPLETO.md)** - LDA, NMF, LSA
 - **[PLSA_IMPLEMENTACION.md](implementaciones/PLSA_IMPLEMENTACION.md)** - PLSA detallado
-- **[NGRAM_ANALYSIS_COMPLETO.md](implementaciones/NGRAM_ANALYSIS_COMPLETO.md)** - Análisis de n-gramas
+- **[NGRAM_ANALYSIS_COMPLETO.md](implementaciones/NGRAM_ANALYSIS_COMPLETO.md)** - N-gramas
 
 #### Clasificación y Análisis
-- **[CLASIFICACION_TEXTOS.md](implementaciones/CLASIFICACION_TEXTOS.md)** - Clasificador de textos
+- **[CLASIFICACION_TEXTOS.md](implementaciones/CLASIFICACION_TEXTOS.md)** - Clasificación
 - **[REDUCCION_DIMENSIONALIDAD.md](implementaciones/REDUCCION_DIMENSIONALIDAD.md)** - PCA, t-SNE, UMAP
+- **[ANALISIS_FACTORES_AUTOMATICO.md](implementaciones/ANALISIS_FACTORES_AUTOMATICO.md)** - Análisis de factores
 
 #### Integraciones
-- **[EXPORTACIONES_DRIVE.md](implementaciones/EXPORTACIONES_DRIVE.md)** - Exportación a Google Drive
+- **[EXPORTACIONES_DRIVE.md](implementaciones/EXPORTACIONES_DRIVE.md)** - Exportación a Drive
 
 ---
 
-### 📊 [Estado](estado/)
+### 📊 [Estado del Proyecto](estado/)
 
-Estado actual del proyecto y análisis:
+Estado actual y análisis:
 
-- **[ESTADO_PROYECTO_ACTUALIZADO.md](estado/ESTADO_PROYECTO_ACTUALIZADO.md)** - Estado completo (v4.0)
-  - Calidad general: 8.2/10
+- **[ESTADO_PROYECTO_ACTUALIZADO.md](estado/ESTADO_PROYECTO_ACTUALIZADO.md)** ⭐
+  - Versión actual: v3.5.0
+  - Calidad general: 9.0/10
   - Testing: 10/10
   - Type hints: 10/10
   - Logging: 10/10
 
 - **[ANALISIS_ESTADO_PROYECTO.md](estado/ANALISIS_ESTADO_PROYECTO.md)** - Análisis detallado
 
-**Resumen:**
-- ✅ Testing completo (98 tests, 80% coverage)
-- ✅ Type hints implementados
-- ✅ Sistema de logging profesional
-- ✅ Optimización NLTK (50x mejora)
-- ⚠️ Cache parcial (Redis pendiente)
-- ⚠️ Sanitización de inputs pendiente
+---
+
+### 💾 [Sistema de Caché](sistema_cache/)
+
+Sistema de caché y optimización:
+
+- **[SISTEMA_CACHE_COMPLETO.md](sistema_cache/SISTEMA_CACHE_COMPLETO.md)** - Sistema completo
+- **[CACHE_NER_README.md](sistema_cache/CACHE_NER_README.md)** - Caché NER
+- **[RESUMEN_SISTEMA_CACHE.md](sistema_cache/RESUMEN_SISTEMA_CACHE.md)** - Resumen
+- **[SISTEMA_CACHE_NER.md](sistema_cache/SISTEMA_CACHE_NER.md)** - Implementación NER
+- **[ANALISIS_CACHE_Y_PERSISTENCIA.md](sistema_cache/ANALISIS_CACHE_Y_PERSISTENCIA.md)** - Análisis completo
+
+**Características:**
+- Caché local de documentos
+- Caché NER para entidades
+- Mejora de performance ~100x más rápido
 
 ---
 
@@ -80,7 +110,7 @@ Estado actual del proyecto y análisis:
 
 Diseño y arquitectura del sistema:
 
-- **[ARQUITECTURA.md](arquitectura/ARQUITECTURA.md)** - Arquitectura completa del proyecto
+- **[ARQUITECTURA.md](arquitectura/ARQUITECTURA.md)** - Arquitectura completa
   - Estructura de módulos
   - Flujo de datos
   - Patrones de diseño
@@ -88,74 +118,74 @@ Diseño y arquitectura del sistema:
 
 ---
 
-### 💾 [Cache](cache/)
-
-Sistema de cache y optimización:
-
-- **[CACHE_NER_README.md](cache/CACHE_NER_README.md)** - Cache NER
-- **[SISTEMA_CACHE_COMPLETO.md](cache/SISTEMA_CACHE_COMPLETO.md)** - Sistema de cache completo
-- **[RESUMEN_SISTEMA_CACHE.md](cache/RESUMEN_SISTEMA_CACHE.md)** - Resumen del sistema
-
-**Características:**
-- Cache local de documentos
-- Cache NER para entidades
-- Mejora de performance ~40%
-
----
-
 ### ⚡ [Optimizaciones](optimizaciones/)
 
-Mejoras de performance y calidad de código:
+Mejoras de performance y calidad:
 
 #### Type Hints
 - **[TYPE_HINTS_IMPLEMENTACION.md](optimizaciones/TYPE_HINTS_IMPLEMENTACION.md)**
-  - 4 módulos core con type hints completos
-  - ~95 métodos anotados
-  - mypy configurado y validado
+- **[REVISION_COMPLETA_TYPE_HINTS_LOGGER.md](optimizaciones/REVISION_COMPLETA_TYPE_HINTS_LOGGER.md)**
 
 #### Logging
 - **[MEJORAS_LOGGING_IMPLEMENTADAS.md](optimizaciones/MEJORAS_LOGGING_IMPLEMENTADAS.md)**
   - 41 print statements reemplazados
   - Sistema de logging profesional
-  - 4 niveles: DEBUG, INFO, WARNING, ERROR
-  - Tracebacks completos
 
 #### Performance
-- **[OPTIMIZACION_NLTK.md](optimizaciones/OPTIMIZACION_NLTK.md)**
-  - Mejora 50x en velocidad
-  - Download inteligente de recursos
-  - Caché de recursos
+- **[OPTIMIZACION_NLTK.md](optimizaciones/OPTIMIZACION_NLTK.md)** - Mejora 50x en velocidad
+- **[CAMBIOS_TFIDF.md](optimizaciones/CAMBIOS_TFIDF.md)** - Mejoras TF-IDF
+- **[SOLUCION_ERROR_SSL.md](optimizaciones/SOLUCION_ERROR_SSL.md)** - Solución SSL
 
-#### Cambios
-- **[CAMBIOS_TFIDF.md](optimizaciones/CAMBIOS_TFIDF.md)** - Mejoras en TF-IDF
-- **[SOLUCION_ERROR_SSL.md](optimizaciones/SOLUCION_ERROR_SSL.md)** - Solución errores SSL
+#### Completitud
+- **[COMPLETITUD_100_PROGRESO.md](optimizaciones/COMPLETITUD_100_PROGRESO.md)**
+- **[COMPLETITUD_100_ALCANZADA.md](optimizaciones/COMPLETITUD_100_ALCANZADA.md)**
+
+---
+
+### 📝 [Detalle de Archivos](detalle_archivos/)
+
+Documentación línea por línea de 36 archivos Python:
+
+- **[README.md](detalle_archivos/README.md)** - Índice completo
+- Documentación detallada de cada módulo
+- Explicaciones para principiantes
+- Diagramas de flujo
+
+**Categorías:**
+- Capa de Negocio (src/): 15 archivos
+- Componentes UI: 3 archivos
+- Páginas: 16 archivos
+- Utilidades: 2 archivos
 
 ---
 
 ## 🗺️ Guía de Navegación
 
-### Para Empezar
-1. [INICIO_RAPIDO.md](instalacion/INICIO_RAPIDO.md) - Empieza aquí (5 min)
-2. [GUIA_INSTALACION_PYTHON_3.11.md](instalacion/GUIA_INSTALACION_PYTHON_3.11.md) - Instalación completa
-3. [FLUJO_DE_TRABAJO.md](FLUJO_DE_TRABAJO.md) ⭐ **NUEVO** - Guía completa de las 7 fases
-4. [README_TESTS.md](testing/README_TESTS.md) - Verificar instalación con tests
+### Para Empezar (Usuarios Nuevos)
+
+1. **[INICIO_RAPIDO.md](instalacion/INICIO_RAPIDO.md)** - Empieza aquí (5 min)
+2. **[FLUJO_DE_TRABAJO.md](FLUJO_DE_TRABAJO.md)** ⭐ - Aprende el sistema completo
+3. **[README_TESTS.md](testing/README_TESTS.md)** - Verifica que todo funcione
 
 ### Para Desarrolladores
-1. [ARQUITECTURA.md](arquitectura/ARQUITECTURA.md) - Entender la estructura
-2. [TYPE_HINTS_IMPLEMENTACION.md](optimizaciones/TYPE_HINTS_IMPLEMENTACION.md) - Type hints
-3. [MEJORAS_LOGGING_IMPLEMENTADAS.md](optimizaciones/MEJORAS_LOGGING_IMPLEMENTADAS.md) - Logging
-4. [TESTING_FASE2_COMPLETO.md](testing/TESTING_FASE2_COMPLETO.md) - Testing
+
+1. **[ARQUITECTURA.md](arquitectura/ARQUITECTURA.md)** - Entender la estructura
+2. **[FLUJO_DE_TRABAJO.md](FLUJO_DE_TRABAJO.md)** - Flujo completo del sistema
+3. **[TYPE_HINTS_IMPLEMENTACION.md](optimizaciones/TYPE_HINTS_IMPLEMENTACION.md)** - Estándares de código
+4. **[TESTING_FASE2_COMPLETO.md](testing/TESTING_FASE2_COMPLETO.md)** - Testing
 
 ### Para Investigadores
-1. [MODELOS_AVANZADOS_README.md](implementaciones/MODELOS_AVANZADOS_README.md) - Overview
-2. [TOPIC_MODELING_COMPLETO.md](implementaciones/TOPIC_MODELING_COMPLETO.md) - Topic modeling
-3. [CLASIFICACION_TEXTOS.md](implementaciones/CLASIFICACION_TEXTOS.md) - Clasificación
-4. [REDUCCION_DIMENSIONALIDAD.md](implementaciones/REDUCCION_DIMENSIONALIDAD.md) - Visualización
+
+1. **[FLUJO_DE_TRABAJO.md](FLUJO_DE_TRABAJO.md)** ⭐ - Metodología completa
+2. **[TOPIC_MODELING_COMPLETO.md](implementaciones/TOPIC_MODELING_COMPLETO.md)** - Topic modeling
+3. **[CLASIFICACION_TEXTOS.md](implementaciones/CLASIFICACION_TEXTOS.md)** - Clasificación
+4. **[REDUCCION_DIMENSIONALIDAD.md](implementaciones/REDUCCION_DIMENSIONALIDAD.md)** - Visualización
 
 ### Para Mantenedores
-1. [ESTADO_PROYECTO_ACTUALIZADO.md](estado/ESTADO_PROYECTO_ACTUALIZADO.md) - Estado actual
-2. [SOLUCION_INSTALACION.md](instalacion/SOLUCION_INSTALACION.md) - Troubleshooting
-3. [SISTEMA_CACHE_COMPLETO.md](cache/SISTEMA_CACHE_COMPLETO.md) - Cache system
+
+1. **[ESTADO_PROYECTO_ACTUALIZADO.md](estado/ESTADO_PROYECTO_ACTUALIZADO.md)** - Estado actual
+2. **[SOLUCION_INSTALACION.md](instalacion/SOLUCION_INSTALACION.md)** - Troubleshooting
+3. **[SISTEMA_CACHE_COMPLETO.md](cache/SISTEMA_CACHE_COMPLETO.md)** - Cache system
 
 ---
 
@@ -163,38 +193,53 @@ Mejoras de performance y calidad de código:
 
 | Categoría | Archivos | Estado |
 |-----------|----------|--------|
-| Instalación | 6 | ✅ Completo |
+| Instalación | 8 | ✅ Completo |
 | Testing | 3 | ✅ Completo |
-| Implementaciones | 7 | ✅ Completo |
+| Implementaciones | 8 | ✅ Completo |
 | Estado | 2 | ✅ Actualizado |
 | Arquitectura | 1 | ✅ Completo |
-| Cache | 3 | ✅ Completo |
-| Optimizaciones | 5 | ✅ Completo |
-| **TOTAL** | **27** | **✅** |
+| Sistema Cache | 5 | ✅ Completo |
+| Optimizaciones | 7 | ✅ Completo |
+| Detalle de Archivos | 36+ | ✅ Completo |
+| **TOTAL** | **70+** | **✅** |
 
 ---
 
 ## 🔗 Enlaces Rápidos
 
 ### Más Usados
+- **[Flujo de Trabajo Completo](FLUJO_DE_TRABAJO.md)** ⭐ **NUEVO**
 - [Inicio Rápido](instalacion/INICIO_RAPIDO.md)
 - [Estado del Proyecto](estado/ESTADO_PROYECTO_ACTUALIZADO.md)
-- [Guía de Tests](testing/README_TESTS.md)
 - [Arquitectura](arquitectura/ARQUITECTURA.md)
 
 ### Implementaciones Destacadas
 - [Topic Modeling Completo](implementaciones/TOPIC_MODELING_COMPLETO.md)
 - [Clasificación de Textos](implementaciones/CLASIFICACION_TEXTOS.md)
-- [Sistema de Cache](cache/SISTEMA_CACHE_COMPLETO.md)
-
-### Mejoras Recientes
-- [Logging Profesional](optimizaciones/MEJORAS_LOGGING_IMPLEMENTADAS.md) - 2025-10-26
-- [Type Hints](optimizaciones/TYPE_HINTS_IMPLEMENTACION.md) - 2025-10-25
-- [Testing Fase 2](testing/TESTING_FASE2_COMPLETO.md) - 2025-10-25
-- [Optimización NLTK](optimizaciones/OPTIMIZACION_NLTK.md) - 2025-10-25
+- [Sistema de Cache](sistema_cache/SISTEMA_CACHE_COMPLETO.md)
+- [Análisis de Factores](implementaciones/ANALISIS_FACTORES_AUTOMATICO.md)
 
 ---
 
-**Última actualización:** 2025-10-26
-**Total de documentos:** 27
-**Estado:** ✅ Completo y organizado
+## 🆕 Últimas Actualizaciones (v3.5.0 - 2025-11-09)
+
+### Nuevas Características
+- ✅ Sistema de interpretaciones guiadas para gráficos (20+ gráficos)
+- ✅ Flujo de trabajo organizado en 7 fases
+- ✅ Documentación completamente reorganizada y limpia
+- ✅ Gráfico de distribución de predicciones en clasificación
+
+### Documentación
+- ✅ Creado `FLUJO_DE_TRABAJO.md` con guía completa de 7 fases
+- ✅ Eliminados 13 archivos obsoletos (TXT + MD redundantes)
+- ✅ Reorganizada estructura de docs/
+- ✅ Actualizado CHANGELOG.md con v3.5.0 completo
+
+Ver detalles en [CHANGELOG.md](../CHANGELOG.md)
+
+---
+
+**Última actualización:** 2025-11-09
+**Versión:** 3.5.0
+**Total de documentos:** 70+
+**Estado:** ✅ Completo, limpio y organizado
