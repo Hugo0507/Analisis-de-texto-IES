@@ -137,7 +137,8 @@ Mejoras de performance y calidad de código:
 ### Para Empezar
 1. [INICIO_RAPIDO.md](instalacion/INICIO_RAPIDO.md) - Empieza aquí (5 min)
 2. [GUIA_INSTALACION_PYTHON_3.11.md](instalacion/GUIA_INSTALACION_PYTHON_3.11.md) - Instalación completa
-3. [README_TESTS.md](testing/README_TESTS.md) - Verificar instalación con tests
+3. [FLUJO_DE_TRABAJO.md](FLUJO_DE_TRABAJO.md) ⭐ **NUEVO** - Guía completa de las 7 fases
+4. [README_TESTS.md](testing/README_TESTS.md) - Verificar instalación con tests
 
 ### Para Desarrolladores
 1. [ARQUITECTURA.md](arquitectura/ARQUITECTURA.md) - Entender la estructura

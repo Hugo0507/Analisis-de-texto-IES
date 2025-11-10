@@ -1,10 +1,3 @@
-"""
-Aplicación Principal - Análisis de Transformación Digital
-Versión Modular 3.0
-
-Archivo principal simplificado que orquesta los componentes modulares
-"""
-
 import streamlit as st
 import sys
 import os
