@@ -31,8 +31,8 @@ Ver guía completa: [docs/instalacion/INICIO_RAPIDO.md](docs/instalacion/INICIO_
 
 ## 📊 Estado del Proyecto
 
-**Versión:** 3.1 ([Ver Changelog](CHANGELOG.md))
-**Calidad General:** 8.2/10
+**Versión:** 3.5.0 ([Ver Changelog](CHANGELOG.md))
+**Calidad General:** 9.0/10
 **Cobertura de Tests:** ~80%
 
 ### ✅ Completado
@@ -44,6 +44,9 @@ Ver guía completa: [docs/instalacion/INICIO_RAPIDO.md](docs/instalacion/INICIO_
 - [x] Variables de entorno (.env)
 - [x] Sistema de cache local
 - [x] Documentación completa
+- [x] Sistema de interpretaciones guiadas para gráficos (20+ gráficos)
+- [x] Flujo de trabajo organizado en 7 fases
+- [x] Persistencia completa con Google Drive
 
 Ver estado completo: [docs/estado/ESTADO_PROYECTO_ACTUALIZADO.md](docs/estado/ESTADO_PROYECTO_ACTUALIZADO.md)
 
@@ -78,6 +81,7 @@ analisis_transformacion_digital/
 ### 📖 Documentación Principal
 
 - **[📚 Manual Técnico Completo](README_TECNICO.md)** ⭐ - Arquitectura, flujo de ejecución, guías detalladas
+- **[🔄 Flujo de Trabajo Completo](docs/FLUJO_DE_TRABAJO.md)** ⭐ **NUEVO** - Guía detallada de las 7 fases del sistema
 - **[📝 Documentación por Archivo](docs/detalle_archivos/)** - Explicación línea por línea de cada módulo Python
 - **[📋 Changelog](CHANGELOG.md)** - Historial de cambios del proyecto
 
@@ -165,17 +169,29 @@ Este proyecto es parte de una investigación académica sobre transformación di
 
 ---
 
-## 🆕 Últimas Actualizaciones (v3.1 - 2025-11-06)
+## 🆕 Últimas Actualizaciones (v3.5.0 - 2025-11-09)
 
-- ✅ Corregido error de carga del modelo spaCy `en_core_web_sm`
-- ✅ Eliminados 150 warnings de Plotly
-- ✅ Corregido routing de páginas del menú
-- 📚 Documentación técnica completa (1200+ líneas)
-- 📝 36 archivos Python documentados línea por línea
+### 🎯 Sistema de Interpretaciones Guiadas para Gráficos
 
-Ver detalles en [CHANGELOG.md](CHANGELOG.md)
+- ✅ **20+ gráficos** con interpretaciones detalladas en todos los módulos
+- 📊 Interpretaciones contextuales para BERTopic (5 gráficos)
+- 📊 Interpretaciones para Clasificación de Textos (4 gráficos + predicción)
+- 📊 Interpretaciones para Reducción de Dimensionalidad (5 gráficos)
+- 📊 Interpretaciones para Evaluación de Desempeño (6 gráficos)
+- 🔧 Helper functions reutilizables: `show_chart_interpretation()` y `show_quick_interpretation()`
+- 📈 Visualización de distribución de predicciones (gráfico de barras)
+
+### 🐛 Correcciones y Mejoras
+
+- ✅ Validación de DataFrames vacíos en BERTopic
+- ✅ Corrección de métricas de clasificación (f1_score, average='weighted')
+- ✅ Solución de errores en red de co-ocurrencia de factores
+- ✅ Manejo robusto de estructuras de datos en caché
+- ✅ Corrección de encoding UTF-8 en módulos UI
+
+Ver detalles completos en [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
-**Última actualización:** 2025-11-06
-**Versión:** 3.1
+**Última actualización:** 2025-11-09
+**Versión:** 3.5.0

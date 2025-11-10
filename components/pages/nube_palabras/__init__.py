@@ -1,4 +1,3 @@
-"""Módulo nube_palabras"""
 # Exportar función render desde el módulo UI
 from .nube_palabras_ui import render
 
