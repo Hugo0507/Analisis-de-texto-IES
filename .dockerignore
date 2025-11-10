@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# Git
+.git/
+.gitignore
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# Data y Cache (se regeneran)
+cache/
+logs/
+output/
+*.csv
+*.xlsx
+
+# Credentials (NUNCA incluir en imagen Docker)
+credentials.json
+token.json
+service_account.json
+client_secret*.json
+.env
+.env.local
+.streamlit/secrets.toml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+docs/
+README.md
+CHANGELOG.md
+*.md
+
+# Tests
+tests/
+pytest.ini
+.coverage
+
+# Claude
+.claude/

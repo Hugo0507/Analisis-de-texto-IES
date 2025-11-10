@@ -21,6 +21,7 @@ Guía completa para desplegar la aplicación de Análisis de Transformación Dig
 - **100% Gratis** para siempre
 - Diseñado específicamente para aplicaciones Streamlit
 - **Súper fácil de usar** (despliegue en 3 clicks)
+- ✅ **Soporta repositorios privados** (desde 2023)
 - Actualizaciones automáticas desde GitHub
 - **1 GB RAM** y **1 CPU core** (suficiente para esta app)
 - Dominio gratis: `tu-app.streamlit.app`
@@ -31,6 +32,15 @@ Guía completa para desplegar la aplicación de Análisis de Transformación Dig
 - Solo para apps Streamlit
 - 1 GB RAM (suficiente, pero no para datasets muy grandes)
 - No soporta bases de datos persistentes (usa Google Drive)
+
+### 🔐 Repositorios Privados
+
+**Buenas noticias**: Streamlit Community Cloud **SÍ soporta repositorios privados**.
+
+Cuando conectes tu cuenta de GitHub por primera vez, autoriza el acceso a repos privados:
+- GitHub te preguntará: "Allow access to private repositories?"
+- Acepta y Streamlit podrá acceder a tus repos privados
+- Tu código permanece privado, solo Streamlit tiene acceso para deploy
 
 ---
 
@@ -50,11 +60,17 @@ cat .gitignore
 git add -A
 git commit -m "Preparar para despliegue en Streamlit Cloud"
 
-# 4. Sube a GitHub (si aún no lo has hecho)
-# Primero crea un repositorio en github.com
+# 4. Sube a GitHub
+# Opción A: Repositorio PRIVADO (Recomendado)
+# 1. Crea repo PRIVADO en github.com
+# 2. Ejecuta:
 git remote add origin https://github.com/TU-USUARIO/analisis-transformacion-digital.git
 git branch -M main
 git push -u origin main
+
+# Opción B: Repositorio PÚBLICO
+# Igual que Opción A, pero crea el repo como público
+# IMPORTANTE: Verifica que .gitignore proteja credenciales
 ```
 
 #### **Paso 2: Crear Cuenta en Streamlit Cloud**
@@ -244,6 +260,7 @@ if IS_RENDER:
 ### ✅ Ventajas
 
 - **$5 gratis/mes** (suficiente para desarrollo)
+- ✅ **Soporta repositorios privados**
 - Muy rápido (no se duerme)
 - Base de datos incluida
 - Deploy con GitHub automático
@@ -259,16 +276,109 @@ if IS_RENDER:
 
 1. **Ve a**: https://railway.app
 2. **Sign up** con GitHub
-3. **New Project** > **Deploy from GitHub repo**
-4. **Selecciona** tu repositorio
-5. **Configura variables**:
+3. **Autoriza** acceso a repos privados
+4. **New Project** > **Deploy from GitHub repo**
+5. **Selecciona** tu repositorio privado
+6. **Configura variables**:
    ```
    GOOGLE_DRIVE_FOLDER_ID=...
    GOOGLE_CREDENTIALS=...
    ```
-6. **Deploy**
+7. **Deploy**
 
 Railway detectará automáticamente que es una app Streamlit.
+
+---
+
+## ✈️ OPCIÓN 4: Fly.io (Sin exponer código en GitHub)
+
+### ✅ Ventajas
+
+- **Gratis** hasta 3 apps
+- ✅ **No necesitas subir código a GitHub**
+- Deploy directo desde tu máquina con Docker
+- **256 MB RAM gratis** (suficiente con caché de Drive)
+- Tu código permanece 100% privado
+- SSL automático
+
+### ⚠️ Limitaciones
+
+- Requiere instalar Fly CLI
+- Necesitas conocimientos básicos de Docker
+- Requiere tarjeta de crédito (no cobra en plan gratis)
+
+---
+
+### 📝 Pasos para Desplegar en Fly.io
+
+#### **Paso 1: Instalar Fly CLI**
+
+**Windows (PowerShell):**
+```powershell
+iwr https://fly.io/install.ps1 -useb | iex
+```
+
+**Linux/Mac:**
+```bash
+curl -L https://fly.io/install.sh | sh
+```
+
+#### **Paso 2: Login en Fly.io**
+
+```bash
+fly auth login
+# Te abrirá el navegador para autenticarte
+```
+
+#### **Paso 3: Crear App en Fly.io**
+
+```bash
+cd C:\Projects\Tesis\analisis_transformacion_digital
+
+# Crear app (usa el fly.toml ya incluido en el proyecto)
+fly launch --name analisis-td --no-deploy
+
+# Configura región (elige la más cercana, ej: mia para Miami)
+```
+
+#### **Paso 4: Configurar Secretos**
+
+```bash
+# Configurar folder ID
+fly secrets set GOOGLE_DRIVE_FOLDER_ID="tu-folder-id"
+
+# Configurar credentials (como JSON string)
+fly secrets set GOOGLE_CREDENTIALS='{"type":"service_account","project_id":"..."}'
+```
+
+#### **Paso 5: Deploy**
+
+```bash
+# Primera vez (construye imagen Docker)
+fly deploy
+
+# Tu app estará en: https://analisis-td.fly.dev
+```
+
+#### **Paso 6: Actualizar App**
+
+```bash
+# Cuando hagas cambios al código:
+fly deploy
+```
+
+### 🔐 Ventajas de Privacidad con Fly.io
+
+- ✅ Tu código **NUNCA se sube a GitHub**
+- ✅ Solo se crea una imagen Docker en Fly.io
+- ✅ Nadie puede ver tu código fuente
+- ✅ Deploy directo desde tu máquina
+- ✅ Ideal para proyectos confidenciales
+
+**Archivos ya incluidos:**
+- `Dockerfile` - Configuración de Docker
+- `fly.toml` - Configuración de Fly.io
+- `.dockerignore` - Qué no incluir en la imagen
 
 ---
 
@@ -397,31 +507,55 @@ streamlit run app.py --server.port=$PORT
 
 ## 📊 Comparación de Plataformas
 
-| Característica | Streamlit Cloud | Render | Railway |
-|----------------|-----------------|--------|---------|
-| **Precio** | 100% Gratis | Gratis ($0) | $5/mes gratis |
-| **RAM** | 1 GB | 512 MB | 512 MB - 8 GB |
-| **Siempre activo** | ✅ Sí | ❌ No (se duerme) | ✅ Sí |
-| **SSL** | ✅ Gratis | ✅ Gratis | ✅ Gratis |
-| **Custom domain** | ❌ No | ✅ Sí | ✅ Sí |
-| **Base de datos** | ❌ No | ✅ PostgreSQL | ✅ PostgreSQL |
-| **Facilidad** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
-| **Mejor para** | Apps Streamlit | Apps generales | Apps complejas |
+| Característica | Streamlit Cloud | Render | Railway | Fly.io |
+|----------------|-----------------|--------|---------|--------|
+| **Precio** | 100% Gratis | Gratis | $5/mes gratis | Gratis |
+| **RAM** | 1 GB | 512 MB | 512 MB+ | 256 MB |
+| **Repo privado** | ✅ Sí | ✅ Sí | ✅ Sí | ✅ No necesita repo |
+| **Sin GitHub** | ❌ No | ❌ No | ❌ No | ✅ **Sí** |
+| **Siempre activo** | ✅ Sí | ❌ No (se duerme) | ✅ Sí | ✅ Sí |
+| **SSL** | ✅ Gratis | ✅ Gratis | ✅ Gratis | ✅ Gratis |
+| **Custom domain** | ❌ No | ✅ Sí | ✅ Sí | ✅ Sí |
+| **Facilidad** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ |
+| **Privacidad** | 🔒 Repo privado | 🔒 Repo privado | 🔒 Repo privado | 🔐 **Total** |
+| **Mejor para** | Apps Streamlit | Apps generales | Apps con BD | Máxima privacidad |
 
 ---
 
 ## 🎯 Recomendación Final
 
-Para esta aplicación, **recomiendo Streamlit Community Cloud** porque:
+### Para Repositorio Privado con GitHub:
+
+**Recomiendo Streamlit Community Cloud** porque:
 
 ✅ Es **100% gratis** para siempre
+✅ ✅ **Soporta repos privados**
 ✅ Diseñado para Streamlit (deploy súper fácil)
 ✅ **1 GB RAM** (suficiente con caché de Drive)
 ✅ Siempre activo (no se duerme)
 ✅ Updates automáticos desde GitHub
 ✅ SSL gratis
 
-**Limitación a considerar**: Si tu corpus es **MUY grande** (>1000 documentos), considera Render o Railway con más RAM.
+### Para Máxima Privacidad (sin GitHub):
+
+**Recomiendo Fly.io** porque:
+
+✅ ✅ **No necesitas subir código a GitHub**
+✅ Tu código permanece 100% privado
+✅ Deploy directo desde tu máquina
+✅ Gratis hasta 3 apps
+✅ SSL gratis
+⚠️ Requiere Docker (pero ya incluido en el proyecto)
+
+### Decisión Rápida:
+
+```
+¿Necesitas máxima privacidad (código no en GitHub)?
+├─ SÍ → Fly.io
+└─ NO → ¿Tu repo es privado?
+    ├─ SÍ → Streamlit Cloud (acepta repos privados)
+    └─ NO → Streamlit Cloud también
+```
 
 ---
 
