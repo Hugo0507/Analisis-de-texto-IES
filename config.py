@@ -48,9 +48,69 @@ def get_env_int(key: str, default: int = 0) -> int:
 
 
 # ==================== GOOGLE DRIVE ====================
+
+# Detectar entorno de ejecución
+import sys
+IS_STREAMLIT_CLOUD = False
+IS_FLY_IO = os.getenv('FLY_APP_NAME') is not None
+
+# Intentar importar streamlit para detectar Streamlit Cloud
+try:
+    import streamlit as st
+    IS_STREAMLIT_CLOUD = hasattr(st, 'secrets') and len(st.secrets) > 0
+except (ImportError, Exception):
+    pass
+
+# Google Drive Folder ID
 GOOGLE_DRIVE_FOLDER_ID = get_env('GOOGLE_DRIVE_FOLDER_ID', '1tDUZ4PnQen_lSr6z4ZALji2zdtrJf-sS')
-CREDENTIALS_PATH = get_env('CREDENTIALS_PATH', 'credentials.json')
-TOKEN_PATH = get_env('TOKEN_PATH', 'token.json')
+
+# Paths de credenciales
+CREDENTIALS_PATH = 'credentials.json'
+TOKEN_PATH = 'token.json'
+
+# Configurar credenciales según el entorno
+if IS_STREAMLIT_CLOUD:
+    # En Streamlit Cloud, crear credentials.json desde secrets
+    try:
+        import streamlit as st
+        import json
+
+        if "google_credentials" in st.secrets:
+            credentials_dict = dict(st.secrets["google_credentials"])
+
+            # Guardar temporalmente
+            with open(CREDENTIALS_PATH, "w") as f:
+                json.dump(credentials_dict, f)
+
+            # Actualizar folder ID si existe en secrets
+            if "GOOGLE_DRIVE_FOLDER_ID" in st.secrets:
+                GOOGLE_DRIVE_FOLDER_ID = st.secrets["GOOGLE_DRIVE_FOLDER_ID"]
+    except Exception as e:
+        print(f"⚠️ Error configurando credenciales desde Streamlit secrets: {e}")
+
+elif IS_FLY_IO:
+    # En Fly.io, crear credentials.json desde variable de entorno
+    import json
+
+    credentials_json = os.getenv('GOOGLE_CREDENTIALS')
+    if credentials_json:
+        try:
+            credentials_dict = json.loads(credentials_json)
+
+            # Guardar temporalmente
+            with open(CREDENTIALS_PATH, "w") as f:
+                json.dump(credentials_dict, f)
+        except Exception as e:
+            print(f"⚠️ Error configurando credenciales desde Fly.io env: {e}")
+
+    # Actualizar folder ID
+    folder_id_env = os.getenv('GOOGLE_DRIVE_FOLDER_ID')
+    if folder_id_env:
+        GOOGLE_DRIVE_FOLDER_ID = folder_id_env
+else:
+    # Modo local: usar archivos directamente
+    CREDENTIALS_PATH = get_env('CREDENTIALS_PATH', 'credentials.json')
+    TOKEN_PATH = get_env('TOKEN_PATH', 'token.json')
 
 # ==================== LOGGING ====================
 LOG_LEVEL = get_env('LOG_LEVEL', 'INFO').upper()
