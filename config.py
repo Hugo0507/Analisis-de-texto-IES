@@ -76,7 +76,18 @@ if IS_STREAMLIT_CLOUD:
         import json
 
         if "google_credentials" in st.secrets:
-            credentials_dict = dict(st.secrets["google_credentials"])
+            # Convertir StreamlitSecrets a dict regular
+            creds_section = st.secrets["google_credentials"]
+
+            # Manejar ambos formatos: OAuth y Service Account
+            if "installed" in creds_section:
+                # Formato OAuth (credentials.json actual)
+                credentials_dict = {
+                    "installed": dict(creds_section["installed"])
+                }
+            else:
+                # Formato Service Account o directo
+                credentials_dict = dict(creds_section)
 
             # Guardar temporalmente
             with open(CREDENTIALS_PATH, "w") as f:
