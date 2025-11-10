@@ -6,9 +6,11 @@ Conecta y descarga archivos de Google Drive
 import os
 import io
 import time
+import json
 from typing import List, Dict, Optional, Union, Any
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
+from google.oauth2 import service_account
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
@@ -46,7 +48,7 @@ class GoogleDriveConnector:
 
     def authenticate(self) -> bool:
         """
-        Autentica con Google Drive usando OAuth2
+        Autentica con Google Drive usando OAuth2 o Service Account
 
         Returns:
             True si la autenticación fue exitosa, False en caso contrario
@@ -54,47 +56,81 @@ class GoogleDriveConnector:
         logger.info("Iniciando autenticación con Google Drive")
         creds: Optional[Credentials] = None
 
-        # Verificar si existe un token guardado
-        if os.path.exists(self.token_path):
-            try:
-                creds = Credentials.from_authorized_user_file(self.token_path, SCOPES)
-                logger.info("Token existente cargado exitosamente")
-            except Exception as e:
-                logger.error(f"Error al cargar token: {e}")
+        # Verificar si credentials.json existe
+        if not os.path.exists(self.credentials_path):
+            logger.error(f"No se encontró el archivo {self.credentials_path}")
+            return False
 
-        # Si no hay credenciales válidas, solicitar login
-        if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
+        # Detectar el tipo de credenciales
+        try:
+            with open(self.credentials_path, 'r') as f:
+                creds_data = json.load(f)
+
+            # Si es Service Account, usar ese flujo
+            if creds_data.get('type') == 'service_account':
+                logger.info("Detectadas credenciales de Service Account")
                 try:
-                    logger.info("Refrescando token expirado")
-                    creds.refresh(Request())
-                    logger.info("Token refrescado exitosamente")
+                    creds = service_account.Credentials.from_service_account_file(
+                        self.credentials_path,
+                        scopes=SCOPES
+                    )
+                    logger.info("Autenticación con Service Account exitosa")
                 except Exception as e:
-                    logger.error(f"Error al refrescar token: {e}")
-                    creds = None
-
-            if not creds:
-                if not os.path.exists(self.credentials_path):
-                    logger.error(f"No se encontró el archivo {self.credentials_path}")
+                    logger.error(f"Error en autenticación con Service Account: {e}", exc_info=True)
                     return False
 
-                try:
-                    logger.info("Iniciando flujo de autenticación OAuth2")
-                    flow = InstalledAppFlow.from_client_secrets_file(
-                        self.credentials_path, SCOPES)
-                    creds = flow.run_local_server(port=0)
-                    logger.info("Autenticación OAuth2 completada exitosamente")
-                except Exception as e:
-                    logger.error(f"Error en autenticación OAuth2: {e}", exc_info=True)
-                    return False
+            # Si es OAuth (installed), usar flujo interactivo
+            elif 'installed' in creds_data or 'web' in creds_data:
+                logger.info("Detectadas credenciales OAuth2")
 
-            # Guardar las credenciales para la próxima vez
-            try:
-                with open(self.token_path, 'w') as token:
-                    token.write(creds.to_json())
-                logger.info(f"Token guardado en {self.token_path}")
-            except Exception as e:
-                logger.warning(f"No se pudo guardar token: {e}")
+                # Verificar si existe un token guardado
+                if os.path.exists(self.token_path):
+                    try:
+                        creds = Credentials.from_authorized_user_file(self.token_path, SCOPES)
+                        logger.info("Token existente cargado exitosamente")
+                    except Exception as e:
+                        logger.error(f"Error al cargar token: {e}")
+
+                # Si no hay credenciales válidas, solicitar login
+                if not creds or not creds.valid:
+                    if creds and creds.expired and creds.refresh_token:
+                        try:
+                            logger.info("Refrescando token expirado")
+                            creds.refresh(Request())
+                            logger.info("Token refrescado exitosamente")
+                        except Exception as e:
+                            logger.error(f"Error al refrescar token: {e}")
+                            creds = None
+
+                    if not creds:
+                        try:
+                            logger.info("Iniciando flujo de autenticación OAuth2")
+                            flow = InstalledAppFlow.from_client_secrets_file(
+                                self.credentials_path, SCOPES)
+                            creds = flow.run_local_server(port=0)
+                            logger.info("Autenticación OAuth2 completada exitosamente")
+                        except Exception as e:
+                            logger.error(f"Error en autenticación OAuth2: {e}", exc_info=True)
+                            return False
+
+                    # Guardar las credenciales para la próxima vez
+                    try:
+                        with open(self.token_path, 'w') as token:
+                            token.write(creds.to_json())
+                        logger.info(f"Token guardado en {self.token_path}")
+                    except Exception as e:
+                        logger.warning(f"No se pudo guardar token: {e}")
+
+            else:
+                logger.error(f"Formato de credenciales no reconocido en {self.credentials_path}")
+                return False
+
+        except json.JSONDecodeError as e:
+            logger.error(f"Error al leer {self.credentials_path}: JSON inválido - {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Error al procesar credenciales: {e}", exc_info=True)
+            return False
 
         self.creds = creds
 
