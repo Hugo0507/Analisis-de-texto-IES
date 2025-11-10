@@ -224,7 +224,7 @@ def main() -> None:
             evaluacion_desempeno.render()
 
         # Manejo de separadores de fase (son solo títulos, mostrar página de inicio)
-        elif pagina.startswith("---"):
+        elif "FASE" in pagina and pagina.strip().startswith("FASE"):
             st.info("👈 Selecciona una opción específica del menú lateral")
             st.markdown("""
             ### 🎯 Flujo de Análisis Organizado por Fases
