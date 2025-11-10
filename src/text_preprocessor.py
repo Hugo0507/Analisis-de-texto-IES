@@ -88,7 +88,7 @@ class TextPreprocessor:
             "G.", "H.", "I.", "J.", "K.", "L.", "M.", "N.", "O.", "P.", "Q.",
             "R.", "S.", "T.", "U.", "V.", "W.", "X.", "Y.", "Z.",
             "CrossReff", "et", "t", "u", "v", "w", "x", "y", "z", "doi", "pp",
-            "group", "author", "crossref",
+            "group", "author", "crossref", "cid",
             "article", "well", "zane", "hive", "morl", "neame", "eep",
             "gelderen", "httpswwwdundeeacukentrepreneurshipourmission",
             "schtt", "ionescusomers", "deviating", "excelling", "marketreadiness",
