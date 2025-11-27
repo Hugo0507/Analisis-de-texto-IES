@@ -35,7 +35,8 @@ class BagOfWordsAnalyzer:
             min_df=self.config.get('min_df', 2),
             max_df=self.config.get('max_df', 0.85),
             max_features=self.config.get('max_features', 5000),
-            lowercase=True,
+            lowercase=False,  # Ya viene preprocesado en minúsculas
+            stop_words=None,  # NO aplicar stopwords aquí (ya se aplicaron en preprocesamiento)
             token_pattern=r'\b[a-zA-Z]{2,}\b'  # solo palabras de 2+ letras
         )
 

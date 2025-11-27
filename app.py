@@ -24,7 +24,6 @@ from src.text_preprocessor import TextPreprocessor  # noqa: E402
 
 # Importar componentes UI
 from components.ui.styles import apply_custom_styles  # noqa: E402
-from components.ui.layout import render_sidebar  # noqa: E402
 
 # Importar páginas
 from components.pages import (  # noqa: E402
@@ -59,8 +58,7 @@ from components.pages.models import dimensionality_reduction as dimensionality_r
 st.set_page_config(
     page_title="Análisis Transformación Digital",
     page_icon="🎓",
-    layout="wide",
-    initial_sidebar_state="collapsed"  # Sidebar colapsado por defecto
+    layout="wide"
 )
 
 # Constantes desde configuración

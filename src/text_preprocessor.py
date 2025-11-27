@@ -17,19 +17,24 @@ from collections import defaultdict, Counter
 from typing import Dict, List, Tuple, Set, Optional, Union, Any
 from scipy.sparse import csr_matrix
 from numpy.typing import NDArray
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class TextPreprocessor:
     """Clase para preprocesamiento avanzado de texto"""
 
-    def __init__(self, language: str = 'english') -> None:
+    def __init__(self, language: str = 'english', use_global_stopwords: bool = True) -> None:
         """
         Inicializa el preprocesador
 
         Args:
             language: Idioma para procesamiento
+            use_global_stopwords: Si True, usa stopwords globales del PipelineConfig
         """
         self.language: str = language
+        self.use_global_stopwords: bool = use_global_stopwords
         self.stop_words: Set[str] = set()
         self.stemmer: Optional[SnowballStemmer] = None
         self.lemmatizer: Optional[WordNetLemmatizer] = None
@@ -64,7 +69,20 @@ class TextPreprocessor:
                     # Si falla la descarga, continuar (no es crítico)
                     pass
 
-        # Stopwords - Cargar múltiples idiomas
+        # Stopwords - Usar stopwords globales del PipelineConfig si está activado
+        if self.use_global_stopwords:
+            try:
+                from src.pipeline_config import PipelineConfig
+                self.stop_words = PipelineConfig.GLOBAL_STOPWORDS.copy()
+                logger.info(f"Cargadas {len(self.stop_words)} stopwords globales desde PipelineConfig")
+            except ImportError:
+                logger.warning("No se pudo importar PipelineConfig, cargando stopwords locales")
+                self._load_local_stopwords()
+        else:
+            self._load_local_stopwords()
+
+    def _load_local_stopwords(self) -> None:
+        """Carga stopwords locales (fallback si no se puede usar GLOBAL_STOPWORDS)"""
         self.stop_words = set()
         try:
             # Cargar stopwords en inglés
@@ -80,76 +98,13 @@ class TextPreprocessor:
         except Exception:
             pass
 
-        # Palabras adicionales a eliminar
+        # Palabras adicionales a eliminar (versión reducida para evitar eliminar TODO)
         extra_stopwords = {
             "de", "al", "en", "la", "et", "a", "b", "c", "d", "e", "f",
             "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s",
-            "L.", "Y.", "S.", "T.", "A.", "B.", "C.", "D.", "E.", "F.",
-            "G.", "H.", "I.", "J.", "K.", "L.", "M.", "N.", "O.", "P.", "Q.",
-            "R.", "S.", "T.", "U.", "V.", "W.", "X.", "Y.", "Z.",
-            "CrossReff", "et", "t", "u", "v", "w", "x", "y", "z", "doi", "pp",
-            "group", "author", "crossref", "cid",
-            "article", "well", "zane", "hive", "morl", "neame", "eep",
-            "gelderen", "httpswwwdundeeacukentrepreneurshipourmission",
-            "schtt", "ionescusomers", "deviating", "excelling", "marketreadiness",
-            "kicked", "beautyman", "robbie", "runnerup", "levelall", "hefe",
-            "culminates", "feeder", "closelyknit", "scottishwide", "masterclass",
-            "jewellery", "selfreliance", "interweaving", "chaff", "wheat",
-            "innovatorentrepreneur",
-            "doubtful", "bmcnicolldundeeacuk", "fsbrucedundeeacuk", "slatterdundeeacuk",
-            "ieeetsinghua", "telecomequipment", "deisign", "httpsdoiorgjeuroecorev",
-            "observertoparticipant", "focusgroups", "musgrave", "commonalty", "escalating",
-            "mediatory", "crediting", "musgraves", "aideneomahonymycitie", "httpcieasuedu",
-            "nctla", "goodsell", "dolan", "discoverybased", "httpsdoiorgjjvb",
-            "schmittrodermund",
-            "silbereisen", "httpsdoiorgjausmj", "parrish", "okely", "httpdoich",
-            "ndererol", "cansever",
-            "arslan", "capio", "stretching", "teacherstudents", "collectiveefficacy",
-            "empathically", "unfit",
-            "disequilibria", "adoptable", "paulflynnnuigalwayie",
-            "veronicamccauleynuigalwayie", "rmcartstangelasnuigalwayie",
-            "ramsgaard", "strom", "sheshinskie", "storeyd",
-            "systemsresearchicarepacepaceworkbookinenglish",
-            "httpsmgmtaudkresearchinnovationentrepreneurshipandinformation",
-            "rodriguezfalcon",
-            "httpseceuropaeusocialmainjspcatidlangiden", "httpswwwloopmeio", "debbi",
-            "ephemera",
-            "entreprenrskab", "fonden", "incl", "skillscompetences", "capacious",
-            "sheshinski", "challengesbarriers",
-            "meltviadk", "cafrviadk", "zari", "brakovska", "lukaa", "grinevia",
-            "avotins", "alonsogonzalez", "broadfoot", "lapparent", "fig",
-
-            "con", "del", "para", "el", "los", "una", "un", "sobre", "y",  # Español
-            "also", "may", "many", "however", "provides", "providing", "results",
-            "paper", "time", "new", "one", "used",
-            "important", "system", "example", "approach", "framework", "level",
-            "among", "various", "type", "number", "etc",
-            "table", "section", "introduction", "conclusion", "reference", "references",
-            "abstract", "keywords", "email",
-            "http", "https", "www", "url", "id", "data", "study",  # Académicos/generales
-
-            # Nombres de autores o de la propuesta para eliminar
-            "nguyen", "phan", "tran", "khong", "celik", "mulafalcn", "agasisti",
-            "soncin", "mai", "chau", "nguyenanh", "pham",
-            "odea", "zhou", "andy", "bichhang", "duong", "mlf", "camilo", "jose",
-            "cela", "luckasson", "tasse", "farran",
-            "joanne", "alonso", "criado", "gmez", "martn", "verdugo", "sanchez",
-            "carrera", "angel", "vicariomerino", "martorell",
-            "montero", "daz", "garcaprieto", "bonilla", "calero", "luzn", "trujillo",
-            "sevilla", "moreno", "cobos", "lopezbastias",
-            "montoya", "echeverra", "saenz", "esteve", "mon", "gisbert", "cervera",
-            "caberoalmenara", "duran", "lobo",
-            "watkins", "vquezalfaro", "armasalba", "alonsorodrguez", "kumin",
-            "schoenbrodt", "furniss", "lancioni",
-            "gedrimiene", "silvola", "le", "ttt", "cruzgonzalez", "domingo", "segovia",
-            "hn", "gardner", "sheridan",
-            "nn", "nham", "tp", "takahashi", "tranphuong", "qa", "tl", "dtb",
-            "blackmore", "ainara", "palazn",
-            "gmezgallego", "arrieta", "casasola", "margarita", "marina", "quero",
-            "crdoba", "guha", "th", "dsm",
-            "aaidd", "navas", "echavarriaramirez", "tirapuustarroz", "gutierrez",
-            "martorell", "incheon", "unesco",
-            "luque", "yeung", "universitarios", "autopercepcin"
+            "t", "u", "v", "w", "x", "y", "z",
+            "con", "del", "para", "el", "los", "una", "un", "sobre", "y",
+            "doi", "pp", "http", "https", "www", "url"
         }
 
         # Unir las stopwords estándar con las adicionales
