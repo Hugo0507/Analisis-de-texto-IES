@@ -4,7 +4,7 @@ Reducción de Dimensionalidad - Dashboard de Solo Lectura
 
 import streamlit as st
 import pandas as pd
-from components.ui.helpers import show_section_header
+from components.ui.helpers import show_section_header, show_return_to_dashboard_button
 
 
 def render():
@@ -61,3 +61,6 @@ def render():
 
     st.markdown("---")
     st.success("✅ **Reducción de dimensionalidad completada**")
+
+    # Botón de retorno al Dashboard Principal
+    show_return_to_dashboard_button()
