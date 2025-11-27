@@ -5,7 +5,7 @@ Componentes visuales con Streamlit
 
 import streamlit as st
 import plotly.express as px
-from components.ui.helpers import show_section_header, show_chart_interpretation
+from components.ui.helpers import show_section_header, show_chart_interpretation, show_return_to_dashboard_button
 from src.drive_connector import format_size
 from . import estadisticas_archivos as logic
 
@@ -230,3 +230,6 @@ def render():
 
     with tab3:
         render_distribution_tab()
+
+    # Botón de retorno al Dashboard Principal
+    show_return_to_dashboard_button()

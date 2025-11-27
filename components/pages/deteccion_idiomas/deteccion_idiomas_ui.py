@@ -6,7 +6,7 @@ Muestra resultados procesados automáticamente por el pipeline
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-from components.ui.helpers import show_section_header, show_chart_interpretation
+from components.ui.helpers import show_section_header, show_chart_interpretation, show_return_to_dashboard_button
 
 
 def render():
@@ -218,3 +218,6 @@ def render():
             f"como idioma mayoritario ({selected_count} documentos)"
         )
         st.info("📌 Solo los documentos en este idioma continúan a las siguientes etapas del análisis.")
+
+    # Botón de retorno al Dashboard Principal
+    show_return_to_dashboard_button()

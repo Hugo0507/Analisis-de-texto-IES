@@ -7,7 +7,7 @@ import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
-from components.ui.helpers import show_section_header, show_chart_interpretation
+from components.ui.helpers import show_section_header, show_chart_interpretation, show_return_to_dashboard_button
 from . import evaluacion_desempeno as logic
 import json
 
@@ -660,3 +660,6 @@ def render():
 
     with tab6:
         render_export()
+
+    # Botón de retorno al Dashboard Principal
+    show_return_to_dashboard_button()
