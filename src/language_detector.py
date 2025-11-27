@@ -130,6 +130,56 @@ class LanguageDetector:
                 'error': str(e)
             }
 
+    def detect_from_bytes(self, file_bytes: bytes, file_name: str, file_extension: str, method: str = 'langdetect') -> Dict[str, Any]:
+        """
+        Detecta el idioma de un archivo PDF desde bytes
+
+        Args:
+            file_bytes: Bytes del archivo
+            file_name: Nombre del archivo
+            file_extension: Extensión del archivo (.pdf)
+            method: Método de detección
+
+        Returns:
+            Diccionario con información del idioma
+        """
+        try:
+            # Importar PyPDF2 para leer PDFs
+            import PyPDF2
+            from io import BytesIO
+
+            # Leer el PDF desde bytes
+            pdf_reader = PyPDF2.PdfReader(BytesIO(file_bytes))
+
+            # Extraer texto de todas las páginas (máximo 10 para velocidad)
+            text_parts = []
+            max_pages = min(10, len(pdf_reader.pages))
+
+            for i in range(max_pages):
+                try:
+                    page = pdf_reader.pages[i]
+                    text_parts.append(page.extract_text())
+                except Exception:
+                    continue
+
+            text = ' '.join(text_parts)
+
+            # Detectar idioma del texto extraído
+            result = self.detect_language(text, method=method)
+            result['file'] = file_name
+            return result
+
+        except Exception as e:
+            logger.warning(f"Error detectando idioma de {file_name}: {e}")
+            return {
+                'file': file_name,
+                'language_code': 'error',
+                'language_name': 'Error',
+                'confidence': 0.0,
+                'method': method,
+                'error': str(e)
+            }
+
     def detect_language_from_file(self, file_path: str, encoding: str = 'utf-8', method: str = 'langdetect') -> Dict[str, Any]:
         """
         Detecta el idioma de un archivo

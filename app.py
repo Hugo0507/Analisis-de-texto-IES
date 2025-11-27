@@ -43,6 +43,9 @@ from components.pages import (  # noqa: E402
     evaluacion_desempeno
 )
 
+# Dashboard Principal
+from components.pages import dashboard_principal  # noqa: E402
+
 # Importar páginas de modelos avanzados
 from components.pages.models import ner_analysis  # noqa: E402
 from components.pages.models import topic_modeling as topic_modeling_page  # noqa: E402
@@ -168,6 +171,10 @@ def main() -> None:
         # Routing de páginas - Reorganizado por flujo lógico
         if pagina == "Inicio":
             inicio.render()
+
+        # DASHBOARD PRINCIPAL - Monitor de Pipeline
+        elif pagina == "📊 Dashboard Principal":
+            dashboard_principal.render()
 
         # FASE 1: PREPARACIÓN
         elif pagina == "1. Conexión Google Drive":

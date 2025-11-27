@@ -4,6 +4,7 @@ Modulo de paginas de la aplicacion
 
 from . import (
     inicio,
+    dashboard_principal,
     conexion_drive,
     estadisticas_archivos,
     deteccion_idiomas,
@@ -20,6 +21,7 @@ from . import (
 
 __all__ = [
     'inicio',
+    'dashboard_principal',
     'conexion_drive',
     'estadisticas_archivos',
     'deteccion_idiomas',
