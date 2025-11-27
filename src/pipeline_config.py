@@ -15,10 +15,85 @@ DOCUMENTACIÓN DE PARÁMETROS:
 """
 
 from typing import Dict, Any, List, Tuple
+import nltk
+from nltk.corpus import stopwords
+
+# Descargar stopwords si es necesario
+try:
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('stopwords', quiet=True)
 
 
 class PipelineConfig:
     """Configuración centralizada del pipeline de análisis"""
+
+    # ============================================================
+    # 0. STOPWORDS GLOBALES (INGLÉS + ESPAÑOL + EXTRAS)
+    # ============================================================
+    # Stopwords unificadas para TODOS los modelos del pipeline
+    # NO modificar estas stopwords por modelo - usar siempre este set global
+
+    # Cargar stopwords en inglés y español
+    _stop_words_english = set(stopwords.words('english'))
+    _stop_words_spanish = set(stopwords.words('spanish'))
+
+    # Stopwords adicionales (académicas, nombres de autores, términos técnicos)
+    _extra_stopwords = {
+        # Español básico
+        "de", "al", "en", "la", "et", "a", "b", "c", "d", "e", "f",
+        "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s",
+        "t", "u", "v", "w", "x", "y", "z",
+        "con", "del", "para", "el", "los", "una", "un", "sobre", "y",
+
+        # Letras con punto
+        "L.", "Y.", "S.", "T.", "A.", "B.", "C.", "D.", "E.", "F.",
+        "G.", "H.", "I.", "J.", "K.", "L.", "M.", "N.", "O.", "P.", "Q.", "R.", "S.", "T.", "U.", "V.", "W.", "X.", "Y.", "Z.",
+
+        # Términos académicos genéricos
+        "CrossReff", "doi", "pp", "group", "author", "crossref",
+        "article", "well", "zane", "hive", "morl", "neame", "eep",
+        "also", "may", "many", "however", "provides", "providing", "results", "paper", "time", "new", "one", "used",
+        "important", "system", "example", "approach", "framework", "level", "among", "various", "type", "number", "etc",
+        "table", "section", "introduction", "conclusion", "reference", "references", "abstract", "keywords", "email",
+        "http", "https", "www", "url", "id", "data", "study", "fig",
+
+        # Términos técnicos/institucionales
+        "gelderen", "httpswwwdundeeacukentrepreneurshipourmission",
+        "schtt", "ionescusomers", "deviating", "excelling", "marketreadiness",
+        "kicked", "beautyman", "robbie", "runnerup", "levelall", "hefe",
+        "culminates", "feeder", "closelyknit", "scottishwide", "masterclass",
+        "jewellery", "selfreliance", "interweaving", "chaff", "wheat", "innovatorentrepreneur",
+        "doubtful", "bmcnicolldundeeacuk", "fsbrucedundeeacuk", "slatterdundeeacuk",
+        "ieeetsinghua", "telecomequipment", "deisign", "httpsdoiorgjeuroecorev",
+        "observertoparticipant", "focusgroups", "musgrave", "commonalty", "escalating",
+        "mediatory", "crediting", "musgraves", "aideneomahonymycitie", "httpcieasuedu",
+        "nctla", "goodsell", "dolan", "discoverybased", "httpsdoiorgjjvb", "schmittrodermund",
+        "silbereisen", "httpsdoiorgjausmj", "parrish", "okely", "httpdoich", "ndererol", "cansever",
+        "arslan", "capio", "stretching", "teacherstudents", "collectiveefficacy", "empathically", "unfit",
+        "disequilibria", "adoptable", "paulflynnnuigalwayie", "veronicamccauleynuigalwayie", "rmcartstangelasnuigalwayie",
+        "ramsgaard", "strom", "sheshinskie", "storeyd", "systemsresearchicarepacepaceworkbookinenglish",
+        "httpsmgmtaudkresearchinnovationentrepreneurshipandinformation", "rodriguezfalcon",
+        "httpseceuropaeusocialmainjspcatidlangiden", "httpswwwloopmeio", "debbi", "ephemera",
+        "entreprenrskab", "fonden", "incl", "skillscompetences", "capacious", "sheshinski", "challengesbarriers",
+        "meltviadk", "cafrviadk", "zari", "brakovska", "lukaa", "grinevia", "avotins", "alonsogonzalez", "broadfoot", "lapparent",
+
+        # Nombres de autores
+        "nguyen", "phan", "tran", "khong", "celik", "mulafalcn", "agasisti", "soncin", "mai", "chau", "nguyenanh", "pham",
+        "odea", "zhou", "andy", "bichhang", "duong", "mlf", "camilo", "jose", "cela", "luckasson", "tasse", "farran",
+        "joanne", "alonso", "criado", "gmez", "martn", "verdugo", "sanchez", "carrera", "angel", "vicariomerino", "martorell",
+        "montero", "daz", "garcaprieto", "bonilla", "calero", "luzn", "trujillo", "sevilla", "moreno", "cobos", "lopezbastias",
+        "montoya", "echeverra", "saenz", "esteve", "mon", "gisbert", "cervera", "caberoalmenara", "duran", "lobo",
+        "watkins", "vquezalfaro", "armasalba", "alonsorodrguez", "kumin", "schoenbrodt", "furniss", "lancioni",
+        "gedrimiene", "silvola", "le", "ttt", "cruzgonzalez", "domingo", "segovia", "hn", "gardner", "sheridan",
+        "nn", "nham", "tp", "takahashi", "tranphuong", "qa", "tl", "dtb", "blackmore", "ainara", "palazn",
+        "gmezgallego", "arrieta", "casasola", "margarita", "marina", "quero", "crdoba", "guha", "th", "dsm",
+        "aaidd", "navas", "echavarriaramirez", "tirapuustarroz", "gutierrez", "martorell", "incheon", "unesco",
+        "luque", "yeung", "universitarios", "autopercepcin"
+    }
+
+    # Unir todas las stopwords
+    GLOBAL_STOPWORDS = _stop_words_english.union(_stop_words_spanish).union(_extra_stopwords)
 
     # ============================================================
     # 1. SELECCIÓN AUTOMÁTICA DE IDIOMA
@@ -34,9 +109,13 @@ class PipelineConfig:
     # Configuración para limpieza y normalización de texto
 
     PREPROCESSING = {
-        # Aplicar stemming (reducir palabras a su raíz)
+        # Aplicar lematización (reducir palabras a su forma base/lemma)
+        # True: "running" -> "run", "better" -> "good" | False: mantener palabras completas
+        'apply_lemmatization': True,
+
+        # Aplicar stemming (MÁS AGRESIVO que lematización, NO recomendado si se usa lematización)
         # True: "running" -> "run" | False: mantener palabras completas
-        'apply_stemming': True,
+        'apply_stemming': False,  # Desactivado porque usamos lematización
 
         # Longitud mínima de tokens a conservar
         'min_token_length': 3,  # Descartar palabras de 1-2 caracteres
@@ -44,8 +123,8 @@ class PipelineConfig:
         # Remover números del texto
         'remove_numbers': False,  # True = remover | False = conservar
 
-        # Stopwords personalizadas adicionales (además de las por defecto)
-        'custom_stopwords': ['además', 'así', 'puede', 'debe', 'hacer', 'ser', 'estar'],
+        # Stopwords personalizadas adicionales (además de las globales)
+        'custom_stopwords': [],  # Ya tenemos GLOBAL_STOPWORDS, no necesitamos más
 
         # Convertir todo a minúsculas
         'lowercase': True

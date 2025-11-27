@@ -7,7 +7,7 @@ import streamlit as st
 import plotly.express as px
 from components.ui.helpers import show_section_header, show_chart_interpretation, show_return_to_dashboard_button
 from src.drive_connector import format_size
-from . import estadisticas_archivos as logic
+from src import file_statistics as logic
 
 
 # Constante
