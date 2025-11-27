@@ -999,7 +999,7 @@ class PipelineManager:
                 logger.info("✓ BoW encontrado en caché")
                 self.progress_tracker.update_progress(stage_idx, 0.5, "Cargando desde caché...")
 
-                # Nota: matrices sparse no se pueden serializar en JSON, solo guardamos metadatos
+                # Cargar metadatos
                 self.results['bow_vocabulary_size'] = results_data.get('vocabulary_size', 0)
                 self.results['bow_feature_names'] = results_data.get('feature_names', [])
                 self.results['bow_doc_names'] = results_data.get('doc_names', [])
@@ -1011,6 +1011,15 @@ class PipelineManager:
                     'avg_terms_per_doc': results_data.get('avg_terms_per_doc', 0),
                     'sparsity': results_data.get('sparsity', 0.0)
                 }
+
+                # CRÍTICO: Cargar la matriz desde pickle
+                logger.info("Cargando matriz BoW desde pickle...")
+                bow_matrix = self.cache.load_pickle_data("05_BagOfWords_Results", "bow_matrix.pkl")
+                if bow_matrix is not None:
+                    self.results['bow_matrix'] = bow_matrix
+                    logger.info(f"✓ Matriz BoW cargada: {bow_matrix.shape}")
+                else:
+                    logger.warning("⚠️ No se pudo cargar la matriz BoW desde cache")
 
                 self.progress_tracker.update_progress(stage_idx, 1.0, "Cargado desde caché")
 
@@ -1057,7 +1066,7 @@ class PipelineManager:
         self.results['bow_stats'] = bow_stats
 
         # ===== GUARDAR EN CACHÉ =====
-        self.progress_tracker.update_progress(stage_idx, 0.95, "Guardando en caché...")
+        self.progress_tracker.update_progress(stage_idx, 0.90, "Guardando en caché...")
 
         cache_data = {
             'vocabulary_size': bow_stats['vocabulary_size'],
@@ -1071,6 +1080,10 @@ class PipelineManager:
         }
 
         self.cache.save_stage_results("05_BagOfWords_Results", cache_data, "bow_results.json")
+
+        # CRÍTICO: Guardar la matriz en pickle para poder cargarla después
+        logger.info("Guardando matriz BoW en pickle...")
+        self.cache.save_pickle_data("05_BagOfWords_Results", bow_df, "bow_matrix.pkl")
 
         self.progress_tracker.update_progress(stage_idx, 1.0, "BoW completado")
 
@@ -1097,6 +1110,7 @@ class PipelineManager:
                 logger.info("✓ TF-IDF encontrado en caché")
                 self.progress_tracker.update_progress(stage_idx, 0.5, "Cargando desde caché...")
 
+                # Cargar metadatos
                 self.results['tfidf_vocabulary_size'] = results_data.get('vocabulary_size', 0)
                 self.results['tfidf_feature_names'] = results_data.get('feature_names', [])
                 self.results['tfidf_doc_names'] = results_data.get('doc_names', [])
@@ -1106,8 +1120,18 @@ class PipelineManager:
                     'n_documents': results_data.get('n_documents', 0),
                     'vocabulary_size': results_data.get('vocabulary_size', 0),
                     'sparsity': results_data.get('sparsity', 0.0),
-                    'density': results_data.get('density', 0.0)
+                    'density': results_data.get('density', 0.0),
+                    'avg_tfidf_score': results_data.get('avg_tfidf_score', 0.0)
                 }
+
+                # CRÍTICO: Cargar la matriz desde pickle
+                logger.info("Cargando matriz TF-IDF desde pickle...")
+                tfidf_matrix = self.cache.load_pickle_data("06_TFIDF_Results", "tfidf_matrix.pkl")
+                if tfidf_matrix is not None:
+                    self.results['tfidf_matrix'] = tfidf_matrix
+                    logger.info(f"✓ Matriz TF-IDF cargada: {tfidf_matrix.shape}")
+                else:
+                    logger.warning("⚠️ No se pudo cargar la matriz TF-IDF desde cache")
 
                 self.progress_tracker.update_progress(stage_idx, 1.0, "Cargado desde caché")
 
@@ -1164,13 +1188,14 @@ class PipelineManager:
         self.results['tfidf_stats'] = tfidf_stats
 
         # ===== GUARDAR EN CACHÉ =====
-        self.progress_tracker.update_progress(stage_idx, 0.95, "Guardando en caché...")
+        self.progress_tracker.update_progress(stage_idx, 0.90, "Guardando en caché...")
 
         cache_data = {
             'vocabulary_size': tfidf_stats['vocabulary_size'],
             'n_documents': tfidf_stats['n_documents'],
             'sparsity': tfidf_stats['sparsity'],
             'density': 1.0 - tfidf_stats['sparsity'],
+            'avg_tfidf_score': tfidf_stats.get('avg_tfidf_score', 0.0),
             'feature_names': tfidf_analyzer.get_vocabulary(),
             'doc_names': doc_names,
             'top_terms': top_terms,
@@ -1178,6 +1203,10 @@ class PipelineManager:
         }
 
         self.cache.save_stage_results("06_TFIDF_Results", cache_data, "tfidf_results.json")
+
+        # CRÍTICO: Guardar la matriz en pickle para poder cargarla después
+        logger.info("Guardando matriz TF-IDF en pickle...")
+        self.cache.save_pickle_data("06_TFIDF_Results", tfidf_df_normalized, "tfidf_matrix.pkl")
 
         self.progress_tracker.update_progress(stage_idx, 1.0, "TF-IDF completado")
 
