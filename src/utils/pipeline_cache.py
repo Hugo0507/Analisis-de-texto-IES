@@ -212,6 +212,91 @@ class PipelineCache:
             logger.error(f"Error limpiando cache de {stage_name}: {e}")
             return False
 
+    def save_pickle_data(self, stage_name: str, data: Any, pickle_file: str) -> bool:
+        """
+        Guarda datos en formato pickle (para matrices, DataFrames, etc.)
+
+        Args:
+            stage_name: Nombre de la carpeta
+            data: Datos a guardar (DataFrame, matriz, etc.)
+            pickle_file: Nombre del archivo pickle
+
+        Returns:
+            True si se guardó exitosamente
+        """
+        try:
+            logger.info(f"Guardando datos pickle para {stage_name}/{pickle_file}...")
+            folder_id = self.get_or_create_stage_folder(stage_name)
+
+            # Serializar a pickle
+            pickle_bytes = pickle.dumps(data)
+            logger.info(f"  Tamaño del pickle: {len(pickle_bytes)} bytes")
+
+            # Subir a Drive
+            file_id = self.drive_connector.upload_file(
+                folder_id,
+                pickle_file,
+                pickle_bytes,
+                'application/octet-stream'
+            )
+
+            if file_id:
+                logger.info(f"  ✓ Pickle guardado en Drive: {stage_name}/{pickle_file}")
+                return True
+            else:
+                logger.error(f"  ❌ Error guardando pickle: {stage_name}/{pickle_file}")
+                return False
+
+        except Exception as e:
+            logger.error(f"❌ Error guardando pickle para {stage_name}: {e}", exc_info=True)
+            return False
+
+    def load_pickle_data(self, stage_name: str, pickle_file: str) -> Optional[Any]:
+        """
+        Carga datos desde formato pickle
+
+        Args:
+            stage_name: Nombre de la carpeta
+            pickle_file: Nombre del archivo pickle
+
+        Returns:
+            Datos deserializados o None si hay error
+        """
+        try:
+            logger.info(f"Cargando pickle {stage_name}/{pickle_file}...")
+            folder_id = self.get_or_create_stage_folder(stage_name)
+
+            # Listar archivos en la carpeta
+            files = self.drive_connector.list_files_in_folder(folder_id, recursive=False)
+            pickle_files = [f for f in files if f['name'] == pickle_file]
+
+            if not pickle_files:
+                logger.info(f"  ❌ No se encontró pickle {stage_name}/{pickle_file}")
+                return None
+
+            # Leer el archivo
+            file_id = pickle_files[0]['id']
+            logger.info(f"  Leyendo archivo pickle {file_id}...")
+            file_content = self.drive_connector.read_file_content(file_id)
+
+            if not file_content:
+                logger.warning(f"  ⚠️ Pickle vacío: {stage_name}/{pickle_file}")
+                return None
+
+            # Deserializar
+            if hasattr(file_content, 'read'):
+                pickle_bytes = file_content.read()
+            else:
+                pickle_bytes = file_content
+
+            data = pickle.loads(pickle_bytes)
+            logger.info(f"  ✓ Pickle cargado exitosamente: {stage_name}/{pickle_file}")
+            return data
+
+        except Exception as e:
+            logger.error(f"❌ Error cargando pickle {stage_name}/{pickle_file}: {e}", exc_info=True)
+            return None
+
     def get_stage_folder_map(self) -> Dict[str, str]:
         """
         Retorna el mapeo de nombres de etapas a IDs de carpetas
