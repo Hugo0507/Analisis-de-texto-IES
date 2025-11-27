@@ -70,7 +70,7 @@ def render():
 
                     # Listar archivos de la carpeta
                     with st.spinner("Listando archivos de Drive..."):
-                        files = st.session_state.drive_connector.list_files(logic.DEFAULT_FOLDER_ID)
+                        files = st.session_state.drive_connector.list_files_in_folder(logic.DEFAULT_FOLDER_ID)
                         st.session_state.drive_files = files
                         st.info(f"📁 Se encontraron {len(files)} archivos en la carpeta")
 

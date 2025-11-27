@@ -6,7 +6,7 @@ Muestra resultados procesados automáticamente por el pipeline
 import streamlit as st
 import plotly.express as px
 import pandas as pd
-from components.ui.helpers import show_section_header
+from components.ui.helpers import show_section_header, show_return_to_dashboard_button
 
 
 def render():
@@ -165,3 +165,6 @@ def render():
     """)
 
     st.success("✅ **Conversión completada** - Los archivos están listos para el preprocesamiento")
+
+    # Botón de retorno al Dashboard Principal
+    show_return_to_dashboard_button()

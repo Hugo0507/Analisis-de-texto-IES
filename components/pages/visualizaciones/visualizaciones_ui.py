@@ -3,7 +3,7 @@ Visualizaciones - Dashboard de Solo Lectura
 """
 
 import streamlit as st
-from components.ui.helpers import show_section_header
+from components.ui.helpers import show_section_header, show_return_to_dashboard_button
 
 
 def render():
@@ -43,3 +43,6 @@ def render():
 
     st.markdown("---")
     st.success("✅ **Visualizaciones preparadas** - Disponibles en cada dashboard")
+
+    # Botón de retorno al Dashboard Principal
+    show_return_to_dashboard_button()
