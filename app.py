@@ -60,7 +60,7 @@ st.set_page_config(
     page_title="Análisis Transformación Digital",
     page_icon="🎓",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"  # Sidebar colapsado por defecto
 )
 
 # Constantes desde configuración
@@ -112,6 +112,14 @@ def init_session_state() -> None:
     if 'parent_folder_id' not in st.session_state:
         st.session_state.parent_folder_id = None
 
+    # Control de flujo del pipeline automático
+    if 'pipeline_completed' not in st.session_state:
+        st.session_state.pipeline_completed = False
+    if 'pipeline_should_start' not in st.session_state:
+        st.session_state.pipeline_should_start = False
+    if 'current_page' not in st.session_state:
+        st.session_state.current_page = None
+
     # Sistema de carpetas de persistencia secuencial (actualizado con nuevo flujo)
     if 'project_folder_id' not in st.session_state:
         st.session_state.project_folder_id = None
@@ -154,7 +162,7 @@ def init_session_state() -> None:
 # ==================== FUNCIÓN PRINCIPAL ====================
 
 def main() -> None:
-    """Función principal de la aplicación"""
+    """Función principal de la aplicación - Nuevo flujo automático"""
     try:
         logger.debug("Ejecutando función main()")
 
@@ -164,16 +172,24 @@ def main() -> None:
         # Aplicar estilos
         apply_custom_styles()
 
-        # Renderizar sidebar y obtener página seleccionada
-        pagina: Optional[str] = render_sidebar()
-        logger.debug(f"Página seleccionada: {pagina}")
+        # ==================== NUEVO FLUJO AUTOMÁTICO ====================
+        # FLUJO 1: Si no está autenticado -> Mostrar conexión a Drive
+        if not st.session_state.authenticated:
+            logger.info("Usuario no autenticado - Mostrando página de conexión")
+            conexion_drive.render()
+            return
 
-        # Routing de páginas - Reorganizado por flujo lógico
-        if pagina == "Inicio":
-            inicio.render()
+        # FLUJO 2: Si está autenticado pero no hay current_page -> Ir a Dashboard
+        if st.session_state.current_page is None:
+            logger.info("Usuario autenticado - Redirigiendo a Dashboard Principal")
+            st.session_state.current_page = "📊 Dashboard Principal"
 
-        # DASHBOARD PRINCIPAL - Monitor de Pipeline
-        elif pagina == "📊 Dashboard Principal":
+        # FLUJO 3: Renderizar la página actual
+        pagina = st.session_state.current_page
+        logger.debug(f"Renderizando página: {pagina}")
+
+        # Routing de páginas
+        if pagina == "📊 Dashboard Principal":
             dashboard_principal.render()
 
         # FASE 1: PREPARACIÓN
@@ -230,49 +246,13 @@ def main() -> None:
         elif pagina == "17. Evaluación de Desempeño":
             evaluacion_desempeno.render()
 
-        # Manejo de separadores de fase (son solo títulos, mostrar página de inicio)
-        elif "FASE" in pagina and pagina.strip().startswith("FASE"):
-            st.info("👈 Selecciona una opción específica del menú lateral")
-            st.markdown("""
-            ### 🎯 Flujo de Análisis Organizado por Fases
-
-            El análisis está estructurado en **8 fases secuenciales**:
-
-            **📁 FASE 1: PREPARACIÓN**
-            - Conexión a Google Drive
-            - Detección de idiomas
-            - Conversión de documentos
-            - Preprocesamiento de texto
-
-            **📁 FASE 2: REPRESENTACIÓN VECTORIAL**
-            - Bolsa de Palabras (BoW)
-            - TF-IDF
-            - Análisis de N-gramas
-
-            **📁 FASE 3: ANÁLISIS LINGÜÍSTICO**
-            - Named Entity Recognition (NER)
-
-            **📁 FASE 4: MODELADO DE TEMAS**
-            - Topic Modeling clásico (LDA/NMF/LSA/pLSA)
-            - BERTopic (moderno)
-
-            **📁 FASE 5: DIMENSIONALIDAD Y CLASIFICACIÓN**
-            - Reducción de Dimensionalidad (PCA/t-SNE/UMAP)
-            - Clasificación de Textos
-
-            **📁 FASE 6: ANÁLISIS INTEGRADO**
-            - Análisis de Factores (consolida todos los análisis)
-
-            **📁 FASE 7: VISUALIZACIÓN**
-            - Visualizaciones y Nubes de Palabras
-
-            **📁 FASE 8: EVALUACIÓN**
-            - Evaluación de Desempeño del Pipeline Completo
-            """)
-
         else:
             logger.warning(f"Página desconocida: {pagina}")
             st.error(f"❌ Página no encontrada: {pagina}")
+            # Redirigir al dashboard
+            if st.button("Volver al Dashboard Principal"):
+                st.session_state.current_page = "📊 Dashboard Principal"
+                st.rerun()
 
     except Exception as e:
         logger.error(f"Error crítico en main(): {e}", exc_info=True)
