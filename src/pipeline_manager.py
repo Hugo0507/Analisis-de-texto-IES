@@ -1631,7 +1631,25 @@ class PipelineManager:
                 logger.info("✓ Reducción de dimensionalidad encontrada en caché")
                 self.progress_tracker.update_progress(stage_idx, 0.5, "Cargando reducción desde caché...")
 
-                self.results['dimensionality_reduction'] = results_data.get('reduction_results', {})
+                reduction_results = results_data.get('reduction_results', {})
+
+                # Cargar datos transformados desde pickle
+                logger.info("Cargando datos transformados desde pickle...")
+                transformed_data_dict = self.cache.load_pickle_data(
+                    "11_Dimensionality_Reduction",
+                    "transformed_data.pkl"
+                )
+
+                # Combinar métricas con datos transformados
+                if transformed_data_dict:
+                    for method_name, transformed_data in transformed_data_dict.items():
+                        if method_name in reduction_results:
+                            reduction_results[method_name]['transformed_data'] = transformed_data
+                    logger.info(f"✓ Datos transformados cargados para {len(transformed_data_dict)} métodos")
+                else:
+                    logger.warning("⚠️ No se encontraron datos transformados en pickle")
+
+                self.results['dimensionality_reduction'] = reduction_results
 
                 self.progress_tracker.update_progress(stage_idx, 1.0, "Reducción cargada desde caché")
 
@@ -1712,13 +1730,41 @@ class PipelineManager:
         # ===== GUARDAR EN CACHÉ =====
         self.progress_tracker.update_progress(stage_idx, 0.95, "Guardando reducción en caché...")
 
+        # Separar datos transformados (NumPy arrays) de métricas (JSON-serializable)
+        results_for_json = {}
+        transformed_data_dict = {}
+
+        for method_name, method_results in results.items():
+            if method_name.endswith('_error'):
+                # Guardar errores tal cual
+                results_for_json[method_name] = method_results
+            elif isinstance(method_results, dict) and 'transformed_data' in method_results:
+                # Separar transformed_data (NumPy) de métricas (JSON)
+                results_for_json[method_name] = {
+                    k: v for k, v in method_results.items() if k != 'transformed_data'
+                }
+                # Guardar datos transformados por separado
+                transformed_data_dict[method_name] = method_results['transformed_data']
+            else:
+                results_for_json[method_name] = method_results
+
         cache_data = {
-            'reduction_results': results,
+            'reduction_results': results_for_json,
             'methods_applied': len([k for k in results.keys() if not k.endswith('_error')]),
             'original_dimensions': prep_stats['n_features']
         }
 
+        # Guardar métricas en JSON
         self.cache.save_stage_results("11_Dimensionality_Reduction", cache_data, "dimred_results.json")
+
+        # Guardar datos transformados en pickle por separado
+        if transformed_data_dict:
+            logger.info("Guardando datos transformados en pickle...")
+            self.cache.save_pickle_data(
+                "11_Dimensionality_Reduction",
+                transformed_data_dict,
+                "transformed_data.pkl"
+            )
 
         self.progress_tracker.update_progress(stage_idx, 1.0, "Reducción completada")
 
