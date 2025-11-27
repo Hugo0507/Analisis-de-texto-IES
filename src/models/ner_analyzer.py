@@ -476,6 +476,11 @@ class NERAnalyzer:
         avg_entity_density = np.mean([doc['entity_density'] for doc in doc_metrics]) if doc_metrics else 0
         total_chars = sum(doc['total_chars'] for doc in document_analyses.values())
 
+        # Crear diccionario entities_by_type (cantidad total por tipo de entidad)
+        entities_by_type = {}
+        for label, entities in all_entities.items():
+            entities_by_type[label] = len(entities)
+
         result = {
             'documents': document_analyses,
             'corpus_stats': {
@@ -487,11 +492,13 @@ class NERAnalyzer:
                 'year_range': (min(all_years), max(all_years)) if all_years else None,
                 'total_entities': total_entities,
                 'avg_entity_density': round(avg_entity_density, 2),
-                'total_entity_types': len(all_entities)
+                'total_entity_types': len(all_entities),
+                'entities_by_type': entities_by_type  # Agregado para compatibilidad con UI
             },
             'country_distribution': dict(country_counts.most_common(30)),
             'year_distribution': dict(year_counts.most_common()),
             'top_entities_by_category': top_entities_by_category,
+            'top_entities_by_type': top_entities_by_category,  # Alias para compatibilidad
             'cooccurrences': dict(all_cooccurrences.most_common(50)),
             'contexts': dict(all_contexts),
             'document_metrics': doc_metrics

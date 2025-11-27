@@ -1330,9 +1330,11 @@ class PipelineManager:
         ner_config = self.config.NER
 
         # Crear analizador NER
+        # IMPORTANTE: Desactivar caché interno del NERAnalyzer porque el pipeline
+        # ya maneja su propio sistema de caché en Google Drive
         analyzer = NERAnalyzer(
             model_name=ner_config['model_name'],
-            use_cache=ner_config['use_cache']
+            use_cache=False  # Usar solo el caché del pipeline (Google Drive)
         )
 
         self.progress_tracker.update_progress(stage_idx, 0.1, "Modelo cargado, procesando documentos...")
