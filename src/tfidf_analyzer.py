@@ -43,7 +43,8 @@ class TFIDFAnalyzer:
             smooth_idf=self.config.get('smooth_idf', True),
             sublinear_tf=self.config.get('sublinear_tf', False),
             norm=self.config.get('norm', 'l2'),
-            lowercase=True,
+            lowercase=False,  # Ya viene preprocesado en minúsculas
+            stop_words=None,  # NO aplicar stopwords aquí (ya se aplicaron en preprocesamiento)
             token_pattern=r'\b[a-zA-Z]{2,}\b'
         )
 

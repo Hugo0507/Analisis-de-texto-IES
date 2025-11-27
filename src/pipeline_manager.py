@@ -915,7 +915,12 @@ class PipelineManager:
         logger.info(f"Cache no encontrado, preprocesando {len(txt_files)} documentos...")
 
         if not self.text_preprocessor:
-            self.text_preprocessor = TextPreprocessor(language='english')
+            self.text_preprocessor = TextPreprocessor(language='english', use_global_stopwords=True)
+
+        # Obtener parámetros de preprocesamiento desde configuración
+        preprocessing_config = self.config.PREPROCESSING
+        apply_lemmatization = preprocessing_config.get('apply_lemmatization', False)
+        apply_stemming = preprocessing_config.get('apply_stemming', False)
 
         preprocessed_texts = {}
         preprocessing_results = {}
@@ -925,7 +930,14 @@ class PipelineManager:
                 text = txt_file.get('text', '')
                 doc_name = txt_file['name']
 
-                result = self.text_preprocessor.preprocess_text(text)
+                # Usar procesar_texto_completo que soporta lematización
+                result = self.text_preprocessor.procesar_texto_completo(
+                    text,
+                    doc_name,
+                    remove_stopwords=True,
+                    apply_stemming=apply_stemming,
+                    apply_lemmatization=apply_lemmatization
+                )
 
                 preprocessed_texts[doc_name] = ' '.join(result['tokens'])
                 preprocessing_results[doc_name] = result
