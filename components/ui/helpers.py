@@ -67,6 +67,19 @@ def show_section_header(title, description):
     st.markdown(f'<div class="section-description">{description}</div>', unsafe_allow_html=True)
 
 
+def show_return_to_dashboard_button():
+    """
+    Muestra un botón destacado para volver al Dashboard Principal
+    Este botón debe aparecer en todas las páginas de resultados
+    """
+    st.markdown("---")
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("⬅️ Volver al Dashboard Principal", type="primary", use_container_width=True, key="return_to_dashboard"):
+            st.session_state.current_page = "📊 Dashboard Principal"
+            st.rerun()
+
+
 def get_connector():
     """
     Obtiene el conector de Google Drive desde session_state

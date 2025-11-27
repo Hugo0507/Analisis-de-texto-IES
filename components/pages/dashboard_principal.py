@@ -375,7 +375,15 @@ def _render_pipeline_status():
         time.sleep(1.5)
         st.rerun()
     elif progress_dict.get('is_complete', False):
-        st.success("✅ Pipeline completado. Navega a las páginas individuales en el menú lateral para ver los resultados")
+        st.success("✅ Pipeline completado exitosamente!")
+        st.session_state.pipeline_completed = True
+
+        # ==================== MENÚ DE NAVEGACIÓN DE RESULTADOS ====================
+        st.markdown("---")
+        st.markdown("## 📊 Acceso a Resultados")
+        st.markdown("Selecciona un análisis para ver sus resultados:")
+
+        _render_results_navigation_menu()
 
 
 def _render_stage_card(number: int, stage: Dict[str, Any]):
@@ -527,4 +535,116 @@ BOW = {
     with col2:
         if st.button("❌ Cancelar", use_container_width=True):
             st.session_state.show_reprocess_modal = False
+            st.rerun()
+
+
+def _render_results_navigation_menu():
+    """
+    Menú de navegación de resultados cuando el pipeline ha terminado
+    Muestra tarjetas organizadas por fases para acceder a cada análisis
+    """
+    st.markdown("### 📁 FASE 1: Preparación")
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        if st.button("📊 Estadísticas de Archivos", use_container_width=True, key="nav_stats"):
+            st.session_state.current_page = "2. Estadísticas de Archivos"
+            st.rerun()
+
+    with col2:
+        if st.button("🌐 Detección de Idiomas", use_container_width=True, key="nav_lang"):
+            st.session_state.current_page = "3. Detección de Idiomas"
+            st.rerun()
+
+    with col3:
+        if st.button("📝 Conversión a TXT", use_container_width=True, key="nav_convert"):
+            st.session_state.current_page = "4. Conversión a TXT"
+            st.rerun()
+
+    st.markdown("---")
+    st.markdown("### 📁 FASE 2: Representación Vectorial")
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        if st.button("📊 Bolsa de Palabras", use_container_width=True, key="nav_bow"):
+            st.session_state.current_page = "6. Bolsa de Palabras"
+            st.rerun()
+
+    with col2:
+        if st.button("📈 Análisis TF-IDF", use_container_width=True, key="nav_tfidf"):
+            st.session_state.current_page = "7. Análisis TF-IDF"
+            st.rerun()
+
+    with col3:
+        if st.button("🔤 Análisis de N-gramas", use_container_width=True, key="nav_ngrams"):
+            st.session_state.current_page = "8. Análisis de N-gramas"
+            st.rerun()
+
+    st.markdown("---")
+    st.markdown("### 📁 FASE 3: Análisis Lingüístico")
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        if st.button("🏷️ Named Entity Recognition", use_container_width=True, key="nav_ner"):
+            st.session_state.current_page = "9. Named Entity Recognition"
+            st.rerun()
+
+    st.markdown("---")
+    st.markdown("### 📁 FASE 4: Modelado de Temas")
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        if st.button("📚 Modelado de Temas", use_container_width=True, key="nav_topics"):
+            st.session_state.current_page = "10. Modelado de Temas"
+            st.rerun()
+
+    with col2:
+        if st.button("🤖 BERTopic", use_container_width=True, key="nav_bertopic"):
+            st.session_state.current_page = "11. BERTopic"
+            st.rerun()
+
+    st.markdown("---")
+    st.markdown("### 📁 FASE 5: Dimensionalidad y Clasificación")
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        if st.button("📉 Reducción de Dimensionalidad", use_container_width=True, key="nav_dimred"):
+            st.session_state.current_page = "12. Reducción de Dimensionalidad"
+            st.rerun()
+
+    with col2:
+        if st.button("🎯 Clasificación de Textos", use_container_width=True, key="nav_class"):
+            st.session_state.current_page = "13. Clasificación de Textos"
+            st.rerun()
+
+    st.markdown("---")
+    st.markdown("### 📁 FASE 6: Análisis Integrado")
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        if st.button("🔍 Análisis de Factores", use_container_width=True, key="nav_factors"):
+            st.session_state.current_page = "14. Análisis de Factores"
+            st.rerun()
+
+    with col2:
+        if st.button("📊 Consolidación de Factores", use_container_width=True, key="nav_consol"):
+            st.session_state.current_page = "15. Consolidación de Factores"
+            st.rerun()
+
+    st.markdown("---")
+    st.markdown("### 📁 FASE 7: Visualización")
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        if st.button("📊 Visualizaciones y Nubes", use_container_width=True, key="nav_viz"):
+            st.session_state.current_page = "16. Visualizaciones y Nubes de Palabras"
+            st.rerun()
+
+    st.markdown("---")
+    st.markdown("### 📁 FASE 8: Evaluación")
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        if st.button("⚡ Evaluación de Desempeño", use_container_width=True, key="nav_eval"):
+            st.session_state.current_page = "17. Evaluación de Desempeño"
             st.rerun()

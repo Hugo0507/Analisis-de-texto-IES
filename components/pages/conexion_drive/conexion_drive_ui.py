@@ -57,7 +57,7 @@ def render():
             "Es normal para apps en desarrollo. Haz clic en 'Advanced' → 'Go to [App Name]'")
 
         if st.button("Conectar con Google Drive", type="primary", use_container_width=True):
-            with st.spinner("Conectando..."):
+            with st.spinner("Conectando a Google Drive..."):
                 if st.session_state.drive_connector.authenticate():
                     st.session_state.authenticated = True
 
@@ -66,7 +66,20 @@ def render():
                     if parent_id:
                         st.session_state.parent_folder_id = parent_id
 
-                    st.success("Conexión exitosa")
+                    st.success("✅ Conexión exitosa a Google Drive")
+
+                    # Listar archivos de la carpeta
+                    with st.spinner("Listando archivos de Drive..."):
+                        files = st.session_state.drive_connector.list_files(logic.DEFAULT_FOLDER_ID)
+                        st.session_state.drive_files = files
+                        st.info(f"📁 Se encontraron {len(files)} archivos en la carpeta")
+
+                    # ==================== NUEVO: DISPARAR PIPELINE AUTOMÁTICO ====================
+                    # Marcar que el pipeline debe iniciarse
+                    st.session_state.pipeline_should_start = True
+                    st.session_state.current_page = "📊 Dashboard Principal"
+
+                    st.success("🚀 Iniciando análisis automático...")
                     st.rerun()
                 else:
-                    st.error("Error en la conexión. Verifica credentials.json")
+                    st.error("❌ Error en la conexión. Verifica credentials.json")
