@@ -21,6 +21,7 @@ def render():
     if 'pipeline_manager' not in st.session_state:
         st.info("ℹ️ El pipeline aún no se ha ejecutado. Ve al **Dashboard Principal** para iniciar el análisis automático.")
         st.markdown("👈 Selecciona **📊 Dashboard Principal** en el menú lateral")
+        show_return_to_dashboard_button()
         return
 
     pipeline_manager = st.session_state.pipeline_manager
@@ -28,6 +29,7 @@ def render():
     # Verificar si hay resultados de detección de idiomas
     if not hasattr(pipeline_manager, 'results') or 'language_detection_results' not in pipeline_manager.results:
         st.warning("⚠️ La detección de idiomas aún no se ha completado. Verifica el **Dashboard Principal**.")
+        show_return_to_dashboard_button()
         return
 
     # Obtener resultados
@@ -35,6 +37,7 @@ def render():
 
     if not lang_results:
         st.warning("⚠️ No hay resultados de detección de idiomas disponibles.")
+        show_return_to_dashboard_button()
         return
 
     # ========== MÉTRICAS GENERALES ==========
