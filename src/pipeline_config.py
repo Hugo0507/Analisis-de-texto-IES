@@ -243,9 +243,12 @@ class PipelineConfig:
 
         # ---------- pLSA (Probabilistic LSA) ----------
         'plsa': {
-            'n_topics': 10,  # MODIFICAR AQUÍ
-            'max_iter': 100,
-            'random_state': 42
+            'n_topics': 10,  # MODIFICAR AQUÍ: número de temas
+            'max_iter': 100,  # Iteraciones máximas del algoritmo EM
+            'random_state': 42,
+            'max_features': 1000,  # Vocabulario para pLSA
+            'min_df': 2,
+            'max_df': 0.95
         }
     }
 

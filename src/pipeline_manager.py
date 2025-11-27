@@ -1457,27 +1457,61 @@ class PipelineManager:
             results['nmf_error'] = str(e)
 
         # LSA
-        self.progress_tracker.update_progress(stage_idx, 0.7, "Entrenando LSA...")
+        self.progress_tracker.update_progress(stage_idx, 0.6, "Entrenando LSA...")
         try:
             lsa_results = analyzer.fit_lsa(
                 documents,
-                n_components=tm_config['lsa']['n_components'],
+                n_topics=tm_config['lsa']['n_components'],
                 max_features=tm_config['lsa']['max_features'],
                 min_df=tm_config['lsa']['min_df'],
                 max_df=tm_config['lsa']['max_df'],
                 random_state=tm_config['lsa']['random_state']
             )
             results['lsa'] = lsa_results
-            logger.info(f"LSA completado: {lsa_results['n_components']} componentes")
+            logger.info(f"LSA completado: {lsa_results['n_topics']} componentes")
         except Exception as e:
             logger.error(f"Error en LSA: {e}")
             results['lsa_error'] = str(e)
+
+        # PLSA
+        self.progress_tracker.update_progress(stage_idx, 0.75, "Entrenando pLSA...")
+        try:
+            plsa_results = analyzer.fit_plsa(
+                documents,
+                n_topics=tm_config['plsa']['n_topics'],
+                max_features=tm_config['plsa']['max_features'],
+                min_df=tm_config['plsa']['min_df'],
+                max_df=tm_config['plsa']['max_df'],
+                random_state=tm_config['plsa']['random_state'],
+                max_iter=tm_config['plsa']['max_iter']
+            )
+            results['plsa'] = plsa_results
+            logger.info(f"pLSA completado: {plsa_results['n_topics']} temas")
+        except Exception as e:
+            logger.error(f"Error en pLSA: {e}")
+            results['plsa_error'] = str(e)
+
+        # Comparación de modelos
+        self.progress_tracker.update_progress(stage_idx, 0.90, "Comparando modelos...")
+        try:
+            if 'lda' in results and 'nmf' in results and 'lsa' in results:
+                comparison = analyzer.compare_models(
+                    results['lda'],
+                    results['nmf'],
+                    results['lsa'],
+                    results.get('plsa')
+                )
+                results['model_comparison'] = comparison
+                logger.info("Comparación de modelos completada")
+        except Exception as e:
+            logger.error(f"Error en comparación de modelos: {e}")
+            results['comparison_error'] = str(e)
 
         # Guardar resultados
         self.results['topic_modeling'] = results
         self.results['topic_modeling_analyzer'] = analyzer
 
-        logger.info("Topic Modeling completado (LDA, NMF, LSA)")
+        logger.info("Topic Modeling completado (LDA, NMF, LSA, pLSA)")
 
         # ===== GUARDAR EN CACHÉ =====
         self.progress_tracker.update_progress(stage_idx, 0.95, "Guardando Topic Modeling en caché...")
