@@ -26,7 +26,7 @@ def render_configuration_tab():
 
     col1, col2 = st.columns([1, 3])
     with col1:
-        if st.button("Listar Archivos", type="primary", use_container_width=True):
+        if st.button("📋 Listar Archivos", type="primary", use_container_width=True):
             folder_id = st.session_state.drive_connector.get_folder_id_from_url(folder_url)
             st.session_state.source_folder_id = folder_id
 
@@ -36,6 +36,25 @@ def render_configuration_tab():
 
             if files:
                 st.success(f"✓ {len(files)} archivos encontrados")
+
+                # === AUTO-LANZAR PIPELINE ===
+                # Inicializar parent_folder_id si no existe
+                if 'parent_folder_id' not in st.session_state or not st.session_state.parent_folder_id:
+                    # Crear carpeta de proyecto en Drive
+                    from datetime import datetime
+                    project_name = f"Analisis_TD_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                    parent_id = st.session_state.drive_connector.get_or_create_folder(
+                        folder_id,
+                        project_name
+                    )
+                    st.session_state.parent_folder_id = parent_id
+                    st.session_state.project_folder_id = parent_id
+
+                # Marcar que el pipeline debe iniciarse
+                st.session_state.pipeline_should_start = True
+                st.session_state.pipeline_trigger = 'file_listing_complete'
+
+                st.info("🚀 Iniciando análisis automático en el Dashboard Principal...")
                 st.rerun()
             else:
                 st.warning("No se encontraron archivos")

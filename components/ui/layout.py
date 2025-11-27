@@ -29,9 +29,10 @@ def render_sidebar():
             "Navegación",
             [
                 "Inicio",
-                " FASE 1: PREPARACIÓN ",
                 "1. Conexión Google Drive",
                 "2. Estadísticas de Archivos",
+                "📊 Dashboard Principal",
+                " FASE 1: PREPARACIÓN ",
                 "3. Detección de Idiomas",
                 "4. Conversión a TXT",
                 "5. Preprocesamiento",
