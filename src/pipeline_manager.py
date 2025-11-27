@@ -693,11 +693,31 @@ class PipelineManager:
         txt_files_in_drive = [f for f in files_in_folder if f['name'].endswith('.txt')]
 
         logger.info(f"Encontrados {len(txt_files_in_drive)} archivos TXT en Drive")
+        logger.info(f"Archivos PDF a procesar: {len(files)}")
 
-        # ===== PASO 2: SI HAY ARCHIVOS EN DRIVE, CARGARLOS =====
-        if len(txt_files_in_drive) > 0:
-            logger.info("✓ Archivos TXT encontrados en Drive, cargando...")
-            self.progress_tracker.update_progress(stage_idx, 0.1, f"Cargando {len(txt_files_in_drive)} archivos TXT desde Drive...")
+        # ===== VERIFICAR SI ESTÁN TODOS LOS ARCHIVOS =====
+        # Crear set de nombres de archivos TXT esperados
+        expected_txt_names = {f['file_name'].replace('.pdf', '.txt') for f in files}
+        actual_txt_names = {f['name'] for f in txt_files_in_drive}
+
+        # Verificar si tenemos TODOS los archivos TXT necesarios
+        all_files_cached = expected_txt_names == actual_txt_names
+
+        if all_files_cached and len(txt_files_in_drive) == len(files):
+            logger.info(f"✓ TODOS los archivos TXT están en caché ({len(txt_files_in_drive)}/{len(files)})")
+        else:
+            missing_files = expected_txt_names - actual_txt_names
+            extra_files = actual_txt_names - expected_txt_names
+            logger.warning(f"⚠️ Caché incompleto: {len(txt_files_in_drive)} en Drive vs {len(files)} esperados")
+            if missing_files:
+                logger.warning(f"   Archivos faltantes: {len(missing_files)} (ej: {list(missing_files)[:3]})")
+            if extra_files:
+                logger.warning(f"   Archivos extra: {len(extra_files)} (serán ignorados)")
+
+        # ===== PASO 2: SI HAY ARCHIVOS EN DRIVE Y ESTÁN COMPLETOS, CARGARLOS =====
+        if all_files_cached and len(txt_files_in_drive) > 0:
+            logger.info("✓ Caché completo encontrado, cargando archivos TXT desde Drive...")
+            self.progress_tracker.update_progress(stage_idx, 0.1, f"Cargando {len(txt_files_in_drive)} archivos TXT desde caché...")
 
             txt_files_full = []
 
@@ -971,6 +991,7 @@ class PipelineManager:
                 self.results['bow_vocabulary_size'] = results_data.get('vocabulary_size', 0)
                 self.results['bow_feature_names'] = results_data.get('feature_names', [])
                 self.results['bow_doc_names'] = results_data.get('doc_names', [])
+                self.results['bow_top_terms'] = results_data.get('top_terms', [])
                 self.results['bow_stats'] = {
                     'n_documents': results_data.get('n_documents', 0),
                     'vocabulary_size': results_data.get('vocabulary_size', 0),
@@ -989,63 +1010,52 @@ class PipelineManager:
                     'from_cache': True
                 }
 
-        # ===== PROCESAR =====
-        from sklearn.feature_extraction.text import CountVectorizer
+        # ===== PROCESAR USANDO BOW_ANALYZER =====
+        from src.bow_analyzer import BagOfWordsAnalyzer
 
         logger.info(f"Cache no encontrado, creando matriz BoW para {len(preprocessed_texts)} documentos...")
-        self.progress_tracker.update_progress(stage_idx, 0.1, "Inicializando vectorizador...")
+        self.progress_tracker.update_progress(stage_idx, 0.1, "Inicializando BagOfWordsAnalyzer...")
 
-        bow_config = self.config.BOW
+        # Crear instancia del analizador con configuración
+        bow_analyzer = BagOfWordsAnalyzer(config=self.config.BOW)
 
-        vectorizer = CountVectorizer(
-            ngram_range=bow_config['ngram_range'],
-            max_features=bow_config['max_features'],
-            min_df=bow_config['min_df'],
-            max_df=bow_config['max_df']
-        )
+        self.progress_tracker.update_progress(stage_idx, 0.3, "Creando matriz de frecuencias...")
 
-        doc_names = list(preprocessed_texts.keys())
-        documents = list(preprocessed_texts.values())
+        # Crear matriz BoW
+        bow_df = bow_analyzer.fit_transform(preprocessed_texts)
 
-        self.progress_tracker.update_progress(stage_idx, 0.3, "Vectorizando documentos...")
+        self.progress_tracker.update_progress(stage_idx, 0.6, "Calculando estadísticas...")
 
-        bow_matrix = vectorizer.fit_transform(documents)
-        feature_names = vectorizer.get_feature_names_out()
+        # Obtener estadísticas
+        bow_stats = bow_analyzer.get_statistics(bow_df)
 
-        self.progress_tracker.update_progress(stage_idx, 0.7, "Calculando estadísticas...")
+        # Obtener top términos
+        top_terms = bow_analyzer.get_top_terms(bow_df, top_n=50)
 
-        vocabulary_size = len(feature_names)
-        total_terms = bow_matrix.sum()
-        avg_terms_per_doc = total_terms / len(documents)
+        self.progress_tracker.update_progress(stage_idx, 0.8, "Extrayendo información...")
 
-        logger.info(f"BoW creado: {vocabulary_size} términos, {total_terms} ocurrencias totales")
+        logger.info(f"BoW creado: {bow_stats['vocabulary_size']} términos, {bow_stats['total_terms']} ocurrencias totales")
 
-        # Calcular sparsity
-        sparsity = 1.0 - (bow_matrix.nnz / (bow_matrix.shape[0] * bow_matrix.shape[1]))
-
-        self.results['bow_matrix'] = bow_matrix
-        self.results['bow_feature_names'] = feature_names
-        self.results['bow_vectorizer'] = vectorizer
-        self.results['bow_doc_names'] = doc_names
-        self.results['bow_stats'] = {
-            'n_documents': len(documents),
-            'vocabulary_size': vocabulary_size,
-            'total_terms': int(total_terms),
-            'avg_terms_per_doc': float(avg_terms_per_doc),
-            'sparsity': float(sparsity)
-        }
+        # Guardar resultados
+        self.results['bow_matrix'] = bow_df  # DataFrame en lugar de sparse matrix
+        self.results['bow_feature_names'] = bow_analyzer.get_vocabulary()
+        self.results['bow_analyzer'] = bow_analyzer
+        self.results['bow_doc_names'] = list(preprocessed_texts.keys())
+        self.results['bow_top_terms'] = top_terms
+        self.results['bow_stats'] = bow_stats
 
         # ===== GUARDAR EN CACHÉ =====
         self.progress_tracker.update_progress(stage_idx, 0.95, "Guardando en caché...")
 
         cache_data = {
-            'vocabulary_size': vocabulary_size,
-            'total_terms': int(total_terms),
-            'avg_terms_per_doc': float(avg_terms_per_doc),
-            'n_documents': len(documents),
-            'sparsity': float(sparsity),
-            'feature_names': feature_names.tolist(),
-            'doc_names': doc_names
+            'vocabulary_size': bow_stats['vocabulary_size'],
+            'total_terms': bow_stats['total_terms'],
+            'avg_terms_per_doc': bow_stats['avg_terms_per_doc'],
+            'n_documents': bow_stats['n_documents'],
+            'sparsity': bow_stats['sparsity'],
+            'feature_names': bow_analyzer.get_vocabulary(),
+            'doc_names': list(preprocessed_texts.keys()),
+            'top_terms': top_terms
         }
 
         self.cache.save_stage_results("05_BagOfWords_Results", cache_data, "bow_results.json")
@@ -1053,10 +1063,10 @@ class PipelineManager:
         self.progress_tracker.update_progress(stage_idx, 1.0, "BoW completado")
 
         return {
-            'vocabulary_size': vocabulary_size,
-            'total_terms': int(total_terms),
-            'avg_terms_per_doc': float(avg_terms_per_doc),
-            'n_documents': len(documents),
+            'vocabulary_size': bow_stats['vocabulary_size'],
+            'total_terms': bow_stats['total_terms'],
+            'avg_terms_per_doc': bow_stats['avg_terms_per_doc'],
+            'n_documents': bow_stats['n_documents'],
             'from_cache': False
         }
 
@@ -1078,6 +1088,7 @@ class PipelineManager:
                 self.results['tfidf_vocabulary_size'] = results_data.get('vocabulary_size', 0)
                 self.results['tfidf_feature_names'] = results_data.get('feature_names', [])
                 self.results['tfidf_doc_names'] = results_data.get('doc_names', [])
+                self.results['tfidf_top_terms'] = results_data.get('top_terms', [])
                 self.results['top_tfidf_terms_per_doc'] = results_data.get('top_terms_per_doc', {})
                 self.results['tfidf_stats'] = {
                     'n_documents': results_data.get('n_documents', 0),
@@ -1094,72 +1105,63 @@ class PipelineManager:
                     'from_cache': True
                 }
 
-        # ===== PROCESAR =====
-        from sklearn.feature_extraction.text import TfidfVectorizer
+        # ===== PROCESAR USANDO TFIDF_ANALYZER =====
+        from src.tfidf_analyzer import TFIDFAnalyzer
 
         logger.info(f"Cache no encontrado, calculando TF-IDF para {len(preprocessed_texts)} documentos...")
-        self.progress_tracker.update_progress(stage_idx, 0.1, "Inicializando vectorizador TF-IDF...")
+        self.progress_tracker.update_progress(stage_idx, 0.1, "Inicializando TFIDFAnalyzer...")
 
-        tfidf_config = self.config.TFIDF
+        # Crear instancia del analizador con configuración
+        tfidf_analyzer = TFIDFAnalyzer(config=self.config.TFIDF)
 
-        vectorizer = TfidfVectorizer(
-            ngram_range=tfidf_config['ngram_range'],
-            max_features=tfidf_config['max_features'],
-            min_df=tfidf_config['min_df'],
-            max_df=tfidf_config['max_df'],
-            norm=tfidf_config['norm'],
-            use_idf=tfidf_config['use_idf'],
-            smooth_idf=tfidf_config['smooth_idf'],
-            sublinear_tf=tfidf_config['sublinear_tf']
-        )
+        self.progress_tracker.update_progress(stage_idx, 0.3, "Calculando matriz TF-IDF...")
 
+        # Crear matriz TF-IDF
+        tfidf_df = tfidf_analyzer.fit_transform(preprocessed_texts)
+
+        self.progress_tracker.update_progress(stage_idx, 0.5, "Normalizando matriz...")
+
+        # Normalizar (ya está normalizado por defecto, pero aseguramos)
+        tfidf_df_normalized = tfidf_analyzer.normalize(tfidf_df, norm=self.config.TFIDF.get('norm', 'l2'))
+
+        self.progress_tracker.update_progress(stage_idx, 0.6, "Calculando estadísticas...")
+
+        # Obtener estadísticas
+        tfidf_stats = tfidf_analyzer.get_statistics(tfidf_df_normalized)
+
+        # Obtener top términos globales
+        top_terms = tfidf_analyzer.get_top_terms(tfidf_df_normalized, top_n=50)
+
+        self.progress_tracker.update_progress(stage_idx, 0.7, "Extrayendo términos más relevantes por documento...")
+
+        # Obtener top términos por documento
         doc_names = list(preprocessed_texts.keys())
-        documents = list(preprocessed_texts.values())
-
-        self.progress_tracker.update_progress(stage_idx, 0.3, "Calculando TF-IDF...")
-
-        tfidf_matrix = vectorizer.fit_transform(documents)
-        feature_names = vectorizer.get_feature_names_out()
-
-        self.progress_tracker.update_progress(stage_idx, 0.7, "Extrayendo términos más relevantes...")
-
-        import numpy as np
         top_terms_per_doc = {}
-        for i, doc_name in enumerate(doc_names):
-            doc_vector = tfidf_matrix[i].toarray().flatten()
-            top_indices = doc_vector.argsort()[-10:][::-1]
-            top_terms_per_doc[doc_name] = [
-                (feature_names[idx], float(doc_vector[idx]))
-                for idx in top_indices if doc_vector[idx] > 0
-            ]
+        for doc_name in doc_names:
+            top_terms_per_doc[doc_name] = tfidf_analyzer.get_document_top_terms(tfidf_df_normalized, doc_name, top_n=10)
 
-        logger.info(f"TF-IDF calculado: {len(feature_names)} términos únicos")
+        logger.info(f"TF-IDF calculado: {tfidf_stats['vocabulary_size']} términos únicos")
 
-        # Calcular sparsity
-        sparsity = 1.0 - (tfidf_matrix.nnz / (tfidf_matrix.shape[0] * tfidf_matrix.shape[1]))
-
-        self.results['tfidf_matrix'] = tfidf_matrix
-        self.results['tfidf_feature_names'] = feature_names
-        self.results['tfidf_vectorizer'] = vectorizer
+        # Guardar resultados
+        self.results['tfidf_matrix'] = tfidf_df_normalized  # DataFrame normalizado
+        self.results['tfidf_feature_names'] = tfidf_analyzer.get_vocabulary()
+        self.results['tfidf_analyzer'] = tfidf_analyzer
         self.results['tfidf_doc_names'] = doc_names
+        self.results['tfidf_top_terms'] = top_terms
         self.results['top_tfidf_terms_per_doc'] = top_terms_per_doc
-        self.results['tfidf_stats'] = {
-            'n_documents': len(documents),
-            'vocabulary_size': len(feature_names),
-            'sparsity': float(sparsity),
-            'density': float(1.0 - sparsity)
-        }
+        self.results['tfidf_stats'] = tfidf_stats
 
         # ===== GUARDAR EN CACHÉ =====
         self.progress_tracker.update_progress(stage_idx, 0.95, "Guardando en caché...")
 
         cache_data = {
-            'vocabulary_size': len(feature_names),
-            'n_documents': len(documents),
-            'sparsity': float(sparsity),
-            'density': float(1.0 - sparsity),
-            'feature_names': feature_names.tolist(),
+            'vocabulary_size': tfidf_stats['vocabulary_size'],
+            'n_documents': tfidf_stats['n_documents'],
+            'sparsity': tfidf_stats['sparsity'],
+            'density': 1.0 - tfidf_stats['sparsity'],
+            'feature_names': tfidf_analyzer.get_vocabulary(),
             'doc_names': doc_names,
+            'top_terms': top_terms,
             'top_terms_per_doc': top_terms_per_doc
         }
 
@@ -1168,8 +1170,8 @@ class PipelineManager:
         self.progress_tracker.update_progress(stage_idx, 1.0, "TF-IDF completado")
 
         return {
-            'vocabulary_size': len(feature_names),
-            'n_documents': len(documents),
+            'vocabulary_size': tfidf_stats['vocabulary_size'],
+            'n_documents': tfidf_stats['n_documents'],
             'from_cache': False
         }
 

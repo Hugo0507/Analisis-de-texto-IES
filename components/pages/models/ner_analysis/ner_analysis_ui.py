@@ -43,20 +43,111 @@ def render():
             {'Tipo': k, 'Cantidad': v} for k, v in entities_by_type.items()
         ]).sort_values('Cantidad', ascending=False)
 
-        st.dataframe(entity_df, use_container_width=True, height=300)
+        # Gráfico de torta: Distribución de tipos de entidades
+        import plotly.graph_objects as go
+
+        fig_pie = go.Figure(data=[go.Pie(
+            labels=entity_df['Tipo'],
+            values=entity_df['Cantidad'],
+            hole=0.3,
+            textinfo='label+percent',
+            hovertemplate='<b>%{label}</b><br>Cantidad: %{value}<br>Porcentaje: %{percent}<extra></extra>'
+        )])
+
+        fig_pie.update_layout(
+            title='Distribución de Tipos de Entidades',
+            height=500,
+            showlegend=True,
+            legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.05)
+        )
+
+        st.plotly_chart(fig_pie, use_container_width=True)
+
+        # Tabla de entidades por tipo
+        st.dataframe(entity_df, use_container_width=True, height=200)
 
         # Top entidades por tipo
         st.markdown("### 🔝 Top Entidades Detectadas")
 
         top_entities = ner_results.get('top_entities_by_type', {})
-        for entity_type, entities in list(top_entities.items())[:3]:  # Mostrar top 3 tipos
-            with st.expander(f"📌 {entity_type}"):
+
+        # Gráfica de Top Entidades GPE (Lugares/Países)
+        if 'GPE' in top_entities and top_entities['GPE']:
+            st.markdown("#### 🌍 Top 20 Entidades GPE (Lugares/Países)")
+            gpe_df = pd.DataFrame(top_entities['GPE'][:20], columns=['Entidad', 'Frecuencia'])
+
+            import plotly.express as px
+            fig_gpe = px.bar(
+                gpe_df,
+                x='Frecuencia',
+                y='Entidad',
+                orientation='h',
+                title='Top 20 Entidades GPE Más Frecuentes',
+                color='Frecuencia',
+                color_continuous_scale='Viridis'
+            )
+            fig_gpe.update_layout(
+                yaxis={'categoryorder': 'total ascending'},
+                height=600,
+                xaxis_title='Frecuencia',
+                yaxis_title='Entidad'
+            )
+            st.plotly_chart(fig_gpe, use_container_width=True)
+
+        # Gráfica de Top Entidades ORG (Organizaciones)
+        if 'ORG' in top_entities and top_entities['ORG']:
+            st.markdown("#### 🏢 Top 20 Entidades ORG (Organizaciones)")
+            org_df = pd.DataFrame(top_entities['ORG'][:20], columns=['Entidad', 'Frecuencia'])
+
+            fig_org = px.bar(
+                org_df,
+                x='Frecuencia',
+                y='Entidad',
+                orientation='h',
+                title='Top 20 Entidades ORG Más Frecuentes',
+                color='Frecuencia',
+                color_continuous_scale='Teal'
+            )
+            fig_org.update_layout(
+                yaxis={'categoryorder': 'total ascending'},
+                height=600,
+                xaxis_title='Frecuencia',
+                yaxis_title='Entidad'
+            )
+            st.plotly_chart(fig_org, use_container_width=True)
+
+        # Gráfica de Top Entidades PERSON (Personas)
+        if 'PERSON' in top_entities and top_entities['PERSON']:
+            st.markdown("#### 👤 Top 20 Entidades PERSON (Personas)")
+            person_df = pd.DataFrame(top_entities['PERSON'][:20], columns=['Entidad', 'Frecuencia'])
+
+            fig_person = px.bar(
+                person_df,
+                x='Frecuencia',
+                y='Entidad',
+                orientation='h',
+                title='Top 20 Entidades PERSON Más Frecuentes',
+                color='Frecuencia',
+                color_continuous_scale='Bluered'
+            )
+            fig_person.update_layout(
+                yaxis={'categoryorder': 'total ascending'},
+                height=600,
+                xaxis_title='Frecuencia',
+                yaxis_title='Entidad'
+            )
+            st.plotly_chart(fig_person, use_container_width=True)
+
+        # Expandable con todas las entidades por tipo
+        st.markdown("### 📋 Listado Completo por Tipo")
+        for entity_type, entities in top_entities.items():
+            with st.expander(f"📌 {entity_type} ({len(entities)} entidades únicas)"):
                 if entities:
-                    ent_df = pd.DataFrame(entities[:10], columns=['Entidad', 'Frecuencia'])
-                    st.dataframe(ent_df, use_container_width=True)
+                    ent_df = pd.DataFrame(entities[:50], columns=['Entidad', 'Frecuencia'])
+                    st.dataframe(ent_df, use_container_width=True, height=400)
 
     st.markdown("---")
-    st.success("✅ **Análisis NER completado** - Entidades identificadas")
+    st.success("✅ **Análisis NER completado** - Entidades identificadas y visualizadas")
 
     # Botón de retorno al Dashboard Principal
     show_return_to_dashboard_button()
