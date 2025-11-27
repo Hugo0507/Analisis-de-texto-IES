@@ -144,40 +144,56 @@ class LanguageDetector:
             Diccionario con información del idioma
         """
         try:
-            # Importar PyPDF2 para leer PDFs
-            import PyPDF2
+            # Usar pdfminer.six para extraer texto (más robusto que PyPDF2)
+            from pdfminer.high_level import extract_text
             from io import BytesIO
 
-            # Leer el PDF desde bytes
-            pdf_reader = PyPDF2.PdfReader(BytesIO(file_bytes))
+            # Convertir bytes a BytesIO si es necesario
+            if isinstance(file_bytes, bytes):
+                file_stream = BytesIO(file_bytes)
+            else:
+                # Si ya es un BytesIO, usarlo directamente
+                file_stream = file_bytes
+                file_stream.seek(0)
 
-            # Extraer texto de todas las páginas (máximo 10 para velocidad)
-            text_parts = []
-            max_pages = min(10, len(pdf_reader.pages))
+            # Extraer texto usando pdfminer
+            logger.debug(f"Extrayendo texto de {file_name} usando pdfminer...")
+            text = extract_text(file_stream)
 
-            for i in range(max_pages):
-                try:
-                    page = pdf_reader.pages[i]
-                    text_parts.append(page.extract_text())
-                except Exception:
-                    continue
+            # LOG: Mostrar longitud del texto extraído
+            text_length = len(text.strip()) if text else 0
+            logger.info(f"  -> Texto extraído: {text_length} caracteres")
 
-            text = ' '.join(text_parts)
-
-            # Detectar idioma del texto extraído
-            result = self.detect_language(text, method=method)
-            result['file'] = file_name
-            return result
+            # Verificar si hay texto extraído
+            if text and text.strip():
+                # Detectar idioma del texto extraído
+                result = self.detect_language(text, method=method)
+                result['file'] = file_name
+                result['text_length'] = text_length
+                logger.info(f"  -> Idioma detectado: {result.get('language_code', 'unknown')} (confianza: {result.get('confidence', 0):.2f})")
+                return result
+            else:
+                logger.warning(f"  -> No se extrajo texto del PDF {file_name}")
+                return {
+                    'file': file_name,
+                    'language_code': 'error',
+                    'language_name': 'Texto no detectado',
+                    'confidence': 0.0,
+                    'method': method,
+                    'error': 'No text extracted from PDF',
+                    'text_length': 0
+                }
 
         except Exception as e:
-            logger.warning(f"Error detectando idioma de {file_name}: {e}")
+            logger.error(f"  -> Error procesando {file_name}: {e}")
             return {
                 'file': file_name,
                 'language_code': 'error',
                 'language_name': 'Error',
                 'confidence': 0.0,
                 'method': method,
-                'error': str(e)
+                'error': str(e),
+                'text_length': 0
             }
 
     def detect_language_from_file(self, file_path: str, encoding: str = 'utf-8', method: str = 'langdetect') -> Dict[str, Any]:

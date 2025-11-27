@@ -503,6 +503,10 @@ class PipelineManager:
         language_results = []
         logger.info("Iniciando detección de idiomas...")
 
+        # VALIDACIÓN TEMPRANA: Contar idiomas válidos en los primeros 10 archivos
+        early_validation_count = min(10, len(pdf_files))
+        early_valid_count = 0
+
         for i, pdf in enumerate(pdf_files):
             try:
                 logger.info(f"Procesando [{i+1}/{len(pdf_files)}]: {pdf['name']}")
@@ -516,8 +520,9 @@ class PipelineManager:
                         'file_name': pdf['name'],
                         'file_id': pdf.get('id'),
                         'language_code': 'error',
-                        'language_name': 'Error',
-                        'confidence': 0.0
+                        'language_name': 'Error de lectura',
+                        'confidence': 0.0,
+                        'error': 'No se pudo leer el archivo desde Drive'
                     })
                     continue
 
@@ -535,25 +540,82 @@ class PipelineManager:
                     '.pdf'
                 )
 
-                logger.info(f"  -> Idioma: {detection_result.get('language_code', 'unknown')}, Confianza: {detection_result.get('confidence', 0):.2f}")
-
                 language_results.append({
                     'file_name': pdf['name'],
                     'file_id': pdf.get('id'),
                     'language_code': detection_result.get('language_code', 'unknown'),
                     'language_name': detection_result.get('language_name', 'Unknown'),
-                    'confidence': detection_result.get('confidence', 0.0)
+                    'confidence': detection_result.get('confidence', 0.0),
+                    'error': detection_result.get('error', None),
+                    'text_length': detection_result.get('text_length', 0)
                 })
+
+                # Contar idiomas válidos en primeros 10 archivos
+                if i < early_validation_count:
+                    lang_code = detection_result.get('language_code', 'unknown')
+                    if lang_code not in ['error', 'unknown']:
+                        early_valid_count += 1
+                        logger.info(f"  ✓ Idioma válido detectado: {lang_code}")
+                    else:
+                        logger.warning(f"  ✗ NO se detectó idioma válido (código: {lang_code})")
+                        if detection_result.get('error'):
+                            logger.error(f"     Razón: {detection_result.get('error')}")
+                        if detection_result.get('text_length', 0) == 0:
+                            logger.error(f"     Problema: No se extrajo texto del PDF")
 
             except Exception as e:
                 logger.error(f"Error detectando idioma de {pdf['name']}: {e}")
+                import traceback
+                logger.error(f"Traceback: {traceback.format_exc()}")
                 language_results.append({
                     'file_name': pdf['name'],
                     'file_id': pdf.get('id'),
                     'language_code': 'error',
-                    'language_name': 'Error',
-                    'confidence': 0.0
+                    'language_name': 'Error de excepción',
+                    'confidence': 0.0,
+                    'error': str(e)
                 })
+
+            # VALIDACIÓN TEMPRANA: Detener si los primeros 10 archivos NO detectan NINGÚN idioma
+            if i + 1 == early_validation_count:
+                logger.info(f"\n{'='*80}")
+                logger.info(f"VALIDACIÓN TEMPRANA (primeros {early_validation_count} archivos)")
+                logger.info(f"{'='*80}")
+                logger.info(f"Archivos procesados: {early_validation_count}")
+                logger.info(f"Idiomas válidos detectados: {early_valid_count}")
+                logger.info(f"Idiomas fallidos/desconocidos: {early_validation_count - early_valid_count}")
+
+                if early_valid_count == 0:
+                    logger.error(f"\n{'!'*80}")
+                    logger.error(f"❌ DETECCIÓN DE IDIOMAS FALLIDA")
+                    logger.error(f"{'!'*80}")
+                    logger.error(f"NO se detectó ningún idioma válido en los primeros {early_validation_count} archivos.")
+                    logger.error(f"\nPOSIBLES CAUSAS:")
+                    logger.error(f"1. Los PDFs no contienen texto extraíble (son imágenes escaneadas)")
+                    logger.error(f"2. Los PDFs están protegidos o encriptados")
+                    logger.error(f"3. Error en la biblioteca pdfminer.six (verifica instalación)")
+                    logger.error(f"4. Los archivos están corruptos")
+                    logger.error(f"\nRECOMENDACIÓN:")
+                    logger.error(f"- Verifica que los PDFs contengan texto extraíble")
+                    logger.error(f"- Instala/actualiza pdfminer.six: pip install --upgrade pdfminer.six")
+                    logger.error(f"- Revisa los logs detallados arriba para cada archivo")
+                    logger.error(f"{'!'*80}\n")
+
+                    # Actualizar progreso indicando error
+                    self.progress_tracker.update_progress(stage_idx, 0.0, "❌ No se detectaron idiomas - Pipeline detenido")
+
+                    # Guardar resultados parciales para análisis
+                    self.results['language_detection_results'] = language_results
+                    self.results['majority_language'] = None
+                    self.results['english_pdf_files'] = []
+
+                    raise ValueError(
+                        f"Pipeline detenido: No se detectó ningún idioma válido en los primeros {early_validation_count} archivos. "
+                        f"Revisa los logs para más detalles."
+                    )
+                else:
+                    logger.info(f"✓ Validación exitosa: {early_valid_count}/{early_validation_count} archivos con idioma detectado")
+                    logger.info(f"Continuando con el resto de archivos...\n")
 
             # Actualizar progreso
             self.progress_tracker.update_progress(stage_idx, 0.1 + (0.7 * (i + 1) / len(pdf_files)))
