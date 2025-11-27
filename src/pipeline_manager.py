@@ -415,12 +415,62 @@ class PipelineManager:
                 if not english_pdfs and self.results['language_detection_results']:
                     logger.warning("⚠️ Cache antiguo sin english_pdfs, reconstruyendo desde language_results...")
                     majority_lang = self.results['majority_language']
+
+                    # DEBUG: Ver estructura del primer resultado
+                    if self.results['language_detection_results']:
+                        sample = self.results['language_detection_results'][0]
+                        logger.debug(f"Muestra de resultado cacheado: {sample}")
+                        logger.debug(f"Idioma mayoritario a buscar: '{majority_lang}'")
+
+                    # Reconstruir lista de archivos en idioma mayoritario
                     english_pdfs = [
                         {'file_name': r['file_name'], 'file_id': r['file_id']}
                         for r in self.results['language_detection_results']
                         if r.get('language_code') == majority_lang
                     ]
+
                     logger.info(f"✓ Reconstruidos {len(english_pdfs)} archivos en idioma {majority_lang}")
+
+                    # Si aún está vacío, intentar con todos los archivos no-error
+                    if not english_pdfs:
+                        logger.warning(f"⚠️ No se encontraron archivos con language_code='{majority_lang}'")
+                        logger.warning("Intentando recuperar archivos con idiomas válidos (no 'error' ni 'unknown')...")
+
+                        # Contar idiomas en el cache
+                        from collections import Counter
+                        lang_codes = [r.get('language_code') for r in self.results['language_detection_results']]
+                        lang_counts_cache = Counter(lang_codes)
+                        logger.info(f"Idiomas en caché: {dict(lang_counts_cache)}")
+
+                        # Tomar archivos válidos
+                        valid_pdfs = [
+                            {'file_name': r['file_name'], 'file_id': r['file_id'], 'language_code': r.get('language_code')}
+                            for r in self.results['language_detection_results']
+                            if r.get('language_code') not in ['error', 'unknown']
+                        ]
+
+                        if valid_pdfs:
+                            # Recalcular idioma mayoritario desde los archivos válidos
+                            valid_langs = [f['language_code'] for f in valid_pdfs]
+                            valid_lang_counts = Counter(valid_langs)
+                            new_majority = valid_lang_counts.most_common(1)[0][0]
+                            logger.info(f"✓ Nuevo idioma mayoritario calculado: {new_majority} ({valid_lang_counts[new_majority]} archivos)")
+
+                            # Filtrar por nuevo idioma mayoritario
+                            english_pdfs = [
+                                {'file_name': f['file_name'], 'file_id': f['file_id']}
+                                for f in valid_pdfs
+                                if f['language_code'] == new_majority
+                            ]
+
+                            # Actualizar el idioma mayoritario en resultados
+                            self.results['majority_language'] = new_majority
+                            majority_lang = new_majority
+
+                            logger.info(f"✓ Recuperados {len(english_pdfs)} archivos en idioma {new_majority}")
+                        else:
+                            logger.error("❌ No hay archivos válidos en el caché. Todos tienen 'error' o 'unknown'.")
+                            logger.error("Se requiere re-ejecutar la detección de idiomas desde cero.")
 
                 self.results['english_pdf_files'] = english_pdfs
 

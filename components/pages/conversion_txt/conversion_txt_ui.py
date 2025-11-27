@@ -21,6 +21,7 @@ def render():
     if 'pipeline_manager' not in st.session_state:
         st.info("ℹ️ El pipeline aún no se ha ejecutado. Ve al **Dashboard Principal** para iniciar el análisis automático.")
         st.markdown("👈 Selecciona **📊 Dashboard Principal** en el menú lateral")
+        show_return_to_dashboard_button()
         return
 
     pipeline_manager = st.session_state.pipeline_manager
@@ -28,6 +29,7 @@ def render():
     # Verificar si hay resultados de conversión
     if not hasattr(pipeline_manager, 'results') or 'txt_files' not in pipeline_manager.results:
         st.warning("⚠️ La conversión a TXT aún no se ha completado. Verifica el **Dashboard Principal**.")
+        show_return_to_dashboard_button()
         return
 
     # Obtener resultados
@@ -36,6 +38,8 @@ def render():
 
     if not txt_files:
         st.warning("⚠️ No hay archivos TXT disponibles.")
+        st.info("💡 Esto puede ocurrir si no hay documentos en el idioma detectado o si hubo errores en la detección de idiomas.")
+        show_return_to_dashboard_button()
         return
 
     # ========== MÉTRICAS GENERALES ==========
