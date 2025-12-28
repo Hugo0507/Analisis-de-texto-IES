@@ -26,6 +26,7 @@ jobs:
           # Copy HF-specific files
           cp backend/README_HF.md /tmp/hf-backend/README.md
           cp backend/Dockerfile.hf /tmp/hf-backend/Dockerfile
+          cp backend/requirements-hf.txt /tmp/hf-backend/requirements-hf.txt
 
           # Create .gitignore for HF Space
           cat > /tmp/hf-backend/.gitignore << 'EOF'
