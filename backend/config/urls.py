@@ -11,8 +11,13 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
+from apps.core.views import health_check, api_root
 
 urlpatterns = [
+    # Root and Health Check
+    path('', api_root, name='api-root'),
+    path('health/', health_check, name='health-check'),
+
     # Django Admin
     path('admin/', admin.site.urls),
 
