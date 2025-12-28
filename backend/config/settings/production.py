@@ -7,10 +7,10 @@ Security-hardened configuration optimized for deployment.
 from .base import *
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY') or os.environ.get('SECRET_KEY')
 
 if not SECRET_KEY:
-    raise ValueError("DJANGO_SECRET_KEY environment variable must be set in production")
+    raise ValueError("DJANGO_SECRET_KEY or SECRET_KEY environment variable must be set in production")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -73,36 +73,58 @@ else:
     else:
         raise ValueError(f"Unsupported DB_ENGINE: {db_engine}. Use 'postgresql' or 'mysql'")
 
-# Cache Configuration (Redis)
-CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': os.environ.get('REDIS_URL', 'redis://redis:6379/1'),
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            'CONNECTION_POOL_KWARGS': {
-                'max_connections': 50,
-                'retry_on_timeout': True,
-            },
-            'SOCKET_CONNECT_TIMEOUT': 5,
-            'SOCKET_TIMEOUT': 5,
-        },
-        'KEY_PREFIX': 'nlp_analysis',
-        'TIMEOUT': 7200,  # 2 horas
-    }
-}
+# Cache Configuration (Redis with fallback to in-memory)
+REDIS_URL = os.environ.get('REDIS_URL')
 
-# Channel Layers (WebSocket - Redis)
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            'hosts': [os.environ.get('REDIS_URL', 'redis://redis:6379/2')],
-            'capacity': 1500,
-            'expiry': 10,
+if REDIS_URL:
+    # Use Redis if available
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': REDIS_URL,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'CONNECTION_POOL_KWARGS': {
+                    'max_connections': 50,
+                    'retry_on_timeout': True,
+                },
+                'SOCKET_CONNECT_TIMEOUT': 5,
+                'SOCKET_TIMEOUT': 5,
+            },
+            'KEY_PREFIX': 'nlp_analysis',
+            'TIMEOUT': 7200,  # 2 horas
+        }
+    }
+else:
+    # Fallback to in-memory cache (HF Spaces without Redis)
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'nlp_analysis_cache',
+            'TIMEOUT': 7200,
+        }
+    }
+
+# Channel Layers (WebSocket - Redis with fallback to in-memory)
+if REDIS_URL:
+    # Use Redis for channel layers if available
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [REDIS_URL],
+                'capacity': 1500,
+                'expiry': 10,
+            },
         },
-    },
-}
+    }
+else:
+    # Fallback to in-memory channel layer (HF Spaces without Redis)
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        },
+    }
 
 # Static and Media files
 STATIC_URL = '/static/'
@@ -153,27 +175,19 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
         },
-        'file': {
-            'level': 'WARNING',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': '/var/log/django/django.log',
-            'maxBytes': 1024 * 1024 * 15,  # 15MB
-            'backupCount': 10,
-            'formatter': 'verbose',
-        },
     },
     'root': {
-        'handlers': ['console', 'file'],
+        'handlers': ['console'],
         'level': 'WARNING',
     },
     'loggers': {
         'django': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
         },
         'apps': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
         },
@@ -215,8 +229,12 @@ TEMPLATES[0]['OPTIONS']['loaders'] = [
 ]
 
 # Session Configuration
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
-SESSION_CACHE_ALIAS = 'default'
+if REDIS_URL:
+    SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+    SESSION_CACHE_ALIAS = 'default'
+else:
+    # Use database sessions if no Redis
+    SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 # Stricter Password Validation
 AUTH_PASSWORD_VALIDATORS = [
