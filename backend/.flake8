@@ -1,17 +1,35 @@
 [flake8]
-max-line-length = 120
+max-line-length = 100
+
+ignore =
+    E203,
+    E501,
+    W503,
+    E402,
+    F401
+
 exclude =
     .git,
     __pycache__,
     */migrations/*,
     */venv/*,
     */env/*,
-    .pytest_cache,
+    .venv,
+    .tox,
+    build,
+    dist,
+    *.egg-info,
     htmlcov,
-    .coverage
-ignore =
-    E203,  # whitespace before ':'
-    W503,  # line break before binary operator
-    E501,  # line too long (handled by black)
+    .pytest_cache,
+    node_modules,
+    staticfiles,
+    mediafiles
+
 per-file-ignores =
-    __init__.py:F401
+    __init__.py:F401,F403
+    settings/*.py:E501
+    */migrations/*.py:E501
+
+count = True
+show-source = True
+statistics = True
