@@ -8,9 +8,18 @@ Este proyecto ha sido **completamente refactorizado** a una arquitectura moderna
 
 - ✅ **Backend**: Django REST Framework + Django Channels (WebSocket)
 - ✅ **Frontend**: React + TypeScript + Tailwind CSS + Nivo
-- ✅ **Base de Datos**: MySQL
-- ✅ **Caché**: Redis (triple layer: Redis + MySQL + Google Drive)
+- ✅ **Base de Datos**: PostgreSQL (Neon) / MySQL (local)
+- ✅ **Caché**: Redis / In-Memory (fallback)
 - ✅ **Containerización**: Docker + Docker Compose
+
+### 🌐 Deployment en Producción
+
+**¡Aplicación desplegada y funcionando!**
+
+- 🎨 **Frontend**: https://analisis-de-texto-ies.vercel.app (Vercel)
+- 🔌 **Backend API**: https://hugo0507-analisis-ies-backend.hf.space (Hugging Face Spaces)
+- 📚 **API Docs**: https://hugo0507-analisis-ies-backend.hf.space/api/docs/
+- 🗄️ **Base de Datos**: PostgreSQL en Neon (Serverless)
 
 ### 🎯 Características Principales
 
