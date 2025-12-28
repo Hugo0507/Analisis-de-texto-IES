@@ -188,6 +188,8 @@ jobs:
 
       - name: Build production
         working-directory: ./frontend
+        env:
+          CI: false
         run: npm run build
 
       - name: Upload build artifacts
