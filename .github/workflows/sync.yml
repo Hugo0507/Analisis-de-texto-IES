@@ -45,7 +45,8 @@ jobs:
           staticfiles/
           mediafiles/
           logs/
-          cache/
+          *.cache
+          .cache/
           htmlcov/
           .coverage
           .pytest_cache/
