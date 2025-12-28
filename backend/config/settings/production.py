@@ -15,9 +15,16 @@ if not SECRET_KEY:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',')
+# Parse ALLOWED_HOSTS with whitespace trimming
+allowed_hosts_str = os.environ.get('DJANGO_ALLOWED_HOSTS', '')
+ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',') if host.strip()]
 
-if not ALLOWED_HOSTS or ALLOWED_HOSTS == ['']:
+# Add HF Space hostname if not already present
+hf_hostname = 'hugo0507-analisis-ies-backend.hf.space'
+if hf_hostname not in ALLOWED_HOSTS and '*.hf.space' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(hf_hostname)
+
+if not ALLOWED_HOSTS:
     raise ValueError("DJANGO_ALLOWED_HOSTS environment variable must be set in production")
 
 # Database Configuration
@@ -148,11 +155,23 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
 # CORS Settings
-CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
+cors_origins_str = os.environ.get('CORS_ALLOWED_ORIGINS', '')
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_origins_str.split(',') if origin.strip()]
+
+# Add HF Space URL if not present
+hf_space_url = 'https://hugo0507-analisis-ies-backend.hf.space'
+if hf_space_url not in CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS.append(hf_space_url)
+
 CORS_ALLOW_CREDENTIALS = True
 
 # CSRF Trusted Origins
-CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',')
+csrf_origins_str = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_origins_str.split(',') if origin.strip()]
+
+# Add HF Space URL if not present
+if hf_space_url not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.append(hf_space_url)
 
 # Logging Configuration
 LOGGING = {
