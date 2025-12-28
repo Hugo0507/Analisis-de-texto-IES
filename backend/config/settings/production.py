@@ -221,6 +221,8 @@ GOOGLE_DRIVE_TOKEN_FILE = os.environ.get(
 )
 
 # Template Caching
+# Must disable APP_DIRS when using custom loaders
+TEMPLATES[0]['APP_DIRS'] = False
 TEMPLATES[0]['OPTIONS']['loaders'] = [
     ('django.template.loaders.cached.Loader', [
         'django.template.loaders.filesystem.Loader',
