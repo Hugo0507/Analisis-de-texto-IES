@@ -8,6 +8,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
 import {
   Home,
+  Pipeline,
   BagOfWords,
   TfIdf,
   TopicModeling,
@@ -22,6 +23,7 @@ function App() {
       <Routes>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<Home />} />
+          <Route path="pipeline" element={<Pipeline />} />
           <Route path="documents" element={<Documents />} />
           <Route path="bow" element={<BagOfWords />} />
           <Route path="tfidf" element={<TfIdf />} />

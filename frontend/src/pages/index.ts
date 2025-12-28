@@ -5,6 +5,7 @@
  */
 
 export { Home } from './Home';
+export { Pipeline } from './Pipeline';
 export { BagOfWords } from './BagOfWords';
 export { TfIdf } from './TfIdf';
 export { TopicModeling } from './TopicModeling';
