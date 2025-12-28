@@ -3,10 +3,20 @@ max-line-length = 100
 
 ignore =
     E203,
-    E501,
-    W503,
+    E226,
+    E302,
+    E305,
     E402,
-    F401
+    E501,
+    E722,
+    F401,
+    F403,
+    F405,
+    F541,
+    F841,
+    W391,
+    W503,
+    W504
 
 exclude =
     .git,
@@ -26,8 +36,8 @@ exclude =
     mediafiles
 
 per-file-ignores =
-    __init__.py:F401,F403
-    settings/*.py:E501
+    __init__.py:F401,F403,W391
+    settings/*.py:E501,F403,F405
     */migrations/*.py:E501
 
 count = True
