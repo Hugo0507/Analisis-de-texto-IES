@@ -1,7 +1,3 @@
-"""
-Pipeline Manager - Orquestador Central del Análisis
-Ejecuta automáticamente todas las etapas del análisis de transformación digital
-"""
 
 import time
 from typing import Dict, Any, List, Optional, Callable
@@ -17,19 +13,10 @@ logger = get_logger(__name__)
 
 
 class PipelineManager:
-    """
-    Orquestador central que ejecuta el pipeline completo de análisis
-    CON SISTEMA DE CACHÉ INTELIGENTE: Solo procesa lo que no existe en Drive
-    """
+   
 
     def __init__(self, drive_connector, config: Optional[PipelineConfig] = None):
-        """
-        Inicializa el pipeline manager
-
-        Args:
-            drive_connector: Conector de Google Drive
-            config: Configuración del pipeline (usa default si es None)
-        """
+       
         self.drive_connector = drive_connector
         self.config = config or PipelineConfig()
         self.progress_tracker = ProgressTracker("Análisis de Transformación Digital")
@@ -58,7 +45,7 @@ class PipelineManager:
         self._initialize_stages()
 
     def _initialize_stages(self):
-        """Inicializa las etapas del pipeline según configuración"""
+        
         stages_config = self.config.PIPELINE['stages']
 
         stage_definitions = [
@@ -90,17 +77,7 @@ class PipelineManager:
         parent_folder_id: str,
         progress_callback: Optional[Callable] = None
     ) -> Dict[str, Any]:
-        """
-        Ejecuta el pipeline completo de análisis
-
-        Args:
-            files: Lista de archivos PDF del Drive
-            parent_folder_id: ID de la carpeta padre para persistencia
-            progress_callback: Función callback para updates de progreso
-
-        Returns:
-            Diccionario con resultados completos del pipeline
-        """
+        
         logger.info("=" * 70)
         logger.info("INICIANDO PIPELINE DE ANÁLISIS AUTOMÁTICO")
         logger.info("=" * 70)
@@ -124,9 +101,9 @@ class PipelineManager:
         try:
             stage_idx = 0
 
-            # ============================================================
+            
             # ETAPA 1: DETECCIÓN DE IDIOMAS
-            # ============================================================
+            
             if self.config.PIPELINE['stages'].get('language_detection', True):
                 self._execute_stage(
                     stage_idx,
@@ -136,9 +113,9 @@ class PipelineManager:
                 )
                 stage_idx += 1
 
-            # ============================================================
+            
             # ETAPA 2: CONVERSIÓN PDF → TXT
-            # ============================================================
+            
             if self.config.PIPELINE['stages'].get('txt_conversion', True):
                 # Usar archivos filtrados por idioma si existen
                 files_to_convert = self.results.get('english_pdf_files', files)
@@ -151,9 +128,9 @@ class PipelineManager:
                 )
                 stage_idx += 1
 
-            # ============================================================
+            
             # ETAPA 3: PREPROCESAMIENTO
-            # ============================================================
+            
             if self.config.PIPELINE['stages'].get('preprocessing', True):
                 if 'txt_files' not in self.results:
                     logger.warning("No hay archivos TXT, saltando preprocesamiento")
@@ -167,9 +144,9 @@ class PipelineManager:
                     )
                 stage_idx += 1
 
-            # ============================================================
+           
             # ETAPA 4: BOLSA DE PALABRAS
-            # ============================================================
+           
             if self.config.PIPELINE['stages'].get('bow', True):
                 if 'preprocessed_texts' not in self.results:
                     self.progress_tracker.skip_stage(stage_idx, "No hay textos preprocesados")
@@ -182,9 +159,9 @@ class PipelineManager:
                     )
                 stage_idx += 1
 
-            # ============================================================
+           
             # ETAPA 5: TF-IDF
-            # ============================================================
+           
             if self.config.PIPELINE['stages'].get('tfidf', True):
                 if 'bow_matrix' not in self.results:
                     self.progress_tracker.skip_stage(stage_idx, "No hay matriz BoW")
@@ -197,9 +174,9 @@ class PipelineManager:
                     )
                 stage_idx += 1
 
-            # ============================================================
+            
             # ETAPA 6: ANÁLISIS DE N-GRAMAS
-            # ============================================================
+           
             if self.config.PIPELINE['stages'].get('ngrams', True):
                 if 'preprocessed_texts' not in self.results:
                     self.progress_tracker.skip_stage(stage_idx, "No hay textos preprocesados")
@@ -212,9 +189,9 @@ class PipelineManager:
                     )
                 stage_idx += 1
 
-            # ============================================================
+           
             # ETAPA 7: NAMED ENTITY RECOGNITION (NER)
-            # ============================================================
+            
             if self.config.PIPELINE['stages'].get('ner', True):
                 if 'txt_files' not in self.results:
                     self.progress_tracker.skip_stage(stage_idx, "No hay archivos TXT")
@@ -227,9 +204,9 @@ class PipelineManager:
                     )
                 stage_idx += 1
 
-            # ============================================================
+            
             # ETAPA 8: TOPIC MODELING
-            # ============================================================
+            
             if self.config.PIPELINE['stages'].get('topic_modeling', True):
                 if 'preprocessed_texts' not in self.results:
                     self.progress_tracker.skip_stage(stage_idx, "No hay textos preprocesados")
@@ -242,9 +219,9 @@ class PipelineManager:
                     )
                 stage_idx += 1
 
-            # ============================================================
+            
             # ETAPA 9: BERTOPIC
-            # ============================================================
+            
             if self.config.PIPELINE['stages'].get('bertopic', True):
                 if 'preprocessed_texts' not in self.results:
                     self.progress_tracker.skip_stage(stage_idx, "No hay textos preprocesados")
@@ -257,9 +234,9 @@ class PipelineManager:
                     )
                 stage_idx += 1
 
-            # ============================================================
+            
             # ETAPA 10: REDUCCIÓN DE DIMENSIONALIDAD
-            # ============================================================
+           
             if self.config.PIPELINE['stages'].get('dimensionality_reduction', True):
                 if 'tfidf_matrix' not in self.results:
                     self.progress_tracker.skip_stage(stage_idx, "No hay matriz TF-IDF")
@@ -273,17 +250,17 @@ class PipelineManager:
                     )
                 stage_idx += 1
 
-            # ============================================================
+           
             # ETAPA 11: CLASIFICACIÓN (OPCIONAL - requiere etiquetas)
-            # ============================================================
+            
             if self.config.PIPELINE['stages'].get('classification', False):
                 logger.info("Clasificación requiere etiquetado manual - saltando")
                 self.progress_tracker.skip_stage(stage_idx, "Requiere etiquetado manual")
                 stage_idx += 1
 
-            # ============================================================
+           
             # ETAPA 12: ANÁLISIS DE FACTORES
-            # ============================================================
+            
             if self.config.PIPELINE['stages'].get('factor_analysis', True):
                 if 'preprocessed_texts' not in self.results:
                     self.progress_tracker.skip_stage(stage_idx, "No hay textos preprocesados")
@@ -296,9 +273,9 @@ class PipelineManager:
                     )
                 stage_idx += 1
 
-            # ============================================================
+            
             # ETAPA 13: CONSOLIDACIÓN DE FACTORES
-            # ============================================================
+           
             if self.config.PIPELINE['stages'].get('consolidation', True):
                 self._execute_stage(
                     stage_idx,
@@ -308,9 +285,9 @@ class PipelineManager:
                 )
                 stage_idx += 1
 
-            # ============================================================
+            
             # ETAPA 14: VISUALIZACIONES
-            # ============================================================
+           
             if self.config.PIPELINE['stages'].get('visualizations', True):
                 self._execute_stage(
                     stage_idx,
@@ -341,14 +318,7 @@ class PipelineManager:
         return self.results
 
     def _execute_stage(self, stage_idx: int, stage_function: Callable, **kwargs):
-        """
-        Ejecuta una etapa del pipeline con manejo de errores
 
-        Args:
-            stage_idx: Índice de la etapa
-            stage_function: Función a ejecutar
-            **kwargs: Argumentos para la función
-        """
         stage = self.progress_tracker.stages[stage_idx]
         timeout = self.config.PIPELINE['stage_timeout'].get(
             stage.name.lower().replace(' ', '_').replace('→', '_').replace('(', '').replace(')', ''),
@@ -383,18 +353,16 @@ class PipelineManager:
             if not self.config.PIPELINE.get('continue_on_error', True):
                 raise
 
-    # ============================================================
+   
     # IMPLEMENTACIÓN DE ETAPAS
-    # ============================================================
-    # Las siguientes funciones implementan cada etapa del pipeline
-    # Se ejecutan automáticamente en secuencia
+   
 
     def _stage_language_detection(self, stage_idx: int, files: List[Dict], parent_folder_id: str) -> Dict[str, Any]:
         """Etapa 1: Detección de idiomas"""
         logger.info(f"=== INICIO ETAPA: Detección de Idiomas ===")
         logger.info(f"Archivos recibidos: {len(files)}")
 
-        # ===== VERIFICAR CACHÉ PRIMERO =====
+        #VERIFICAR CACHÉ PRIMERO 
         cached = self.cache.check_stage_cache("02_Language_Detection", "language_detection_results.json")
 
         if cached:
@@ -485,7 +453,7 @@ class PipelineManager:
                     'from_cache': True
                 }
 
-        # ===== NO HAY CACHÉ, PROCESAR =====
+        #  NO HAY CACHÉ, PROCESAR 
         from src.language_detector import LanguageDetector
 
         logger.info(f"Cache no encontrado, detectando idiomas en {len(files)} archivos...")
@@ -650,7 +618,7 @@ class PipelineManager:
         self.results['selected_language'] = majority_lang
         self.results['selected_language_count'] = len(english_pdfs)
 
-        # ===== GUARDAR EN CACHÉ =====
+        # GUARDAR EN CACHÉ
         logger.info("Guardando resultados en caché...")
         self.progress_tracker.update_progress(stage_idx, 0.9, "Guardando en caché...")
 
@@ -674,15 +642,9 @@ class PipelineManager:
         }
 
     def _stage_txt_conversion(self, stage_idx: int, files: List[Dict], parent_folder_id: str) -> Dict[str, Any]:
-        """Etapa 2: Conversión PDF → TXT
+        
 
-        Flujo:
-        1. Buscar archivos .txt en Google Drive
-        2. Si existen, cargarlos desde Drive
-        3. Si no existen, convertir PDFs y guardar en Drive
-        """
-
-        # ===== PASO 1: BUSCAR ARCHIVOS TXT EN GOOGLE DRIVE =====
+        # BUSCAR ARCHIVOS TXT EN GOOGLE DRIVE 
         logger.info("=== Etapa Conversión TXT ===")
         logger.info("Paso 1: Buscando archivos TXT en Google Drive...")
 
@@ -695,7 +657,7 @@ class PipelineManager:
         logger.info(f"Encontrados {len(txt_files_in_drive)} archivos TXT en Drive")
         logger.info(f"Archivos PDF a procesar: {len(files)}")
 
-        # ===== VERIFICAR SI ESTÁN TODOS LOS ARCHIVOS =====
+        # VERIFICAR SI ESTÁN TODOS LOS ARCHIVOS 
         # Crear set de nombres de archivos TXT esperados
         expected_txt_names = {f['file_name'].replace('.pdf', '.txt') for f in files}
         actual_txt_names = {f['name'] for f in txt_files_in_drive}
@@ -714,7 +676,7 @@ class PipelineManager:
             if extra_files:
                 logger.warning(f"   Archivos extra: {len(extra_files)} (serán ignorados)")
 
-        # ===== PASO 2: SI HAY ARCHIVOS EN DRIVE Y ESTÁN COMPLETOS, CARGARLOS =====
+        # SI HAY ARCHIVOS EN DRIVE Y ESTÁN COMPLETOS, CARGARLOS 
         if all_files_cached and len(txt_files_in_drive) > 0:
             logger.info("✓ Caché completo encontrado, cargando archivos TXT desde Drive...")
             self.progress_tracker.update_progress(stage_idx, 0.1, f"Cargando {len(txt_files_in_drive)} archivos TXT desde caché...")
@@ -762,7 +724,7 @@ class PipelineManager:
                 'from_cache': True
             }
 
-        # ===== NO HAY CACHÉ, PROCESAR =====
+        #NO HAY CACHÉ, PROCESAR 
         from src.document_converter import DocumentConverter
 
         logger.info(f"Cache no encontrado, convirtiendo {len(files)} archivos PDF a TXT...")
@@ -807,7 +769,7 @@ class PipelineManager:
         self.results['conversion_results'] = conversion_results
         self.results['txt_files'] = txt_files
 
-        # ===== GUARDAR EN CACHÉ =====
+        # GUARDAR EN CACHÉ 
         self.progress_tracker.update_progress(stage_idx, 0.95, "Guardando en caché...")
 
         # NO guardar el texto completo en el caché (es demasiado grande)
@@ -879,9 +841,9 @@ class PipelineManager:
         }
 
     def _stage_preprocessing(self, stage_idx: int, txt_files: List[Dict], parent_folder_id: str) -> Dict[str, Any]:
-        """Etapa 3: Preprocesamiento"""
+        
 
-        # ===== VERIFICAR CACHÉ =====
+        # VERIFICAR CACHÉ
         cached = self.cache.check_stage_cache("04_TXT_Preprocessed", "preprocessing_results.json")
 
         if cached:
@@ -909,7 +871,7 @@ class PipelineManager:
                     'from_cache': True
                 }
 
-        # ===== PROCESAR =====
+        # PROCESAR
         from src.text_preprocessor import TextPreprocessor
 
         logger.info(f"Cache no encontrado, preprocesando {len(txt_files)} documentos...")
@@ -950,7 +912,7 @@ class PipelineManager:
         self.results['preprocessed_texts'] = preprocessed_texts
         self.results['preprocessing_results'] = preprocessing_results
 
-        # ===== GUARDAR EN CACHÉ =====
+        # GUARDAR EN CACHÉ 
         self.progress_tracker.update_progress(stage_idx, 0.95, "Guardando en caché...")
 
         total_tokens = sum(len(r['tokens']) for r in preprocessing_results.values())
@@ -987,7 +949,7 @@ class PipelineManager:
     def _stage_bow(self, stage_idx: int, preprocessed_texts: Dict, parent_folder_id: str) -> Dict[str, Any]:
         """Etapa 4: Bolsa de Palabras"""
 
-        # ===== VERIFICAR CACHÉ =====
+        # VERIFICAR CACHÉ 
         cached = self.cache.check_stage_cache("05_BagOfWords_Results", "bow_results.json")
 
         if cached:
@@ -1031,7 +993,7 @@ class PipelineManager:
                     'from_cache': True
                 }
 
-        # ===== PROCESAR USANDO BOW_ANALYZER =====
+        # PROCESAR USANDO BOW_ANALYZER 
         from src.bow_analyzer import BagOfWordsAnalyzer
 
         logger.info(f"Cache no encontrado, creando matriz BoW para {len(preprocessed_texts)} documentos...")
@@ -1065,7 +1027,7 @@ class PipelineManager:
         self.results['bow_top_terms'] = top_terms
         self.results['bow_stats'] = bow_stats
 
-        # ===== GUARDAR EN CACHÉ =====
+        # GUARDAR EN CACHÉ 
         self.progress_tracker.update_progress(stage_idx, 0.90, "Guardando en caché...")
 
         cache_data = {
@@ -1098,7 +1060,7 @@ class PipelineManager:
     def _stage_tfidf(self, stage_idx: int, preprocessed_texts: Dict, parent_folder_id: str) -> Dict[str, Any]:
         """Etapa 5: TF-IDF"""
 
-        # ===== VERIFICAR CACHÉ =====
+        # VERIFICAR CACHÉ 
         cached = self.cache.check_stage_cache("06_TFIDF_Results", "tfidf_results.json")
 
         if cached:
@@ -1141,7 +1103,7 @@ class PipelineManager:
                     'from_cache': True
                 }
 
-        # ===== PROCESAR USANDO TFIDF_ANALYZER =====
+        # PROCESAR USANDO TFIDF_ANALYZER 
         from src.tfidf_analyzer import TFIDFAnalyzer
 
         logger.info(f"Cache no encontrado, calculando TF-IDF para {len(preprocessed_texts)} documentos...")
@@ -1187,7 +1149,7 @@ class PipelineManager:
         self.results['top_tfidf_terms_per_doc'] = top_terms_per_doc
         self.results['tfidf_stats'] = tfidf_stats
 
-        # ===== GUARDAR EN CACHÉ =====
+        # GUARDAR EN CACHÉ 
         self.progress_tracker.update_progress(stage_idx, 0.90, "Guardando en caché...")
 
         cache_data = {

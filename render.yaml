@@ -1,0 +1,148 @@
+# ============================================================================
+# Render Blueprint - Infrastructure as Code
+# ============================================================================
+# Este archivo define toda tu infraestructura en Render
+# Render detecta automáticamente este archivo y crea los servicios
+
+databases:
+  - name: nlp-analysis-db
+    databaseName: analisis_transformacion_digital
+    user: analisis_user
+    region: oregon
+    plan: free
+    ipAllowList: []
+
+services:
+  # ==================== Backend API (Django REST Framework) ====================
+  - type: web
+    name: nlp-analysis-backend
+    runtime: python
+    region: oregon
+    plan: free
+    branch: main
+    rootDir: backend
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    startCommand: |
+      python manage.py migrate --noinput &&
+      python manage.py collectstatic --noinput --clear &&
+      gunicorn config.wsgi:application --config gunicorn.conf.py
+    healthCheckPath: /api/v1/
+    autoDeploy: true
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+
+      - key: DEBUG
+        value: false
+
+      - key: DJANGO_ALLOWED_HOSTS
+        sync: false  # Configurar manualmente con tu dominio .onrender.com
+
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nlp-analysis-db
+          property: connectionString
+
+      - key: DB_ENGINE
+        value: postgresql
+
+      - key: REDIS_URL
+        sync: false  # Configurar manualmente (Redis Cloud o alternativa)
+
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false  # Configurar manualmente con URL de Vercel
+
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false  # Configurar manualmente con URL de Vercel
+
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+
+      - key: EMAIL_PORT
+        value: 587
+
+      - key: EMAIL_USE_TLS
+        value: true
+
+      - key: EMAIL_HOST_USER
+        sync: false  # Configurar manualmente
+
+      - key: EMAIL_HOST_PASSWORD
+        sync: false  # Configurar manualmente
+
+      - key: DEFAULT_FROM_EMAIL
+        sync: false  # Configurar manualmente
+
+      - key: SENTRY_DSN
+        sync: false  # Opcional
+
+  # ==================== WebSocket Service (Django Channels) ====================
+  - type: web
+    name: nlp-analysis-websocket
+    runtime: python
+    region: oregon
+    plan: free
+    branch: main
+    rootDir: backend
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    startCommand: daphne -b 0.0.0.0 -p $PORT config.asgi:application
+    autoDeploy: true
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+
+      - key: DJANGO_SECRET_KEY
+        sync: false  # Usar el mismo que backend
+
+      - key: DEBUG
+        value: false
+
+      - key: DJANGO_ALLOWED_HOSTS
+        sync: false
+
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nlp-analysis-db
+          property: connectionString
+
+      - key: DB_ENGINE
+        value: postgresql
+
+      - key: REDIS_URL
+        sync: false  # Configurar manualmente (mismo que backend)
+
+# ============================================================================
+# Instrucciones de Uso
+# ============================================================================
+#
+# 1. Guarda este archivo en la raíz de tu repositorio
+# 2. Haz commit y push a GitHub:
+#    git add render.yaml
+#    git commit -m "Add Render infrastructure as code"
+#    git push origin main
+#
+# 3. Ve a Render Dashboard → "Blueprints" → "New Blueprint Instance"
+# 4. Conecta tu repositorio de GitHub
+# 5. Render creará automáticamente:
+#    - PostgreSQL database (nlp-analysis-db)
+#    - Backend service (nlp-analysis-backend)
+#    - WebSocket service (nlp-analysis-websocket)
+#
+# 6. Configura las variables marcadas con "sync: false":
+#    - DJANGO_ALLOWED_HOSTS: nlp-analysis-backend.onrender.com
+#    - REDIS_URL: redis://... (de Redis Cloud)
+#    - CORS_ALLOWED_ORIGINS: https://tu-app.vercel.app
+#    - CSRF_TRUSTED_ORIGINS: https://tu-app.vercel.app
+#    - EMAIL_* variables (si usas notificaciones)
+#
+# 7. Después del primer deploy, ejecuta en Render Shell:
+#    python manage.py createsuperuser
+#
+# ============================================================================
