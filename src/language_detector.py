@@ -1,8 +1,3 @@
-"""
-Módulo de Detección de Idioma
-Detecta el idioma de documentos de texto
-"""
-
 import langdetect
 from langdetect import detect, detect_langs, LangDetectException
 import langid
@@ -16,7 +11,7 @@ logger = get_logger(__name__)
 
 
 class LanguageDetector:
-    """Clase para detectar idiomas en documentos"""
+    
 
     def __init__(self) -> None:
         """Inicializa el detector de idioma"""
@@ -64,16 +59,7 @@ class LanguageDetector:
         }
 
     def detect_language(self, text: str, method: str = 'langdetect') -> Dict[str, Any]:
-        """
-        Detecta el idioma de un texto
-
-        Args:
-            text: Texto a analizar
-            method: Método a usar ('langdetect' o 'langid')
-
-        Returns:
-            Diccionario con código de idioma, nombre, y confianza
-        """
+        
         if not text or len(text.strip()) < 10:
             return {
                 'language_code': 'unknown',
@@ -131,18 +117,7 @@ class LanguageDetector:
             }
 
     def detect_from_bytes(self, file_bytes: bytes, file_name: str, file_extension: str, method: str = 'langdetect') -> Dict[str, Any]:
-        """
-        Detecta el idioma de un archivo PDF desde bytes
-
-        Args:
-            file_bytes: Bytes del archivo
-            file_name: Nombre del archivo
-            file_extension: Extensión del archivo (.pdf)
-            method: Método de detección
-
-        Returns:
-            Diccionario con información del idioma
-        """
+        
         try:
             # Usar pdfminer.six para extraer texto (más robusto que PyPDF2)
             from pdfminer.high_level import extract_text
@@ -197,17 +172,7 @@ class LanguageDetector:
             }
 
     def detect_language_from_file(self, file_path: str, encoding: str = 'utf-8', method: str = 'langdetect') -> Dict[str, Any]:
-        """
-        Detecta el idioma de un archivo
-
-        Args:
-            file_path: Ruta al archivo
-            encoding: Codificación del archivo
-            method: Método de detección
-
-        Returns:
-            Diccionario con información del idioma
-        """
+       
         try:
             with open(file_path, 'r', encoding=encoding, errors='ignore') as f:
                 text = f.read()
@@ -227,16 +192,7 @@ class LanguageDetector:
             }
 
     def detect_languages_batch(self, texts: Any, method: str = 'langdetect') -> List[Dict[str, Any]]:
-        """
-        Detecta idiomas en múltiples textos
-
-        Args:
-            texts: Lista de textos o diccionario {nombre: texto}
-            method: Método de detección
-
-        Returns:
-            Lista de resultados
-        """
+        
         results: List[Dict[str, Any]] = []
 
         if isinstance(texts, dict):
@@ -253,17 +209,7 @@ class LanguageDetector:
         return results
 
     def detect_languages_from_files(self, file_paths: List[str], encoding: str = 'utf-8', method: str = 'langdetect') -> List[Dict[str, Any]]:
-        """
-        Detecta idiomas de múltiples archivos
-
-        Args:
-            file_paths: Lista de rutas de archivos
-            encoding: Codificación de los archivos
-            method: Método de detección
-
-        Returns:
-            Lista de resultados
-        """
+       
         results = []
 
         for file_path in file_paths:
@@ -273,15 +219,7 @@ class LanguageDetector:
         return results
 
     def create_language_statistics(self, detection_results: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """
-        Crea estadísticas de idiomas detectados
-
-        Args:
-            detection_results: Lista de resultados de detección
-
-        Returns:
-            Diccionario con estadísticas
-        """
+        
         # Contar idiomas
         language_counts = Counter()
         confidence_sum = {}
@@ -319,15 +257,7 @@ class LanguageDetector:
         }
 
     def create_detection_dataframe(self, detection_results: List[Dict[str, Any]]) -> pd.DataFrame:
-        """
-        Crea DataFrame con resultados de detección
-
-        Args:
-            detection_results: Lista de resultados
-
-        Returns:
-            DataFrame de pandas
-        """
+        
         data = []
         for result in detection_results:
             data.append({
@@ -341,16 +271,7 @@ class LanguageDetector:
         return pd.DataFrame(data)
 
     def filter_by_language(self, detection_results: List[Dict[str, Any]], target_languages: Any) -> List[Dict[str, Any]]:
-        """
-        Filtra resultados por idioma(s) específico(s)
-
-        Args:
-            detection_results: Lista de resultados de detección
-            target_languages: Lista de códigos de idioma (ej: ['es', 'en'])
-
-        Returns:
-            Lista filtrada de resultados
-        """
+        
         if isinstance(target_languages, str):
             target_languages = [target_languages]
 
@@ -362,15 +283,7 @@ class LanguageDetector:
         return filtered
 
     def separate_by_language(self, detection_results):
-        """
-        Separa resultados por idioma
-
-        Args:
-            detection_results: Lista de resultados
-
-        Returns:
-            Diccionario {idioma: [resultados]}
-        """
+        
         separated = {}
 
         for result in detection_results:
@@ -384,15 +297,7 @@ class LanguageDetector:
         return separated
 
     def get_language_distribution(self, detection_results):
-        """
-        Obtiene la distribución de idiomas
-
-        Args:
-            detection_results: Lista de resultados
-
-        Returns:
-            DataFrame con distribución
-        """
+        
         stats = self.create_language_statistics(detection_results)
 
         data = []
@@ -410,16 +315,7 @@ class LanguageDetector:
         return df
 
     def validate_detection(self, text, expected_language):
-        """
-        Valida si el texto está en el idioma esperado
-
-        Args:
-            text: Texto a validar
-            expected_language: Código de idioma esperado
-
-        Returns:
-            Diccionario con resultado de validación
-        """
+       
         result = self.detect_language(text)
 
         is_valid = result['language_code'] == expected_language

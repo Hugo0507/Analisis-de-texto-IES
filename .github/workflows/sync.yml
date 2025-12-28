@@ -1,18 +1,63 @@
-name: Sync to Hugging Face
+name: Sync to Hugging Face Backend Space
 on:
   push:
-    branches: [main] # Se activa cuando subes algo a la rama main
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/sync.yml'
   workflow_dispatch:
 
 jobs:
-  build:
+  sync-backend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           lfs: true
-      - name: Push to Hub
+
+      - name: Prepare backend for HF Space
+        run: |
+          # Copy backend files to temp directory
+          mkdir -p /tmp/hf-backend
+          cp -r backend/* /tmp/hf-backend/
+
+          # Copy HF-specific files
+          cp backend/README_HF.md /tmp/hf-backend/README.md
+          cp backend/Dockerfile.hf /tmp/hf-backend/Dockerfile
+
+          # Create .gitignore for HF Space
+          cat > /tmp/hf-backend/.gitignore << 'EOF'
+          __pycache__/
+          *.py[cod]
+          *$py.class
+          *.so
+          .Python
+          env/
+          venv/
+          ENV/
+          *.db
+          *.sqlite3
+          .env
+          .venv
+          staticfiles/
+          mediafiles/
+          logs/
+          cache/
+          htmlcov/
+          .coverage
+          .pytest_cache/
+          EOF
+
+      - name: Push to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: git push --force https://Hugo0507:$HF_TOKEN@huggingface.co/spaces/Hugo0507/analisis-ies
+        run: |
+          cd /tmp/hf-backend
+          git init
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "Sync from GitHub: ${{ github.sha }}"
+          git push --force https://Hugo0507:$HF_TOKEN@huggingface.co/spaces/Hugo0507/analisis-ies-backend main

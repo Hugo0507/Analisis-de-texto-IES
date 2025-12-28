@@ -1,8 +1,3 @@
-"""
-Módulo de Procesamiento de Lenguaje Natural
-Procesa texto y extrae información relevante para análisis
-"""
-
 import re
 import nltk
 from nltk.corpus import stopwords
@@ -18,10 +13,7 @@ logger = get_logger(__name__)
 
 
 def descargar_recursos_nltk() -> None:
-    """
-    Descarga los recursos necesarios de NLTK
-    Solo descarga si no están ya instalados
-    """
+   
     recursos_necesarios = {
         'tokenizers/punkt': 'punkt',
         'corpora/stopwords': 'stopwords',
@@ -42,15 +34,10 @@ def descargar_recursos_nltk() -> None:
 
 
 class ProcessadorTexto:
-    """Clase para procesar y analizar textos"""
+    
 
     def __init__(self, idioma: str = 'spanish') -> None:
-        """
-        Inicializa el procesador de texto
-
-        Args:
-            idioma: Idioma para el procesamiento (por defecto español)
-        """
+       
         self.idioma: str = idioma
         logger.info(f"Inicializando ProcessadorTexto con idioma: {idioma}")
         descargar_recursos_nltk()
@@ -81,15 +68,7 @@ class ProcessadorTexto:
         }
 
     def limpiar_texto(self, texto: str) -> str:
-        """
-        Limpia y normaliza el texto
-
-        Args:
-            texto: Texto a limpiar
-
-        Returns:
-            Texto limpio y normalizado
-        """
+        
         if not texto or not isinstance(texto, str):
             logger.warning("Texto vacío o tipo inválido recibido en limpiar_texto")
             return ""
@@ -115,15 +94,7 @@ class ProcessadorTexto:
         return texto.strip()
 
     def tokenizar(self, texto: str) -> List[str]:
-        """
-        Tokeniza el texto en palabras
-
-        Args:
-            texto: Texto a tokenizar
-
-        Returns:
-            Lista de tokens
-        """
+        
         try:
             return word_tokenize(texto, language=self.idioma)
         except Exception as e:
@@ -131,39 +102,15 @@ class ProcessadorTexto:
             return []
 
     def remover_stopwords(self, tokens: List[str]) -> List[str]:
-        """
-        Remueve stopwords de la lista de tokens
-
-        Args:
-            tokens: Lista de tokens
-
-        Returns:
-            Lista de tokens sin stopwords
-        """
+        
         return [token for token in tokens if token not in self.stop_words and len(token) > 2]
 
     def aplicar_stemming(self, tokens: List[str]) -> List[str]:
-        """
-        Aplica stemming a los tokens
-
-        Args:
-            tokens: Lista de tokens
-
-        Returns:
-            Lista de tokens con stemming aplicado
-        """
+        
         return [self.stemmer.stem(token) for token in tokens]
 
     def procesar_texto_completo(self, texto: str) -> Dict[str, Union[str, List[str], Counter[str], int]]:
-        """
-        Procesa el texto completo aplicando todos los pasos
-
-        Args:
-            texto: Texto a procesar
-
-        Returns:
-            Diccionario con resultados del procesamiento
-        """
+        
         logger.debug(f"Procesando texto de {len(texto)} caracteres")
 
         # Limpiar
@@ -194,15 +141,7 @@ class ProcessadorTexto:
         }
 
     def extraer_oraciones(self, texto: str) -> List[str]:
-        """
-        Extrae oraciones del texto
-
-        Args:
-            texto: Texto a procesar
-
-        Returns:
-            Lista de oraciones
-        """
+        
         try:
             return sent_tokenize(texto, language=self.idioma)
         except Exception as e:
@@ -210,15 +149,7 @@ class ProcessadorTexto:
             return []
 
     def identificar_factores_mencionados(self, texto: str) -> Dict[str, int]:
-        """
-        Identifica qué factores de transformación digital son mencionados
-
-        Args:
-            texto: Texto a analizar
-
-        Returns:
-            Diccionario con factores identificados y conteo
-        """
+        
         texto_limpio = self.limpiar_texto(texto)
         factores_encontrados: Dict[str, int] = {}
 
@@ -234,15 +165,7 @@ class ProcessadorTexto:
         return factores_encontrados
 
     def procesar_documentos(self, documentos: Union[List[str], Dict[str, str]]) -> pd.DataFrame:
-        """
-        Procesa múltiples documentos
-
-        Args:
-            documentos: Lista de textos o diccionario con textos
-
-        Returns:
-            DataFrame con resultados del procesamiento
-        """
+        
         logger.info(f"Procesando {len(documentos)} documentos")
         resultados: List[Dict] = []
 
@@ -263,15 +186,6 @@ class ProcessadorTexto:
         return pd.DataFrame(resultados)
 
     def obtener_palabras_mas_frecuentes(self, texto: str, n: int = 20) -> List[Tuple[str, int]]:
-        """
-        Obtiene las N palabras más frecuentes
-
-        Args:
-            texto: Texto a analizar
-            n: Número de palabras a retornar
-
-        Returns:
-            Lista de tuplas (palabra, frecuencia)
-        """
+        
         resultado = self.procesar_texto_completo(texto)
         return resultado['frecuencias'].most_common(n)

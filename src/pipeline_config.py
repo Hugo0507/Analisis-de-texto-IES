@@ -1,19 +1,3 @@
-"""
-Configuración Centralizada del Pipeline de Análisis
-====================================================
-
-Este archivo contiene TODOS los parámetros configurables para el pipeline de análisis.
-
-IMPORTANTE: Para modificar el comportamiento del pipeline, edita los valores en este archivo.
-Los cambios aquí afectarán cómo se procesan todos los documentos.
-
-DOCUMENTACIÓN DE PARÁMETROS:
-- Para análisis rápido: reduce n_topics, max_features, iterations
-- Para análisis profundo: aumenta estos valores (más tiempo de procesamiento)
-- Para corpus pequeños (< 50 docs): reduce min_df, min_topic_size
-- Para corpus grandes (> 500 docs): aumenta estos valores
-"""
-
 from typing import Dict, Any, List, Tuple
 import nltk
 from nltk.corpus import stopwords
@@ -26,13 +10,9 @@ except LookupError:
 
 
 class PipelineConfig:
-    """Configuración centralizada del pipeline de análisis"""
-
-    # ============================================================
+    
     # 0. STOPWORDS GLOBALES (INGLÉS + ESPAÑOL + EXTRAS)
-    # ============================================================
-    # Stopwords unificadas para TODOS los modelos del pipeline
-    # NO modificar estas stopwords por modelo - usar siempre este set global
+    
 
     # Cargar stopwords en inglés y español
     _stop_words_english = set(stopwords.words('english'))
@@ -89,24 +69,22 @@ class PipelineConfig:
         "nn", "nham", "tp", "takahashi", "tranphuong", "qa", "tl", "dtb", "blackmore", "ainara", "palazn",
         "gmezgallego", "arrieta", "casasola", "margarita", "marina", "quero", "crdoba", "guha", "th", "dsm",
         "aaidd", "navas", "echavarriaramirez", "tirapuustarroz", "gutierrez", "martorell", "incheon", "unesco",
-        "luque", "yeung", "universitarios", "autopercepcin"
+        "luque", "yeung", "universitarios", "autopercepcin", "cid"
     }
 
     # Unir todas las stopwords
     GLOBAL_STOPWORDS = _stop_words_english.union(_stop_words_spanish).union(_extra_stopwords)
 
-    # ============================================================
+    
     # 1. SELECCIÓN AUTOMÁTICA DE IDIOMA
-    # ============================================================
     # El sistema detecta automáticamente el idioma mayoritario
     # y descarta documentos en otros idiomas
     AUTO_SELECT_MAJORITY_LANGUAGE = True
     MIN_LANGUAGE_THRESHOLD = 0.7  # 70% de documentos deben estar en el idioma principal
 
-    # ============================================================
+  
     # 2. PREPROCESAMIENTO DE TEXTO
-    # ============================================================
-    # Configuración para limpieza y normalización de texto
+  
 
     PREPROCESSING = {
         # Aplicar lematización (reducir palabras a su forma base/lemma)
@@ -130,10 +108,10 @@ class PipelineConfig:
         'lowercase': True
     }
 
-    # ============================================================
+   
     # 3. BOLSA DE PALABRAS (BOW - Bag of Words)
-    # ============================================================
-    # Representa documentos como vectores de frecuencias de términos
+    
+ 
 
     BOW = {
         # Rango de n-gramas a incluir
@@ -150,9 +128,8 @@ class PipelineConfig:
         'max_df': 0.85,  # 0.85 = 85% | Descartar términos muy comunes
     }
 
-    # ============================================================
+
     # 4. TF-IDF (Term Frequency - Inverse Document Frequency)
-    # ============================================================
     # Se calcula DESDE la matriz BoW, aplicando ponderación TF-IDF
     # Los parámetros son similares a BoW pero se pueden ajustar independientemente
 
@@ -183,10 +160,9 @@ class PipelineConfig:
         'sublinear_tf': False  # True = usar log(TF) en vez de TF
     }
 
-    # ============================================================
+    
     # 5. ANÁLISIS DE N-GRAMAS
-    # ============================================================
-    # Extrae y analiza patrones de 1, 2, 3+ palabras
+
 
     NGRAMS = {
         # Máximo n para análisis (1=unigrams, 2=bigrams, 3=trigrams)
@@ -202,13 +178,12 @@ class PipelineConfig:
         'top_k': 50,  # Mostrar los 50 más frecuentes
     }
 
-    # ============================================================
+ 
     # 6. TOPIC MODELING (LDA, NMF, LSA, pLSA)
-    # ============================================================
-    # Descubre temas latentes en el corpus
+   
 
     TOPIC_MODELING = {
-        # ---------- LDA (Latent Dirichlet Allocation) ----------
+        # LDA 
         'lda': {
             'n_topics': 10,  # MODIFICAR AQUÍ: número de temas a descubrir (5-20 típico)
             'max_iter': 20,  # Iteraciones máximas (10=rápido, 50=preciso)
@@ -220,7 +195,7 @@ class PipelineConfig:
             'max_df': 0.95
         },
 
-        # ---------- NMF (Non-negative Matrix Factorization) ----------
+        # NMF 
         'nmf': {
             'n_topics': 10,  # MODIFICAR AQUÍ
             'max_iter': 200,
@@ -232,7 +207,7 @@ class PipelineConfig:
             'max_df': 0.95
         },
 
-        # ---------- LSA (Latent Semantic Analysis) ----------
+        # LSA 
         'lsa': {
             'n_components': 10,  # MODIFICAR AQUÍ: dimensiones latentes
             'random_state': 42,
@@ -241,21 +216,17 @@ class PipelineConfig:
             'max_df': 0.95
         },
 
-        # ---------- pLSA (Probabilistic LSA) ----------
+        #  pLSA 
         'plsa': {
-            'n_topics': 10,  # MODIFICAR AQUÍ: número de temas
-            'max_iter': 100,  # Iteraciones máximas del algoritmo EM
-            'random_state': 42,
-            'max_features': 1000,  # Vocabulario para pLSA
-            'min_df': 2,
-            'max_df': 0.95
+            'n_topics': 10,  # MODIFICAR AQUÍ
+            'max_iter': 100,
+            'random_state': 42
         }
     }
 
-    # ============================================================
+   
     # 7. BERTOPIC (Topic Modeling con Transformers)
-    # ============================================================
-    # Usa embeddings de BERT para descubrir temas semánticamente coherentes
+    
 
     BERTOPIC = {
         # Modelo de embeddings (sentence-transformers)
@@ -283,10 +254,8 @@ class PipelineConfig:
         'vectorizer_ngram_range': (1, 2)
     }
 
-    # ============================================================
     # 8. NER (Named Entity Recognition)
-    # ============================================================
-    # Identifica y clasifica entidades nombradas en el texto
+
 
     NER = {
         # Modelo de spaCy
@@ -307,20 +276,19 @@ class PipelineConfig:
         'use_cache': True
     }
 
-    # ============================================================
+ 
     # 9. REDUCCIÓN DE DIMENSIONALIDAD
-    # ============================================================
-    # Reduce el espacio de características para visualización y análisis
+ 
 
     DIMENSIONALITY_REDUCTION = {
-        # ---------- PCA (Principal Component Analysis) ----------
+        # PCA 
         'pca': {
             'n_components': 50,  # MODIFICAR AQUÍ: dimensiones finales (2-100)
             'random_state': 42,
             'svd_solver': 'auto'  # 'auto', 'full', 'arpack', 'randomized'
         },
 
-        # ---------- t-SNE (t-Distributed Stochastic Neighbor Embedding) ----------
+        # t-SNE 
         'tsne': {
             'n_components': 2,  # Típicamente 2 o 3 para visualización
             'perplexity': 30,  # MODIFICAR AQUÍ: 5-50 (corpus pequeño: 5-15, grande: 30-50)
@@ -330,7 +298,7 @@ class PipelineConfig:
             'init': 'pca'  # 'pca' o 'random'
         },
 
-        # ---------- UMAP (Uniform Manifold Approximation and Projection) ----------
+        # UMAP
         'umap': {
             'n_components': 2,  # Dimensiones finales
             'n_neighbors': 15,  # MODIFICAR AQUÍ: 2-100 (local vs global structure)
@@ -339,7 +307,7 @@ class PipelineConfig:
             'random_state': 42
         },
 
-        # ---------- Filtros de Features ----------
+        # Filtros de Features 
         'filters': {
             # Filtro de baja varianza
             'low_variance_threshold': 0.01,  # Remover features con varianza < 0.01
@@ -349,19 +317,18 @@ class PipelineConfig:
         }
     }
 
-    # ============================================================
+   
     # 10. CLASIFICACIÓN DE TEXTOS
-    # ============================================================
-    # Modelos de aprendizaje supervisado (requiere etiquetado manual)
+
 
     CLASSIFICATION = {
-        # ---------- Naive Bayes ----------
+        #  Naive Bayes 
         'naive_bayes': {
             'alpha': 1.0,  # MODIFICAR AQUÍ: parámetro de suavizado (0.1-10.0)
             'fit_prior': True  # Aprender probabilidades a priori
         },
 
-        # ---------- SVM (Support Vector Machine) ----------
+        #  SVM 
         'svm': {
             'kernel': 'linear',  # MODIFICAR AQUÍ: 'linear', 'rbf', 'poly', 'sigmoid'
             'C': 1.0,  # MODIFICAR AQUÍ: regularización (0.1-100)
@@ -370,7 +337,7 @@ class PipelineConfig:
             'random_state': 42
         },
 
-        # ---------- KNN (K-Nearest Neighbors) ----------
+        # KNN 
         'knn': {
             'n_neighbors': 5,  # MODIFICAR AQUÍ: número de vecinos (1-20)
             'weights': 'uniform',  # MODIFICAR AQUÍ: 'uniform' o 'distance'
@@ -378,14 +345,14 @@ class PipelineConfig:
             'algorithm': 'auto'  # 'auto', 'ball_tree', 'kd_tree', 'brute'
         },
 
-        # ---------- Validación Cruzada ----------
+        #  Validación Cruzada 
         'cross_validation': {
             'n_splits': 5,  # Número de folds
             'shuffle': True,
             'random_state': 42
         },
 
-        # ---------- Train/Test Split ----------
+        #  Train/Test Split 
         'train_test_split': {
             'test_size': 0.2,  # 20% para test, 80% para train
             'random_state': 42,
@@ -393,10 +360,9 @@ class PipelineConfig:
         }
     }
 
-    # ============================================================
+    
     # 11. ANÁLISIS DE FACTORES
-    # ============================================================
-    # Consolida diferentes análisis en factores clave
+  
 
     FACTOR_ANALYSIS = {
         # TF-IDF interno para análisis de factores
@@ -415,18 +381,16 @@ class PipelineConfig:
         'top_n_per_factor': 10
     }
 
-    # ============================================================
+    
     # 12. CONSOLIDACIÓN DE FACTORES
-    # ============================================================
-    # Integra resultados de todos los análisis previos
 
     CONSOLIDATION = {
         # Pesos para cada fuente de análisis (deben sumar 1.0)
         'weights': {
-            'factor_analysis': 0.3,  # MODIFICAR AQUÍ: peso del análisis de factores
-            'topic_modeling': 0.3,   # MODIFICAR AQUÍ: peso del topic modeling
-            'ner': 0.2,              # MODIFICAR AQUÍ: peso de NER
-            'tfidf': 0.2             # MODIFICAR AQUÍ: peso de TF-IDF
+            'factor_analysis': 0.3,  #  peso del análisis de factores
+            'topic_modeling': 0.3,   #  peso del topic modeling
+            'ner': 0.2,              #  peso de NER
+            'tfidf': 0.2             #  peso de TF-IDF
         },
 
         # Número de factores consolidados finales
@@ -436,10 +400,9 @@ class PipelineConfig:
         'aggregation_method': 'weighted_average'  # 'weighted_average', 'max', 'vote'
     }
 
-    # ============================================================
+ 
     # 13. VISUALIZACIONES
-    # ============================================================
-    # Configuración de gráficos y nubes de palabras
+
 
     VISUALIZATION = {
         # Nubes de palabras
@@ -460,10 +423,8 @@ class PipelineConfig:
         }
     }
 
-    # ============================================================
     # 14. EVALUACIÓN DE DESEMPEÑO
-    # ============================================================
-    # Métricas y benchmarks del pipeline
+  
 
     PERFORMANCE = {
         # Métricas a calcular
@@ -482,10 +443,9 @@ class PipelineConfig:
         'save_intermediate_results': True  # Guardar resultados intermedios
     }
 
-    # ============================================================
+ 
     # 15. SISTEMA DE CACHÉ Y PERSISTENCIA
-    # ============================================================
-    # Configuración de almacenamiento y cache
+
 
     CACHE = {
         # Usar caché local
@@ -501,10 +461,9 @@ class PipelineConfig:
         'cache_ttl': None
     }
 
-    # ============================================================
+
     # 16. CONFIGURACIÓN DEL PIPELINE AUTOMÁTICO
-    # ============================================================
-    # Controla el flujo de ejecución automático
+
 
     PIPELINE = {
         # Auto-ejecutar al conectar Drive
@@ -552,12 +511,7 @@ class PipelineConfig:
 
     @classmethod
     def get_config_dict(cls) -> Dict[str, Any]:
-        """
-        Retorna configuración como diccionario
-
-        Returns:
-            Diccionario con toda la configuración
-        """
+       
         return {
             'auto_select_majority_language': cls.AUTO_SELECT_MAJORITY_LANGUAGE,
             'min_language_threshold': cls.MIN_LANGUAGE_THRESHOLD,
@@ -580,12 +534,7 @@ class PipelineConfig:
 
     @classmethod
     def validate_config(cls) -> List[str]:
-        """
-        Valida la configuración y retorna warnings/errores
-
-        Returns:
-            Lista de mensajes de validación
-        """
+       
         warnings = []
 
         # Validar pesos de consolidación
@@ -607,9 +556,8 @@ class PipelineConfig:
         return warnings
 
 
-# ============================================================
+
 # EXPORTAR CONFIGURACIÓN POR DEFECTO
-# ============================================================
 
 # Instancia global de configuración
 config = PipelineConfig()

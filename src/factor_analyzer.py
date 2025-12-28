@@ -1,8 +1,3 @@
-"""
-Módulo de Análisis de Factores Clave
-Analiza y visualiza factores clave en transformación digital
-"""
-
 import pandas as pd
 from collections import Counter
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -18,10 +13,10 @@ logger = get_logger(__name__)
 
 
 class AnalizadorFactores:
-    """Clase para analizar factores clave en transformación digital"""
+    
 
     def __init__(self) -> None:
-        """Inicializa el analizador de factores"""
+        
         logger.info("Inicializando AnalizadorFactores")
 
         # Definición de factores clave y sus categorías
@@ -76,15 +71,7 @@ class AnalizadorFactores:
         self.vectorizer: TfidfVectorizer = TfidfVectorizer(max_features=100, ngram_range=(1, 2))
 
     def analizar_texto(self, texto: str) -> Dict[str, Any]:
-        """
-        Analiza un texto y extrae factores clave
 
-        Args:
-            texto: Texto a analizar
-
-        Returns:
-            Diccionario con análisis de factores
-        """
         logger.debug(f"Analizando texto de {len(texto)} caracteres")
         texto_lower = texto.lower()
         factores_detectados: Dict[str, Any] = {}
@@ -111,15 +98,7 @@ class AnalizadorFactores:
         return factores_detectados
 
     def analizar_documentos(self, documentos_dict: Dict[str, str]) -> pd.DataFrame:
-        """
-        Analiza múltiples documentos
-
-        Args:
-            documentos_dict: Diccionario con nombre:texto
-
-        Returns:
-            DataFrame con análisis completo
-        """
+       
         logger.info(f"Analizando {len(documentos_dict)} documentos")
         resultados: List[Dict[str, Any]] = []
 
@@ -144,16 +123,7 @@ class AnalizadorFactores:
         return pd.DataFrame(resultados)
 
     def obtener_factores_principales(self, documentos_dict: Dict[str, str], top_n: int = 5) -> List[Tuple[str, int]]:
-        """
-        Obtiene los factores principales más mencionados
-
-        Args:
-            documentos_dict: Diccionario con documentos
-            top_n: Número de factores principales a retornar
-
-        Returns:
-            Lista de factores ordenados por relevancia
-        """
+        
         logger.debug(f"Obteniendo top {top_n} factores principales")
         factores_totales: Counter[str] = Counter()
 
@@ -165,15 +135,7 @@ class AnalizadorFactores:
         return factores_totales.most_common(top_n)
 
     def analisis_tfidf(self, textos: List[str]) -> Tuple[Optional[Any], Optional[np.ndarray]]:
-        """
-        Realiza análisis TF-IDF de los textos
-
-        Args:
-            textos: Lista de textos
-
-        Returns:
-            Matriz TF-IDF y nombres de características
-        """
+       
         try:
             logger.debug(f"Realizando análisis TF-IDF de {len(textos)} textos")
             tfidf_matrix = self.vectorizer.fit_transform(textos)
@@ -185,16 +147,7 @@ class AnalizadorFactores:
             return None, None
 
     def clustering_documentos(self, textos: List[str], n_clusters: int = 3) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
-        """
-        Agrupa documentos en clusters
-
-        Args:
-            textos: Lista de textos
-            n_clusters: Número de clusters
-
-        Returns:
-            Etiquetas de cluster y centroides
-        """
+        
         try:
             logger.debug(f"Iniciando clustering de {len(textos)} documentos en {n_clusters} clusters")
             tfidf_matrix, _ = self.analisis_tfidf(textos)
@@ -210,17 +163,7 @@ class AnalizadorFactores:
             return None, None
 
     def extraer_temas_lda(self, textos: List[str], n_topics: int = 5, n_words: int = 10) -> List[Dict[str, Union[str, List[str], List[float]]]]:
-        """
-        Extrae temas usando LDA (Latent Dirichlet Allocation)
-
-        Args:
-            textos: Lista de textos
-            n_topics: Número de temas a extraer
-            n_words: Número de palabras por tema
-
-        Returns:
-            Lista de temas con sus palabras principales
-        """
+        
         try:
             logger.debug(f"Extrayendo {n_topics} temas LDA de {len(textos)} textos ({n_words} palabras por tema)")
             tfidf_matrix, feature_names = self.analisis_tfidf(textos)
@@ -248,15 +191,7 @@ class AnalizadorFactores:
             return []
 
     def obtener_resumen_factores(self, documentos_dict: Dict[str, str]) -> Dict[str, Any]:
-        """
-        Obtiene un resumen completo de factores
-
-        Args:
-            documentos_dict: Diccionario con documentos
-
-        Returns:
-            Diccionario con resumen estadístico
-        """
+        
         df_analisis = self.analizar_documentos(documentos_dict)
 
         resumen = {
@@ -289,16 +224,7 @@ class AnalizadorFactores:
         return resumen
 
     def obtener_keywords_por_factor(self, texto: str, factor: str) -> List[Tuple[str, int]]:
-        """
-        Obtiene las keywords encontradas para un factor específico
-
-        Args:
-            texto: Texto a analizar
-            factor: Nombre del factor
-
-        Returns:
-            Lista de keywords encontradas con sus frecuencias
-        """
+        
         if factor not in self.categorias_factores:
             return []
 
@@ -313,15 +239,7 @@ class AnalizadorFactores:
         return sorted(keywords_encontradas, key=lambda x: x[1], reverse=True)
 
     def matriz_co_ocurrencia(self, documentos_dict: Dict[str, str]) -> pd.DataFrame:
-        """
-        Crea una matriz de co-ocurrencia de factores
-
-        Args:
-            documentos_dict: Diccionario con documentos
-
-        Returns:
-            DataFrame con matriz de co-ocurrencia
-        """
+      
         categorias = list(self.categorias_factores.keys())
         matriz = pd.DataFrame(0, index=categorias, columns=categorias)
 
