@@ -1,9 +1,4 @@
-"""
-Módulo de Análisis NER (Named Entity Recognition)
-Identifica entidades nombradas: países, años, organizaciones, personas, etc.
-Incluye análisis de co-ocurrencias, contexto y visualizaciones avanzadas.
-Con sistema de caché automático para evitar re-procesar documentos.
-"""
+
 
 import re
 from collections import Counter, defaultdict
@@ -19,17 +14,10 @@ logger = get_logger(__name__)
 
 
 class NERAnalyzer:
-    """Clase para análisis de entidades nombradas usando SpaCy"""
+    
 
     def __init__(self, model_name='en_core_web_sm', use_cache=True, drive_folder_id=None):
-        """
-        Inicializa el analizador NER
-
-        Args:
-            model_name: Nombre del modelo de SpaCy a usar
-            use_cache: Si debe usar el sistema de caché
-            drive_folder_id: ID de carpeta en Google Drive para caché
-        """
+        
         self.model_name = model_name
         self.nlp = None
         self.max_length = 1000000  # Límite de caracteres por fragmento

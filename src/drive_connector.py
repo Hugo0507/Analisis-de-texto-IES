@@ -1,8 +1,3 @@
-"""
-Módulo de Conexión a Google Drive
-Conecta y descarga archivos de Google Drive
-"""
-
 import os
 import io
 import time
@@ -30,16 +25,10 @@ SCOPES = ['https://www.googleapis.com/auth/drive']
 
 
 class GoogleDriveConnector:
-    """Clase para conectar y descargar archivos de Google Drive"""
+    
 
     def __init__(self, credentials_path: str = 'credentials.json', token_path: str = 'token.json') -> None:
-        """
-        Inicializa el conector de Google Drive
-
-        Args:
-            credentials_path: Ruta al archivo credentials.json
-            token_path: Ruta donde se guardará el token de autenticación
-        """
+        
         self.credentials_path: str = credentials_path
         self.token_path: str = token_path
         self.service: Optional[Any] = None
@@ -47,12 +36,7 @@ class GoogleDriveConnector:
         logger.info(f"Inicializando GoogleDriveConnector con credentials_path={credentials_path}")
 
     def authenticate(self) -> bool:
-        """
-        Autentica con Google Drive usando OAuth2 o Service Account
-
-        Returns:
-            True si la autenticación fue exitosa, False en caso contrario
-        """
+       
         logger.info("Iniciando autenticación con Google Drive")
         creds: Optional[Credentials] = None
 
@@ -144,12 +128,7 @@ class GoogleDriveConnector:
             return False
 
     def validate_connection(self) -> bool:
-        """
-        Valida que la conexión con Google Drive esté activa
-
-        Returns:
-            True si la conexión es válida, False en caso contrario
-        """
+      
         if not self.service:
             logger.warning("No hay servicio de Google Drive disponible para validar")
             return False
@@ -164,12 +143,7 @@ class GoogleDriveConnector:
             return False
 
     def ensure_connection(self) -> bool:
-        """
-        Asegura que la conexión esté activa, re-autenticando si es necesario
-
-        Returns:
-            True si la conexión está activa, False en caso contrario
-        """
+       
         if self.validate_connection():
             return True
 
@@ -190,30 +164,13 @@ class GoogleDriveConnector:
         return False
 
     def get_folder_id_from_url(self, url):
-        """
-        Extrae el ID de carpeta de una URL de Google Drive
-
-        Args:
-            url: URL de Google Drive
-
-        Returns:
-            ID de la carpeta
-        """
+       
         if 'folders/' in url:
             return url.split('folders/')[1].split('?')[0]
         return url
 
     def list_files_in_folder(self, folder_id: str, recursive: bool = True) -> List[Dict[str, Any]]:
-        """
-        Lista todos los archivos en una carpeta de Google Drive
-
-        Args:
-            folder_id: ID de la carpeta
-            recursive: Si True, busca en subcarpetas también
-
-        Returns:
-            Lista de diccionarios con información de archivos
-        """
+        
         if not self.service:
             logger.error("Debe autenticarse primero antes de listar archivos")
             return []
@@ -253,17 +210,7 @@ class GoogleDriveConnector:
         return all_files
 
     def read_file_content(self, file_id: str, max_retries: int = 3) -> Optional[io.BytesIO]:
-        """
-        Lee el contenido de un archivo de Google Drive en memoria (sin descargar)
-        Con sistema de reintentos y manejo robusto de errores SSL
-
-        Args:
-            file_id: ID del archivo en Drive
-            max_retries: Número máximo de reintentos (default: 3)
-
-        Returns:
-            BytesIO con el contenido del archivo, o None si hay error
-        """
+        
         if not self.service:
             logger.error("Debe autenticarse primero antes de leer archivos")
             return None
@@ -365,16 +312,7 @@ class GoogleDriveConnector:
         return None
 
     def download_file(self, file_id: str, destination_path: str) -> bool:
-        """
-        Descarga un archivo de Google Drive
-
-        Args:
-            file_id: ID del archivo en Drive
-            destination_path: Ruta donde guardar el archivo
-
-        Returns:
-            True si la descarga fue exitosa, False en caso contrario
-        """
+        
         if not self.service:
             logger.error("Debe autenticarse primero antes de descargar archivos")
             return False
@@ -403,18 +341,7 @@ class GoogleDriveConnector:
             return False
 
     def download_folder(self, folder_id, destination_folder, file_types=None):
-        """
-        Descarga todos los archivos de una carpeta
-
-        Args:
-            folder_id: ID de la carpeta
-            destination_folder: Carpeta de destino local
-            file_types: Lista de extensiones a descargar (ej: ['.pdf', '.docx'])
-                       Si es None, descarga todos
-
-        Returns:
-            Lista de archivos descargados exitosamente
-        """
+        
         files = self.list_files_in_folder(folder_id)
         downloaded = []
 
@@ -440,15 +367,7 @@ class GoogleDriveConnector:
         return downloaded
 
     def get_file_statistics(self, files):
-        """
-        Obtiene estadísticas de archivos
-
-        Args:
-            files: Lista de archivos obtenida de list_files_in_folder
-
-        Returns:
-            Diccionario con estadísticas
-        """
+        
         stats = {
             'total_files': len(files),
             'by_directory': defaultdict(int),
@@ -480,15 +399,7 @@ class GoogleDriveConnector:
         return stats
 
     def create_file_dataframe(self, files):
-        """
-        Crea un DataFrame de pandas con la información de archivos
-
-        Args:
-            files: Lista de archivos
-
-        Returns:
-            DataFrame de pandas
-        """
+       
         data = []
         for file in files:
             data.append({
@@ -504,15 +415,7 @@ class GoogleDriveConnector:
         return pd.DataFrame(data)
 
     def create_directory_summary_table(self, files):
-        """
-        Crea una tabla resumida de archivos por directorio
-
-        Args:
-            files: Lista de archivos
-
-        Returns:
-            DataFrame con resumen por directorio
-        """
+      
         stats = self.get_file_statistics(files)
 
         data = []
@@ -535,16 +438,7 @@ class GoogleDriveConnector:
         return df
 
     def create_folder(self, folder_name: str, parent_folder_id: Optional[str] = None) -> Optional[str]:
-        """
-        Crea una nueva carpeta en Google Drive
-
-        Args:
-            folder_name: Nombre de la carpeta a crear
-            parent_folder_id: ID de la carpeta padre (None = raíz)
-
-        Returns:
-            ID de la carpeta creada, o None si hay error
-        """
+        
         if not self.service:
             logger.error("Debe autenticarse primero antes de crear carpetas")
             return None
@@ -573,17 +467,7 @@ class GoogleDriveConnector:
             return None
 
     def copy_file(self, file_id: str, destination_folder_id: str, new_name: Optional[str] = None) -> Optional[str]:
-        """
-        Copia un archivo a otra carpeta en Drive
-
-        Args:
-            file_id: ID del archivo a copiar
-            destination_folder_id: ID de la carpeta destino
-            new_name: Nuevo nombre (opcional, usa el original si es None)
-
-        Returns:
-            ID del archivo copiado, o None si hay error
-        """
+        
         if not self.service:
             logger.error("Debe autenticarse primero antes de copiar archivos")
             return None
@@ -621,16 +505,7 @@ class GoogleDriveConnector:
             return None
 
     def copy_files_to_folder(self, file_ids, destination_folder_id):
-        """
-        Copia múltiples archivos a una carpeta
-
-        Args:
-            file_ids: Lista de IDs de archivos a copiar
-            destination_folder_id: ID de la carpeta destino
-
-        Returns:
-            Lista de diccionarios con resultados (success, file_id, new_id)
-        """
+        
         results = []
 
         for file_id in file_ids:
@@ -645,17 +520,7 @@ class GoogleDriveConnector:
         return results
 
     def filter_files_by_extension(self, files, extensions):
-        """
-        Filtra archivos por extensión
-
-        Args:
-            files: Lista de archivos de list_files_in_folder
-            extensions: Lista de extensiones (ej: ['.pdf', '.docx'])
-                       o string única (ej: '.pdf')
-
-        Returns:
-            Lista de archivos filtrados
-        """
+        
         if isinstance(extensions, str):
             extensions = [extensions]
 
@@ -672,15 +537,7 @@ class GoogleDriveConnector:
         return filtered
 
     def get_parent_folder_id(self, folder_id: str) -> Optional[str]:
-        """
-        Obtiene el ID de la carpeta padre de una carpeta dada
-
-        Args:
-            folder_id: ID de la carpeta
-
-        Returns:
-            ID de la carpeta padre, o None si hay error
-        """
+        
         if not self.service:
             logger.error("Debe autenticarse primero antes de obtener carpeta padre")
             return None
@@ -706,16 +563,7 @@ class GoogleDriveConnector:
             return None
 
     def get_or_create_folder(self, parent_folder_id: str, folder_name: str) -> Optional[str]:
-        """
-        Obtiene o crea una carpeta (verifica si existe primero)
-
-        Args:
-            parent_folder_id: ID de la carpeta padre
-            folder_name: Nombre de la carpeta
-
-        Returns:
-            ID de la carpeta
-        """
+        
         if not self.service:
             logger.error("Debe autenticarse primero antes de obtener/crear carpetas")
             return None
@@ -750,44 +598,15 @@ class GoogleDriveConnector:
             return None
 
     def get_or_create_project_folder(self, parent_folder_id, project_name="Analisis_TD"):
-        """
-        Obtiene o crea una carpeta de proyecto para la persistencia
-        (Alias de get_or_create_folder para compatibilidad)
-
-        Args:
-            parent_folder_id: ID de la carpeta padre
-            project_name: Nombre de la carpeta de proyecto
-
-        Returns:
-            ID de la carpeta de proyecto
-        """
+        
         return self.get_or_create_folder(parent_folder_id, project_name)
 
     def create_persistence_folder(self, parent_folder_id, folder_name):
-        """
-        Crea una carpeta de persistencia secuencial
-
-        Args:
-            parent_folder_id: ID de la carpeta padre
-            folder_name: Nombre de la carpeta (ej: '01_PDF_Files')
-
-        Returns:
-            ID de la carpeta creada
-        """
+        
         return self.create_folder(folder_name, parent_folder_id)
 
     def create_text_file(self, folder_id: str, file_name: str, content: str) -> Optional[str]:
-        """
-        Crea un archivo de texto en Google Drive
-
-        Args:
-            folder_id: ID de la carpeta donde crear el archivo
-            file_name: Nombre del archivo (incluir extensión .txt)
-            content: Contenido del archivo (string)
-
-        Returns:
-            ID del archivo creado, o None si hay error
-        """
+        
         if not self.service:
             logger.error("Debe autenticarse primero antes de crear archivos de texto")
             return None
@@ -825,16 +644,7 @@ class GoogleDriveConnector:
             return None
 
     def find_file_in_folder(self, folder_id: str, file_name: str) -> Optional[Dict[str, Any]]:
-        """
-        Busca un archivo por nombre en una carpeta específica
-
-        Args:
-            folder_id: ID de la carpeta donde buscar
-            file_name: Nombre del archivo a buscar
-
-        Returns:
-            Diccionario con información del archivo (id, name), o None si no existe
-        """
+        
         if not self.service:
             logger.error("Debe autenticarse primero antes de buscar archivos")
             return None
@@ -863,17 +673,7 @@ class GoogleDriveConnector:
             return None
 
     def create_json_file(self, folder_id: str, file_name: str, json_data: Union[Dict, List]) -> Optional[str]:
-        """
-        Crea un archivo JSON en Google Drive
-
-        Args:
-            folder_id: ID de la carpeta donde crear el archivo
-            file_name: Nombre del archivo (incluir extensión .json)
-            json_data: Datos a guardar (dict o list)
-
-        Returns:
-            ID del archivo creado, o None si hay error
-        """
+        
         if not self.service:
             logger.error("Debe autenticarse primero antes de crear archivos JSON")
             return None
@@ -915,18 +715,7 @@ class GoogleDriveConnector:
             return None
 
     def upload_file(self, folder_id: str, file_name: str, content: bytes, mime_type: str) -> Optional[str]:
-        """
-        Sube un archivo genérico a Google Drive
-
-        Args:
-            folder_id: ID de la carpeta donde subir el archivo
-            file_name: Nombre del archivo
-            content: Contenido del archivo en bytes
-            mime_type: Tipo MIME del archivo (ej: 'text/csv', 'application/octet-stream')
-
-        Returns:
-            ID del archivo creado, o None si hay error
-        """
+       
         if not self.service:
             logger.error("Debe autenticarse primero antes de subir archivos")
             return None
@@ -969,15 +758,7 @@ class GoogleDriveConnector:
             return None
 
     def read_json_file(self, file_id: str) -> Optional[Union[Dict, List]]:
-        """
-        Lee un archivo JSON desde Google Drive
-
-        Args:
-            file_id: ID del archivo JSON
-
-        Returns:
-            Datos del JSON (dict o list), o None si hay error
-        """
+        
         if not self.service:
             logger.error("Debe autenticarse primero antes de leer archivos JSON")
             return None
@@ -1005,15 +786,7 @@ class GoogleDriveConnector:
 
 
 def format_size(size_bytes):
-    """
-    Formatea tamaño en bytes a formato legible
-
-    Args:
-        size_bytes: Tamaño en bytes
-
-    Returns:
-        String formateado (ej: "1.5 MB")
-    """
+    
     for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
         if size_bytes < 1024.0:
             return f"{size_bytes:.2f} {unit}"

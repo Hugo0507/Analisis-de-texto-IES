@@ -1,0 +1,106 @@
+# ============================================================
+# REQUIREMENTS.TXT - Análisis de Transformación Digital
+# Backend Django REST Framework
+# ============================================================
+
+# ============================================================
+# CORE DJANGO & REST FRAMEWORK
+# ============================================================
+Django==4.2.8
+djangorestframework==3.14.0
+drf-spectacular==0.27.0              # OpenAPI/Swagger documentation
+django-cors-headers==4.3.1           # CORS support
+django-filter==23.5                  # Filtering support
+
+# ============================================================
+# WEBSOCKET & ASGI
+# ============================================================
+channels==4.0.0                      # Django Channels for WebSocket
+channels-redis==4.1.0                # Redis backend for Channels
+daphne==4.0.0                        # ASGI server
+
+# ============================================================
+# DATABASE
+# ============================================================
+# PostgreSQL (Render, Heroku) - Primary for production
+psycopg2-binary==2.9.9               # PostgreSQL adapter
+dj-database-url==2.1.0               # Database URL parsing
+
+# MySQL (Docker Compose) - Alternative/Legacy
+mysqlclient==2.2.1                   # MySQL connector
+
+# ============================================================
+# CACHE
+# ============================================================
+redis==5.0.1                         # Redis client
+django-redis==5.4.0                  # Django Redis cache backend
+
+# ============================================================
+# NLP & TEXT PROCESSING
+# ============================================================
+nltk==3.8.1                          # Natural Language Toolkit
+spacy==3.7.2                         # Industrial-strength NLP
+langdetect==1.0.9                    # Language detection
+
+# ============================================================
+# MACHINE LEARNING & DATA SCIENCE
+# ============================================================
+scikit-learn==1.3.2                  # Machine learning algorithms
+pandas==2.1.4                        # Data manipulation
+numpy==1.26.2                        # Numerical computing
+scipy==1.11.4                        # Scientific computing
+
+# ============================================================
+# TOPIC MODELING
+# ============================================================
+gensim==4.3.2                        # LDA, LSA topic modeling
+
+# ============================================================
+# PDF PROCESSING
+# ============================================================
+pdfminer.six==20221105               # PDF text extraction
+PyPDF2==3.0.1                        # PDF manipulation
+pdfplumber==0.10.3                   # PDF parsing
+
+# ============================================================
+# GOOGLE DRIVE API
+# ============================================================
+google-api-python-client==2.108.0   # Google API client
+google-auth-httplib2==0.2.0          # Google Auth HTTP
+google-auth-oauthlib==1.2.0          # Google OAuth2
+
+# ============================================================
+# UTILITIES
+# ============================================================
+python-dotenv==1.0.0                 # Environment variables
+Pillow==10.1.0                       # Image processing
+python-dateutil==2.8.2               # Date utilities
+
+# ============================================================
+# ASYNC TASKS (Optional - for production)
+# ============================================================
+celery==5.3.4                        # Distributed task queue
+kombu==5.3.4                         # Messaging library
+
+# ============================================================
+# TESTING
+# ============================================================
+pytest==7.4.3                        # Testing framework
+pytest-django==4.7.0                 # Django plugin for pytest
+pytest-cov==4.1.0                    # Code coverage
+pytest-asyncio==0.21.1               # Async testing
+factory-boy==3.3.0                   # Test fixtures
+
+# ============================================================
+# CODE QUALITY & LINTING
+# ============================================================
+black==23.12.1                       # Code formatter
+flake8==6.1.0                        # Linter
+isort==5.13.2                        # Import sorter
+pylint==3.0.3                        # Static code analyzer
+
+# ============================================================
+# DEVELOPMENT TOOLS
+# ============================================================
+ipython==8.18.1                      # Interactive Python shell
+django-extensions==3.2.3             # Django shell_plus and more

@@ -1,8 +1,3 @@
-"""
-Módulo de Conversión de Documentos
-Convierte diferentes formatos de documentos a texto plano
-"""
-
 import os
 import pandas as pd
 from docx import Document
@@ -17,10 +12,10 @@ logger = get_logger(__name__)
 
 
 class DocumentConverter:
-    """Clase para convertir documentos a formato de texto"""
+   
 
     def __init__(self):
-        """Inicializa el conversor de documentos"""
+        
         self.supported_formats = {
             '.txt': self.convert_txt,
             '.pdf': self.convert_pdf,
@@ -37,16 +32,7 @@ class DocumentConverter:
         }
 
     def convert_txt(self, file_path, encoding='utf-8'):
-        """
-        Lee archivo de texto plano
-
-        Args:
-            file_path: Ruta al archivo
-            encoding: Codificación del archivo
-
-        Returns:
-            Texto del archivo
-        """
+  
         try:
             with open(file_path, 'r', encoding=encoding, errors='ignore') as f:
                 return f.read()
@@ -54,15 +40,7 @@ class DocumentConverter:
             raise Exception(f"Error leyendo TXT: {e}")
 
     def convert_pdf(self, file_path):
-        """
-        Convierte PDF a texto
 
-        Args:
-            file_path: Ruta al archivo PDF
-
-        Returns:
-            Texto extraído del PDF
-        """
         text = ""
 
         # 1ra opción: pdfminer.six (más robusto y preciso)
@@ -109,16 +87,7 @@ class DocumentConverter:
             raise Exception(f"Error leyendo PDF con todos los métodos: {e}")
 
     def convert_pdf_from_bytes(self, file_bytes, file_name="archivo.pdf"):
-        """
-        Convierte PDF a texto desde BytesIO (archivo en memoria)
 
-        Args:
-            file_bytes: BytesIO con el contenido del PDF
-            file_name: Nombre del archivo (para logs)
-
-        Returns:
-            Texto extraído del PDF
-        """
         text = ""
 
         # 1ra opción: pdfminer.six (más robusto y preciso)
@@ -167,15 +136,7 @@ class DocumentConverter:
             raise Exception(f"Error leyendo PDF desde memoria con todos los métodos: {e}")
 
     def convert_docx(self, file_path):
-        """
-        Convierte DOCX a texto
 
-        Args:
-            file_path: Ruta al archivo DOCX
-
-        Returns:
-            Texto extraído del documento
-        """
         try:
             doc = Document(file_path)
             text = ""
@@ -200,30 +161,11 @@ class DocumentConverter:
             raise Exception(f"Error leyendo DOCX: {e}")
 
     def convert_doc(self, file_path):
-        """
-        Intenta convertir DOC a texto
-        Nota: DOC es más complicado, se recomienda convertir a DOCX primero
 
-        Args:
-            file_path: Ruta al archivo DOC
-
-        Returns:
-            Texto extraído
-        """
         raise Exception("Formato .doc no soportado directamente. Convierte a .docx primero.")
 
     def convert_from_bytes(self, file_bytes, file_name, file_extension):
-        """
-        Convierte un archivo desde BytesIO (memoria) a texto
 
-        Args:
-            file_bytes: BytesIO con contenido del archivo
-            file_name: Nombre del archivo
-            file_extension: Extensión (.pdf, .docx, .txt)
-
-        Returns:
-            Diccionario con resultado de conversión
-        """
         self.conversion_stats['total'] += 1
 
         result = {
@@ -282,17 +224,7 @@ class DocumentConverter:
         return result
 
     def convert_file(self, file_path, output_path=None, encoding='utf-8'):
-        """
-        Convierte un archivo a texto plano
 
-        Args:
-            file_path: Ruta al archivo original
-            output_path: Ruta donde guardar el TXT (opcional)
-            encoding: Codificación para el archivo de salida
-
-        Returns:
-            Diccionario con resultado de la conversión
-        """
         self.conversion_stats['total'] += 1
 
         # Obtener extensión
@@ -351,18 +283,7 @@ class DocumentConverter:
 
     def convert_batch(self, file_paths, output_folder=None, encoding='utf-8',
                       preserve_structure=True):
-        """
-        Convierte múltiples archivos a texto
 
-        Args:
-            file_paths: Lista de rutas de archivos
-            output_folder: Carpeta donde guardar los TXT
-            encoding: Codificación de salida
-            preserve_structure: Si True, mantiene la estructura de carpetas
-
-        Returns:
-            Lista de resultados
-        """
         results = []
 
         for file_path in file_paths:
@@ -385,12 +306,7 @@ class DocumentConverter:
         return results
 
     def get_conversion_statistics(self):
-        """
-        Obtiene estadísticas de conversión
-
-        Returns:
-            Diccionario con estadísticas
-        """
+ 
         stats = dict(self.conversion_stats)
 
         # Calcular tasas de éxito
@@ -404,15 +320,7 @@ class DocumentConverter:
         return stats
 
     def create_conversion_report(self, results):
-        """
-        Crea reporte detallado de conversiones
 
-        Args:
-            results: Lista de resultados de conversión
-
-        Returns:
-            DataFrame con reporte
-        """
         data = []
         for result in results:
             data.append({
@@ -428,15 +336,7 @@ class DocumentConverter:
         return pd.DataFrame(data)
 
     def create_format_summary(self, results):
-        """
-        Crea resumen por formato
 
-        Args:
-            results: Lista de resultados
-
-        Returns:
-            DataFrame con resumen por formato
-        """
         format_stats = defaultdict(lambda: {'total': 0, 'exitosos': 0, 'fallidos': 0})
 
         for result in results:
@@ -464,15 +364,7 @@ class DocumentConverter:
         return df
 
     def get_failed_conversions(self, results):
-        """
-        Obtiene lista de conversiones fallidas
 
-        Args:
-            results: Lista de resultados
-
-        Returns:
-            DataFrame con conversiones fallidas
-        """
         failed = [r for r in results if not r['success']]
 
         data = []
@@ -487,7 +379,7 @@ class DocumentConverter:
         return pd.DataFrame(data)
 
     def reset_statistics(self):
-        """Reinicia las estadísticas de conversión"""
+        
         self.conversion_stats = {
             'total': 0,
             'successful': 0,
@@ -497,16 +389,7 @@ class DocumentConverter:
         }
 
     def validate_text_extraction(self, file_path, min_length=100):
-        """
-        Valida que se pueda extraer texto de un archivo
 
-        Args:
-            file_path: Ruta al archivo
-            min_length: Longitud mínima esperada del texto
-
-        Returns:
-            Diccionario con resultado de validación
-        """
         try:
             result = self.convert_file(file_path)
 

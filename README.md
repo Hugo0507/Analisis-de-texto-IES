@@ -1,112 +1,130 @@
-# Análisis de Transformación Digital
+# Análisis de Transformación Digital en Educación Superior
 
-Sistema completo de análisis de documentos para investigación en transformación digital en instituciones educativas.
+Plataforma moderna de análisis NLP/ML para investigación académica sobre transformación digital en instituciones de educación superior.
 
-## 🎯 Características Principales
+## 🚀 Nueva Arquitectura (v4.0.0)
 
-- **Procesamiento de Documentos**: Conversión y análisis de PDFs, DOCX, TXT
-- **Análisis NLP Avanzado**: Tokenización, lematización, análisis de sentimientos
-- **Modelado de Tópicos**: LDA, PLSA, BERTopic
-- **Análisis de Factores**: Identificación de factores clave en transformación digital
-- **Clasificación de Textos**: Clasificación automática de documentos
-- **Named Entity Recognition (NER)**: Extracción de entidades
-- **Reducción de Dimensionalidad**: PCA, t-SNE, UMAP
-- **Sistema de Cache**: Cache local y NER para optimización
-- **Integración con Google Drive**: Descarga y persistencia de datos
+Este proyecto ha sido **completamente refactorizado** a una arquitectura moderna con **Clean Architecture**:
 
-## 🚀 Inicio Rápido
+- ✅ **Backend**: Django REST Framework + Django Channels (WebSocket)
+- ✅ **Frontend**: React + TypeScript + Tailwind CSS + Nivo
+- ✅ **Base de Datos**: MySQL
+- ✅ **Caché**: Redis (triple layer: Redis + MySQL + Google Drive)
+- ✅ **Containerización**: Docker + Docker Compose
+
+### 🎯 Características Principales
+
+- **Pipeline NLP Completo**: 14 etapas de procesamiento automático
+- **Análisis NLP Avanzado**: BoW, TF-IDF, Topic Modeling (LDA, NMF, LSA, pLSA)
+- **Análisis de Factores**: 8 categorías de transformación digital
+- **Monitoreo en Tiempo Real**: WebSocket para progreso del pipeline
+- **Visualizaciones Profesionales**: Dashboards tipo Power BI con Nivo
+- **API RESTful**: 20+ endpoints documentados con Swagger
+- **Clean Architecture**: Separación completa Frontend/Backend
+
+## ⚡ Inicio Rápido
+
+### Usando Docker (Recomendado)
 
 ```bash
-# Instalar dependencias
-pip install -r requirements.txt
+# Clonar el repositorio
+git clone <url-del-repositorio>
+cd analisis_transformacion_digital
 
-# Descargar recursos NLTK
-python -c "import nltk; nltk.download('punkt'); nltk.download('stopwords')"
-
-# Ejecutar aplicación
-streamlit run app.py
+# Levantar todo el stack
+docker-compose up --build
 ```
 
-Ver guía completa: [docs/instalacion/INICIO_RAPIDO.md](docs/instalacion/INICIO_RAPIDO.md)
+Accede a:
+- **Frontend React**: http://localhost:3000
+- **Backend API**: http://localhost:8000/api/v1/
+- **Swagger Docs**: http://localhost:8000/api/docs/
+- **Django Admin**: http://localhost:8000/admin/
+
+### Sin Docker
+
+Ver guía completa: **[GUIA_EJECUCION.md](GUIA_EJECUCION.md)**
 
 ## 📊 Estado del Proyecto
 
-**Versión:** 3.5.0 ([Ver Changelog](CHANGELOG.md))
-**Calidad General:** 9.0/10
+**Versión:** 4.0.0 ([Ver Changelog](docs/CHANGELOG.md))
+**Arquitectura:** Clean Architecture (Backend Django + Frontend React)
 **Cobertura de Tests:** ~80%
 
 ### ✅ Completado
 
-- [x] Type hints completos en módulos core (10/10)
-- [x] Sistema de logging profesional (10/10)
-- [x] Testing con pytest (98 tests, ~80% coverage)
-- [x] Optimización NLTK (mejora 50x)
-- [x] Variables de entorno (.env)
-- [x] Sistema de cache local
-- [x] Documentación completa
-- [x] Sistema de interpretaciones guiadas para gráficos (20+ gráficos)
-- [x] Flujo de trabajo organizado en 7 fases
-- [x] Persistencia completa con Google Drive
+- [x] **Arquitectura Moderna**: Django REST + React TypeScript
+- [x] **WebSocket**: Monitoreo en tiempo real del pipeline
+- [x] **Pipeline NLP**: 14 etapas automatizadas
+- [x] **API RESTful**: 20+ endpoints documentados
+- [x] **Visualizaciones**: Dashboards profesionales con Nivo
+- [x] **Testing**: Cobertura ~80%
+- [x] **Docker**: Containerización completa
+- [x] **Triple Caché**: Redis + MySQL + Google Drive
 
-Ver estado completo: [docs/estado/ESTADO_PROYECTO_ACTUALIZADO.md](docs/estado/ESTADO_PROYECTO_ACTUALIZADO.md)
+Ver progreso completo: [docs/progreso/](docs/progreso/)
 
 ## 📁 Estructura del Proyecto
 
 ```
 analisis_transformacion_digital/
-├── app.py                      # Aplicación principal Streamlit
-├── src/                        # Código fuente
-│   ├── drive_connector.py      # Conexión Google Drive
-│   ├── document_converter.py   # Conversión de documentos
-│   ├── text_preprocessor.py    # Preprocesamiento NLP
-│   ├── nlp_processor.py        # Procesamiento NLP avanzado
-│   ├── factor_analyzer.py      # Análisis de factores
-│   ├── models/                 # Modelos avanzados
-│   │   ├── topic_modeling.py
-│   │   ├── ner_analyzer.py
-│   │   ├── text_classifier.py
-│   │   ├── bertopic_analyzer.py
-│   │   └── ...
-│   └── utils/                  # Utilidades
-│       ├── logger.py
-│       └── local_cache.py
-├── tests/                      # Tests con pytest
-├── pages/                      # Páginas Streamlit
-├── docs/                       # Documentación
-└── requirements.txt            # Dependencias
+├── backend/                    # Django REST Framework
+│   ├── apps/                   # Aplicaciones Django
+│   │   ├── analysis/          # Análisis NLP y ML
+│   │   ├── documents/         # Gestión de documentos
+│   │   └── pipeline/          # Pipeline de procesamiento
+│   ├── config/                # Configuración Django
+│   ├── manage.py              # CLI de Django
+│   └── requirements.txt       # Dependencias Python
+│
+├── frontend/                  # React + TypeScript
+│   ├── src/                   # Código fuente React
+│   │   ├── components/        # Componentes reutilizables
+│   │   ├── pages/            # Páginas de la aplicación
+│   │   ├── services/         # Servicios API
+│   │   └── utils/            # Utilidades
+│   └── package.json          # Dependencias Node
+│
+├── src/                      # Proyecto legacy (Streamlit)
+│   ├── models/               # Modelos ML/NLP
+│   └── utils/                # Utilidades compartidas
+│
+├── docs/                     # Documentación
+│   ├── deployment/           # Guías de despliegue
+│   ├── progreso/            # Fases completadas
+│   └── estado/              # Estado del proyecto
+│
+├── docker-compose.yml        # Orquestación Docker
+├── README.md                 # Este archivo
+└── GUIA_EJECUCION.md        # Guía de ejecución
 ```
 
 ## 📚 Documentación
 
-### 📖 Documentación Principal
+### 📖 Guías Principales
 
-- **[📚 Manual Técnico Completo](README_TECNICO.md)** ⭐ - Arquitectura, flujo de ejecución, guías detalladas
-- **[🔄 Flujo de Trabajo Completo](docs/FLUJO_DE_TRABAJO.md)** ⭐ **NUEVO** - Guía detallada de las 7 fases del sistema
-- **[📝 Documentación por Archivo](docs/detalle_archivos/)** - Explicación línea por línea de cada módulo Python
-- **[📋 Changelog](CHANGELOG.md)** - Historial de cambios del proyecto
+- **[⚡ Guía de Ejecución](GUIA_EJECUCION.md)** ⭐ **NUEVO** - Cómo ejecutar el proyecto (Docker y sin Docker)
+- **[📚 Manual Técnico](docs/README_TECNICO.md)** - Arquitectura y guías técnicas detalladas
+- **[📋 Changelog](docs/CHANGELOG.md)** - Historial de cambios del proyecto
+- **[🚀 Inicio Rápido](docs/INICIO_RAPIDO.md)** - Guía de inicio rápido
+- **[📖 Referencia Rápida](docs/REFERENCIA_RAPIDA.md)** - Comandos y referencias útiles
 
-### Instalación
-- [Guía de Instalación Python 3.11](docs/instalacion/GUIA_INSTALACION_PYTHON_3.11.md)
-- [Inicio Rápido](docs/instalacion/INICIO_RAPIDO.md)
-- [Solución de Problemas](docs/instalacion/SOLUCION_INSTALACION.md)
+### Despliegue y DevOps
+- **[🚀 Guías de Deployment](docs/deployment/)** - Deployment en Render, Vercel, Fly.io
+- **[🐳 Docker Compose](docker-compose.yml)** - Configuración de contenedores
+- **[📊 API Endpoints](backend/ENDPOINTS.md)** - Documentación de la API REST
 
-### Testing
-- [Guía de Testing](docs/testing/README_TESTS.md)
-- [Testing Fase 2 Completo](docs/testing/TESTING_FASE2_COMPLETO.md)
+### Desarrollo
+- **[📝 Estado del Proyecto](docs/estado/)** - Estado actual y tareas pendientes
+- **[📈 Progreso de Fases](docs/progreso/)** - Historial de fases completadas
+- **[🧪 Testing](docs/testing/)** - Guías de testing y cobertura
+- **[⚙️ Optimizaciones](docs/optimizaciones/)** - Mejoras de rendimiento y calidad
 
-### Implementaciones
-- [Modelos Avanzados](docs/implementaciones/MODELOS_AVANZADOS_README.md)
+### Implementaciones Técnicas
 - [Topic Modeling](docs/implementaciones/TOPIC_MODELING_COMPLETO.md)
 - [Análisis N-Gram](docs/implementaciones/NGRAM_ANALYSIS_COMPLETO.md)
 - [Clasificación de Textos](docs/implementaciones/CLASIFICACION_TEXTOS.md)
 - [Reducción de Dimensionalidad](docs/implementaciones/REDUCCION_DIMENSIONALIDAD.md)
-
-### Optimizaciones
-- [Type Hints](docs/optimizaciones/TYPE_HINTS_IMPLEMENTACION.md)
-- [Sistema de Logging](docs/optimizaciones/MEJORAS_LOGGING_IMPLEMENTADAS.md)
-- [Optimización NLTK](docs/optimizaciones/OPTIMIZACION_NLTK.md)
-
-Ver índice completo: [docs/README.md](docs/README.md)
 
 ## 🛠️ Tecnologías
 
@@ -162,10 +180,10 @@ Este proyecto es parte de una investigación académica sobre transformación di
 
 ## 🔗 Enlaces Útiles
 
-- [Documentación completa](docs/)
-- [Estado del proyecto](docs/estado/ESTADO_PROYECTO_ACTUALIZADO.md)
-- [Guía de testing](docs/testing/README_TESTS.md)
-- [Arquitectura](docs/arquitectura/ARQUITECTURA.md)
+- **[Guía de Ejecución](GUIA_EJECUCION.md)** - Cómo ejecutar el proyecto
+- **[Documentación completa](docs/)** - Toda la documentación
+- **[API Endpoints](backend/ENDPOINTS.md)** - Documentación de la API
+- **[Swagger Docs](http://localhost:8000/api/docs/)** - Documentación interactiva (cuando el backend esté corriendo)
 
 ---
 
