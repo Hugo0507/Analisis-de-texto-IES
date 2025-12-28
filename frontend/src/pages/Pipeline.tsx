@@ -10,7 +10,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button, Badge, Spinner } from '../components/atoms';
-import { pipelineService } from '../services';
+import { pipelineService, documentsService } from '../services';
 
 interface PipelineStage {
   name: string;
@@ -46,6 +46,15 @@ export const Pipeline: React.FC = () => {
     initializeStages();
   }, []);
 
+  // Cleanup WebSocket on unmount
+  useEffect(() => {
+    return () => {
+      if (ws) {
+        ws.close();
+      }
+    };
+  }, [ws]);
+
   const initializeStages = () => {
     const pipelineStages: PipelineStage[] = [
       { name: '1. Detección de Idiomas', status: 'pending', progress: 0 },
@@ -74,20 +83,34 @@ export const Pipeline: React.FC = () => {
 
     setIsLoadingFolder(true);
     try {
-      // Validate folder and get info
-      // TODO: Call backend endpoint to validate Drive folder
-      // For now, simulate validation
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      setFolderInfo({
-        id: folderId,
-        name: 'Documentos Académicos',
-        file_count: 25,
+      // Upload documents from Google Drive folder
+      const response = await documentsService.upload({
+        folder_id: folderId,
+        mime_type: 'application/pdf',
+        max_files: 100,
       });
-      setDriveConnected(true);
-    } catch (error) {
+
+      if (response.success) {
+        setFolderInfo({
+          id: folderId,
+          name: `Carpeta de Drive`,
+          file_count: response.uploaded_count + response.skipped_count,
+        });
+        setDriveConnected(true);
+
+        alert(
+          `✅ Conexión exitosa!\n\n` +
+          `Documentos cargados: ${response.uploaded_count}\n` +
+          `Ya existentes: ${response.skipped_count}\n` +
+          `Errores: ${response.failed_count}`
+        );
+      } else {
+        alert('Error al cargar documentos desde Drive');
+      }
+    } catch (error: any) {
       console.error('Error connecting to Drive:', error);
-      alert('Error al conectar con Google Drive. Verifica el ID de la carpeta.');
+      const errorMsg = error.response?.data?.error || 'Error al conectar con Google Drive. Verifica el ID de la carpeta.';
+      alert(errorMsg);
     } finally {
       setIsLoadingFolder(false);
     }
@@ -102,9 +125,8 @@ export const Pipeline: React.FC = () => {
     setIsExecuting(true);
 
     try {
-      // Execute pipeline
+      // Execute pipeline (processes all loaded documents)
       const response = await pipelineService.execute({
-        folder_id: folderId,
         use_cache: true,
       });
 
