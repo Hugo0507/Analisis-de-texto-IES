@@ -19,10 +19,17 @@ DEBUG = False
 allowed_hosts_str = os.environ.get('DJANGO_ALLOWED_HOSTS', '')
 ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',') if host.strip()]
 
-# Add HF Space hostname if not already present
+# Always add HF Space hostname (explicit is better than relying on wildcards)
 hf_hostname = 'hugo0507-analisis-ies-backend.hf.space'
-if hf_hostname not in ALLOWED_HOSTS and '*.hf.space' not in ALLOWED_HOSTS:
+if hf_hostname not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(hf_hostname)
+
+# Also add with dot prefix for subdomain matching
+if '.hf.space' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('.hf.space')
+
+# Log ALLOWED_HOSTS for debugging
+print(f"✅ ALLOWED_HOSTS configured: {ALLOWED_HOSTS}")
 
 if not ALLOWED_HOSTS:
     raise ValueError("DJANGO_ALLOWED_HOSTS environment variable must be set in production")
