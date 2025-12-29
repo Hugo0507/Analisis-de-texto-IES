@@ -1,17 +1,20 @@
 """
 Google Drive Gateway.
 
-Handles OAuth2 authentication and file operations with Google Drive.
+Handles OAuth2 and Service Account authentication for Google Drive operations.
+Supports both local development (OAuth2) and production (Service Account).
 """
 
 import logging
 import os
 import pickle
+import json
 from typing import Dict, List, Optional
 from pathlib import Path
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
+from google.oauth2 import service_account
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
@@ -61,7 +64,11 @@ class DriveGateway:
 
     def authenticate(self) -> bool:
         """
-        Authenticate with Google Drive using OAuth2.
+        Authenticate with Google Drive.
+
+        Supports two authentication methods:
+        1. Service Account (Production): Uses GOOGLE_SERVICE_ACCOUNT_JSON env var
+        2. OAuth2 (Development): Uses credentials.json and interactive flow
 
         Returns:
             True if authentication successful
@@ -72,6 +79,30 @@ class DriveGateway:
             >>>     print("Authenticated successfully")
         """
         try:
+            # Method 1: Service Account (for production/cloud deployment)
+            service_account_json = os.getenv('GOOGLE_SERVICE_ACCOUNT_JSON')
+
+            if service_account_json:
+                logger.info("Authenticating with Service Account")
+
+                # Parse JSON from environment variable
+                service_account_info = json.loads(service_account_json)
+
+                # Create credentials from service account
+                self.credentials = service_account.Credentials.from_service_account_info(
+                    service_account_info,
+                    scopes=self.SCOPES
+                )
+
+                # Build service
+                self.service = build('drive', 'v3', credentials=self.credentials)
+
+                logger.info("Service Account authentication successful")
+                return True
+
+            # Method 2: OAuth2 (for local development)
+            logger.info("Attempting OAuth2 authentication")
+
             # Load token if exists
             if os.path.exists(self.token_path):
                 with open(self.token_path, 'rb') as token:
@@ -81,11 +112,19 @@ class DriveGateway:
             if not self.credentials or not self.credentials.valid:
                 if self.credentials and self.credentials.expired and self.credentials.refresh_token:
                     # Refresh token
-                    logger.info("Refreshing expired token")
+                    logger.info("Refreshing expired OAuth2 token")
                     self.credentials.refresh(Request())
                 else:
+                    # Check if credentials file exists
+                    if not os.path.exists(self.credentials_path):
+                        logger.error(
+                            f"No credentials found. Either set GOOGLE_SERVICE_ACCOUNT_JSON "
+                            f"environment variable or provide {self.credentials_path} file."
+                        )
+                        return False
+
                     # New authentication flow
-                    logger.info("Starting OAuth2 flow")
+                    logger.info("Starting OAuth2 interactive flow")
                     flow = InstalledAppFlow.from_client_secrets_file(
                         self.credentials_path,
                         self.SCOPES
@@ -99,9 +138,12 @@ class DriveGateway:
             # Build service
             self.service = build('drive', 'v3', credentials=self.credentials)
 
-            logger.info("Drive authentication successful")
+            logger.info("OAuth2 authentication successful")
             return True
 
+        except json.JSONDecodeError as e:
+            logger.exception(f"Invalid GOOGLE_SERVICE_ACCOUNT_JSON format: {e}")
+            return False
         except Exception as e:
             logger.exception(f"Drive authentication failed: {e}")
             return False
