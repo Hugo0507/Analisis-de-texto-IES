@@ -6,7 +6,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Spinner } from '../components/atoms';
+import { Spinner } from '../components/atoms';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
