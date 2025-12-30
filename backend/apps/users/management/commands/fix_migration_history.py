@@ -3,7 +3,7 @@ Comando para arreglar el historial de migraciones inconsistente.
 Inserta manualmente el registro de users.0001_initial en django_migrations.
 """
 from django.core.management.base import BaseCommand
-from django.db import connection
+from django.db import connection, transaction
 
 
 class Command(BaseCommand):
@@ -61,6 +61,8 @@ class Command(BaseCommand):
                         """,
                         ['admin', '0001_initial']
                     )
+                    # CRÍTICO: Commit explícito para que migrate vea los cambios
+                    transaction.commit()
 
                     self.stdout.write(self.style.SUCCESS(
                         '✅ admin.0001_initial eliminada - migrate ejecutará users ANTES de admin'
@@ -77,6 +79,7 @@ class Command(BaseCommand):
                         """,
                         ['users', '0001_initial']
                     )
+                    transaction.commit()
 
                     self.stdout.write(self.style.SUCCESS(
                         '✅ Registro de users.0001_initial insertado correctamente'
@@ -104,6 +107,7 @@ class Command(BaseCommand):
                         """,
                         ['users', '0001_initial']
                     )
+                    transaction.commit()
 
                     self.stdout.write(self.style.SUCCESS(
                         '✅ Registro eliminado - migrate ahora creará la tabla users_user'

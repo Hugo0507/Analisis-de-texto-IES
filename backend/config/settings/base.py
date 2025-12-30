@@ -179,8 +179,8 @@ SPECTACULAR_SETTINGS = {
 # JWT AUTHENTICATION (Simple JWT) - Only if installed
 # ============================================================
 try:
-    import rest_framework_simplejwt
     from datetime import timedelta
+    # rest_framework_simplejwt ya fue importado en línea 46
 
     # Update authentication classes to include JWT
     REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = [
