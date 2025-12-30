@@ -50,20 +50,20 @@ class Command(BaseCommand):
                         '🚨 CONFLICTO DETECTADO: admin.0001_initial existe pero users.0001_initial no'
                     ))
                     self.stdout.write(self.style.WARNING(
-                        '🔧 Insertando users.0001_initial para resolver dependencia...'
+                        '🗑️  Eliminando admin.0001_initial para permitir re-ejecución ordenada...'
                     ))
 
-                    # Insertar el registro de la migración de users
+                    # Eliminar admin.0001_initial para que se ejecute después de users
                     cursor.execute(
                         """
-                        INSERT INTO django_migrations (app, name, applied)
-                        VALUES (%s, %s, NOW())
+                        DELETE FROM django_migrations
+                        WHERE app = %s AND name = %s
                         """,
-                        ['users', '0001_initial']
+                        ['admin', '0001_initial']
                     )
 
                     self.stdout.write(self.style.SUCCESS(
-                        '✅ users.0001_initial insertada para satisfacer dependencia de admin'
+                        '✅ admin.0001_initial eliminada - migrate ejecutará users ANTES de admin'
                     ))
                 elif table_exists:
                     self.stdout.write(self.style.WARNING(
