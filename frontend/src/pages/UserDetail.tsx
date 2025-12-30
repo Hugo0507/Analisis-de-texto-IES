@@ -18,7 +18,7 @@ export const UserDetail: React.FC = () => {
 
   useEffect(() => {
     if (!id) {
-      navigate('/admin/dashboard/users');
+      navigate('/configuracion/usuarios');
       return;
     }
 
@@ -59,7 +59,7 @@ export const UserDetail: React.FC = () => {
           {error || 'Usuario no encontrado'}
         </div>
         <button
-          onClick={() => navigate('/admin/dashboard/users')}
+          onClick={() => navigate('/configuracion/usuarios')}
           className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
         >
           ← Volver
@@ -87,7 +87,7 @@ export const UserDetail: React.FC = () => {
         </div>
 
         <button
-          onClick={() => navigate('/admin/dashboard/users')}
+          onClick={() => navigate('/configuracion/usuarios')}
           className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
         >
           ← Volver

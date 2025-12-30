@@ -75,21 +75,37 @@ export const Users: React.FC = () => {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestión de Usuarios</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Configuración de Usuarios</h1>
           <p className="text-sm text-gray-600 mt-1">
             Administra los usuarios del sistema
           </p>
         </div>
 
-        <button
-          onClick={() => navigate('/admin/dashboard/users/create')}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Crear Usuario
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Refresh Button */}
+          <button
+            onClick={loadUsers}
+            disabled={isLoading}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Refrescar lista"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span className="hidden sm:inline">Refrescar</span>
+          </button>
+
+          {/* Create Button */}
+          <button
+            onClick={() => navigate('/configuracion/usuarios/nuevo')}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Crear Usuario
+          </button>
+        </div>
       </div>
 
       {/* Error Message */}
@@ -119,7 +135,7 @@ export const Users: React.FC = () => {
               Comienza creando tu primer usuario
             </p>
             <button
-              onClick={() => navigate('/admin/dashboard/users/create')}
+              onClick={() => navigate('/configuracion/usuarios/nuevo')}
               className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -158,7 +174,7 @@ export const Users: React.FC = () => {
                   <tr
                     key={user.id}
                     className="hover:bg-gray-50 transition-colors cursor-pointer"
-                    onClick={() => navigate(`/admin/dashboard/users/${user.id}`)}
+                    onClick={() => navigate(`/configuracion/usuarios/${user.id}`)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -198,7 +214,7 @@ export const Users: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                         <button
-                          onClick={() => navigate(`/admin/dashboard/users/${user.id}`)}
+                          onClick={() => navigate(`/configuracion/usuarios/${user.id}`)}
                           className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50 transition-colors"
                           title="Ver detalles"
                         >
