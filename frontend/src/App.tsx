@@ -4,10 +4,12 @@
  * Main application component with React Router configuration.
  */
 
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
 import {
   Home,
+  Login,
+  ForgotPassword,
   Pipeline,
   BagOfWords,
   TfIdf,
@@ -21,8 +23,16 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<MainLayout />}>
-          <Route index element={<Home />} />
+        {/* Public Routes */}
+        <Route path="/" element={<Home />} />
+
+        {/* Admin Authentication Routes */}
+        <Route path="/admin" element={<Login />} />
+        <Route path="/admin/forgot-password" element={<ForgotPassword />} />
+
+        {/* Protected Admin Routes */}
+        <Route path="/admin/dashboard" element={<MainLayout />}>
+          <Route index element={<Navigate to="/admin/dashboard/pipeline" replace />} />
           <Route path="pipeline" element={<Pipeline />} />
           <Route path="documents" element={<Documents />} />
           <Route path="bow" element={<BagOfWords />} />
@@ -31,6 +41,9 @@ function App() {
           <Route path="factors" element={<Factors />} />
           <Route path="statistics" element={<Statistics />} />
         </Route>
+
+        {/* Fallback - Redirect to home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );

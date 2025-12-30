@@ -5,6 +5,8 @@
  */
 
 export { Home } from './Home';
+export { Login } from './Login';
+export { ForgotPassword } from './ForgotPassword';
 export { Pipeline } from './Pipeline';
 export { BagOfWords } from './BagOfWords';
 export { TfIdf } from './TfIdf';
