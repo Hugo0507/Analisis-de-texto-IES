@@ -40,34 +40,41 @@ export const ForgotPassword: React.FC = () => {
       {/* Left Panel - White (45%) */}
       <div className="w-[45%] bg-white flex flex-col">
         {/* Logo Section */}
-        <div className="p-8">
-          <img
-            src="/Logo_tesis.png"
-            alt="Transformación Digital - IES"
-            className="h-24 w-auto"
-          />
+        <div className="p-6">
+          <div className="flex items-center gap-4">
+            <img
+              src="/Logo_tesis.png"
+              alt="Transformación Digital - IES"
+              className="h-16 w-auto"
+            />
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-gray-900 uppercase leading-tight">
+                TRANSFORMACIÓN DIGITAL - INSTITUCIONES DE EDUCACIÓN SUPERIOR
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Recovery Form */}
         <div className="flex-1 flex items-center justify-center px-12">
           <div className="w-full max-w-md">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">
               ¿Olvidaste tu contraseña?
             </h2>
-            <p className="text-gray-600 mb-8">
+            <p className="text-gray-600 text-sm mb-6">
               Llena el formulario para recuperar tu contraseña
             </p>
 
             {success ? (
-              <div className="bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-lg">
-                <p className="font-semibold mb-2">✓ Correo enviado</p>
-                <p className="text-sm">
+              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+                <p className="font-semibold mb-2 text-sm">✓ Correo enviado</p>
+                <p className="text-xs">
                   Revisa tu bandeja de entrada. Te hemos enviado un enlace para
                   restablecer tu contraseña.
                 </p>
                 <button
                   onClick={() => navigate('/admin')}
-                  className="mt-4 text-sm text-teal-600 hover:text-teal-700 font-medium"
+                  className="mt-3 text-xs text-teal-600 hover:text-teal-700 font-medium"
                 >
                   ← Volver al login
                 </button>
@@ -75,26 +82,26 @@ export const ForgotPassword: React.FC = () => {
             ) : (
               <>
                 {error && (
-                  <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                  <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
                     {error}
                   </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-4">
                   {/* Email Field */}
                   <div>
                     <label
                       htmlFor="email"
-                      className="block text-sm font-medium text-gray-700 mb-2"
+                      className="block text-sm font-medium text-gray-700 mb-1.5"
                     >
-                      Correo electrónico
+                      Correo electrónico <span className="text-red-500">*</span>
                     </label>
                     <input
                       id="email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-900 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors"
                       placeholder="ejemplo@correo.com"
                       required
                       disabled={isLoading}
@@ -104,8 +111,8 @@ export const ForgotPassword: React.FC = () => {
                   {/* Submit Button */}
                   <button
                     type="submit"
-                    disabled={isLoading}
-                    className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-6 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    disabled={isLoading || !email.trim()}
+                    className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 px-6 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm"
                     style={{ backgroundColor: '#10968E' }}
                   >
                     {isLoading ? (
@@ -120,10 +127,10 @@ export const ForgotPassword: React.FC = () => {
                 </form>
 
                 {/* Back to Login */}
-                <div className="mt-6 text-center">
+                <div className="mt-4 text-center">
                   <button
                     onClick={() => navigate('/admin')}
-                    className="text-sm text-teal-600 hover:text-teal-700 font-medium"
+                    className="text-xs text-teal-600 hover:text-teal-700 font-medium"
                     disabled={isLoading}
                   >
                     ← Volver al login
@@ -158,18 +165,18 @@ export const ForgotPassword: React.FC = () => {
         </div>
 
         {/* Content */}
-        <div className="relative z-10 h-full flex flex-col items-center justify-center px-16 text-white">
-          <div className="max-w-xl">
-            <h1 className="text-4xl font-bold mb-8 leading-tight">
+        <div className="relative z-10 h-full flex flex-col items-center justify-center px-12 text-white">
+          <div className="max-w-lg">
+            <h1 className="text-3xl font-bold mb-6 leading-tight">
               Recuperación de contraseña
             </h1>
-            <p className="text-xl mb-6 leading-relaxed opacity-90">
+            <p className="text-base mb-4 leading-relaxed opacity-90">
               Ingresa tu correo electrónico y te enviaremos las instrucciones
               para restablecer tu contraseña de acceso al sistema.
             </p>
 
-            <div className="mt-12 pt-8 border-t border-white/20">
-              <p className="text-sm opacity-70">
+            <div className="mt-8 pt-6 border-t border-white/20">
+              <p className="text-xs opacity-70">
                 Versión 1.0
               </p>
             </div>
