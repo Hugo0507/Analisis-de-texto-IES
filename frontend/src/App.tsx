@@ -5,6 +5,8 @@
  */
 
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { ProtectedRoute } from './components/guards/ProtectedRoute';
 import { MainLayout } from './layouts/MainLayout';
 import {
   Home,
@@ -21,31 +23,35 @@ import {
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Home />} />
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Home />} />
 
-        {/* Admin Authentication Routes */}
-        <Route path="/admin" element={<Login />} />
-        <Route path="/admin/forgot-password" element={<ForgotPassword />} />
+          {/* Admin Authentication Routes */}
+          <Route path="/admin" element={<Login />} />
+          <Route path="/admin/forgot-password" element={<ForgotPassword />} />
 
-        {/* Protected Admin Routes */}
-        <Route path="/admin/dashboard" element={<MainLayout />}>
-          <Route index element={<Navigate to="/admin/dashboard/pipeline" replace />} />
-          <Route path="pipeline" element={<Pipeline />} />
-          <Route path="documents" element={<Documents />} />
-          <Route path="bow" element={<BagOfWords />} />
-          <Route path="tfidf" element={<TfIdf />} />
-          <Route path="topics" element={<TopicModeling />} />
-          <Route path="factors" element={<Factors />} />
-          <Route path="statistics" element={<Statistics />} />
-        </Route>
+          {/* Protected Admin Routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/admin/dashboard" element={<MainLayout />}>
+              <Route index element={<Navigate to="/admin/dashboard/pipeline" replace />} />
+              <Route path="pipeline" element={<Pipeline />} />
+              <Route path="documents" element={<Documents />} />
+              <Route path="bow" element={<BagOfWords />} />
+              <Route path="tfidf" element={<TfIdf />} />
+              <Route path="topics" element={<TopicModeling />} />
+              <Route path="factors" element={<Factors />} />
+              <Route path="statistics" element={<Statistics />} />
+            </Route>
+          </Route>
 
-        {/* Fallback - Redirect to home */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Router>
+          {/* Fallback - Redirect to home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 

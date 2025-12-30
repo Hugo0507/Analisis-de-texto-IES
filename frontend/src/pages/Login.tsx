@@ -4,17 +4,26 @@
  * Custom admin login interface with split-screen design
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Spinner } from '../components/atoms';
+import { useAuth } from '../contexts/AuthContext';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const { login, isAuthenticated } = useAuth();
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/admin/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,16 +31,13 @@ export const Login: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // TODO: Implement authentication service
-      console.log('Login attempt:', { email, password });
-
-      // Simulated login for now
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Navigate to admin dashboard
+      await login({ username, password });
       navigate('/admin/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Error al iniciar sesión');
+      const errorMessage = err.response?.data?.detail ||
+                          err.response?.data?.message ||
+                          'Credenciales incorrectas. Por favor, verifica tu usuario y contraseña.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -74,23 +80,24 @@ export const Login: React.FC = () => {
             )}
 
             <form onSubmit={handleLogin} className="space-y-4">
-              {/* Email Field */}
+              {/* Username Field */}
               <div>
                 <label
-                  htmlFor="email"
+                  htmlFor="username"
                   className="block text-sm font-medium text-gray-700 mb-1.5"
                 >
-                  Correo electrónico <span className="text-red-500">*</span>
+                  Usuario <span className="text-red-500">*</span>
                 </label>
                 <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors"
-                  placeholder="ejemplo@correo.com"
+                  placeholder="usuario"
                   required
                   disabled={isLoading}
+                  autoComplete="username"
                 />
               </div>
 
@@ -113,6 +120,7 @@ export const Login: React.FC = () => {
                     required
                     minLength={6}
                     disabled={isLoading}
+                    autoComplete="current-password"
                   />
                   <button
                     type="button"
@@ -149,7 +157,7 @@ export const Login: React.FC = () => {
               {/* Login Button */}
               <button
                 type="submit"
-                disabled={isLoading || !email.trim() || !password.trim()}
+                disabled={isLoading || !username.trim() || !password.trim()}
                 className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 px-6 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm"
                 style={{ backgroundColor: '#10968E' }}
               >
