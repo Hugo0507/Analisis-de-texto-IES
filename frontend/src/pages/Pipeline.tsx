@@ -109,8 +109,21 @@ export const Pipeline: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Error connecting to Drive:', error);
-      const errorMsg = error.response?.data?.error || 'Error al conectar con Google Drive. Verifica el ID de la carpeta.';
-      alert(errorMsg);
+
+      // Handle timeout specifically
+      if (error.code === 'ECONNABORTED') {
+        alert(
+          '⏱️ El proceso está tardando más de lo esperado.\n\n' +
+          'Esto puede deberse a:\n' +
+          '• Carpeta con muchos archivos\n' +
+          '• Archivos muy grandes\n' +
+          '• Conexión lenta a Google Drive\n\n' +
+          'Por favor intenta de nuevo o reduce el número de archivos (max_files).'
+        );
+      } else {
+        const errorMsg = error.response?.data?.error || 'Error al conectar con Google Drive. Verifica el ID de la carpeta.';
+        alert(errorMsg);
+      }
     } finally {
       setIsLoadingFolder(false);
     }
@@ -269,12 +282,18 @@ export const Pipeline: React.FC = () => {
               {isLoadingFolder ? (
                 <>
                   <Spinner size="sm" />
-                  <span className="ml-2">Conectando...</span>
+                  <span className="ml-2">Conectando... (puede tomar varios minutos)</span>
                 </>
               ) : (
                 '🔗 Conectar con Drive'
               )}
             </Button>
+            {isLoadingFolder && (
+              <p className="mt-2 text-sm text-blue-600">
+                ⏳ Descargando archivos de Google Drive... Este proceso puede tardar dependiendo
+                del número y tamaño de archivos en la carpeta.
+              </p>
+            )}
           </div>
         ) : (
           <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded">
