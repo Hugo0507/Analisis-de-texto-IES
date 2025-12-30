@@ -20,10 +20,10 @@ class Command(BaseCommand):
             )
             users_count = cursor.fetchone()[0]
 
-            # Verificar si admin.0001_initial está registrada
+            # Verificar si hay CUALQUIER migración de admin (no solo 0001_initial)
             cursor.execute(
-                "SELECT COUNT(*) FROM django_migrations WHERE app = %s AND name = %s",
-                ['admin', '0001_initial']
+                "SELECT COUNT(*) FROM django_migrations WHERE app = %s",
+                ['admin']
             )
             admin_count = cursor.fetchone()[0]
 
@@ -46,15 +46,8 @@ class Command(BaseCommand):
 
                 # Si hay alguna migración de admin, tenemos un problema de dependencias
                 if admin_count > 0:
-                    # Verificar cuántas migraciones de admin hay
-                    cursor.execute(
-                        "SELECT COUNT(*) FROM django_migrations WHERE app = %s",
-                        ['admin']
-                    )
-                    total_admin_migrations = cursor.fetchone()[0]
-
                     self.stdout.write(self.style.ERROR(
-                        f'🚨 CONFLICTO: {total_admin_migrations} migraciones de admin existen pero users.0001_initial no'
+                        f'🚨 CONFLICTO: {admin_count} migraciones de admin existen pero users.0001_initial no'
                     ))
                     self.stdout.write(self.style.WARNING(
                         '🗑️  Eliminando TODAS las migraciones de admin para permitir re-ejecución ordenada...'
