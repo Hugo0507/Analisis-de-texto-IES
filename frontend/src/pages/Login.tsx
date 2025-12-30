@@ -42,16 +42,19 @@ export const Login: React.FC = () => {
       {/* Left Panel - White (45%) */}
       <div className="w-[45%] bg-white flex flex-col">
         {/* Logo Section */}
-        <div className="p-6">
-          <div className="flex items-center gap-4">
+        <div className="px-12 pt-8 pb-4">
+          <div className="flex items-start gap-4">
             <img
               src="/Logo_tesis.png"
               alt="Transformación Digital - IES"
-              className="h-16 w-auto"
+              className="h-14 w-auto mt-1"
             />
             <div className="flex-1">
-              <p className="text-xs font-semibold text-gray-900 uppercase leading-tight">
-                TRANSFORMACIÓN DIGITAL - INSTITUCIONES DE EDUCACIÓN SUPERIOR
+              <p className="text-sm font-bold text-gray-900 uppercase leading-tight">
+                TRANSFORMACIÓN DIGITAL
+              </p>
+              <p className="text-xs font-light text-gray-900 uppercase leading-tight mt-0.5">
+                INSTITUCIONES DE EDUCACIÓN SUPERIOR
               </p>
             </div>
           </div>
