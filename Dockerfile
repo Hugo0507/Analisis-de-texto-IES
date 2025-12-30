@@ -1,5 +1,6 @@
 FROM python:3.10-slim
 
+# Build timestamp: 2025-12-30 (Force rebuild for JWT authentication)
 # Instalar dependencias del sistema necesarias
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
