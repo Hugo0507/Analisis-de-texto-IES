@@ -1,6 +1,5 @@
 FROM python:3.10-slim
 
-# Build timestamp: 2025-12-30 (Force rebuild for JWT authentication)
 # Instalar dependencias del sistema necesarias
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -13,9 +12,21 @@ ENV PATH="/home/user/.local/bin:$PATH"
 
 WORKDIR /app
 
+# Build arg to force rebuild (change this to break cache)
+ARG CACHEBUST=2025-12-30-v2
+RUN echo "Cache bust: $CACHEBUST"
+
 # Copiar requirements del backend
 COPY --chown=user ./backend/requirements.txt requirements.txt
+
+# Instalar pip más reciente primero
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Instalar dependencias (sin caché)
 RUN pip install --no-cache-dir --upgrade -r requirements.txt
+
+# Verificar que simplejwt está instalado
+RUN pip list | grep simplejwt || echo "WARNING: simplejwt not found"
 
 # Copiar código del backend
 COPY --chown=user ./backend .
