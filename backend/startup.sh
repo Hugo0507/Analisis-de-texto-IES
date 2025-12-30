@@ -24,6 +24,11 @@ echo "👤 Ensuring superuser exists..."
 python manage.py ensuresuperuser
 echo ""
 
+# Create test user for development
+echo "👤 Creating test user..."
+python manage.py create_test_user
+echo ""
+
 # Start gunicorn server
 echo "🚀 Starting Gunicorn server on port 7860..."
 echo "====================================="
