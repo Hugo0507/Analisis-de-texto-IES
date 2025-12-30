@@ -47,9 +47,13 @@ function App() {
               <Route path="topics" element={<TopicModeling />} />
               <Route path="factors" element={<Factors />} />
               <Route path="statistics" element={<Statistics />} />
-              <Route path="users" element={<Users />} />
-              <Route path="users/create" element={<UserCreate />} />
-              <Route path="users/:id" element={<UserDetail />} />
+            </Route>
+
+            {/* Configuration Routes */}
+            <Route path="/configuracion" element={<MainLayout />}>
+              <Route path="usuarios" element={<Users />} />
+              <Route path="usuarios/nuevo" element={<UserCreate />} />
+              <Route path="usuarios/:id" element={<UserDetail />} />
             </Route>
           </Route>
 
