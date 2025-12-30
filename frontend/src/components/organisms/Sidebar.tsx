@@ -20,43 +20,43 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   {
-    path: '/',
+    path: '/admin/dashboard',
     label: 'Dashboard',
     icon: '🏠',
     description: 'Vista general',
   },
   {
-    path: '/documents',
+    path: '/admin/dashboard/documents',
     label: 'Documentos',
     icon: '📄',
     description: 'Gestión de archivos',
   },
   {
-    path: '/bow',
+    path: '/admin/dashboard/bow',
     label: 'Bag of Words',
     icon: '📝',
     description: 'Análisis BoW',
   },
   {
-    path: '/tfidf',
+    path: '/admin/dashboard/tfidf',
     label: 'TF-IDF',
     icon: '📊',
     description: 'Vectores TF-IDF',
   },
   {
-    path: '/topics',
+    path: '/admin/dashboard/topics',
     label: 'Topic Modeling',
     icon: '🔍',
     description: 'LDA, NMF, LSA, pLSA',
   },
   {
-    path: '/factors',
+    path: '/admin/dashboard/factors',
     label: 'Análisis de Factores',
     icon: '🎯',
     description: '8 categorías',
   },
   {
-    path: '/statistics',
+    path: '/admin/dashboard/statistics',
     label: 'Estadísticas',
     icon: '📈',
     description: 'Corpus y métricas',
@@ -100,7 +100,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
           </h2>
 
           <NavLink
-            to="/pipeline"
+            to="/admin/dashboard/pipeline"
             className={({ isActive }) =>
               `flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
                 isActive
@@ -120,11 +120,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
         {/* Admin Section */}
         <div className="mt-8 pt-8 border-t border-gray-200">
           <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 mb-2">
-            Administración
+            Configuración
           </h2>
 
           <NavLink
-            to="/users"
+            to="/configuracion/usuarios"
             className={({ isActive }) =>
               `flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
                 isActive
