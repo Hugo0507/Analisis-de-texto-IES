@@ -75,18 +75,21 @@ class UploadDocumentsUseCase:
         )
 
         if not files:
-            logger.warning(f"No files found in folder {folder_id}")
+            logger.warning(f"No files found in folder {folder_id} (searched recursively in subfolders)")
             return {
                 'success': True,
                 'uploaded_count': 0,
+                'skipped_count': 0,
                 'failed_count': 0,
-                'message': 'No files found in folder'
+                'total_files': 0,
+                'message': 'No files found in folder or subfolders. Make sure the folder contains PDF files and the service account has access.'
             }
 
         logger.info(f"Found {len(files)} files to upload")
 
         uploaded_count = 0
         failed_count = 0
+        skipped_count = 0
         uploaded_documents = []
         errors = []
 
@@ -103,6 +106,7 @@ class UploadDocumentsUseCase:
 
                 if existing_doc:
                     logger.info(f"Document {filename} already exists, skipping")
+                    skipped_count += 1
                     continue
 
                 # Download file to temp location
@@ -147,11 +151,15 @@ class UploadDocumentsUseCase:
                 failed_count += 1
                 errors.append(str(e))
 
-        logger.info(f"Upload complete: {uploaded_count} succeeded, {failed_count} failed")
+        logger.info(
+            f"Upload complete: {uploaded_count} uploaded, "
+            f"{skipped_count} skipped, {failed_count} failed"
+        )
 
         return {
             'success': True,
             'uploaded_count': uploaded_count,
+            'skipped_count': skipped_count,
             'failed_count': failed_count,
             'total_files': len(files),
             'documents': uploaded_documents,

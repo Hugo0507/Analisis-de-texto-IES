@@ -152,7 +152,8 @@ class DriveGateway:
         self,
         folder_id: Optional[str] = None,
         mime_type: Optional[str] = None,
-        max_results: int = 100
+        max_results: int = 100,
+        recursive: bool = True
     ) -> List[Dict[str, any]]:
         """
         List files from Google Drive.
@@ -161,6 +162,7 @@ class DriveGateway:
             folder_id: Filter by parent folder ID
             mime_type: Filter by MIME type (e.g., 'application/pdf')
             max_results: Maximum number of results
+            recursive: If True, search in subfolders recursively
 
         Returns:
             List of file metadata dictionaries
@@ -175,6 +177,11 @@ class DriveGateway:
             raise ValueError("Not authenticated. Call authenticate() first.")
 
         try:
+            if recursive and folder_id:
+                # Use recursive search
+                return self._list_files_recursive(folder_id, mime_type, max_results)
+
+            # Non-recursive search (original behavior)
             # Build query
             query_parts = []
 
@@ -205,6 +212,76 @@ class DriveGateway:
         except HttpError as e:
             logger.exception(f"Error listing files: {e}")
             return []
+
+    def _list_files_recursive(
+        self,
+        folder_id: str,
+        mime_type: Optional[str] = None,
+        max_results: int = 100
+    ) -> List[Dict[str, any]]:
+        """
+        Recursively list files from a folder and all its subfolders.
+
+        Args:
+            folder_id: Root folder ID to start search
+            mime_type: Filter by MIME type (e.g., 'application/pdf')
+            max_results: Maximum total number of files to return
+
+        Returns:
+            List of file metadata dictionaries from folder and subfolders
+        """
+        all_files = []
+        folders_to_process = [folder_id]
+        folders_processed = set()
+
+        logger.info(f"Starting recursive search in folder {folder_id}")
+
+        while folders_to_process and len(all_files) < max_results:
+            current_folder = folders_to_process.pop(0)
+
+            # Avoid processing same folder twice
+            if current_folder in folders_processed:
+                continue
+
+            folders_processed.add(current_folder)
+
+            try:
+                # Get all items in current folder
+                query = f"'{current_folder}' in parents and trashed=false"
+
+                results = self.service.files().list(
+                    q=query,
+                    pageSize=1000,  # Get many items per request
+                    fields="files(id, name, mimeType, size, createdTime, modifiedTime)"
+                ).execute()
+
+                items = results.get('files', [])
+
+                for item in items:
+                    # If it's a folder, add to processing queue
+                    if item['mimeType'] == 'application/vnd.google-apps.folder':
+                        folders_to_process.append(item['id'])
+                        logger.debug(f"Found subfolder: {item['name']}")
+
+                    # If it's a file and matches mime_type filter, add to results
+                    elif mime_type is None or item['mimeType'] == mime_type:
+                        all_files.append(item)
+                        logger.debug(f"Found file: {item['name']} ({item['mimeType']})")
+
+                        # Stop if we've reached max_results
+                        if len(all_files) >= max_results:
+                            break
+
+            except HttpError as e:
+                logger.warning(f"Error accessing folder {current_folder}: {e}")
+                continue
+
+        logger.info(
+            f"Recursive search complete: Found {len(all_files)} files "
+            f"across {len(folders_processed)} folders"
+        )
+
+        return all_files[:max_results]
 
     def download_file(
         self,
