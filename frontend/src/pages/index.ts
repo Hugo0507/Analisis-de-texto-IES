@@ -14,3 +14,6 @@ export { TopicModeling } from './TopicModeling';
 export { Factors } from './Factors';
 export { Documents } from './Documents';
 export { Statistics } from './Statistics';
+export { Users } from './Users';
+export { UserCreate } from './UserCreate';
+export { UserDetail } from './UserDetail';
