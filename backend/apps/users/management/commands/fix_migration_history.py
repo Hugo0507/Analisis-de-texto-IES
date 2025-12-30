@@ -44,28 +44,35 @@ class Command(BaseCommand):
                     '⚠️  users.0001_initial no está en django_migrations'
                 ))
 
-                # Si admin.0001_initial está registrada, tenemos un problema de dependencias
+                # Si hay alguna migración de admin, tenemos un problema de dependencias
                 if admin_count > 0:
+                    # Verificar cuántas migraciones de admin hay
+                    cursor.execute(
+                        "SELECT COUNT(*) FROM django_migrations WHERE app = %s",
+                        ['admin']
+                    )
+                    total_admin_migrations = cursor.fetchone()[0]
+
                     self.stdout.write(self.style.ERROR(
-                        '🚨 CONFLICTO DETECTADO: admin.0001_initial existe pero users.0001_initial no'
+                        f'🚨 CONFLICTO: {total_admin_migrations} migraciones de admin existen pero users.0001_initial no'
                     ))
                     self.stdout.write(self.style.WARNING(
-                        '🗑️  Eliminando admin.0001_initial para permitir re-ejecución ordenada...'
+                        '🗑️  Eliminando TODAS las migraciones de admin para permitir re-ejecución ordenada...'
                     ))
 
-                    # Eliminar admin.0001_initial para que se ejecute después de users
+                    # Eliminar TODAS las migraciones de admin para que se ejecuten después de users
                     cursor.execute(
                         """
                         DELETE FROM django_migrations
-                        WHERE app = %s AND name = %s
+                        WHERE app = %s
                         """,
-                        ['admin', '0001_initial']
+                        ['admin']
                     )
                     # CRÍTICO: Commit explícito para que migrate vea los cambios
                     transaction.commit()
 
                     self.stdout.write(self.style.SUCCESS(
-                        '✅ admin.0001_initial eliminada - migrate ejecutará users ANTES de admin'
+                        f'✅ {total_admin_migrations} migraciones de admin eliminadas - migrate ejecutará users primero'
                     ))
                 elif table_exists:
                     self.stdout.write(self.style.WARNING(
