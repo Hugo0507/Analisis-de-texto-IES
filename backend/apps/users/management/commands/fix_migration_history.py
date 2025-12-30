@@ -46,27 +46,58 @@ class Command(BaseCommand):
 
                 # Si hay alguna migración de admin, tenemos un problema de dependencias
                 if admin_count > 0:
+                    # Verificar si las tablas de admin ya existen
+                    cursor.execute(
+                        """
+                        SELECT EXISTS (
+                            SELECT FROM information_schema.tables
+                            WHERE table_schema = 'public'
+                            AND table_name = 'django_admin_log'
+                        )
+                        """
+                    )
+                    admin_tables_exist = cursor.fetchone()[0]
+
                     self.stdout.write(self.style.ERROR(
                         f'🚨 CONFLICTO: {admin_count} migraciones de admin existen pero users.0001_initial no'
                     ))
-                    self.stdout.write(self.style.WARNING(
-                        '🗑️  Eliminando TODAS las migraciones de admin para permitir re-ejecución ordenada...'
-                    ))
 
-                    # Eliminar TODAS las migraciones de admin para que se ejecuten después de users
-                    cursor.execute(
-                        """
-                        DELETE FROM django_migrations
-                        WHERE app = %s
-                        """,
-                        ['admin']
-                    )
-                    # CRÍTICO: Commit explícito para que migrate vea los cambios
-                    transaction.commit()
+                    if admin_tables_exist:
+                        # Las tablas de admin existen, solo insertar users.0001_initial
+                        self.stdout.write(self.style.WARNING(
+                            '📋 Tablas de admin existen - Insertando users.0001_initial sin tocar admin...'
+                        ))
 
-                    self.stdout.write(self.style.SUCCESS(
-                        f'✅ {total_admin_migrations} migraciones de admin eliminadas - migrate ejecutará users primero'
-                    ))
+                        cursor.execute(
+                            """
+                            INSERT INTO django_migrations (app, name, applied)
+                            VALUES (%s, %s, NOW())
+                            """,
+                            ['users', '0001_initial']
+                        )
+                        transaction.commit()
+
+                        self.stdout.write(self.style.SUCCESS(
+                            '✅ users.0001_initial insertada - migraciones de admin quedan intactas'
+                        ))
+                    else:
+                        # Las tablas NO existen, eliminar registros de admin para re-ejecutar
+                        self.stdout.write(self.style.WARNING(
+                            '🗑️  Eliminando registros de admin para permitir re-ejecución ordenada...'
+                        ))
+
+                        cursor.execute(
+                            """
+                            DELETE FROM django_migrations
+                            WHERE app = %s
+                            """,
+                            ['admin']
+                        )
+                        transaction.commit()
+
+                        self.stdout.write(self.style.SUCCESS(
+                            f'✅ {admin_count} migraciones de admin eliminadas - migrate ejecutará users primero'
+                        ))
                 elif table_exists:
                     self.stdout.write(self.style.WARNING(
                         '📋 La tabla users_user existe, insertando registro de migración...'
