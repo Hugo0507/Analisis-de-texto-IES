@@ -19,8 +19,11 @@ RUN pip install --no-cache-dir --upgrade -r requirements.txt
 # Copiar código del backend
 COPY --chown=user ./backend .
 
+# Hacer ejecutable el script de startup
+RUN chmod +x startup.sh
+
 # IMPORTANTE: El puerto debe ser 7860 para Hugging Face
 EXPOSE 7860
 
-# Comando para ejecutar Django con gunicorn en puerto 7860
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:7860", "--workers", "2"]
+# Comando para ejecutar startup script (migraciones + superuser + gunicorn)
+CMD ["bash", "startup.sh"]
