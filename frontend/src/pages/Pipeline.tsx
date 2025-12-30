@@ -29,6 +29,7 @@ export const Pipeline: React.FC = () => {
   // Drive Configuration
   const [driveConnected, setDriveConnected] = useState(false);
   const [folderId, setFolderId] = useState('');
+  const [maxFiles, setMaxFiles] = useState(100);
   const [folderInfo, setFolderInfo] = useState<DriveFolder | null>(null);
   const [isLoadingFolder, setIsLoadingFolder] = useState(false);
 
@@ -87,7 +88,7 @@ export const Pipeline: React.FC = () => {
       const response = await documentsService.upload({
         folder_id: folderId,
         mime_type: 'application/pdf',
-        max_files: 100,
+        max_files: maxFiles,
       });
 
       if (response.success) {
@@ -270,6 +271,26 @@ export const Pipeline: React.FC = () => {
               <p className="mt-2 text-sm text-gray-500">
                 💡 Encuentra el ID en la URL de tu carpeta de Drive:
                 https://drive.google.com/drive/folders/<strong>ID_AQUI</strong>
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Número máximo de archivos
+              </label>
+              <input
+                type="number"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="100"
+                value={maxFiles}
+                onChange={(e) => setMaxFiles(parseInt(e.target.value) || 100)}
+                disabled={isLoadingFolder}
+                min={1}
+                max={1000}
+              />
+              <p className="mt-2 text-sm text-gray-500">
+                ⚠️ Si tienes muchos archivos, empieza con un número pequeño (ej: 10-20)
+                para probar más rápido.
               </p>
             </div>
 
