@@ -90,9 +90,12 @@ class DocumentsService {
 
   /**
    * Upload documents from Google Drive
+   * Note: Uses extended timeout (5 minutes) as Drive operations can take time
    */
   async upload(data: UploadDocumentsRequest): Promise<UploadDocumentsResponse> {
-    const response = await apiClient.post('/documents/upload/', data);
+    const response = await apiClient.post('/documents/upload/', data, {
+      timeout: 300000, // 5 minutes for Drive operations
+    });
     return response.data;
   }
 
