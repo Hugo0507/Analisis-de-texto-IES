@@ -19,6 +19,9 @@ import {
   Factors,
   Documents,
   Statistics,
+  Users,
+  UserCreate,
+  UserDetail,
 } from './pages';
 
 function App() {
@@ -44,6 +47,9 @@ function App() {
               <Route path="topics" element={<TopicModeling />} />
               <Route path="factors" element={<Factors />} />
               <Route path="statistics" element={<Statistics />} />
+              <Route path="users" element={<Users />} />
+              <Route path="users/create" element={<UserCreate />} />
+              <Route path="users/:id" element={<UserDetail />} />
             </Route>
           </Route>
 

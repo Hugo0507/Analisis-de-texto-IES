@@ -116,6 +116,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
             </div>
           </NavLink>
         </div>
+
+        {/* Admin Section */}
+        <div className="mt-8 pt-8 border-t border-gray-200">
+          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 mb-2">
+            Administración
+          </h2>
+
+          <NavLink
+            to="/users"
+            className={({ isActive }) =>
+              `flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
+                isActive
+                  ? 'bg-indigo-50 text-indigo-700 font-medium shadow-sm'
+                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+              }`
+            }
+          >
+            <span className="text-2xl">👥</span>
+            <div className="flex-1">
+              <div className="text-sm font-medium">Usuarios</div>
+              <div className="text-xs text-gray-500">Gestión de usuarios</div>
+            </div>
+          </NavLink>
+        </div>
       </nav>
     </aside>
   );
