@@ -54,7 +54,7 @@ export const UserDetail: React.FC = () => {
 
   if (error || !user) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
+      <div className="min-h-screen p-8">
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
           {error || 'Usuario no encontrado'}
         </div>
@@ -72,7 +72,7 @@ export const UserDetail: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen p-8">
       {/* Page Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
