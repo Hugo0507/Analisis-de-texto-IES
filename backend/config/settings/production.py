@@ -2,6 +2,7 @@
 Production settings for Análisis de Transformación Digital project.
 
 Security-hardened configuration optimized for deployment.
+Last updated: 2025-12-30 - Password validation set to 8 characters minimum
 """
 
 from .base import *
