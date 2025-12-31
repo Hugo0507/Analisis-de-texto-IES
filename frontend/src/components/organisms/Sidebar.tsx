@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 export interface SidebarProps {
@@ -78,9 +78,15 @@ const configNavItems: NavItem[] = [
 
 export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
   const location = useLocation();
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const isConfigRoute = location.pathname.startsWith('/admin/configuracion');
   const navItems = isConfigRoute ? configNavItems : analysisNavItems;
+
+  const handleLogout = () => {
+    logout();
+    navigate('/admin');
+  };
 
   // Sidebar for Configuration Routes - New Dark Design
   if (isConfigRoute) {
@@ -157,9 +163,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
           </div>
         </nav>
 
+        {/* Logout Button */}
+        <div className="px-4 pb-4">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-xl transition-all duration-200 text-slate-400 hover:bg-red-900/20 hover:text-red-400 border border-slate-700"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span className="text-sm font-medium">Cerrar Sesión</span>
+          </button>
+        </div>
+
         {/* Logo Transformación Digital Bottom */}
-        <div className="p-6 border-t border-slate-700">
-          <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg p-3 text-center">
+        <div className="p-6 pt-0 border-t border-slate-700">
+          <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg p-3 text-center mt-4">
             <span className="text-white font-bold text-xs uppercase tracking-wide">
               Transformación Digital
             </span>
