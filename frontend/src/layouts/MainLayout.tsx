@@ -1,29 +1,23 @@
 /**
  * MainLayout Component
  *
- * Main application layout with Header, Sidebar, and content area.
+ * Main application layout with Sidebar and content area (no header).
  */
 
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-import { Header, Sidebar } from '../components/organisms';
+import { Sidebar } from '../components/organisms';
 
 export const MainLayout: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <Header />
+    <div className="flex min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
+      {/* Sidebar - 100vh height */}
+      <Sidebar />
 
-      {/* Main Content Area with Sidebar */}
-      <div className="flex">
-        {/* Sidebar */}
-        <Sidebar />
-
-        {/* Page Content */}
-        <main className="flex-1 p-6">
-          <Outlet />
-        </main>
-      </div>
+      {/* Page Content - Full height, starts from top */}
+      <main className="flex-1">
+        <Outlet />
+      </main>
     </div>
   );
 };
