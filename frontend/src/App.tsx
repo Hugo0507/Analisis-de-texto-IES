@@ -36,10 +36,10 @@ function App() {
           <Route path="/admin" element={<Login />} />
           <Route path="/admin/forgot-password" element={<ForgotPassword />} />
 
-          {/* Protected Admin Routes */}
+          {/* Protected Dashboard Routes - Analysis Tools */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/admin/dashboard" element={<MainLayout />}>
-              <Route index element={<Navigate to="/admin/dashboard/pipeline" replace />} />
+            <Route path="/dashboard" element={<MainLayout />}>
+              <Route index element={<Navigate to="/dashboard/pipeline" replace />} />
               <Route path="pipeline" element={<Pipeline />} />
               <Route path="documents" element={<Documents />} />
               <Route path="bow" element={<BagOfWords />} />
@@ -49,8 +49,8 @@ function App() {
               <Route path="statistics" element={<Statistics />} />
             </Route>
 
-            {/* Configuration Routes */}
-            <Route path="/configuracion" element={<MainLayout />}>
+            {/* Admin Configuration Routes - Users only */}
+            <Route path="/admin/configuracion" element={<MainLayout />}>
               <Route path="usuarios" element={<Users />} />
               <Route path="usuarios/nuevo" element={<UserCreate />} />
               <Route path="usuarios/:id" element={<UserDetail />} />
