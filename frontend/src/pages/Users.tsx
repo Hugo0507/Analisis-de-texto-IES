@@ -8,9 +8,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import authService, { User } from '../services/authService';
 import { Spinner } from '../components/atoms';
+import { useToast } from '../contexts/ToastContext';
 
 export const Users: React.FC = () => {
   const navigate = useNavigate();
+  const { showSuccess, showError } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -54,10 +56,13 @@ export const Users: React.FC = () => {
 
     try {
       await authService.deleteUser(userToDelete.id);
+      showSuccess(`Usuario "${userToDelete.full_name || userToDelete.username}" eliminado exitosamente`);
       closeDeleteModal();
       await loadUsers();
     } catch (err: any) {
-      setError('Error al eliminar usuario: ' + (err.response?.data?.detail || err.message));
+      const errorMessage = 'Error al eliminar usuario: ' + (err.response?.data?.detail || err.message);
+      setError(errorMessage);
+      showError('Error al eliminar usuario');
       closeDeleteModal();
     }
   };
