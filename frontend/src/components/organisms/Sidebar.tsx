@@ -7,7 +7,7 @@
  * - /admin/configuracion/* -> Configuration menu (Dark blue design)
  */
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -83,20 +83,76 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
   const isConfigRoute = location.pathname.startsWith('/admin/configuracion');
   const navItems = isConfigRoute ? configNavItems : analysisNavItems;
 
+  const [showLogoutMenu, setShowLogoutMenu] = useState(false);
+  const logoutMenuRef = useRef<HTMLDivElement>(null);
+
   const handleLogout = () => {
     logout();
     navigate('/admin');
   };
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (logoutMenuRef.current && !logoutMenuRef.current.contains(event.target as Node)) {
+        setShowLogoutMenu(false);
+      }
+    };
+
+    if (showLogoutMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showLogoutMenu]);
+
   // Sidebar for Configuration Routes - New Dark Design
   if (isConfigRoute) {
     return (
-      <aside className={`w-64 bg-slate-900 min-h-screen flex flex-col ${className}`}>
+      <aside className={`w-64 bg-slate-900 min-h-screen flex flex-col relative ${className}`}>
         {/* Logo Institucional Top */}
-        <div className="p-6 border-b border-slate-700">
-          <div className="bg-white rounded-lg p-3 flex items-center justify-center">
-            <span className="text-slate-900 font-bold text-lg">LOGO IES</span>
-          </div>
+        <div className="p-6 border-b border-slate-700 flex items-center justify-between">
+          <img
+            src="/Logo_tesis.png"
+            alt="IES Logo"
+            className="h-12 w-auto"
+          />
+
+          {/* Profile Icon - Top Right Corner */}
+          {user && (
+            <div className="relative" ref={logoutMenuRef}>
+              <button
+                onClick={() => setShowLogoutMenu(!showLogoutMenu)}
+                className="w-8 h-8 rounded-full border-2 border-slate-600 flex items-center justify-center hover:border-emerald-400 transition-colors"
+                title="Menú de usuario"
+              >
+                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </button>
+
+              {/* Logout Dropdown Menu */}
+              {showLogoutMenu && (
+                <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                  <div className="px-4 py-3 border-b border-gray-200">
+                    <p className="text-xs text-gray-500">Logueado como</p>
+                    <p className="text-sm font-medium text-gray-900 truncate">{user.email}</p>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors text-red-600"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span className="text-sm font-medium">Cerrar sesión</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* User Profile */}
@@ -163,22 +219,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
           </div>
         </nav>
 
-        {/* Logout Button */}
-        <div className="px-4 pb-4">
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-xl transition-all duration-200 text-slate-400 hover:bg-red-900/20 hover:text-red-400 border border-slate-700"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            <span className="text-sm font-medium">Cerrar Sesión</span>
-          </button>
-        </div>
-
         {/* Logo Transformación Digital Bottom */}
-        <div className="p-6 pt-0 border-t border-slate-700">
-          <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg p-3 text-center mt-4">
+        <div className="p-6 border-t border-slate-700">
+          <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg p-3 text-center">
             <span className="text-white font-bold text-xs uppercase tracking-wide">
               Transformación Digital
             </span>
