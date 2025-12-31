@@ -135,7 +135,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
 
               {/* Logout Dropdown Menu */}
               {showLogoutMenu && (
-                <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                <div
+                  className="fixed bg-white rounded-lg border border-gray-200 py-2 z-[9999]"
+                  style={{
+                    top: '4.5rem',
+                    left: '13rem',
+                    width: '16rem',
+                    boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.15)'
+                  }}
+                >
                   <div className="px-4 py-3 border-b border-gray-200">
                     <p className="text-xs text-gray-500">Logueado como</p>
                     <p className="text-sm font-medium text-gray-900 truncate">{user.email}</p>
@@ -166,7 +174,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
                 </span>
               </div>
               {/* Username */}
-              <h3 className="text-white font-semibold text-base mb-1">
+              <h3 className="text-white font-semibold text-sm mb-1">
                 {user.username}
               </h3>
               {/* Email */}
@@ -205,26 +213,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
             </NavLink>
           ))}
 
-          {/* Link to Analysis Tools */}
-          <div className="mt-auto pt-8">
-            <NavLink
-              to="/dashboard"
-              className="flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 text-slate-400 hover:bg-slate-800 hover:text-white"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              <span className="text-sm font-medium">Herramientas de Análisis</span>
-            </NavLink>
-          </div>
         </nav>
 
         {/* Logo Transformación Digital Bottom - Watermark */}
-        <div className="p-6">
+        <div className="p-6 mt-auto">
           <img
             src="/Logo_tesis.png"
             alt="Transformación Digital"
-            className="h-10 w-auto mx-auto opacity-30"
+            className="h-14 w-auto mx-auto opacity-30"
           />
         </div>
       </aside>

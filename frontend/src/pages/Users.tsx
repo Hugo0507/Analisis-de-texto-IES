@@ -14,6 +14,8 @@ export const Users: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
   // Load users on mount
   useEffect(() => {
@@ -37,16 +39,26 @@ export const Users: React.FC = () => {
     }
   };
 
-  const handleDelete = async (userId: number) => {
-    if (!window.confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
-      return;
-    }
+  const openDeleteModal = (user: User) => {
+    setUserToDelete(user);
+    setShowDeleteModal(true);
+  };
+
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false);
+    setUserToDelete(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
 
     try {
-      await authService.deleteUser(userId);
+      await authService.deleteUser(userToDelete.id);
+      closeDeleteModal();
       await loadUsers();
     } catch (err: any) {
-      alert('Error al eliminar usuario: ' + (err.response?.data?.detail || err.message));
+      setError('Error al eliminar usuario: ' + (err.response?.data?.detail || err.message));
+      closeDeleteModal();
     }
   };
 
@@ -190,21 +202,22 @@ export const Users: React.FC = () => {
                     {/* Acciones Column */}
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                        {/* Editar Button */}
                         <button
-                          onClick={() => navigate(`/admin/configuracion/usuarios/${user.id}`)}
+                          onClick={() => navigate(`/admin/configuracion/usuarios/${user.id}/editar`)}
                           className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                          title="Ver detalles"
+                          title="Editar usuario"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
                         </button>
 
+                        {/* Eliminar Button */}
                         <button
-                          onClick={() => handleDelete(user.id)}
+                          onClick={() => openDeleteModal(user)}
                           className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                          title="Eliminar"
+                          title="Eliminar usuario"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -219,6 +232,35 @@ export const Users: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && userToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4" style={{ boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.15)' }}>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              ¿Eliminar usuario?
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Esta acción no se puede deshacer. ¿Estás seguro de que quieres eliminar a{' '}
+              <strong>{userToDelete.full_name || userToDelete.username}</strong>?
+            </p>
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={closeDeleteModal}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors font-medium text-sm"
+              >
+                Sí, eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
