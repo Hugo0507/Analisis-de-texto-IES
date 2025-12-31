@@ -70,38 +70,35 @@ export const Users: React.FC = () => {
       <div className="flex items-center justify-between mb-8">
         {/* Title with List Icon */}
         <div className="flex items-center gap-3">
-          {/* List Icon - Three horizontal lines with dots */}
+          {/* List Icon - Three horizontal lines (minimalist) */}
           <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            <circle cx="8" cy="6" r="1" fill="currentColor" />
-            <circle cx="8" cy="12" r="1" fill="currentColor" />
-            <circle cx="8" cy="18" r="1" fill="currentColor" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
           <h1 className="text-2xl font-bold text-gray-900">Configuración de Usuarios</h1>
         </div>
 
         {/* Action Buttons */}
         <div className="flex items-center gap-3">
-          {/* Refresh Button - Circular */}
+          {/* Refresh Button - Circular (minimalist) */}
           <button
             onClick={loadUsers}
             disabled={isLoading}
-            className="p-3 bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            className="p-3 bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="Refrescar lista"
           >
             <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </button>
 
-          {/* Add Button - Grid with Plus (Green Emerald) */}
+          {/* Add Button - Circular Green with Plus */}
           <button
             onClick={() => navigate('/admin/configuracion/usuarios/nuevo')}
-            className="p-3 bg-emerald-500 hover:bg-emerald-600 rounded-full transition-colors shadow-md hover:shadow-lg"
+            className="p-3 bg-emerald-500 hover:bg-emerald-600 rounded-full transition-all shadow-md hover:shadow-lg"
             title="Crear usuario"
           >
             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
             </svg>
           </button>
         </div>
