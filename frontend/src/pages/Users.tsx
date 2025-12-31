@@ -97,7 +97,7 @@ export const Users: React.FC = () => {
 
           {/* Create Button */}
           <button
-            onClick={() => navigate('/configuracion/usuarios/nuevo')}
+            onClick={() => navigate('/admin/configuracion/usuarios/nuevo')}
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,7 +135,7 @@ export const Users: React.FC = () => {
               Comienza creando tu primer usuario
             </p>
             <button
-              onClick={() => navigate('/configuracion/usuarios/nuevo')}
+              onClick={() => navigate('/admin/configuracion/usuarios/nuevo')}
               className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -174,7 +174,7 @@ export const Users: React.FC = () => {
                   <tr
                     key={user.id}
                     className="hover:bg-gray-50 transition-colors cursor-pointer"
-                    onClick={() => navigate(`/configuracion/usuarios/${user.id}`)}
+                    onClick={() => navigate(`/admin/configuracion/usuarios/${user.id}`)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -214,7 +214,7 @@ export const Users: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                         <button
-                          onClick={() => navigate(`/configuracion/usuarios/${user.id}`)}
+                          onClick={() => navigate(`/admin/configuracion/usuarios/${user.id}`)}
                           className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50 transition-colors"
                           title="Ver detalles"
                         >

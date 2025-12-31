@@ -72,7 +72,7 @@ export const UserCreate: React.FC = () => {
 
     try {
       await authService.createUser(formData);
-      navigate('/configuracion/usuarios');
+      navigate('/admin/configuracion/usuarios');
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail ||
                           err.response?.data?.email?.[0] ||
@@ -98,7 +98,7 @@ export const UserCreate: React.FC = () => {
         </div>
 
         <button
-          onClick={() => navigate('/configuracion/usuarios')}
+          onClick={() => navigate('/admin/configuracion/usuarios')}
           className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
         >
           ← Volver
