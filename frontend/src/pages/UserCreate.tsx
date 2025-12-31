@@ -2,16 +2,19 @@
  * User Create Page
  *
  * Form to create a new user with validation.
+ * Only accessible by admin users.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import authService from '../services/authService';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
 
 export const UserCreate: React.FC = () => {
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
   const { showSuccess, showError } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -27,6 +30,16 @@ export const UserCreate: React.FC = () => {
     role: 'user' as 'admin' | 'user',
     is_active: true,
   });
+
+  // Check admin permissions on mount
+  useEffect(() => {
+    if (!currentUser) return;
+
+    if (currentUser.role !== 'admin') {
+      showError('No tienes permisos para crear usuarios');
+      navigate('/admin/configuracion/usuarios');
+    }
+  }, [currentUser, navigate, showError]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;

@@ -3,10 +3,12 @@
  *
  * Display/Edit user information.
  * Supports both read-only and edit modes.
+ * Only admins can edit users.
  */
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import authService, { User } from '../services/authService';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
@@ -15,6 +17,7 @@ export const UserDetail: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams<{ id: string }>();
+  const { user: currentUser } = useAuth();
   const { showSuccess, showError } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,8 +45,15 @@ export const UserDetail: React.FC = () => {
       return;
     }
 
+    // Check admin permissions for edit mode
+    if (isEditMode && currentUser && currentUser.role !== 'admin') {
+      showError('No tienes permisos para editar usuarios');
+      navigate(`/admin/configuracion/usuarios/${id}`);
+      return;
+    }
+
     loadUser();
-  }, [id]);
+  }, [id, isEditMode, currentUser]);
 
   const loadUser = async () => {
     if (!id) return;
