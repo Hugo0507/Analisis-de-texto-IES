@@ -53,6 +53,7 @@ function App() {
               <Route path="usuarios" element={<Users />} />
               <Route path="usuarios/nuevo" element={<UserCreate />} />
               <Route path="usuarios/:id" element={<UserDetail />} />
+              <Route path="usuarios/:id/editar" element={<UserDetail />} />
             </Route>
           </Route>
 
