@@ -154,13 +154,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
             </NavLink>
           ) : (
             <NavLink
-              to="/admin/configuracion/usuarios"
+              to="/admin"
               className="flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
             >
               <span className="text-2xl">⚙️</span>
               <div className="flex-1">
                 <div className="text-sm font-medium">Configuración</div>
-                <div className="text-xs text-gray-500">Administración del sistema</div>
+                <div className="text-xs text-gray-500">Iniciar sesión</div>
               </div>
             </NavLink>
           )}
