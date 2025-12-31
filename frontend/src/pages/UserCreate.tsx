@@ -91,9 +91,9 @@ export const UserCreate: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
       {/* Fixed Header */}
-      <div className="sticky top-0 z-40 bg-white border-b border-gray-200" style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)' }}>
+      <div className="sticky top-0 z-40 bg-white border-b border-gray-200" style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
         <div className="flex items-center justify-between px-8 py-4">
           {/* Left: Back Button + Title */}
           <div className="flex items-center gap-3">
@@ -138,7 +138,7 @@ export const UserCreate: React.FC = () => {
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Personal Data Card */}
-        <div className="bg-white rounded-3xl p-7" style={{ boxShadow: '0 10px 30px rgba(0, 0, 0, 0.02)' }}>
+        <div className="bg-white p-7" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
           <div className="mb-5">
             <h2 className="text-base font-semibold text-gray-900">Datos Personales</h2>
           </div>
@@ -217,7 +217,7 @@ export const UserCreate: React.FC = () => {
         </div>
 
         {/* Permissions Card */}
-        <div className="bg-white rounded-3xl p-7" style={{ boxShadow: '0 10px 30px rgba(0, 0, 0, 0.02)' }}>
+        <div className="bg-white p-7" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
           <div className="mb-5">
             <h2 className="text-base font-semibold text-gray-900">Permisos</h2>
           </div>
@@ -262,7 +262,7 @@ export const UserCreate: React.FC = () => {
         </div>
 
         {/* Password Card */}
-        <div className="bg-white rounded-3xl p-7" style={{ boxShadow: '0 10px 30px rgba(0, 0, 0, 0.02)' }}>
+        <div className="bg-white p-7" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
           <div className="mb-5">
             <h2 className="text-base font-semibold text-gray-900">Contraseña del usuario</h2>
             <p className="text-sm text-gray-600 mt-1">Asignar / Cambiar contraseña</p>
