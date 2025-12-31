@@ -9,11 +9,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import authService, { User } from '../services/authService';
 import { Spinner } from '../components/atoms';
+import { useToast } from '../contexts/ToastContext';
 
 export const UserDetail: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams<{ id: string }>();
+  const { showSuccess, showError } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -87,7 +89,8 @@ export const UserDetail: React.FC = () => {
     setError('');
 
     try {
-      await authService.updateUser(parseInt(id), formData);
+      const updatedUser = await authService.updateUser(parseInt(id), formData);
+      showSuccess(`Usuario "${updatedUser.username}" actualizado exitosamente`);
       // Reload user data
       await loadUser();
       // Navigate back to view mode
@@ -99,6 +102,7 @@ export const UserDetail: React.FC = () => {
                           err.message ||
                           'Error al actualizar usuario';
       setError(errorMessage);
+      showError(errorMessage);
     } finally {
       setIsSaving(false);
     }
