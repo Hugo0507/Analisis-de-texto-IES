@@ -17,3 +17,4 @@ export { Statistics } from './Statistics';
 export { Users } from './Users';
 export { UserCreate } from './UserCreate';
 export { UserDetail } from './UserDetail';
+export { Datasets } from './Datasets';
