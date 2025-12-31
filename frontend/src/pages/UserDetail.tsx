@@ -106,7 +106,7 @@ export const UserDetail: React.FC = () => {
       <div className="space-y-6">
 
       {/* Personal Data Card */}
-      <div className="bg-white rounded-3xl shadow-sm p-8">
+      <div className="bg-white rounded-3xl p-8" style={{ boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.05)' }}>
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-gray-900">Datos Personales</h2>
         </div>
@@ -147,7 +147,7 @@ export const UserDetail: React.FC = () => {
       </div>
 
       {/* Permissions Card */}
-      <div className="bg-white rounded-3xl shadow-sm p-8">
+      <div className="bg-white rounded-3xl p-8" style={{ boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.05)' }}>
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-gray-900">Permisos y Estado</h2>
         </div>
@@ -216,7 +216,7 @@ export const UserDetail: React.FC = () => {
       </div>
 
       {/* Info Box */}
-      <div className="bg-blue-50 border border-blue-200 rounded-3xl p-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-3xl p-6" style={{ boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.05)' }}>
         <div className="flex items-start gap-3">
           <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

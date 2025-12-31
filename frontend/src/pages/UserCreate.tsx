@@ -114,7 +114,7 @@ export const UserCreate: React.FC = () => {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Personal Data Card */}
-        <div className="bg-white rounded-3xl shadow-sm p-8">
+        <div className="bg-white rounded-3xl p-8" style={{ boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.05)' }}>
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-900">Datos Personales</h2>
           </div>
@@ -193,7 +193,7 @@ export const UserCreate: React.FC = () => {
         </div>
 
         {/* Permissions Card */}
-        <div className="bg-white rounded-3xl shadow-sm p-8">
+        <div className="bg-white rounded-3xl p-8" style={{ boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.05)' }}>
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-900">Permisos</h2>
           </div>
@@ -238,7 +238,7 @@ export const UserCreate: React.FC = () => {
         </div>
 
         {/* Password Card */}
-        <div className="bg-white rounded-3xl shadow-sm p-8">
+        <div className="bg-white rounded-3xl p-8" style={{ boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.05)' }}>
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-900">Contraseña</h2>
           </div>
@@ -290,7 +290,7 @@ export const UserCreate: React.FC = () => {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3 bg-white rounded-3xl shadow-sm p-8">
+        <div className="flex items-center justify-end gap-3 bg-white rounded-3xl p-8" style={{ boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.05)' }}>
           <button
             type="button"
             onClick={() => navigate('/admin/configuracion/usuarios')}

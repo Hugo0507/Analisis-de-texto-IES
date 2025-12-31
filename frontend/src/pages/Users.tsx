@@ -112,7 +112,7 @@ export const Users: React.FC = () => {
       )}
 
       {/* Data Table Container - Rounded White Box */}
-      <div className="bg-white rounded-3xl shadow-sm p-8">
+      <div className="bg-white rounded-3xl p-8" style={{ boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.05)' }}>
         {users.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">👥</div>

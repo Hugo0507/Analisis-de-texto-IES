@@ -113,7 +113,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
     return (
       <aside className={`w-64 bg-slate-900 min-h-screen flex flex-col relative ${className}`}>
         {/* Logo Institucional Top */}
-        <div className="p-6 border-b border-slate-700 flex items-center justify-between">
+        <div className="p-6 flex items-center justify-between">
           <img
             src="/Logo_tesis.png"
             alt="IES Logo"
@@ -157,7 +157,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
 
         {/* User Profile */}
         {user && (
-          <div className="p-6 border-b border-slate-700">
+          <div className="p-6">
             <div className="flex flex-col items-center">
               {/* Avatar Circle */}
               <div className="w-20 h-20 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center mb-3">
@@ -219,13 +219,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
           </div>
         </nav>
 
-        {/* Logo Transformación Digital Bottom */}
-        <div className="p-6 border-t border-slate-700">
-          <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg p-3 text-center">
-            <span className="text-white font-bold text-xs uppercase tracking-wide">
-              Transformación Digital
-            </span>
-          </div>
+        {/* Logo Transformación Digital Bottom - Watermark */}
+        <div className="p-6">
+          <img
+            src="/Logo_tesis.png"
+            alt="Transformación Digital"
+            className="h-10 w-auto mx-auto opacity-30"
+          />
         </div>
       </aside>
     );
