@@ -82,9 +82,9 @@ export const Users: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
       {/* Fixed Header */}
-      <div className="sticky top-0 z-40 bg-white border-b border-gray-200" style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)' }}>
+      <div className="sticky top-0 z-40 bg-white border-b border-gray-200" style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
         <div className="flex items-center justify-between px-8 py-4">
           {/* Left: Icon + Title */}
           <div className="flex items-center gap-3">
@@ -132,7 +132,7 @@ export const Users: React.FC = () => {
         )}
 
       {/* Data Table Container - Rounded White Box */}
-      <div className="bg-white rounded-3xl p-7" style={{ boxShadow: '0 10px 30px rgba(0, 0, 0, 0.02)' }}>
+      <div className="bg-white p-7" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
         {users.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">👥</div>
@@ -246,7 +246,7 @@ export const Users: React.FC = () => {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && userToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4" style={{ boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.15)' }}>
+          <div className="bg-white p-6 max-w-md w-full mx-4" style={{ borderRadius: '20px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               ¿Eliminar usuario?
             </h3>
