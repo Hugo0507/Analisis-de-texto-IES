@@ -10,12 +10,12 @@ import { Sidebar } from '../components/organisms';
 
 export const MainLayout: React.FC = () => {
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
-      {/* Sidebar - 100vh height */}
-      <Sidebar />
+    <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
+      {/* Sidebar - Fixed position */}
+      <Sidebar className="fixed left-0 top-0 h-screen" />
 
-      {/* Page Content - Full height, starts from top */}
-      <main className="flex-1">
+      {/* Page Content - With left margin to compensate for fixed sidebar */}
+      <main className="ml-64">
         <Outlet />
       </main>
     </div>
