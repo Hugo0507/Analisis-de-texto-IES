@@ -264,7 +264,7 @@ else:
     # Use database sessions if no Redis
     SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
-# Stricter Password Validation
+# Password Validation (consistent with base.py)
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -272,7 +272,7 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
         'OPTIONS': {
-            'min_length': 12,
+            'min_length': 8,
         }
     },
     {
