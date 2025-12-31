@@ -112,36 +112,115 @@ export const Datasets: React.FC = () => {
           <div className="border-2 border-dashed border-gray-300 rounded-xl p-8">
             {/* Files Import */}
             {selectedMethod === 'files' && (
-              <div className="text-center">
-                <input
-                  type="file"
-                  id="file-upload"
-                  multiple
-                  onChange={handleFilesChange}
-                  className="hidden"
-                  accept=".pdf,.txt,.doc,.docx"
-                />
-                <label
-                  htmlFor="file-upload"
-                  className="cursor-pointer inline-flex flex-col items-center"
-                >
-                  <svg className="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  <span className="text-sm font-medium text-gray-700">Haz clic para seleccionar archivos</span>
-                  <span className="text-xs text-gray-500 mt-1">o arrastra y suelta aquí</span>
-                  <span className="text-xs text-gray-400 mt-2">PDF, TXT, DOC, DOCX</span>
-                </label>
-                {selectedFiles.length > 0 && (
-                  <div className="mt-6 text-left">
-                    <p className="text-sm font-medium text-gray-700 mb-2">
-                      {selectedFiles.length} archivo(s) seleccionado(s):
-                    </p>
-                    <ul className="text-xs text-gray-600 space-y-1 max-h-32 overflow-y-auto">
-                      {selectedFiles.map((file, index) => (
-                        <li key={index} className="truncate">• {file.name}</li>
-                      ))}
-                    </ul>
+              <div>
+                {selectedFiles.length === 0 ? (
+                  <div className="text-center py-8">
+                    <input
+                      type="file"
+                      id="file-upload"
+                      multiple
+                      onChange={handleFilesChange}
+                      className="hidden"
+                      accept=".pdf,.txt,.doc,.docx"
+                    />
+                    <label
+                      htmlFor="file-upload"
+                      className="cursor-pointer inline-flex flex-col items-center"
+                    >
+                      <svg className="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      <span className="text-sm font-medium text-gray-700">Haz clic para seleccionar archivos</span>
+                      <span className="text-xs text-gray-500 mt-1">o arrastra y suelta aquí</span>
+                      <span className="text-xs text-gray-400 mt-2">PDF, TXT, DOC, DOCX</span>
+                    </label>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Header con contador */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-sm font-medium text-gray-900">
+                          {selectedFiles.length} archivo{selectedFiles.length !== 1 ? 's' : ''} seleccionado{selectedFiles.length !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      <label
+                        htmlFor="file-upload"
+                        className="text-xs text-emerald-600 hover:text-emerald-700 cursor-pointer font-medium"
+                      >
+                        + Agregar más
+                      </label>
+                      <input
+                        type="file"
+                        id="file-upload"
+                        multiple
+                        onChange={handleFilesChange}
+                        className="hidden"
+                        accept=".pdf,.txt,.doc,.docx"
+                      />
+                    </div>
+
+                    {/* Lista de archivos */}
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {selectedFiles.map((file, index) => {
+                        const getFileIcon = (fileName: string) => {
+                          if (fileName.endsWith('.pdf')) {
+                            return (
+                              <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                              </svg>
+                            );
+                          } else if (fileName.endsWith('.txt')) {
+                            return (
+                              <svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                              </svg>
+                            );
+                          } else {
+                            return (
+                              <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                              </svg>
+                            );
+                          }
+                        };
+
+                        const formatFileSize = (bytes: number) => {
+                          if (bytes < 1024) return bytes + ' B';
+                          if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                          return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+                        };
+
+                        return (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                          >
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              {getFileIcon(file.name)}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
+                                <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setSelectedFiles(selectedFiles.filter((_, i) => i !== index));
+                              }}
+                              className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                              title="Eliminar"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
@@ -149,37 +228,105 @@ export const Datasets: React.FC = () => {
 
             {/* Folder Import */}
             {selectedMethod === 'folder' && (
-              <div className="text-center">
-                <input
-                  type="file"
-                  id="folder-upload"
-                  /* @ts-ignore */
-                  webkitdirectory=""
-                  directory=""
-                  multiple
-                  onChange={handleFolderChange}
-                  className="hidden"
-                />
-                <label
-                  htmlFor="folder-upload"
-                  className="cursor-pointer inline-flex flex-col items-center"
-                >
-                  <svg className="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                  </svg>
-                  <span className="text-sm font-medium text-gray-700">Haz clic para seleccionar carpeta</span>
-                  <span className="text-xs text-gray-500 mt-1">Se importarán todos los archivos de la carpeta</span>
-                </label>
-                {selectedFiles.length > 0 && (
-                  <div className="mt-6 text-left">
-                    <p className="text-sm font-medium text-gray-700 mb-2">
-                      {selectedFiles.length} archivo(s) en la carpeta:
-                    </p>
-                    <ul className="text-xs text-gray-600 space-y-1 max-h-32 overflow-y-auto">
-                      {selectedFiles.map((file, index) => (
-                        <li key={index} className="truncate">• {file.name}</li>
-                      ))}
-                    </ul>
+              <div>
+                {selectedFiles.length === 0 ? (
+                  <div className="text-center py-8">
+                    <input
+                      type="file"
+                      id="folder-upload"
+                      /* @ts-ignore */
+                      webkitdirectory=""
+                      directory=""
+                      multiple
+                      onChange={handleFolderChange}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="folder-upload"
+                      className="cursor-pointer inline-flex flex-col items-center"
+                    >
+                      <svg className="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                      </svg>
+                      <span className="text-sm font-medium text-gray-700">Haz clic para seleccionar carpeta</span>
+                      <span className="text-xs text-gray-500 mt-1">Se importarán todos los archivos de la carpeta</span>
+                    </label>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Header con contador */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-sm font-medium text-gray-900">
+                          {selectedFiles.length} archivo{selectedFiles.length !== 1 ? 's' : ''} en la carpeta
+                        </span>
+                      </div>
+                      <label
+                        htmlFor="folder-upload"
+                        className="text-xs text-emerald-600 hover:text-emerald-700 cursor-pointer font-medium"
+                      >
+                        Cambiar carpeta
+                      </label>
+                      <input
+                        type="file"
+                        id="folder-upload"
+                        /* @ts-ignore */
+                        webkitdirectory=""
+                        directory=""
+                        multiple
+                        onChange={handleFolderChange}
+                        className="hidden"
+                      />
+                    </div>
+
+                    {/* Lista de archivos */}
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {selectedFiles.map((file, index) => {
+                        const getFileIcon = (fileName: string) => {
+                          if (fileName.endsWith('.pdf')) {
+                            return (
+                              <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                              </svg>
+                            );
+                          } else if (fileName.endsWith('.txt')) {
+                            return (
+                              <svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                              </svg>
+                            );
+                          } else {
+                            return (
+                              <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                              </svg>
+                            );
+                          }
+                        };
+
+                        const formatFileSize = (bytes: number) => {
+                          if (bytes < 1024) return bytes + ' B';
+                          if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                          return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+                        };
+
+                        return (
+                          <div
+                            key={index}
+                            className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+                          >
+                            {getFileIcon(file.name)}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
+                              <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
