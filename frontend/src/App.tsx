@@ -6,6 +6,7 @@
 
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { ToastProvider } from './contexts/ToastContext';
 import { ProtectedRoute } from './components/guards/ProtectedRoute';
 import { MainLayout } from './layouts/MainLayout';
 import {
@@ -26,7 +27,8 @@ import {
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <ToastProvider>
+        <Router>
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Navigate to="/dashboard/pipeline" replace />} />
@@ -60,7 +62,8 @@ function App() {
           {/* Fallback - Redirect to home */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </Router>
+        </Router>
+      </ToastProvider>
     </AuthProvider>
   );
 }

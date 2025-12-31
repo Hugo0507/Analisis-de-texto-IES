@@ -8,9 +8,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
 import { Spinner } from '../components/atoms';
+import { useToast } from '../contexts/ToastContext';
 
 export const UserCreate: React.FC = () => {
   const navigate = useNavigate();
+  const { showSuccess, showError } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -71,7 +73,8 @@ export const UserCreate: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await authService.createUser(formData);
+      const newUser = await authService.createUser(formData);
+      showSuccess(`Usuario "${newUser.username}" creado exitosamente`);
       navigate('/admin/configuracion/usuarios');
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail ||
@@ -81,6 +84,7 @@ export const UserCreate: React.FC = () => {
                           err.message ||
                           'Error al crear usuario';
       setError(errorMessage);
+      showError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -240,7 +244,40 @@ export const UserCreate: React.FC = () => {
         {/* Password Card */}
         <div className="bg-white rounded-3xl p-8" style={{ boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.05)' }}>
           <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">Contraseña</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Contraseña del usuario</h2>
+            <p className="text-sm text-gray-600 mt-1">Asignar / Cambiar contraseña</p>
+          </div>
+
+          {/* Password Requirements Info */}
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-gray-700 font-medium mb-3">
+              Por su seguridad, la contraseña debe cumplir con los siguientes requisitos:
+            </p>
+            <ul className="space-y-2 text-sm text-gray-700">
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 mt-0.5">•</span>
+                <span>Tener al menos 8 caracteres.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 mt-0.5">•</span>
+                <span>Incluir al menos una letra mayúscula (A-Z).</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 mt-0.5">•</span>
+                <span>Incluir al menos una letra minúscula (a-z).</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 mt-0.5">•</span>
+                <span>Incluir al menos un número (0-9).</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 mt-0.5">•</span>
+                <span>Incluir al menos un carácter especial como (!, @, #, $, %, etc.).</span>
+              </li>
+            </ul>
+            <p className="text-sm text-gray-600 mt-3 italic">
+              Le recomendamos no utilizar información personal fácilmente identificable como nombres, fechas o números de identificación en su contraseña.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -262,9 +299,6 @@ export const UserCreate: React.FC = () => {
                 disabled={isLoading}
                 autoComplete="new-password"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Mínimo 8 caracteres con mayúsculas, minúsculas, números y caracteres especiales
-              </p>
             </div>
 
             {/* Confirm Password */}
