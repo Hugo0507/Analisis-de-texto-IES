@@ -36,20 +36,20 @@ function App() {
           <Route path="/admin" element={<Login />} />
           <Route path="/admin/forgot-password" element={<ForgotPassword />} />
 
-          {/* Protected Dashboard Routes - Analysis Tools */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<MainLayout />}>
-              <Route index element={<Navigate to="/dashboard/pipeline" replace />} />
-              <Route path="pipeline" element={<Pipeline />} />
-              <Route path="documents" element={<Documents />} />
-              <Route path="bow" element={<BagOfWords />} />
-              <Route path="tfidf" element={<TfIdf />} />
-              <Route path="topics" element={<TopicModeling />} />
-              <Route path="factors" element={<Factors />} />
-              <Route path="statistics" element={<Statistics />} />
-            </Route>
+          {/* Public Dashboard Routes - Analysis Tools (NO LOGIN REQUIRED) */}
+          <Route path="/dashboard" element={<MainLayout />}>
+            <Route index element={<Navigate to="/dashboard/pipeline" replace />} />
+            <Route path="pipeline" element={<Pipeline />} />
+            <Route path="documents" element={<Documents />} />
+            <Route path="bow" element={<BagOfWords />} />
+            <Route path="tfidf" element={<TfIdf />} />
+            <Route path="topics" element={<TopicModeling />} />
+            <Route path="factors" element={<Factors />} />
+            <Route path="statistics" element={<Statistics />} />
+          </Route>
 
-            {/* Admin Configuration Routes - Users only */}
+          {/* Protected Admin Configuration Routes - Users only (LOGIN REQUIRED) */}
+          <Route element={<ProtectedRoute />}>
             <Route path="/admin/configuracion" element={<MainLayout />}>
               <Route path="usuarios" element={<Users />} />
               <Route path="usuarios/nuevo" element={<UserCreate />} />
