@@ -6,13 +6,20 @@
  */
 
 import React, { useState } from 'react';
+import { datasetsService } from '../services';
+import { useToast } from '../contexts/ToastContext';
+import { Spinner } from '../components/atoms';
 
 type ImportMethod = 'files' | 'folder' | 'drive';
 
 export const Datasets: React.FC = () => {
+  const { showSuccess, showError } = useToast();
   const [selectedMethod, setSelectedMethod] = useState<ImportMethod>('files');
   const [driveUrl, setDriveUrl] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [datasetName, setDatasetName] = useState('');
+  const [datasetDescription, setDatasetDescription] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleFilesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -26,14 +33,63 @@ export const Datasets: React.FC = () => {
     }
   };
 
-  const handleDriveSubmit = () => {
-    console.log('Drive URL:', driveUrl);
-    // TODO: Implementar conexión con Google Drive
+  const handleDriveSubmit = async () => {
+    if (!driveUrl || !datasetName) {
+      showError('Por favor completa el nombre del dataset y la URL de Drive');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      await datasetsService.createDatasetWithDrive({
+        name: datasetName,
+        description: datasetDescription,
+        source_url: driveUrl,
+      });
+
+      showSuccess('Dataset de Google Drive creado exitosamente. La sincronización se iniciará pronto.');
+
+      // Reset form
+      setDatasetName('');
+      setDatasetDescription('');
+      setDriveUrl('');
+    } catch (error: any) {
+      showError('Error al crear dataset: ' + (error.response?.data?.error || error.message));
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  const handleImport = () => {
-    console.log('Importando archivos:', selectedFiles);
-    // TODO: Implementar lógica de importación
+  const handleImport = async () => {
+    if (!datasetName) {
+      showError('Por favor ingresa un nombre para el dataset');
+      return;
+    }
+
+    if (selectedFiles.length === 0) {
+      showError('Por favor selecciona al menos un archivo');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      await datasetsService.createDatasetWithFiles({
+        name: datasetName,
+        description: datasetDescription,
+        files: selectedFiles,
+      });
+
+      showSuccess(`Dataset "${datasetName}" creado exitosamente con ${selectedFiles.length} archivo(s)`);
+
+      // Reset form
+      setDatasetName('');
+      setDatasetDescription('');
+      setSelectedFiles([]);
+    } catch (error: any) {
+      showError('Error al importar archivos: ' + (error.response?.data?.error || error.message));
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -56,6 +112,38 @@ export const Datasets: React.FC = () => {
         {/* Import Options */}
         <div className="bg-white p-7" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
           <h2 className="text-base font-semibold text-gray-900 mb-6">Importar Datos</h2>
+
+          {/* Dataset Info Fields */}
+          <div className="space-y-4 mb-8">
+            <div>
+              <label htmlFor="dataset-name" className="block text-sm font-medium text-gray-700 mb-2">
+                Nombre del Dataset <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="dataset-name"
+                value={datasetName}
+                onChange={(e) => setDatasetName(e.target.value)}
+                placeholder="Ej: Artículos 2024"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                disabled={isUploading}
+              />
+            </div>
+            <div>
+              <label htmlFor="dataset-description" className="block text-sm font-medium text-gray-700 mb-2">
+                Descripción (Opcional)
+              </label>
+              <textarea
+                id="dataset-description"
+                value={datasetDescription}
+                onChange={(e) => setDatasetDescription(e.target.value)}
+                placeholder="Describe el contenido de este dataset..."
+                rows={3}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                disabled={isUploading}
+              />
+            </div>
+          </div>
 
           {/* Method Selector */}
           <div className="grid grid-cols-3 gap-4 mb-8">
@@ -377,10 +465,17 @@ export const Datasets: React.FC = () => {
 
                   <button
                     onClick={handleDriveSubmit}
-                    disabled={!driveUrl}
-                    className="w-full px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                    disabled={!driveUrl || !datasetName || isUploading}
+                    className="w-full px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center justify-center gap-2"
                   >
-                    Conectar con Drive
+                    {isUploading ? (
+                      <>
+                        <Spinner size="sm" />
+                        <span>Conectando...</span>
+                      </>
+                    ) : (
+                      'Conectar con Drive'
+                    )}
                   </button>
                 </div>
               </div>
@@ -392,9 +487,17 @@ export const Datasets: React.FC = () => {
             <div className="mt-6 flex justify-end">
               <button
                 onClick={handleImport}
-                className="px-6 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors text-sm font-medium"
+                disabled={!datasetName || isUploading}
+                className="px-6 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                Importar {selectedFiles.length} archivo(s)
+                {isUploading ? (
+                  <>
+                    <Spinner size="sm" />
+                    <span>Importando...</span>
+                  </>
+                ) : (
+                  `Importar ${selectedFiles.length} archivo(s)`
+                )}
               </button>
             </div>
           )}
