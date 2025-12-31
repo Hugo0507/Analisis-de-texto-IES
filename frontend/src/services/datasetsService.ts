@@ -62,7 +62,7 @@ class DatasetsService {
    * Get all datasets
    */
   async getDatasets(): Promise<DatasetListItem[]> {
-    const response = await apiClient.get('/api/v1/datasets/');
+    const response = await apiClient.get('/datasets/');
     return response.data;
   }
 
@@ -70,7 +70,7 @@ class DatasetsService {
    * Get dataset by ID
    */
   async getDataset(id: number): Promise<Dataset> {
-    const response = await apiClient.get(`/api/v1/datasets/${id}/`);
+    const response = await apiClient.get(`/datasets/${id}/`);
     return response.data;
   }
 
@@ -94,7 +94,7 @@ class DatasetsService {
       formData.append('files', file);
     });
 
-    const response = await apiClient.post('/api/v1/datasets/', formData, {
+    const response = await apiClient.post('/datasets/', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -110,7 +110,7 @@ class DatasetsService {
     description?: string;
     source_url: string;
   }): Promise<Dataset> {
-    const response = await apiClient.post('/api/v1/datasets/', {
+    const response = await apiClient.post('/datasets/', {
       name: data.name,
       description: data.description,
       source: 'drive',
@@ -123,14 +123,14 @@ class DatasetsService {
    * Delete dataset
    */
   async deleteDataset(id: number): Promise<void> {
-    await apiClient.delete(`/api/v1/datasets/${id}/`);
+    await apiClient.delete(`/datasets/${id}/`);
   }
 
   /**
    * Get files for a dataset
    */
   async getDatasetFiles(datasetId: number): Promise<DatasetFile[]> {
-    const response = await apiClient.get(`/api/v1/datasets/${datasetId}/files/`);
+    const response = await apiClient.get(`/datasets/${datasetId}/files/`);
     return response.data;
   }
 
@@ -138,7 +138,7 @@ class DatasetsService {
    * Get dataset statistics
    */
   async getStats(): Promise<DatasetStats> {
-    const response = await apiClient.get('/api/v1/datasets/stats/');
+    const response = await apiClient.get('/datasets/stats/');
     return response.data;
   }
 }
