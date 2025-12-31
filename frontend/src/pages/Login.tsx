@@ -21,7 +21,7 @@ export const Login: React.FC = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard');
+      navigate('/admin/configuracion/usuarios');
     }
   }, [isAuthenticated, navigate]);
 
@@ -32,7 +32,7 @@ export const Login: React.FC = () => {
 
     try {
       await login({ username, password });
-      navigate('/dashboard');
+      navigate('/admin/configuracion/usuarios');
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail ||
                           err.response?.data?.message ||
