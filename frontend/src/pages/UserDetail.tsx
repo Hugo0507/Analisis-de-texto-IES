@@ -179,9 +179,9 @@ export const UserDetail: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
       {/* Fixed Header */}
-      <div className="sticky top-0 z-40 bg-white border-b border-gray-200" style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)' }}>
+      <div className="sticky top-0 z-40 bg-white border-b border-gray-200" style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
         <div className="flex items-center justify-between px-8 py-4">
           {/* Left: Back Button + Avatar + User Info */}
           <div className="flex items-center gap-3">
@@ -235,7 +235,7 @@ export const UserDetail: React.FC = () => {
       <div className="space-y-5">
 
       {/* Personal Data Card */}
-      <div className="bg-white rounded-3xl p-7" style={{ boxShadow: '0 10px 30px rgba(0, 0, 0, 0.02)' }}>
+      <div className="bg-white p-7" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
         <div className="mb-5">
           <h2 className="text-base font-semibold text-gray-900">Datos Personales</h2>
         </div>
@@ -322,7 +322,7 @@ export const UserDetail: React.FC = () => {
       </div>
 
       {/* Permissions Card */}
-      <div className="bg-white rounded-3xl p-7" style={{ boxShadow: '0 10px 30px rgba(0, 0, 0, 0.02)' }}>
+      <div className="bg-white p-7" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
         <div className="mb-5">
           <h2 className="text-base font-semibold text-gray-900">Permisos y Estado</h2>
         </div>
@@ -422,7 +422,7 @@ export const UserDetail: React.FC = () => {
 
       {/* Password Card - Edit Mode Only */}
       {isEditMode && (
-        <div className="bg-white rounded-3xl p-7" style={{ boxShadow: '0 10px 30px rgba(0, 0, 0, 0.02)' }}>
+        <div className="bg-white p-7" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-900">Contraseña del usuario</h2>
             <p className="text-sm text-gray-600 mt-1">Asignar / Cambiar contraseña</p>
@@ -508,7 +508,7 @@ export const UserDetail: React.FC = () => {
 
       {/* Info Box - View Mode Only */}
       {!isEditMode && (
-        <div className="bg-blue-50 border border-blue-200 rounded-3xl p-6" style={{ boxShadow: '0 10px 30px rgba(0, 0, 0, 0.02)' }}>
+        <div className="bg-blue-50 border border-blue-200 p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
           <div className="flex items-start gap-3">
             <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
