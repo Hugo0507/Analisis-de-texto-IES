@@ -2,6 +2,13 @@
   "buildCommand": "npm run build",
   "outputDirectory": "build",
   "installCommand": "npm install --legacy-peer-deps",
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/dashboard/pipeline",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
