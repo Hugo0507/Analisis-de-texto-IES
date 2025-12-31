@@ -82,54 +82,57 @@ export const Users: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen p-8">
-      {/* Page Header */}
-      <div className="flex items-center justify-between mb-8">
-        {/* Title with List Icon */}
-        <div className="flex items-center gap-3">
-          {/* List Icon - Three horizontal lines (minimalist) */}
-          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-          <h1 className="text-2xl font-bold text-gray-900">Configuración de Usuarios</h1>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center gap-3">
-          {/* Refresh Button - Circular (minimalist) */}
-          <button
-            onClick={loadUsers}
-            disabled={isLoading}
-            className="p-3 bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Refrescar lista"
-          >
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    <div className="min-h-screen">
+      {/* Fixed Header */}
+      <div className="sticky top-0 z-40 bg-white border-b border-gray-200" style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)' }}>
+        <div className="flex items-center justify-between px-8 py-4">
+          {/* Left: Icon + Title */}
+          <div className="flex items-center gap-3">
+            <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
-          </button>
+            <h1 className="text-xl font-semibold text-gray-900">Configuración de Usuarios</h1>
+          </div>
 
-          {/* Add Button - Circular Green with Plus */}
-          <button
-            onClick={() => navigate('/admin/configuracion/usuarios/nuevo')}
-            className="p-3 bg-emerald-500 hover:bg-emerald-600 rounded-full transition-all shadow-md hover:shadow-lg"
-            title="Crear usuario"
-          >
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
+          {/* Right: Action Buttons */}
+          <div className="flex items-center gap-3">
+            {/* Refresh Button */}
+            <button
+              onClick={loadUsers}
+              disabled={isLoading}
+              className="p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Refrescar lista"
+            >
+              <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+
+            {/* Add Button */}
+            <button
+              onClick={() => navigate('/admin/configuracion/usuarios/nuevo')}
+              className="p-3 bg-emerald-500 hover:bg-emerald-600 rounded-full transition-all shadow-md hover:shadow-lg"
+              title="Crear usuario"
+            >
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Error Message */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-          {error}
-        </div>
-      )}
+      {/* Content */}
+      <div className="p-8">
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+            {error}
+          </div>
+        )}
 
       {/* Data Table Container - Rounded White Box */}
-      <div className="bg-white rounded-3xl p-8" style={{ boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.05)' }}>
+      <div className="bg-white rounded-3xl p-7" style={{ boxShadow: '0 10px 30px rgba(0, 0, 0, 0.02)' }}>
         {users.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">👥</div>
@@ -236,6 +239,8 @@ export const Users: React.FC = () => {
             </table>
           </div>
         )}
+      </div>
+
       </div>
 
       {/* Delete Confirmation Modal */}
