@@ -87,22 +87,22 @@ export const UserCreate: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50 p-8">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          {/* Back Arrow Button - Circular */}
+          <button
+            onClick={() => navigate('/admin/configuracion/usuarios')}
+            className="p-3 bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors shadow-sm"
+            title="Volver a usuarios"
+          >
+            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+          </button>
           <h1 className="text-2xl font-bold text-gray-900">Crear Usuario</h1>
-          <p className="text-sm text-gray-600 mt-1">
-            Completa el formulario para registrar un nuevo usuario
-          </p>
         </div>
-
-        <button
-          onClick={() => navigate('/admin/configuracion/usuarios')}
-          className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-        >
-          ← Volver
-        </button>
       </div>
 
       {/* Error Message */}
@@ -114,12 +114,12 @@ export const UserCreate: React.FC = () => {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Personal Data Card */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div className="bg-white rounded-3xl shadow-sm p-8">
+          <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-900">Datos Personales</h2>
           </div>
 
-          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Username */}
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
@@ -131,7 +131,7 @@ export const UserCreate: React.FC = () => {
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
                 placeholder="usuario123"
                 required
                 disabled={isLoading}
@@ -149,7 +149,7 @@ export const UserCreate: React.FC = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
                 placeholder="usuario@ejemplo.com"
                 required
                 disabled={isLoading}
@@ -167,7 +167,7 @@ export const UserCreate: React.FC = () => {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
                 placeholder="Juan"
                 disabled={isLoading}
               />
@@ -184,7 +184,7 @@ export const UserCreate: React.FC = () => {
                 name="surname"
                 value={formData.surname}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
                 placeholder="Pérez"
                 disabled={isLoading}
               />
@@ -193,12 +193,12 @@ export const UserCreate: React.FC = () => {
         </div>
 
         {/* Permissions Card */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div className="bg-white rounded-3xl shadow-sm p-8">
+          <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-900">Permisos</h2>
           </div>
 
-          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Role */}
             <div>
               <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
@@ -209,7 +209,7 @@ export const UserCreate: React.FC = () => {
                 name="role"
                 value={formData.role}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
                 required
                 disabled={isLoading}
               >
@@ -226,7 +226,7 @@ export const UserCreate: React.FC = () => {
                   name="is_active"
                   checked={formData.is_active}
                   onChange={handleChange}
-                  className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                  className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                   disabled={isLoading}
                 />
                 <span className="ml-2 text-sm font-medium text-gray-700">
@@ -238,12 +238,12 @@ export const UserCreate: React.FC = () => {
         </div>
 
         {/* Password Card */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div className="bg-white rounded-3xl shadow-sm p-8">
+          <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-900">Contraseña</h2>
           </div>
 
-          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Password */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
@@ -255,7 +255,7 @@ export const UserCreate: React.FC = () => {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
                 placeholder="••••••••"
                 required
                 minLength={8}
@@ -278,7 +278,7 @@ export const UserCreate: React.FC = () => {
                 name="password_confirm"
                 value={formData.password_confirm}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
                 placeholder="••••••••"
                 required
                 minLength={8}
@@ -290,11 +290,11 @@ export const UserCreate: React.FC = () => {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3">
+        <div className="flex items-center justify-end gap-3 bg-white rounded-3xl shadow-sm p-8">
           <button
             type="button"
-            onClick={() => navigate('/admin/dashboard/users')}
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            onClick={() => navigate('/admin/configuracion/usuarios')}
+            className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-full hover:bg-gray-50 transition-colors font-medium"
             disabled={isLoading}
           >
             Cancelar
@@ -303,7 +303,7 @@ export const UserCreate: React.FC = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium shadow-md"
           >
             {isLoading ? (
               <>
