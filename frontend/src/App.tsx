@@ -30,7 +30,7 @@ function App() {
       <Router>
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Navigate to="/dashboard/pipeline" replace />} />
 
           {/* Admin Authentication Routes */}
           <Route path="/admin" element={<Login />} />
