@@ -32,6 +32,8 @@ export const UserDetail: React.FC = () => {
     surname: '',
     role: 'user' as 'admin' | 'user',
     is_active: true,
+    password: '',
+    password_confirm: '',
   });
 
   useEffect(() => {
@@ -60,6 +62,8 @@ export const UserDetail: React.FC = () => {
         surname: data.surname || '',
         role: data.role,
         is_active: data.is_active,
+        password: '',
+        password_confirm: '',
       });
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail ||
@@ -88,8 +92,46 @@ export const UserDetail: React.FC = () => {
     setIsSaving(true);
     setError('');
 
+    // Validate password if provided
+    if (formData.password) {
+      if (formData.password.length < 8) {
+        setError('La contraseña debe tener al menos 8 caracteres');
+        setIsSaving(false);
+        return;
+      }
+      if (formData.password !== formData.password_confirm) {
+        setError('Las contraseñas no coinciden');
+        setIsSaving(false);
+        return;
+      }
+
+      // Password strength validation
+      const hasUpperCase = /[A-Z]/.test(formData.password);
+      const hasLowerCase = /[a-z]/.test(formData.password);
+      const hasNumber = /\d/.test(formData.password);
+      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(formData.password);
+
+      if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
+        setError('La contraseña debe contener mayúsculas, minúsculas, números y caracteres especiales');
+        setIsSaving(false);
+        return;
+      }
+    }
+
     try {
-      const updatedUser = await authService.updateUser(parseInt(id), formData);
+      // Only include password in update if it was provided
+      const updateData = formData.password
+        ? formData
+        : {
+            username: formData.username,
+            email: formData.email,
+            name: formData.name,
+            surname: formData.surname,
+            role: formData.role,
+            is_active: formData.is_active,
+          };
+
+      const updatedUser = await authService.updateUser(parseInt(id), updateData);
       showSuccess(`Usuario "${updatedUser.username}" actualizado exitosamente`);
       // Reload user data
       await loadUser();
@@ -99,6 +141,7 @@ export const UserDetail: React.FC = () => {
       const errorMessage = err.response?.data?.detail ||
                           err.response?.data?.email?.[0] ||
                           err.response?.data?.username?.[0] ||
+                          err.response?.data?.password?.[0] ||
                           err.message ||
                           'Error al actualizar usuario';
       setError(errorMessage);
@@ -354,6 +397,92 @@ export const UserDetail: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Password Card - Edit Mode Only */}
+      {isEditMode && (
+        <div className="bg-white rounded-3xl p-8" style={{ boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.05)' }}>
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">Contraseña del usuario</h2>
+            <p className="text-sm text-gray-600 mt-1">Asignar / Cambiar contraseña</p>
+          </div>
+
+          {/* Password Requirements Info */}
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-gray-700 font-medium mb-3">
+              Por su seguridad, la contraseña debe cumplir con los siguientes requisitos:
+            </p>
+            <ul className="space-y-2 text-sm text-gray-700">
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 mt-0.5">•</span>
+                <span>Tener al menos 8 caracteres.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 mt-0.5">•</span>
+                <span>Incluir al menos una letra mayúscula (A-Z).</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 mt-0.5">•</span>
+                <span>Incluir al menos una letra minúscula (a-z).</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 mt-0.5">•</span>
+                <span>Incluir al menos un número (0-9).</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 mt-0.5">•</span>
+                <span>Incluir al menos un carácter especial como (!, @, #, $, %, etc.).</span>
+              </li>
+            </ul>
+            <p className="text-sm text-gray-600 mt-3 italic">
+              Le recomendamos no utilizar información personal fácilmente identificable como nombres, fechas o números de identificación en su contraseña.
+            </p>
+          </div>
+
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-sm text-amber-800">
+              <strong>Nota:</strong> Deja los campos vacíos si no deseas cambiar la contraseña actual.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Password */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                Nueva Contraseña
+              </label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-sm"
+                placeholder="••••••••"
+                disabled={isSaving}
+                autoComplete="new-password"
+              />
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label htmlFor="password_confirm" className="block text-sm font-medium text-gray-700 mb-2">
+                Confirmar Nueva Contraseña
+              </label>
+              <input
+                type="password"
+                id="password_confirm"
+                name="password_confirm"
+                value={formData.password_confirm}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-sm"
+                placeholder="••••••••"
+                disabled={isSaving}
+                autoComplete="new-password"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Action Buttons - Edit Mode */}
       {isEditMode && (
