@@ -24,6 +24,7 @@ urlpatterns = [
     # API v1
     path('api/v1/', include('apps.users.urls')),  # Auth and Users
     path('api/v1/documents/', include('apps.documents.urls')),
+    path('api/v1/', include('apps.datasets.urls')),  # Datasets
     path('api/v1/analysis/', include('apps.analysis.urls')),
     path('api/v1/pipeline/', include('apps.pipeline.urls')),
 

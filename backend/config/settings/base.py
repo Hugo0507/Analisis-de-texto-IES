@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'apps.core',
     'apps.users',
     'apps.documents',
+    'apps.datasets',
     'apps.analysis',
     'apps.pipeline',
     'apps.infrastructure',
@@ -45,9 +46,9 @@ INSTALLED_APPS = [
 try:
     import rest_framework_simplejwt
     INSTALLED_APPS.insert(INSTALLED_APPS.index('rest_framework') + 1, 'rest_framework_simplejwt')
-    print("✅ djangorestframework-simplejwt is installed and loaded")
+    print("djangorestframework-simplejwt is installed and loaded")
 except ImportError:
-    print("⚠️ WARNING: djangorestframework-simplejwt not found - JWT auth will not be available")
+    print("WARNING: djangorestframework-simplejwt not found - JWT auth will not be available")
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -213,9 +214,9 @@ try:
         'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
         'TOKEN_TYPE_CLAIM': 'token_type',
     }
-    print("✅ JWT authentication configured")
+    print("JWT authentication configured")
 except ImportError:
-    print("⚠️ JWT authentication not available - using session auth only")
+    print("JWT authentication not available - using session auth only")
 
 # ============================================================
 # CORS HEADERS
