@@ -54,30 +54,46 @@ export const UserDetail: React.FC = () => {
 
   if (error || !user) {
     return (
-      <div className="space-y-6">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+      <div className="min-h-screen bg-gray-50 p-8">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
           {error || 'Usuario no encontrado'}
         </div>
         <button
           onClick={() => navigate('/admin/configuracion/usuarios')}
-          className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          className="p-3 bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors shadow-sm"
+          title="Volver a usuarios"
         >
-          ← Volver
+          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
         </button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50 p-8">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center">
+          {/* Back Arrow Button - Circular */}
+          <button
+            onClick={() => navigate('/admin/configuracion/usuarios')}
+            className="p-3 bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors shadow-sm"
+            title="Volver a usuarios"
+          >
+            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+          </button>
+
+          {/* User Avatar - Emerald Gradient */}
+          <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center">
             <span className="text-white font-bold text-2xl">
               {user.name?.[0]?.toUpperCase() || user.username[0].toUpperCase()}
             </span>
           </div>
+
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
               {user.full_name || user.username}
@@ -85,22 +101,17 @@ export const UserDetail: React.FC = () => {
             <p className="text-sm text-gray-600">@{user.username}</p>
           </div>
         </div>
-
-        <button
-          onClick={() => navigate('/admin/configuracion/usuarios')}
-          className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-        >
-          ← Volver
-        </button>
       </div>
 
+      <div className="space-y-6">
+
       {/* Personal Data Card */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+      <div className="bg-white rounded-3xl shadow-sm p-8">
+        <div className="mb-6">
           <h2 className="text-lg font-semibold text-gray-900">Datos Personales</h2>
         </div>
 
-        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Username */}
           <div>
             <label className="block text-sm font-medium text-gray-500 mb-1">
@@ -136,12 +147,12 @@ export const UserDetail: React.FC = () => {
       </div>
 
       {/* Permissions Card */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+      <div className="bg-white rounded-3xl shadow-sm p-8">
+        <div className="mb-6">
           <h2 className="text-lg font-semibold text-gray-900">Permisos y Estado</h2>
         </div>
 
-        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Role */}
           <div>
             <label className="block text-sm font-medium text-gray-500 mb-1">
@@ -149,8 +160,8 @@ export const UserDetail: React.FC = () => {
             </label>
             <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
               user.role === 'admin'
-                ? 'bg-indigo-100 text-indigo-800'
-                : 'bg-gray-100 text-gray-800'
+                ? 'bg-emerald-100 text-emerald-700'
+                : 'bg-gray-100 text-gray-700'
             }`}>
               {user.role === 'admin' ? 'Administrador' : 'Usuario'}
             </span>
@@ -205,7 +216,7 @@ export const UserDetail: React.FC = () => {
       </div>
 
       {/* Info Box */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-blue-50 border border-blue-200 rounded-3xl p-6">
         <div className="flex items-start gap-3">
           <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -217,6 +228,7 @@ export const UserDetail: React.FC = () => {
             </p>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

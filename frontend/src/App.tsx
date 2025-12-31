@@ -9,7 +9,6 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/guards/ProtectedRoute';
 import { MainLayout } from './layouts/MainLayout';
 import {
-  Home,
   Login,
   ForgotPassword,
   Pipeline,
