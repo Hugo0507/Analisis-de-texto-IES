@@ -84,6 +84,10 @@ class DatasetFile(models.Model):
     file_size_bytes = models.BigIntegerField()
     mime_type = models.CharField(max_length=100, blank=True, null=True)
 
+    # Directory structure information
+    directory_path = models.CharField(max_length=1000, blank=True, null=True, help_text='Relative directory path from root')
+    directory_name = models.CharField(max_length=500, blank=True, null=True, help_text='Immediate parent directory name')
+
     # Processing information
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     error_message = models.TextField(blank=True, null=True)

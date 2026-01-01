@@ -163,3 +163,149 @@ class DatasetViewSet(viewsets.ModelViewSet):
             'total_size_bytes': total_size,
             'total_size_mb': round(total_size / (1024 * 1024), 2),
         })
+
+    @action(detail=True, methods=['get'])
+    def directory_stats(self, request, pk=None):
+        """
+        Get directory distribution statistics for a dataset.
+
+        Returns a cross-tabulation of directories × file extensions with:
+        - Matrix of counts (directories × extensions)
+        - Row totals (total files per directory)
+        - Column totals (total files per extension)
+        - Grand total (total files in dataset)
+        - Pie chart data (directory distribution)
+        """
+        dataset = self.get_object()
+        files = dataset.files.all()
+
+        # Initialize data structures
+        directory_stats = {}  # {directory_name: {extension: count}}
+        extension_totals = {}  # {extension: total_count}
+        directory_totals = {}  # {directory_name: total_count}
+        root_files_count = 0
+
+        # Process each file
+        for file in files:
+            # Get directory name (use "Root" for files without directory)
+            directory = file.directory_name or "Root"
+
+            # Get file extension
+            filename = file.original_filename
+            extension = filename.split('.')[-1].upper() if '.' in filename else 'UNKNOWN'
+
+            # Initialize directory if not exists
+            if directory not in directory_stats:
+                directory_stats[directory] = {}
+                directory_totals[directory] = 0
+
+            # Initialize extension in directory if not exists
+            if extension not in directory_stats[directory]:
+                directory_stats[directory][extension] = 0
+
+            # Increment counts
+            directory_stats[directory][extension] += 1
+            directory_totals[directory] += 1
+
+            # Track extension totals
+            if extension not in extension_totals:
+                extension_totals[extension] = 0
+            extension_totals[extension] += 1
+
+        # Get all unique extensions (for consistent column ordering)
+        all_extensions = sorted(extension_totals.keys())
+
+        # Build the matrix (table data)
+        table_data = []
+        for directory in sorted(directory_stats.keys()):
+            row = {
+                'directory': directory,
+                'extensions': {},
+                'total': directory_totals[directory]
+            }
+
+            # Add count for each extension
+            for ext in all_extensions:
+                row['extensions'][ext] = directory_stats[directory].get(ext, 0)
+
+            table_data.append(row)
+
+        # Prepare pie chart data
+        pie_chart_data = [
+            {
+                'name': directory,
+                'value': directory_totals[directory],
+                'percentage': round((directory_totals[directory] / files.count() * 100), 2) if files.count() > 0 else 0
+            }
+            for directory in sorted(directory_stats.keys())
+        ]
+
+        # Calculate grand total
+        grand_total = files.count()
+
+        return Response({
+            'table_data': table_data,
+            'extension_totals': extension_totals,
+            'directory_totals': directory_totals,
+            'all_extensions': all_extensions,
+            'grand_total': grand_total,
+            'pie_chart_data': pie_chart_data
+        })
+
+    @action(detail=True, methods=['post'])
+    def add_files(self, request, pk=None):
+        """
+        Add more files to an existing dataset (incremental feeding).
+
+        Expects:
+        - files: List[File] - Files to add to the dataset
+
+        This endpoint allows adding files to an existing dataset without
+        creating a new one, enabling incremental data collection.
+        """
+        dataset = self.get_object()
+        files = request.FILES.getlist('files')
+
+        if not files:
+            return Response(
+                {'error': 'No files provided'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # Update dataset status to processing
+            dataset.status = 'processing'
+            dataset.save()
+
+            # Process new files
+            processor = DatasetProcessorService()
+            results = processor.process_uploaded_files(dataset, files)
+
+            if not results['success']:
+                return Response(
+                    {
+                        'error': 'Some files failed to process',
+                        'details': results
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Return updated dataset
+            output_serializer = DatasetSerializer(dataset)
+            return Response(
+                {
+                    'message': f'{results["processed"]} files added successfully',
+                    'dataset': output_serializer.data,
+                    'results': results
+                },
+                status=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+            logger.error(f"Error adding files to dataset: {str(e)}")
+            dataset.status = 'error'
+            dataset.save()
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

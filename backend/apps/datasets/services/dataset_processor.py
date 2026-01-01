@@ -68,8 +68,11 @@ class DatasetProcessorService:
 
         for uploaded_file in files:
             try:
+                # Extract directory information from filename
+                directory_info = self._extract_directory_info(uploaded_file.name)
+
                 # Save file to disk
-                file_path = self._save_file(dataset, uploaded_file)
+                file_path = self._save_file(dataset, uploaded_file, directory_info['directory_path'])
                 file_size = uploaded_file.size
                 total_size += file_size
 
@@ -81,6 +84,8 @@ class DatasetProcessorService:
                     file_path=str(file_path),
                     file_size_bytes=file_size,
                     mime_type=uploaded_file.content_type or self._guess_mime_type(uploaded_file.name),
+                    directory_path=directory_info['directory_path'],
+                    directory_name=directory_info['directory_name'],
                     status='pending'
                 )
 
@@ -102,31 +107,39 @@ class DatasetProcessorService:
 
         return results
 
-    def _save_file(self, dataset: Dataset, uploaded_file: UploadedFile) -> str:
+    def _save_file(self, dataset: Dataset, uploaded_file: UploadedFile, directory_path: str = None) -> str:
         """
-        Save uploaded file to disk.
+        Save uploaded file to disk, preserving directory structure if provided.
 
         Args:
             dataset: Dataset instance
             uploaded_file: Uploaded file
+            directory_path: Optional directory path to preserve structure
 
         Returns:
             Path to saved file
         """
         # Create dataset directory
         dataset_dir = self.datasets_dir / f"dataset_{dataset.id}"
-        dataset_dir.mkdir(parents=True, exist_ok=True)
+
+        # If directory path is provided, create subdirectories
+        if directory_path:
+            target_dir = dataset_dir / directory_path
+            target_dir.mkdir(parents=True, exist_ok=True)
+        else:
+            target_dir = dataset_dir
+            target_dir.mkdir(parents=True, exist_ok=True)
 
         # Generate unique filename
-        original_name = uploaded_file.name
+        original_name = os.path.basename(uploaded_file.name)
         name, ext = os.path.splitext(original_name)
 
         # Use hash to ensure uniqueness
-        hash_obj = hashlib.md5(original_name.encode())
+        hash_obj = hashlib.md5(uploaded_file.name.encode())
         hash_suffix = hash_obj.hexdigest()[:8]
 
         unique_filename = f"{name}_{hash_suffix}{ext}"
-        file_path = dataset_dir / unique_filename
+        file_path = target_dir / unique_filename
 
         # Save file
         with open(file_path, 'wb+') as destination:
@@ -135,6 +148,44 @@ class DatasetProcessorService:
 
         logger.info(f"File saved: {file_path}")
         return str(file_path)
+
+    def _extract_directory_info(self, filename: str) -> Dict[str, str]:
+        """
+        Extract directory information from filename.
+
+        When uploading a folder, browsers send the relative path in the filename
+        (e.g., "folder1/subfolder2/file.txt").
+
+        Args:
+            filename: Filename potentially containing directory path
+
+        Returns:
+            Dictionary with 'directory_path' and 'directory_name'
+        """
+        # Normalize path separators (handle both / and \)
+        normalized_path = filename.replace('\\', '/')
+
+        # Split into directory and filename
+        parts = normalized_path.split('/')
+
+        # If there's only one part, it's a file in the root
+        if len(parts) == 1:
+            return {
+                'directory_path': None,
+                'directory_name': None
+            }
+
+        # Extract directory path (everything except the last part)
+        directory_parts = parts[:-1]
+        directory_path = '/'.join(directory_parts)
+
+        # Extract immediate parent directory name
+        directory_name = directory_parts[-1] if directory_parts else None
+
+        return {
+            'directory_path': directory_path,
+            'directory_name': directory_name
+        }
 
     def _process_file(self, dataset_file: DatasetFile) -> None:
         """

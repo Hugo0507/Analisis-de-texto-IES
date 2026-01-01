@@ -8,7 +8,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import datasetsService from '../services/datasetsService';
-import type { Dataset } from '../services/datasetsService';
+import type { Dataset, DirectoryStats } from '../services/datasetsService';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
 
@@ -17,6 +17,7 @@ export const DatasetView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { showError } = useToast();
   const [dataset, setDataset] = useState<Dataset | null>(null);
+  const [directoryStats, setDirectoryStats] = useState<DirectoryStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -29,8 +30,12 @@ export const DatasetView: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const data = await datasetsService.getDataset(parseInt(id));
-      setDataset(data);
+      const [datasetData, dirStats] = await Promise.all([
+        datasetsService.getDataset(parseInt(id)),
+        datasetsService.getDirectoryStats(parseInt(id))
+      ]);
+      setDataset(datasetData);
+      setDirectoryStats(dirStats);
     } catch (error: any) {
       showError('Error al cargar dataset: ' + (error.response?.data?.error || error.message));
     } finally {
@@ -219,6 +224,105 @@ export const DatasetView: React.FC = () => {
             <p className="text-sm text-gray-500 mt-1">archivos completados</p>
           </div>
         </div>
+
+        {/* Directory Distribution Section */}
+        {directoryStats && directoryStats.pie_chart_data.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Pie Chart */}
+            <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
+              <h2 className="text-lg font-semibold text-gray-900 mb-6">Distribución por Directorio</h2>
+              <div className="flex flex-col items-center">
+                {/* Simple List-based Pie Chart Alternative */}
+                <div className="w-full space-y-3">
+                  {directoryStats.pie_chart_data.map((item, index) => {
+                    const colors = [
+                      'bg-emerald-500',
+                      'bg-blue-500',
+                      'bg-purple-500',
+                      'bg-yellow-500',
+                      'bg-red-500',
+                      'bg-indigo-500',
+                      'bg-pink-500',
+                      'bg-teal-500',
+                    ];
+                    const color = colors[index % colors.length];
+
+                    return (
+                      <div key={item.name} className="flex items-center gap-4">
+                        <div className={`w-4 h-4 rounded-full ${color}`}></div>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-sm font-medium text-gray-700">{item.name}</span>
+                            <span className="text-sm text-gray-600">
+                              {item.value} archivos ({item.percentage.toFixed(1)}%)
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className={`${color} h-2 rounded-full transition-all duration-300`}
+                              style={{ width: `${item.percentage}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Distribution Table */}
+            <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
+              <h2 className="text-lg font-semibold text-gray-900 mb-6">Tabla de Distribución</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">
+                        Directorio
+                      </th>
+                      {directoryStats.all_extensions.map((ext) => (
+                        <th key={ext} className="px-3 py-2 text-center text-xs font-semibold text-gray-700 uppercase">
+                          {ext}
+                        </th>
+                      ))}
+                      <th className="px-3 py-2 text-center text-xs font-semibold text-emerald-700 uppercase bg-emerald-50">
+                        Total
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {directoryStats.table_data.map((row) => (
+                      <tr key={row.directory} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="px-3 py-2 font-medium text-gray-900">{row.directory}</td>
+                        {directoryStats.all_extensions.map((ext) => (
+                          <td key={ext} className="px-3 py-2 text-center text-gray-600">
+                            {row.extensions[ext] || 0}
+                          </td>
+                        ))}
+                        <td className="px-3 py-2 text-center font-semibold text-emerald-700 bg-emerald-50">
+                          {row.total}
+                        </td>
+                      </tr>
+                    ))}
+                    {/* Totals Row */}
+                    <tr className="bg-emerald-50 font-semibold">
+                      <td className="px-3 py-2 text-emerald-700">TOTAL</td>
+                      {directoryStats.all_extensions.map((ext) => (
+                        <td key={ext} className="px-3 py-2 text-center text-emerald-700">
+                          {directoryStats.extension_totals[ext]}
+                        </td>
+                      ))}
+                      <td className="px-3 py-2 text-center text-emerald-700 bg-emerald-100">
+                        {directoryStats.grand_total}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Distribution by Extension */}
         <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
