@@ -27,6 +27,146 @@ export const DatasetCreate: React.FC = () => {
   const [uploadProgress, setUploadProgress] = useState({ loaded: 0, total: 0, percentage: 0 });
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [googleConnection, setGoogleConnection] = useState<GoogleDriveConnection | null>(null);
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+
+  // Build file tree from webkitRelativePath
+  interface FileNode {
+    name: string;
+    type: 'file' | 'folder';
+    children?: FileNode[];
+    file?: File;
+    path: string;
+  }
+
+  const buildFileTree = (files: File[]): FileNode => {
+    const root: FileNode = { name: 'root', type: 'folder', children: [], path: '' };
+
+    files.forEach(file => {
+      // @ts-ignore - webkitRelativePath exists on File objects from directory inputs
+      const relativePath = file.webkitRelativePath || file.name;
+      const parts = relativePath.split('/');
+
+      let currentNode = root;
+      let currentPath = '';
+
+      // Navigate/create folder structure
+      for (let i = 0; i < parts.length - 1; i++) {
+        const folderName = parts[i];
+        currentPath = currentPath ? `${currentPath}/${folderName}` : folderName;
+
+        let folderNode = currentNode.children?.find(
+          child => child.name === folderName && child.type === 'folder'
+        );
+
+        if (!folderNode) {
+          folderNode = {
+            name: folderName,
+            type: 'folder',
+            children: [],
+            path: currentPath
+          };
+          currentNode.children?.push(folderNode);
+        }
+
+        currentNode = folderNode;
+      }
+
+      // Add file
+      const fileName = parts[parts.length - 1];
+      currentNode.children?.push({
+        name: fileName,
+        type: 'file',
+        file: file,
+        path: relativePath
+      });
+    });
+
+    return root;
+  };
+
+  const toggleFolder = (path: string) => {
+    const newExpanded = new Set(expandedFolders);
+    if (newExpanded.has(path)) {
+      newExpanded.delete(path);
+    } else {
+      newExpanded.add(path);
+    }
+    setExpandedFolders(newExpanded);
+  };
+
+  // Recursive TreeView render function
+  const renderTreeNode = (node: FileNode, depth: number = 0): React.ReactNode => {
+    if (node.type === 'folder' && node.name === 'root') {
+      // Render root's children without showing the root itself
+      return node.children?.map((child, index) => (
+        <React.Fragment key={child.path || index}>
+          {renderTreeNode(child, depth)}
+        </React.Fragment>
+      ));
+    }
+
+    const isExpanded = expandedFolders.has(node.path);
+    const fileCount = node.type === 'folder'
+      ? countFiles(node)
+      : 0;
+
+    return (
+      <div key={node.path}>
+        <div
+          className={`flex items-center gap-2 py-1 px-2 rounded hover:bg-gray-50 cursor-pointer`}
+          style={{ paddingLeft: `${depth * 16 + 8}px` }}
+          onClick={() => node.type === 'folder' && toggleFolder(node.path)}
+        >
+          {node.type === 'folder' ? (
+            <>
+              {/* Chevron icon */}
+              <svg
+                className={`w-4 h-4 text-gray-500 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              {/* Folder icon */}
+              <svg className="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+              </svg>
+              <span className="text-sm text-gray-900 font-medium">{node.name}</span>
+              <span className="text-xs text-gray-500">({fileCount} archivo{fileCount !== 1 ? 's' : ''})</span>
+            </>
+          ) : (
+            <>
+              <div className="w-4 h-4" /> {/* Spacer for alignment */}
+              {/* File icon */}
+              <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+              </svg>
+              <span className="text-sm text-gray-700 truncate">{node.name}</span>
+            </>
+          )}
+        </div>
+
+        {/* Render children if folder is expanded */}
+        {node.type === 'folder' && isExpanded && node.children && (
+          <div>
+            {node.children.map((child, index) => (
+              <React.Fragment key={child.path || index}>
+                {renderTreeNode(child, depth + 1)}
+              </React.Fragment>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Count total files in a folder node
+  const countFiles = (node: FileNode): number => {
+    if (node.type === 'file') return 1;
+    if (!node.children) return 0;
+    return node.children.reduce((total, child) => total + countFiles(child), 0);
+  };
 
   const handleFilesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -113,7 +253,7 @@ export const DatasetCreate: React.FC = () => {
       {/* Confirmation Modal */}
       {showConfirmModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
+          <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl max-h-[90vh] flex flex-col">
             {/* Icon Header */}
             <div className="flex flex-col items-center pt-8 pb-4">
               <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
@@ -126,8 +266,8 @@ export const DatasetCreate: React.FC = () => {
               </h3>
             </div>
 
-            {/* Content */}
-            <div className="px-8 pb-6">
+            {/* File Count */}
+            <div className="px-8 pb-4">
               <p className="text-center text-gray-600 mb-2">
                 Estás a punto de subir
               </p>
@@ -135,7 +275,28 @@ export const DatasetCreate: React.FC = () => {
                 <span className="text-3xl font-bold text-emerald-600">{selectedFiles.length}</span>
                 <span className="text-gray-700 ml-2">archivo(s)</span>
               </p>
-              <p className="text-center text-sm text-gray-500 mt-4">
+            </div>
+
+            {/* TreeView Section - Scrollable */}
+            {selectedFiles.length > 0 && (
+              <div className="px-8 pb-4 flex-1 overflow-hidden flex flex-col">
+                <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                  </svg>
+                  Estructura de carpetas:
+                </h4>
+                <div className="border border-gray-200 rounded-lg bg-gray-50 overflow-y-auto flex-1" style={{ maxHeight: '300px' }}>
+                  <div className="p-2">
+                    {renderTreeNode(buildFileTree(selectedFiles))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Warning */}
+            <div className="px-8 pb-6">
+              <p className="text-center text-sm text-gray-500">
                 Asegúrate de que la fuente sea confiable antes de proceder
               </p>
             </div>
