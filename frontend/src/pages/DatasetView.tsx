@@ -144,7 +144,7 @@ export const DatasetView: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE', width: '100%', overflow: 'hidden' }}>
+    <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE', width: '100%', overflowX: 'hidden', minWidth: 0 }}>
         {/* Fixed Header */}
         <div className="sticky top-0 z-40 bg-white border-b border-gray-200" style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
           <div className="flex items-center justify-between px-8 py-4">
