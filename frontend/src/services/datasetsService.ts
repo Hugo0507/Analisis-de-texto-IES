@@ -114,8 +114,8 @@ class DatasetsService {
     onProgress?: (progress: { loaded: number; total: number; percentage: number }) => void;
   }): Promise<Dataset> {
     const BATCH_SIZE = 10; // Send 10 files at a time (reduced to prevent server saturation)
-    const BATCH_DELAY = 8000; // Wait 8 seconds between batches (prevent server restart)
-    const MAX_RETRIES = 5; // Retry failed batches up to 5 times (server might restart)
+    const BATCH_DELAY = 12000; // Wait 12 seconds between batches (prevent rate limiting)
+    const MAX_RETRIES = 7; // Retry failed batches up to 7 times (handle rate limiting)
     const totalFiles = data.files.length;
 
     // For small datasets, send all at once
@@ -219,22 +219,27 @@ class DatasetsService {
             );
           }
 
-          // Exponential backoff with longer delays for 401 (server restart)
-          // Normal: 3s, 6s, 12s, 24s, 48s
-          // For 401: 10s, 20s, 30s, 40s, 50s (give server time to restart)
+          // Exponential backoff with longer delays for rate limiting
+          // Rate limit (401/429): 15s, 30s, 45s, 60s, 75s, 90s, 105s
+          // Network error: 10s, 20s, 30s, 40s, 50s, 60s, 70s
           let backoffDelay: number;
+          const isNetworkError = error.message?.includes('Network Error') || !error.response;
+
           if (is401 || is429) {
-            // Server restart or rate limit - wait longer
-            backoffDelay = (attempt + 1) * 10000; // 10s, 20s, 30s, 40s, 50s
+            // Rate limit or server restart - wait progressively longer
+            backoffDelay = (attempt + 1) * 15000; // 15s, 30s, 45s, 60s, 75s, 90s, 105s
+          } else if (isNetworkError) {
+            // Network error (likely rate limiting) - wait long
+            backoffDelay = (attempt + 1) * 10000; // 10s, 20s, 30s, 40s, 50s, 60s, 70s
           } else {
-            // Network error - exponential backoff
-            backoffDelay = Math.pow(2, attempt + 1) * 1500; // 3s, 6s, 12s, 24s, 48s
+            // Other errors - shorter backoff
+            backoffDelay = Math.pow(2, attempt + 1) * 2000; // 4s, 8s, 16s, 32s, 64s, 128s, 256s
           }
 
           console.log(
-            `Batch ${batchNumber} attempt ${attempt + 1} failed. ` +
+            `Batch ${batchNumber} attempt ${attempt + 1}/${retries} failed. ` +
             `Retrying in ${backoffDelay / 1000}s... ` +
-            `(${is401 ? 'Server restart' : is429 ? 'Rate limit' : 'Network error'})`
+            `(${is401 ? 'Auth error' : is429 ? 'Rate limit' : isNetworkError ? 'Network/Rate limit' : 'Other error'})`
           );
 
           await new Promise(resolve => setTimeout(resolve, backoffDelay));
@@ -244,11 +249,12 @@ class DatasetsService {
 
     // Remaining batches: Add files to existing dataset
     for (let i = BATCH_SIZE; i < totalFiles; i += BATCH_SIZE) {
-      // Wait between batches to prevent server saturation and rate limiting
-      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
-
       const batch = data.files.slice(i, i + BATCH_SIZE);
       const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+
+      // Wait BEFORE uploading to prevent rate limiting
+      console.log(`Waiting ${BATCH_DELAY / 1000}s before batch ${batchNumber}...`);
+      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
 
       // Upload with retry logic
       await uploadBatchWithRetry(batch, batchNumber);
@@ -262,6 +268,9 @@ class DatasetsService {
           percentage: Math.round((loaded / totalFiles) * 100)
         });
       }
+
+      // Small additional delay AFTER successful upload to prevent burst
+      await new Promise(resolve => setTimeout(resolve, 2000)); // 2s cooldown
     }
 
     return dataset;
