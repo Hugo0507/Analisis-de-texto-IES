@@ -22,6 +22,8 @@ import {
   Users,
   UserCreate,
   UserDetail,
+  DatasetList,
+  DatasetCreate,
   Datasets,
 } from './pages';
 
@@ -57,7 +59,10 @@ function App() {
               <Route path="usuarios/nuevo" element={<UserCreate />} />
               <Route path="usuarios/:id" element={<UserDetail />} />
               <Route path="usuarios/:id/editar" element={<UserDetail />} />
-              <Route path="datasets" element={<Datasets />} />
+              <Route path="datasets" element={<DatasetList />} />
+              <Route path="datasets/nuevo" element={<DatasetCreate />} />
+              <Route path="datasets/:id" element={<Datasets />} />
+              <Route path="datasets/:id/editar" element={<Datasets />} />
             </Route>
           </Route>
 
