@@ -139,11 +139,17 @@ class GoogleDriveService {
       window.addEventListener('message', messageListener);
 
       // Check if popup was closed manually
+      // Use try-catch to handle COOP (Cross-Origin-Opener-Policy) errors
       const checkClosed = setInterval(() => {
-        if (popup.closed) {
-          clearInterval(checkClosed);
-          window.removeEventListener('message', messageListener);
-          reject(new Error('Authorization window closed'));
+        try {
+          if (popup.closed) {
+            clearInterval(checkClosed);
+            window.removeEventListener('message', messageListener);
+            reject(new Error('Authorization window closed'));
+          }
+        } catch (error) {
+          // Ignore COOP errors - Google's Cross-Origin-Opener-Policy blocks popup.closed
+          // The popup will send postMessage when done, so this is just a fallback
         }
       }, 500);
     });
