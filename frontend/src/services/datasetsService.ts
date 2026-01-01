@@ -113,8 +113,8 @@ class DatasetsService {
     files: File[];
     onProgress?: (progress: { loaded: number; total: number; percentage: number }) => void;
   }): Promise<Dataset> {
-    const BATCH_SIZE = 20; // Send 20 files at a time (reduced to prevent server saturation)
-    const BATCH_DELAY = 1000; // Wait 1 second between batches
+    const BATCH_SIZE = 10; // Send 10 files at a time (reduced to prevent server saturation)
+    const BATCH_DELAY = 3000; // Wait 3 seconds between batches
     const totalFiles = data.files.length;
 
     // For small datasets, send all at once
@@ -135,7 +135,7 @@ class DatasetsService {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 300000, // 5 minutes for file uploads
+        timeout: 600000, // 10 minutes for file uploads
       });
       return response.data;
     }
@@ -158,7 +158,7 @@ class DatasetsService {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
-      timeout: 300000,
+      timeout: 600000, // 10 minutes
     });
     const dataset = response.data;
 
@@ -187,7 +187,7 @@ class DatasetsService {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 300000,
+        timeout: 600000, // 10 minutes
       });
 
       // Report progress
