@@ -144,10 +144,10 @@ export const DatasetView: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
-      {/* Fixed Header */}
-      <div className="sticky top-0 z-40 bg-white border-b border-gray-200" style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-        <div className="flex items-center justify-between px-8 py-4">
+    <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE', width: '100%', overflow: 'hidden' }}>
+        {/* Fixed Header */}
+        <div className="sticky top-0 z-40 bg-white border-b border-gray-200" style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
+          <div className="flex items-center justify-between px-8 py-4">
           {/* Left: Back button + Title */}
           <div className="flex items-center gap-3">
             <button
@@ -174,7 +174,7 @@ export const DatasetView: React.FC = () => {
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-4" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+      <div className="p-4 space-y-4 w-full max-w-full box-border">
         {/* Processing Banner */}
         {dataset.status === 'processing' && (
           <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
@@ -279,9 +279,9 @@ export const DatasetView: React.FC = () => {
 
         {/* Directory Distribution Section */}
         {directoryStats && directoryStats.pie_chart_data.length > 0 && (
-          <div className="space-y-4" style={{ width: '100%', maxWidth: '100%' }}>
+          <div className="space-y-4 w-full max-w-full">
             {/* Pie Chart */}
-            <div className="bg-white p-4" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)', width: '100%', maxWidth: '100%' }}>
+            <div className="bg-white p-4 w-full max-w-full" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
               <h2 className="text-base font-semibold text-gray-900 mb-4">Distribución por Directorio</h2>
               <div className="flex flex-col items-center">
                 {/* Simple List-based Pie Chart Alternative */}
@@ -324,10 +324,11 @@ export const DatasetView: React.FC = () => {
             </div>
 
             {/* Distribution Table */}
-            <div className="bg-white p-4" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)', width: '100%', maxWidth: '100%' }}>
+            <div className="bg-white p-4 w-full max-w-full box-border" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
               <h2 className="text-base font-semibold text-gray-900 mb-4">Tabla de Distribución</h2>
-              <div className="overflow-x-auto border border-gray-200 rounded-lg" style={{ maxHeight: '400px', overflowY: 'auto', width: '100%' }}>
-                <table className="text-xs" style={{ width: 'auto', minWidth: '100%' }}>
+              <div className="overflow-x-auto border border-gray-200 rounded-lg" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                <div style={{ minWidth: 'max-content' }}>
+                  <table className="text-xs w-full">
                   <thead>
                     <tr className="border-b border-gray-200">
                       <th className="px-2 py-1 text-left text-xs font-semibold text-gray-700 uppercase sticky left-0 bg-white z-10 shadow-sm">
@@ -371,13 +372,14 @@ export const DatasetView: React.FC = () => {
                     </tr>
                   </tbody>
                 </table>
+                </div>
               </div>
             </div>
           </div>
         )}
 
         {/* Distribution by Extension */}
-        <div className="bg-white p-4" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)', width: '100%', maxWidth: '100%' }}>
+        <div className="bg-white p-4 w-full max-w-full" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
           <h2 className="text-base font-semibold text-gray-900 mb-4">Distribución por Extensión</h2>
           <div className="space-y-2">
             {Object.entries(extensionStats).map(([ext, count]) => {
@@ -411,7 +413,7 @@ export const DatasetView: React.FC = () => {
         </div>
 
         {/* Files List */}
-        <div className="bg-white p-4" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)', width: '100%', maxWidth: '100%' }}>
+        <div className="bg-white p-4 w-full max-w-full" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold text-gray-900">Archivos del Dataset</h2>
             <div className="flex items-center gap-2">
