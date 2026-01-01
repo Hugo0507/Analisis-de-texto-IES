@@ -57,13 +57,20 @@ export interface DatasetStats {
   total_size_mb: number;
 }
 
+interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
 class DatasetsService {
   /**
    * Get all datasets
    */
   async getDatasets(): Promise<DatasetListItem[]> {
-    const response = await apiClient.get('/datasets/');
-    return response.data;
+    const response = await apiClient.get<PaginatedResponse<DatasetListItem>>('/datasets/');
+    return response.data.results || response.data as any;
   }
 
   /**
