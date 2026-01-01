@@ -16,6 +16,8 @@ export interface DatasetFile {
   error_message?: string;
   language_code?: string;
   language_confidence?: number;
+  directory_path?: string;  // Full path: "Redalyc/subcarpeta"
+  directory_name?: string;  // Immediate parent folder name
   created_at: string;
   updated_at: string;
 }
