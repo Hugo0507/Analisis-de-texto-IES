@@ -57,6 +57,27 @@ export interface DatasetStats {
   total_size_mb: number;
 }
 
+export interface DirectoryStatsRow {
+  directory: string;
+  extensions: { [key: string]: number };
+  total: number;
+}
+
+export interface PieChartData {
+  name: string;
+  value: number;
+  percentage: number;
+}
+
+export interface DirectoryStats {
+  table_data: DirectoryStatsRow[];
+  extension_totals: { [key: string]: number };
+  directory_totals: { [key: string]: number };
+  all_extensions: string[];
+  grand_total: number;
+  pie_chart_data: PieChartData[];
+}
+
 interface PaginatedResponse<T> {
   count: number;
   next: string | null;
@@ -146,6 +167,42 @@ class DatasetsService {
    */
   async getStats(): Promise<DatasetStats> {
     const response = await apiClient.get('/datasets/stats/');
+    return response.data;
+  }
+
+  /**
+   * Get directory distribution statistics for a dataset
+   */
+  async getDirectoryStats(datasetId: number): Promise<DirectoryStats> {
+    const response = await apiClient.get(`/datasets/${datasetId}/directory_stats/`);
+    return response.data;
+  }
+
+  /**
+   * Add files to an existing dataset (incremental feeding)
+   */
+  async addFilesToDataset(datasetId: number, files: File[]): Promise<{
+    message: string;
+    dataset: Dataset;
+    results: {
+      success: boolean;
+      processed: number;
+      failed: number;
+      errors: string[];
+    };
+  }> {
+    const formData = new FormData();
+
+    // Add all files
+    files.forEach((file) => {
+      formData.append('files', file);
+    });
+
+    const response = await apiClient.post(`/datasets/${datasetId}/add_files/`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   }
 }

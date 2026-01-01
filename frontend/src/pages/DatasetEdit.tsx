@@ -72,15 +72,13 @@ export const DatasetEdit: React.FC = () => {
     setIsUploading(true);
 
     try {
-      // Por ahora, creamos un nuevo dataset con los archivos adicionales
-      // TODO: Implementar endpoint específico para alimentar dataset existente
-      await datasetsService.createDatasetWithFiles({
-        name: `${dataset.name} - Actualización`,
-        description: `Archivos adicionales para ${dataset.name}`,
-        files: selectedFiles,
-      });
+      // Agregar archivos al dataset existente (alimentación incremental)
+      const result = await datasetsService.addFilesToDataset(
+        parseInt(id!),
+        selectedFiles
+      );
 
-      showSuccess(`Se agregaron ${selectedFiles.length} archivo(s) al dataset`);
+      showSuccess(result.message || `Se agregaron ${selectedFiles.length} archivo(s) al dataset`);
 
       // Recargar dataset
       await loadDataset();
