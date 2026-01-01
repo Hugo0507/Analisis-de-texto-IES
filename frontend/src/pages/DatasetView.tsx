@@ -324,9 +324,9 @@ export const DatasetView: React.FC = () => {
             </div>
 
             {/* Distribution Table */}
-            <div className="bg-white p-4 w-full max-w-full box-border" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
+            <div className="bg-white p-4 w-full max-w-full box-border flex flex-col" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
               <h2 className="text-base font-semibold text-gray-900 mb-4">Tabla de Distribución</h2>
-              <div className="overflow-x-auto border border-gray-200 rounded-lg" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+              <div className="overflow-x-auto flex-1" style={{ overflowY: 'auto' }}>
                 <div style={{ minWidth: 'max-content' }}>
                   <table className="text-xs w-full">
                   <thead>
