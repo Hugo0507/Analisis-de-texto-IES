@@ -610,50 +610,19 @@ export const DatasetCreate: React.FC = () => {
                       />
                     </div>
 
-                    {/* Lista de archivos */}
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {selectedFiles.map((file, index) => {
-                        const getFileIcon = (fileName: string) => {
-                          if (fileName.endsWith('.pdf')) {
-                            return (
-                              <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                              </svg>
-                            );
-                          } else if (fileName.endsWith('.txt')) {
-                            return (
-                              <svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                              </svg>
-                            );
-                          } else {
-                            return (
-                              <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                              </svg>
-                            );
-                          }
-                        };
-
-                        const formatFileSize = (bytes: number) => {
-                          if (bytes < 1024) return bytes + ' B';
-                          if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-                          return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-                        };
-
-                        return (
-                          <div
-                            key={index}
-                            className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
-                          >
-                            {getFileIcon(file.name)}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
-                              <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
+                    {/* TreeView de estructura de carpetas */}
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                        </svg>
+                        Estructura de carpetas:
+                      </h4>
+                      <div className="border border-gray-200 rounded-lg bg-gray-50 overflow-y-auto" style={{ maxHeight: '400px' }}>
+                        <div className="p-2">
+                          {renderTreeNode(buildFileTree(selectedFiles))}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
