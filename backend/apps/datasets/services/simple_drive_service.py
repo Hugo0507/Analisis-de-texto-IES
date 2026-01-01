@@ -82,55 +82,41 @@ class SimpleDriveService:
 
             logger.info(f"Encontrados {len(all_files)} archivos en Drive")
 
-            # 3. Crear estructura local temporal (como en Colab)
-            dataset_temp_root = self.temp_dir / f"dataset_{dataset.id}"
-            dataset_temp_root.mkdir(parents=True, exist_ok=True)
+            # 3. Generar estadísticas SIN descargar archivos
+            # Solo analizar metadatos de Drive
+            stats = self._generate_statistics_from_metadata(all_files)
 
-            # 4. Descargar todos los archivos manteniendo estructura
-            downloaded_files = []
-            for file_info in all_files:
-                # Saltar formatos de Google Docs
-                if file_info['mimeType'].startswith('application/vnd.google-apps'):
-                    continue
+            logger.info(f"Estadísticas generadas: {stats}")
 
-                # Descargar preservando ruta
-                local_path = self._download_to_local_structure(
-                    file_info,
-                    dataset_temp_root
-                )
+            # 4. Guardar metadata del dataset para referencia futura
+            dataset.metadata = {
+                'source_folder_id': folder_id,
+                'total_files': len(all_files),
+                'file_types': stats['file_types'],
+                'total_size_bytes': stats['total_size'],
+                'files_metadata': [
+                    {
+                        'id': f['id'],
+                        'name': f['name'],
+                        'mime_type': f['mimeType'],
+                        'size': f.get('size', 0)
+                    }
+                    for f in all_files[:100]  # Solo primeros 100 para no saturar
+                ]
+            }
+            dataset.status = 'ready'  # Listo para procesar
+            dataset.save()
 
-                if local_path:
-                    downloaded_files.append(local_path)
-                    results['downloaded'] += 1
+            results['files_found'] = len(all_files)
+            results['downloaded'] = 0  # No se descargó nada
+            results['processed'] = 0  # No se procesó nada
+            results['success'] = True
 
-            # 5. Ahora tenemos los archivos localmente, como en Colab!
-            # Usar os.walk() exactamente como en tu código
-            logger.info(f"Archivos descargados en: {dataset_temp_root}")
-            logger.info(f"Total descargados: {len(downloaded_files)}")
-
-            # 6. Procesarlos con el mismo flujo que uploads locales
-            from .dataset_processor import DatasetProcessorService
-            processor = DatasetProcessorService()
-
-            # Convertir archivos locales a UploadedFile
-            uploaded_files = []
-            for local_file_path in downloaded_files:
-                uploaded_file = self._create_uploaded_file_from_local(local_file_path, dataset_temp_root)
-                if uploaded_file:
-                    uploaded_files.append(uploaded_file)
-
-            # Procesar
-            if uploaded_files:
-                proc_results = processor.process_uploaded_files(dataset, uploaded_files)
-                results['processed'] = proc_results['processed']
-                results['success'] = proc_results['success']
-                if proc_results['errors']:
-                    results['errors'].extend(proc_results['errors'])
-
-            # 7. Limpiar
-            import shutil
-            if dataset_temp_root.exists():
-                shutil.rmtree(dataset_temp_root)
+            logger.info(
+                f"Dataset {dataset.id} creado exitosamente. "
+                f"{len(all_files)} archivos disponibles en Drive. "
+                f"Ejecuta el pipeline para procesarlos."
+            )
 
             return results
 
@@ -281,3 +267,48 @@ class SimpleDriveService:
             '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         }
         return types.get(extension.lower(), 'application/octet-stream')
+
+    def _generate_statistics_from_metadata(self, files: List[Dict]) -> Dict:
+        """
+        Generar estadísticas de archivos basándose solo en metadatos.
+
+        NO descarga archivos, solo analiza:
+        - Tipo MIME
+        - Tamaño
+        - Nombre
+
+        Args:
+            files: Lista de metadatos de archivos de Drive
+
+        Returns:
+            Diccionario con estadísticas
+        """
+        stats = {
+            'total_files': len(files),
+            'total_size': 0,
+            'file_types': {},
+            'by_extension': {}
+        }
+
+        for file in files:
+            # Contar tamaño
+            size = int(file.get('size', 0))
+            stats['total_size'] += size
+
+            # Contar por MIME type
+            mime_type = file.get('mimeType', 'unknown')
+            if mime_type not in stats['file_types']:
+                stats['file_types'][mime_type] = {'count': 0, 'size': 0}
+            stats['file_types'][mime_type]['count'] += 1
+            stats['file_types'][mime_type]['size'] += size
+
+            # Contar por extensión
+            name = file.get('name', '')
+            if '.' in name:
+                ext = name.rsplit('.', 1)[1].lower()
+                if ext not in stats['by_extension']:
+                    stats['by_extension'][ext] = {'count': 0, 'size': 0}
+                stats['by_extension'][ext]['count'] += 1
+                stats['by_extension'][ext]['size'] += size
+
+        return stats
