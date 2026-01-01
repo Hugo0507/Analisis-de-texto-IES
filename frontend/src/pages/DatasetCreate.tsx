@@ -10,6 +10,8 @@ import { useNavigate } from 'react-router-dom';
 import datasetsService from '../services/datasetsService';
 import { useToast } from '../contexts/ToastContext';
 import { Spinner } from '../components/atoms';
+import GoogleDriveConnect from '../components/GoogleDriveConnect';
+import { GoogleDriveConnection } from '../services/googleDriveService';
 
 type ImportMethod = 'files' | 'folder' | 'drive';
 
@@ -23,6 +25,7 @@ export const DatasetCreate: React.FC = () => {
   const [datasetDescription, setDatasetDescription] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [googleConnection, setGoogleConnection] = useState<GoogleDriveConnection | null>(null);
 
   const handleFilesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -473,54 +476,55 @@ export const DatasetCreate: React.FC = () => {
 
             {/* Google Drive Import */}
             {selectedMethod === 'drive' && (
-              <div className="max-w-2xl mx-auto">
-                <div className="text-center mb-6">
-                  <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-                  </svg>
-                  <h3 className="text-sm font-medium text-gray-900 mb-2">Conectar con Google Drive</h3>
-                  <p className="text-xs text-gray-500">
-                    Ingresa la URL de tu carpeta de Google Drive
-                  </p>
-                </div>
+              <div className="max-w-2xl mx-auto space-y-6">
+                {/* Google Drive Connection Component */}
+                <GoogleDriveConnect
+                  onConnectionChange={(connection) => setGoogleConnection(connection)}
+                />
 
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="drive-url" className="block text-sm font-medium text-gray-700 mb-2">
-                      URL de la carpeta
-                    </label>
-                    <input
-                      type="url"
-                      id="drive-url"
-                      value={driveUrl}
-                      onChange={(e) => setDriveUrl(e.target.value)}
-                      placeholder="https://drive.google.com/drive/folders/..."
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    />
+                {/* Only show form if connected */}
+                {googleConnection?.is_connected && (
+                  <div className="space-y-4">
+                    <div className="text-center">
+                      <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                      </svg>
+                      <h3 className="text-sm font-medium text-gray-900 mb-2">Importar desde Google Drive</h3>
+                      <p className="text-xs text-gray-500">
+                        Ingresa la URL de tu carpeta de Google Drive
+                      </p>
+                    </div>
+
+                    <div>
+                      <label htmlFor="drive-url" className="block text-sm font-medium text-gray-700 mb-2">
+                        URL de la carpeta
+                      </label>
+                      <input
+                        type="url"
+                        id="drive-url"
+                        value={driveUrl}
+                        onChange={(e) => setDriveUrl(e.target.value)}
+                        placeholder="https://drive.google.com/drive/folders/..."
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <button
+                      onClick={handleDriveSubmit}
+                      disabled={!driveUrl || !datasetName || isUploading}
+                      className="w-full px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center justify-center gap-2"
+                    >
+                      {isUploading ? (
+                        <>
+                          <Spinner size="sm" />
+                          <span>Importando...</span>
+                        </>
+                      ) : (
+                        'Importar desde Drive'
+                      )}
+                    </button>
                   </div>
-
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <p className="text-xs text-gray-700">
-                      <strong>Nota:</strong> Para conectarte a Google Drive, necesitas compartir la carpeta y
-                      copiar su URL desde el navegador.
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={handleDriveSubmit}
-                    disabled={!driveUrl || !datasetName || isUploading}
-                    className="w-full px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center justify-center gap-2"
-                  >
-                    {isUploading ? (
-                      <>
-                        <Spinner size="sm" />
-                        <span>Conectando...</span>
-                      </>
-                    ) : (
-                      'Conectar con Drive'
-                    )}
-                  </button>
-                </div>
+                )}
               </div>
             )}
           </div>
