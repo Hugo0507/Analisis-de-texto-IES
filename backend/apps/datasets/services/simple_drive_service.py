@@ -88,34 +88,47 @@ class SimpleDriveService:
 
             logger.info(f"Estadísticas generadas: {stats}")
 
-            # 4. Guardar metadata del dataset para referencia futura
-            dataset.metadata = {
-                'source_folder_id': folder_id,
-                'total_files': len(all_files),
-                'file_types': stats['file_types'],
-                'total_size_bytes': stats['total_size'],
-                'files_metadata': [
-                    {
-                        'id': f['id'],
-                        'name': f['name'],
-                        'mime_type': f['mimeType'],
-                        'size': f.get('size', 0)
-                    }
-                    for f in all_files[:100]  # Solo primeros 100 para no saturar
-                ]
-            }
-            dataset.status = 'ready'  # Listo para procesar
+            # 4. Crear registros DatasetFile con metadata (sin descargar contenido)
+            from ..models import DatasetFile
+
+            created_files_count = 0
+            for file_info in all_files:
+                # Saltar formatos de Google Docs que no podemos procesar
+                if file_info['mimeType'].startswith('application/vnd.google-apps'):
+                    continue
+
+                try:
+                    # Crear registro con metadata, sin contenido descargado
+                    DatasetFile.objects.create(
+                        dataset=dataset,
+                        filename=file_info['name'],
+                        original_filename=file_info['name'],
+                        file_path=f"drive://{file_info['id']}",  # Guardar ID de Drive
+                        file_size_bytes=int(file_info.get('size', 0)),
+                        mime_type=file_info['mimeType'],
+                        directory_path=file_info.get('relative_path', ''),
+                        status='pending'  # Pendiente de procesar cuando ejecute pipeline
+                    )
+                    created_files_count += 1
+                except Exception as e:
+                    logger.warning(f"Error creando DatasetFile para {file_info['name']}: {e}")
+                    continue
+
+            # 5. Actualizar estadísticas del dataset
+            dataset.total_files = created_files_count
+            dataset.total_size_bytes = stats['total_size']
+            dataset.status = 'completed'  # Completado (listo para procesar con pipeline)
             dataset.save()
 
             results['files_found'] = len(all_files)
             results['downloaded'] = 0  # No se descargó nada
-            results['processed'] = 0  # No se procesó nada
+            results['processed'] = created_files_count  # Archivos registrados
             results['success'] = True
 
             logger.info(
                 f"Dataset {dataset.id} creado exitosamente. "
-                f"{len(all_files)} archivos disponibles en Drive. "
-                f"Ejecuta el pipeline para procesarlos."
+                f"{created_files_count} archivos registrados (de {len(all_files)} totales). "
+                f"Ejecuta el pipeline para descargar y procesarlos."
             )
 
             return results
