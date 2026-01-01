@@ -47,9 +47,20 @@ apiClient.interceptors.response.use(
 
     // Handle specific error codes
     if (error.response?.status === 401) {
-      // Unauthorized - clear token and redirect to login
-      localStorage.removeItem('authToken');
-      // window.location.href = '/login';
+      // Unauthorized - but DON'T clear token immediately
+      // (might be temporary server restart during file upload)
+      // Let the retry logic in datasetsService handle it
+      console.warn('[API] 401 Unauthorized - might be temporary server restart');
+
+      // Only redirect to login if this is NOT a file upload request
+      const isFileUpload = error.config?.url?.includes('/datasets/') &&
+                          error.config?.url?.includes('/add_files/');
+
+      if (!isFileUpload) {
+        // For non-upload requests, clear token and redirect
+        localStorage.removeItem('authToken');
+        // window.location.href = '/login';
+      }
     }
 
     return Promise.reject(error);
