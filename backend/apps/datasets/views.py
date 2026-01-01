@@ -123,13 +123,10 @@ class DatasetViewSet(viewsets.ModelViewSet):
                             # Usar el servicio simple (más parecido a Colab)
                             drive_service = SimpleDriveService(user=request.user)
 
-                            # Extraer folder ID de la URL
-                            folder_id = drive_service.drive_gateway.extract_folder_id(source_url)
-                            if not folder_id:
-                                # Intentar extraer de otra forma
-                                import re
-                                match = re.search(r'/folders/([a-zA-Z0-9_-]+)', source_url)
-                                folder_id = match.group(1) if match else None
+                            # Extraer folder ID de la URL usando regex
+                            import re
+                            match = re.search(r'/folders/([a-zA-Z0-9_-]+)', source_url)
+                            folder_id = match.group(1) if match else None
 
                             if not folder_id:
                                 raise ValueError(f"No se pudo extraer folder_id de la URL: {source_url}")
