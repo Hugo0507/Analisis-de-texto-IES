@@ -113,8 +113,10 @@ class DatasetsService {
     files: File[];
     onProgress?: (progress: { loaded: number; total: number; percentage: number }) => void;
   }): Promise<Dataset> {
-    const BATCH_SIZE = 10; // Send 10 files at a time (reduced to prevent server saturation)
+    const BATCH_SIZE = 5; // Send 5 files at a time (lighter requests, less network failures)
     const BATCH_DELAY = 12000; // Wait 12 seconds between batches (prevent rate limiting)
+    const LONG_REST_INTERVAL = 5; // Every 5 batches, take a long rest
+    const LONG_REST_DELAY = 30000; // 30 seconds long rest to let HF "forget" the load
     const MAX_RETRIES = 7; // Retry failed batches up to 7 times (handle rate limiting)
     const totalFiles = data.files.length;
 
@@ -252,9 +254,18 @@ class DatasetsService {
       const batch = data.files.slice(i, i + BATCH_SIZE);
       const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
 
-      // Wait BEFORE uploading to prevent rate limiting
-      console.log(`Waiting ${BATCH_DELAY / 1000}s before batch ${batchNumber}...`);
-      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
+      // Long rest every N batches to let HF "forget" the load
+      if (batchNumber % LONG_REST_INTERVAL === 0) {
+        console.log(
+          `✨ Long rest after ${batchNumber} batches. ` +
+          `Waiting ${LONG_REST_DELAY / 1000}s to let server cool down...`
+        );
+        await new Promise(resolve => setTimeout(resolve, LONG_REST_DELAY));
+      } else {
+        // Normal delay between batches
+        console.log(`Waiting ${BATCH_DELAY / 1000}s before batch ${batchNumber}...`);
+        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
+      }
 
       // Upload with retry logic
       await uploadBatchWithRetry(batch, batchNumber);
