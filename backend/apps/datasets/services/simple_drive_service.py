@@ -25,8 +25,15 @@ class SimpleDriveService:
     y luego descarga en lote.
     """
 
-    def __init__(self):
-        self.drive_gateway = DriveGateway()
+    def __init__(self, user):
+        """
+        Initialize SimpleDriveService with user OAuth tokens.
+
+        Args:
+            user: Django User instance with Google Drive connection
+        """
+        self.user = user
+        self.drive_gateway = DriveGateway(user=user)
         self.temp_dir = Path(settings.MEDIA_ROOT) / 'temp_drive' if hasattr(settings, 'MEDIA_ROOT') else Path('media/temp_drive')
         self.temp_dir.mkdir(parents=True, exist_ok=True)
 
