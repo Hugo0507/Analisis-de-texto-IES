@@ -107,6 +107,73 @@ class DatasetProcessorService:
 
         return results
 
+    def process_uploaded_files_with_paths(
+        self,
+        dataset: Dataset,
+        files_with_paths: List[tuple]
+    ) -> Dict[str, any]:
+        """
+        Process uploaded files with explicit paths for a dataset.
+
+        Args:
+            dataset: Dataset instance
+            files_with_paths: List of (UploadedFile, path_string) tuples
+
+        Returns:
+            Dictionary with processing results
+        """
+        results = {
+            'success': True,
+            'processed': 0,
+            'failed': 0,
+            'errors': []
+        }
+
+        total_size = 0
+
+        for uploaded_file, file_path_str in files_with_paths:
+            try:
+                # Extract directory information from the provided path
+                directory_info = self._extract_directory_info(file_path_str)
+
+                # Save file to disk
+                file_path = self._save_file(dataset, uploaded_file, directory_info['directory_path'])
+                file_size = uploaded_file.size
+                total_size += file_size
+
+                # Create DatasetFile record
+                dataset_file = DatasetFile.objects.create(
+                    dataset=dataset,
+                    filename=os.path.basename(file_path),
+                    original_filename=os.path.basename(file_path_str),  # Use basename from path
+                    file_path=str(file_path),
+                    file_size_bytes=file_size,
+                    mime_type=uploaded_file.content_type or self._guess_mime_type(file_path_str),
+                    directory_path=directory_info['directory_path'],
+                    directory_name=directory_info['directory_name'],
+                    status='pending'
+                )
+
+                # Process file (PDF conversion, language detection, etc.)
+                self._process_file(dataset_file)
+                results['processed'] += 1
+
+            except Exception as e:
+                logger.error(f"Error processing file {file_path_str}: {str(e)}")
+                results['failed'] += 1
+                results['errors'].append(f"{file_path_str}: {str(e)}")
+                results['success'] = False
+
+        # Update dataset totals
+        dataset.total_files = dataset.files.count()
+        dataset.total_size_bytes = sum(f.file_size_bytes for f in dataset.files.all())
+        dataset.status = 'completed' if results['failed'] == 0 else 'error'
+        dataset.save()
+
+        logger.info(f"Processed {results['processed']} files for dataset {dataset.id}")
+
+        return results
+
     def _save_file(self, dataset: Dataset, uploaded_file: UploadedFile, directory_path: str = None) -> str:
         """
         Save uploaded file to disk, preserving directory structure if provided.

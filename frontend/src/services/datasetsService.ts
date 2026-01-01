@@ -126,9 +126,12 @@ class DatasetsService {
       }
       formData.append('source', 'upload');
 
-      // Add all files
+      // Add all files with their paths
       data.files.forEach((file) => {
         formData.append('files', file);
+        // @ts-ignore - webkitRelativePath exists on File objects from directory inputs
+        const relativePath = file.webkitRelativePath || file.name;
+        formData.append('file_paths', relativePath);
       });
 
       const response = await apiClient.post('/datasets/', formData, {
@@ -152,6 +155,9 @@ class DatasetsService {
 
     firstBatch.forEach((file) => {
       formData.append('files', file);
+      // @ts-ignore - webkitRelativePath exists on File objects from directory inputs
+      const relativePath = file.webkitRelativePath || file.name;
+      formData.append('file_paths', relativePath);
     });
 
     const response = await apiClient.post('/datasets/', formData, {
@@ -181,6 +187,9 @@ class DatasetsService {
 
       batch.forEach((file) => {
         batchFormData.append('files', file);
+        // @ts-ignore - webkitRelativePath exists on File objects from directory inputs
+        const relativePath = file.webkitRelativePath || file.name;
+        batchFormData.append('file_paths', relativePath);
       });
 
       await apiClient.post(`/datasets/${dataset.id}/add_files/`, batchFormData, {
