@@ -18,9 +18,9 @@ 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
 
 **GOOGLE_OAUTH_REDIRECT_URI**
 ```
-https://tu-space-name.hf.space/oauth/callback/google-drive
+https://analisis-de-texto-ies.vercel.app/oauth/callback/google-drive
 ```
-⚠️ **IMPORTANTE:** Reemplaza `tu-space-name` con el nombre real de tu Space en Hugging Face
+✅ **IMPORTANTE:** Apunta al FRONTEND (Vercel), no al backend
 
 **GOOGLE_OAUTH_ENCRYPTION_KEY**
 ```
@@ -77,15 +77,17 @@ tu_db_host.com
 4. Click en tu "ID de cliente de OAuth 2.0"
 5. En "URIs de redirección autorizadas", agrega:
    ```
-   https://tu-space-name.hf.space/oauth/callback/google-drive
+   https://analisis-de-texto-ies.vercel.app/oauth/callback/google-drive
    ```
-6. En "Orígenes de JavaScript autorizados", agrega:
+6. En "Orígenes de JavaScript autorizados", agrega AMBOS:
    ```
-   https://tu-space-name.hf.space
+   https://analisis-de-texto-ies.vercel.app
+   https://hugo0507-analisis-ies-backend.hf.space
    ```
 7. Click en "GUARDAR"
 
-⚠️ **Reemplaza `tu-space-name` con el nombre real de tu Space**
+✅ **Redirect URI:** Frontend (Vercel) - El popup redirige aquí
+✅ **Orígenes permitidos:** Frontend (Vercel) + Backend (Hugging Face)
 
 ## Verificación
 
@@ -94,7 +96,7 @@ Después de configurar las variables:
 1. **Redesplegar el Space** (puede tomar 5-10 minutos)
 
 2. **Probar el login:**
-   - Ve a: `https://tu-space-name.hf.space/admin`
+   - Ve a: `https://hugo0507-analisis-ies-backend.hf.space/admin`
    - Usuario: `testuser`
    - Password: `Test2024!`
 
@@ -153,13 +155,16 @@ python manage.py shell
 
 **Frontend (Vercel):**
 - Producción: `https://analisis-de-texto-ies.vercel.app`
+- OAuth Callback: `https://analisis-de-texto-ies.vercel.app/oauth/callback/google-drive` ✅
 
 **Backend (Hugging Face):**
-- Producción: `https://tu-space-name.hf.space`
-- API: `https://tu-space-name.hf.space/api/v1/`
+- Producción: `https://hugo0507-analisis-ies-backend.hf.space`
+- API: `https://hugo0507-analisis-ies-backend.hf.space/api/v1/`
 
-**OAuth Callback:**
-- URL: `https://tu-space-name.hf.space/oauth/callback/google-drive`
+**Flujo OAuth:**
+1. Frontend abre popup → Google autoriza → Google redirige a Frontend
+2. Frontend recibe code → Frontend envía code al Backend
+3. Backend intercambia code por tokens → Guarda en base de datos
 
 ---
 
@@ -175,19 +180,19 @@ python manage.py shell
 
 ---
 
-**¿Necesitas el nombre exacto de tu Space?**
+**Tu Space configurado:**
 
-Ve a https://huggingface.co/spaces y busca tu proyecto. La URL será:
+Tu Space repository:
 ```
-https://huggingface.co/spaces/tu-usuario/tu-space-name
-```
-
-El dominio público será:
-```
-https://tu-usuario-tu-space-name.hf.space
+https://huggingface.co/spaces/Hugo0507/analisis-ies-backend
 ```
 
-O si tienes un dominio custom, usa ese.
+Tu dominio público:
+```
+https://hugo0507-analisis-ies-backend.hf.space
+```
+
+✅ Ya configurado con las URLs correctas en este documento.
 
 ---
 

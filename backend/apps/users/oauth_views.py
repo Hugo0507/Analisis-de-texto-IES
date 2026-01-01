@@ -88,9 +88,9 @@ class GoogleDriveOAuthViewSet(viewsets.ViewSet):
             # Generate random state parameter for CSRF protection
             state = secrets.token_urlsafe(32)
 
-            # Store state in session
-            request.session['oauth_state'] = state
-            request.session.modified = True
+            # Store state in user model (not session, to support cross-domain OAuth)
+            request.user.google_drive_oauth_state = state
+            request.user.save(update_fields=['google_drive_oauth_state'])
 
             # Create OAuth flow
             flow = self._get_oauth_flow()
@@ -151,13 +151,17 @@ class GoogleDriveOAuthViewSet(viewsets.ViewSet):
 
         try:
             # Validate state parameter (CSRF protection)
-            stored_state = request.session.get('oauth_state')
+            stored_state = request.user.google_drive_oauth_state
             if not stored_state or state != stored_state:
                 logger.warning(f"Invalid state parameter for user {request.user.email}")
                 return Response(
                     {'error': 'Invalid state parameter. Please try connecting again.'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
+
+            # Clear the state after validation (one-time use)
+            request.user.google_drive_oauth_state = None
+            request.user.save(update_fields=['google_drive_oauth_state'])
 
             # Create OAuth flow
             flow = self._get_oauth_flow()
