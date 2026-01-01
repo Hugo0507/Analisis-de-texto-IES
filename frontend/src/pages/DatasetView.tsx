@@ -174,7 +174,7 @@ export const DatasetView: React.FC = () => {
       </div>
 
       {/* Content */}
-      <div className="p-8 space-y-6">
+      <div className="p-4 space-y-4">
         {/* Processing Banner */}
         {dataset.status === 'processing' && (
           <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
@@ -198,8 +198,8 @@ export const DatasetView: React.FC = () => {
         )}
 
         {/* Dataset Info Card */}
-        <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Información General</h2>
+        <div className="bg-white p-4" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
+          <h2 className="text-base font-semibold text-gray-900 mb-3">Información General</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <p className="text-sm text-gray-500 mb-1">Nombre</p>
@@ -229,49 +229,49 @@ export const DatasetView: React.FC = () => {
         </div>
 
         {/* Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Total Files */}
-          <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Total Archivos</h3>
-              <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-                <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-white p-4" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Total Archivos</h3>
+              <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
               </div>
             </div>
-            <p className="text-3xl font-bold text-gray-900">{totalFiles}</p>
-            <p className="text-sm text-gray-500 mt-1">archivos en total</p>
+            <p className="text-2xl font-bold text-gray-900">{totalFiles}</p>
+            <p className="text-xs text-gray-500 mt-1">archivos en total</p>
           </div>
 
           {/* Total Size */}
-          <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Tamaño Total</h3>
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-white p-4" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Tamaño Total</h3>
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
                 </svg>
               </div>
             </div>
-            <p className="text-3xl font-bold text-gray-900">{formatBytes(dataset.total_size_bytes)}</p>
-            <p className="text-sm text-gray-500 mt-1">espacio utilizado</p>
+            <p className="text-2xl font-bold text-gray-900">{formatBytes(dataset.total_size_bytes)}</p>
+            <p className="text-xs text-gray-500 mt-1">espacio utilizado</p>
           </div>
 
           {/* Most Common Extension */}
-          <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Extensión Principal</h3>
-              <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-white p-4" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Extensión Principal</h3>
+              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
               </div>
             </div>
-            <p className="text-3xl font-bold text-gray-900">
+            <p className="text-2xl font-bold text-gray-900">
               {getMostCommonExtension().ext}
             </p>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 mt-1">
               {getMostCommonExtension().count}/{totalFiles} archivos
             </p>
           </div>
@@ -279,10 +279,10 @@ export const DatasetView: React.FC = () => {
 
         {/* Directory Distribution Section */}
         {directoryStats && directoryStats.pie_chart_data.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-4">
             {/* Pie Chart */}
-            <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-              <h2 className="text-lg font-semibold text-gray-900 mb-6">Distribución por Directorio</h2>
+            <div className="bg-white p-4" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
+              <h2 className="text-base font-semibold text-gray-900 mb-4">Distribución por Directorio</h2>
               <div className="flex flex-col items-center">
                 {/* Simple List-based Pie Chart Alternative */}
                 <div className="w-full space-y-3">
@@ -324,21 +324,21 @@ export const DatasetView: React.FC = () => {
             </div>
 
             {/* Distribution Table */}
-            <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-              <h2 className="text-lg font-semibold text-gray-900 mb-6">Tabla de Distribución</h2>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+            <div className="bg-white p-4" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
+              <h2 className="text-base font-semibold text-gray-900 mb-4">Tabla de Distribución</h2>
+              <div className="overflow-x-auto" style={{ maxWidth: '100%' }}>
+                <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-gray-200">
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase">
+                      <th className="px-2 py-1 text-left text-xs font-semibold text-gray-700 uppercase sticky left-0 bg-white">
                         Directorio
                       </th>
                       {directoryStats.all_extensions.map((ext) => (
-                        <th key={ext} className="px-3 py-2 text-center text-xs font-semibold text-gray-700 uppercase">
+                        <th key={ext} className="px-2 py-1 text-center text-xs font-semibold text-gray-700 uppercase whitespace-nowrap">
                           {ext}
                         </th>
                       ))}
-                      <th className="px-3 py-2 text-center text-xs font-semibold text-emerald-700 uppercase bg-emerald-50">
+                      <th className="px-2 py-1 text-center text-xs font-semibold text-emerald-700 uppercase bg-emerald-50 sticky right-0">
                         Total
                       </th>
                     </tr>
@@ -346,26 +346,26 @@ export const DatasetView: React.FC = () => {
                   <tbody>
                     {directoryStats.table_data.map((row) => (
                       <tr key={row.directory} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="px-3 py-2 font-medium text-gray-900">{row.directory}</td>
+                        <td className="px-2 py-1 text-xs font-medium text-gray-900 sticky left-0 bg-white">{row.directory}</td>
                         {directoryStats.all_extensions.map((ext) => (
-                          <td key={ext} className="px-3 py-2 text-center text-gray-600">
+                          <td key={ext} className="px-2 py-1 text-center text-xs text-gray-600 whitespace-nowrap">
                             {row.extensions[ext] || 0}
                           </td>
                         ))}
-                        <td className="px-3 py-2 text-center font-semibold text-emerald-700 bg-emerald-50">
+                        <td className="px-2 py-1 text-center text-xs font-semibold text-emerald-700 bg-emerald-50 sticky right-0">
                           {row.total}
                         </td>
                       </tr>
                     ))}
                     {/* Totals Row */}
                     <tr className="bg-emerald-50 font-semibold">
-                      <td className="px-3 py-2 text-emerald-700">TOTAL</td>
+                      <td className="px-2 py-1 text-xs text-emerald-700 sticky left-0 bg-emerald-50">TOTAL</td>
                       {directoryStats.all_extensions.map((ext) => (
-                        <td key={ext} className="px-3 py-2 text-center text-emerald-700">
+                        <td key={ext} className="px-2 py-1 text-center text-xs text-emerald-700 whitespace-nowrap">
                           {directoryStats.extension_totals[ext]}
                         </td>
                       ))}
-                      <td className="px-3 py-2 text-center text-emerald-700 bg-emerald-100">
+                      <td className="px-2 py-1 text-center text-xs text-emerald-700 bg-emerald-100 sticky right-0">
                         {directoryStats.grand_total}
                       </td>
                     </tr>
@@ -377,9 +377,9 @@ export const DatasetView: React.FC = () => {
         )}
 
         {/* Distribution by Extension */}
-        <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Distribución por Extensión</h2>
-          <div className="space-y-4">
+        <div className="bg-white p-4" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
+          <h2 className="text-base font-semibold text-gray-900 mb-4">Distribución por Extensión</h2>
+          <div className="space-y-2">
             {Object.entries(extensionStats).map(([ext, count]) => {
               const percentage = totalFiles > 0 ? (count / totalFiles) * 100 : 0;
               const colors: { [key: string]: string } = {
@@ -411,9 +411,9 @@ export const DatasetView: React.FC = () => {
         </div>
 
         {/* Files List */}
-        <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">Archivos del Dataset</h2>
+        <div className="bg-white p-4" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-gray-900">Archivos del Dataset</h2>
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-500">
                 {filteredFiles.length} de {totalFiles} archivos
