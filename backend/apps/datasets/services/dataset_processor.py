@@ -76,7 +76,7 @@ class DatasetProcessorService:
                 file_size = uploaded_file.size
                 total_size += file_size
 
-                # Create DatasetFile record
+                # Create DatasetFile record (NO PROCESSING - only metadata)
                 dataset_file = DatasetFile.objects.create(
                     dataset=dataset,
                     filename=os.path.basename(file_path),
@@ -86,11 +86,11 @@ class DatasetProcessorService:
                     mime_type=uploaded_file.content_type or self._guess_mime_type(uploaded_file.name),
                     directory_path=directory_info['directory_path'],
                     directory_name=directory_info['directory_name'],
-                    status='pending'
+                    status='completed'  # Mark as completed (no processing needed)
                 )
 
-                # Process file asynchronously (for now, synchronously)
-                self._process_file(dataset_file)
+                # NO PROCESSING HERE - Dataset section only stores file metadata
+                # Processing (PDF conversion, language detection) happens in Pipeline NLP section
                 results['processed'] += 1
 
             except Exception as e:
@@ -141,7 +141,7 @@ class DatasetProcessorService:
                 file_size = uploaded_file.size
                 total_size += file_size
 
-                # Create DatasetFile record
+                # Create DatasetFile record (NO PROCESSING - only metadata)
                 dataset_file = DatasetFile.objects.create(
                     dataset=dataset,
                     filename=os.path.basename(file_path),
@@ -151,11 +151,11 @@ class DatasetProcessorService:
                     mime_type=uploaded_file.content_type or self._guess_mime_type(file_path_str),
                     directory_path=directory_info['directory_path'],
                     directory_name=directory_info['directory_name'],
-                    status='pending'
+                    status='completed'  # Mark as completed (no processing needed)
                 )
 
-                # Process file (PDF conversion, language detection, etc.)
-                self._process_file(dataset_file)
+                # NO PROCESSING HERE - Dataset section only stores file metadata
+                # Processing (PDF conversion, language detection) happens in Pipeline NLP section
                 results['processed'] += 1
 
             except Exception as e:

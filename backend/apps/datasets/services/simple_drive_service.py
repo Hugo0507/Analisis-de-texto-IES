@@ -113,12 +113,12 @@ class SimpleDriveService:
                         dataset=dataset,
                         filename=file_info['name'],
                         original_filename=file_info['name'],
-                        file_path=f"drive://{file_info['id']}",  # Guardar ID de Drive
+                        file_path=f"drive://{file_info['id']}",  # Guardar ID de Drive (NO descarga)
                         file_size_bytes=int(file_info.get('size', 0)),
                         mime_type=file_info['mimeType'],
                         directory_path=relative_path,  # Ruta completa: "Redalyc/subcarpeta"
                         directory_name=directory_name,  # Nombre de carpeta inmediata: "subcarpeta"
-                        status='pending'  # Pendiente de procesar cuando ejecute pipeline
+                        status='completed'  # Metadata registrada (procesamiento ocurre en Pipeline NLP)
                     )
                     created_files_count += 1
                 except Exception as e:
@@ -133,18 +133,18 @@ class SimpleDriveService:
             # 5. Actualizar estadísticas del dataset
             dataset.total_files = created_files_count
             dataset.total_size_bytes = stats['total_size']
-            dataset.status = 'completed'  # Completado (listo para procesar con pipeline)
+            dataset.status = 'completed'  # Metadata registrada (NO procesamiento)
             dataset.save()
 
             results['files_found'] = len(all_files)
             results['downloaded'] = 0  # No se descargó nada
-            results['processed'] = created_files_count  # Archivos registrados
+            results['processed'] = created_files_count  # Archivos registrados (solo metadata)
             results['success'] = True
 
             logger.info(
                 f"Dataset {dataset.id} creado exitosamente. "
                 f"{created_files_count} archivos registrados (de {len(all_files)} totales). "
-                f"Ejecuta el pipeline para descargar y procesarlos."
+                f"Solo metadata - sin descarga ni procesamiento. Ejecuta Pipeline NLP para procesarlos."
             )
 
             return results
