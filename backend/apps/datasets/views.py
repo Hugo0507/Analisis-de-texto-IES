@@ -17,7 +17,7 @@ from .serializers import (
     DatasetCreateSerializer,
     DatasetFileSerializer
 )
-from .services import DatasetProcessorService, DriveDatasetService
+from .services import DatasetProcessorService, SimpleDriveService
 
 logger = logging.getLogger(__name__)
 
@@ -113,8 +113,22 @@ class DatasetViewSet(viewsets.ModelViewSet):
                     def process_drive_in_background():
                         """Background task to process Google Drive dataset."""
                         try:
-                            drive_service = DriveDatasetService()
-                            results = drive_service.process_drive_dataset(dataset, source_url)
+                            # Usar el servicio simple (más parecido a Colab)
+                            drive_service = SimpleDriveService()
+
+                            # Extraer folder ID de la URL
+                            folder_id = drive_service.drive_gateway.extract_folder_id(source_url)
+                            if not folder_id:
+                                # Intentar extraer de otra forma
+                                import re
+                                match = re.search(r'/folders/([a-zA-Z0-9_-]+)', source_url)
+                                folder_id = match.group(1) if match else None
+
+                            if not folder_id:
+                                raise ValueError(f"No se pudo extraer folder_id de la URL: {source_url}")
+
+                            # Procesar de forma simple y rápida
+                            results = drive_service.quick_process_drive_folder(dataset, folder_id)
                             logger.info(f"Drive processing completed for dataset {dataset.id}: {results}")
                         except Exception as e:
                             logger.exception(f"Error in background Drive processing: {e}")
