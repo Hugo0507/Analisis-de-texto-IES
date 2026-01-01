@@ -222,7 +222,7 @@ class DatasetsService {
           // Exponential backoff with longer delays for 401 (server restart)
           // Normal: 3s, 6s, 12s, 24s, 48s
           // For 401: 10s, 20s, 30s, 40s, 50s (give server time to restart)
-          let backoffDelay;
+          let backoffDelay: number;
           if (is401 || is429) {
             // Server restart or rate limit - wait longer
             backoffDelay = (attempt + 1) * 10000; // 10s, 20s, 30s, 40s, 50s
