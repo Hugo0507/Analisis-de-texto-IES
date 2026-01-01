@@ -279,7 +279,7 @@ export const DatasetView: React.FC = () => {
 
         {/* Directory Distribution Section */}
         {directoryStats && directoryStats.pie_chart_data.length > 0 && (
-          <div className="space-y-4 w-full max-w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full max-w-full">
             {/* Pie Chart */}
             <div className="bg-white p-4 w-full max-w-full" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
               <h2 className="text-base font-semibold text-gray-900 mb-4">Distribución por Directorio</h2>
