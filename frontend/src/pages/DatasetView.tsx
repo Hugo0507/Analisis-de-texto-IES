@@ -19,6 +19,7 @@ export const DatasetView: React.FC = () => {
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [directoryStats, setDirectoryStats] = useState<DirectoryStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     if (!id) return;
@@ -88,6 +89,17 @@ export const DatasetView: React.FC = () => {
     return stats;
   };
 
+  const getMostCommonExtension = () => {
+    const stats = getFileExtensionStats();
+    if (Object.keys(stats).length === 0) return { ext: 'N/A', count: 0 };
+
+    const sortedEntries = Object.entries(stats).sort((a, b) => b[1] - a[1]);
+    return {
+      ext: sortedEntries[0][0].toUpperCase(),
+      count: sortedEntries[0][1]
+    };
+  };
+
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 B';
     const k = 1024;
@@ -125,6 +137,11 @@ export const DatasetView: React.FC = () => {
 
   const extensionStats = getFileExtensionStats();
   const totalFiles = dataset.files.length;
+
+  // Filter and paginate files
+  const filteredFiles = dataset.files.filter(file =>
+    file.original_filename.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
@@ -241,20 +258,22 @@ export const DatasetView: React.FC = () => {
             <p className="text-sm text-gray-500 mt-1">espacio utilizado</p>
           </div>
 
-          {/* Processed Files */}
+          {/* Most Common Extension */}
           <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Procesados</h3>
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Extensión Principal</h3>
               <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
                 <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
               </div>
             </div>
             <p className="text-3xl font-bold text-gray-900">
-              {dataset.files.filter(f => f.status === 'completed').length}
+              {getMostCommonExtension().ext}
             </p>
-            <p className="text-sm text-gray-500 mt-1">archivos completados</p>
+            <p className="text-sm text-gray-500 mt-1">
+              {getMostCommonExtension().count}/{totalFiles} archivos
+            </p>
           </div>
         </div>
 
@@ -393,55 +412,92 @@ export const DatasetView: React.FC = () => {
 
         {/* Files List */}
         <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Archivos del Dataset</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">Archivos del Dataset</h2>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500">
+                {filteredFiles.length} de {totalFiles} archivos
+              </span>
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          <div className="mb-4">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                placeholder="Buscar archivos por nombre..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                >
+                  <svg className="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Table with scroll */}
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Archivo
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Tamaño
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Idioma
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Estado
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {dataset.files.map((file) => (
-                  <tr key={file.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <p className="text-sm font-medium text-gray-900 truncate max-w-md">
-                        {file.original_filename}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-sm text-gray-600">{formatBytes(file.file_size_bytes)}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {file.language_code ? (
-                        <span className="text-sm text-gray-900">
-                          {file.language_code.toUpperCase()}
-                          {file.language_confidence && (
-                            <span className="text-xs text-gray-500 ml-1">
-                              ({(file.language_confidence * 100).toFixed(0)}%)
-                            </span>
-                          )}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-gray-400">-</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">{getStatusBadge(file.status)}</td>
+            <div style={{ maxHeight: '500px', overflowY: 'auto' }} className="border border-gray-200 rounded-lg">
+              <table className="w-full">
+                <thead className="bg-gray-50 sticky top-0 z-10">
+                  <tr className="border-b border-gray-200">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      #
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Archivo
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Tamaño
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {filteredFiles.length > 0 ? (
+                    filteredFiles.map((file, index) => (
+                      <tr key={file.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3">
+                          <span className="text-sm text-gray-500">{index + 1}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="text-sm font-medium text-gray-900">
+                            {file.original_filename}
+                          </p>
+                          {file.directory_path && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              📁 {file.directory_path}
+                            </p>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm text-gray-600">{formatBytes(file.file_size_bytes)}</span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={3} className="px-4 py-8 text-center text-sm text-gray-500">
+                        No se encontraron archivos que coincidan con "{searchTerm}"
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
