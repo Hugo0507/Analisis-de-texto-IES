@@ -199,18 +199,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
           </h2>
 
           {/* Config Nav Items */}
-          {configNavItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) =>
-                `flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 mb-2 ${
-                  isActive
-                    ? 'bg-slate-700 text-white'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`
-              }
-            >
+          {configNavItems.map((item) => {
+            // Check if current path starts with item path to highlight sub-routes
+            const isActiveRoute = location.pathname.startsWith(item.path);
+
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={() =>
+                  `flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 mb-2 ${
+                    isActiveRoute
+                      ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`
+                }
+              >
               {/* Icon */}
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {item.icon === 'users' ? (
