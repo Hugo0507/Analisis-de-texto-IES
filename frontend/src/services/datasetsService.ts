@@ -105,13 +105,43 @@ class DatasetsService {
   }
 
   /**
-   * Create dataset with file upload
+   * Create dataset with file upload (optimized for large batches)
    */
   async createDatasetWithFiles(data: {
     name: string;
     description?: string;
     files: File[];
+    onProgress?: (progress: { loaded: number; total: number; percentage: number }) => void;
   }): Promise<Dataset> {
+    const BATCH_SIZE = 50; // Send 50 files at a time
+    const totalFiles = data.files.length;
+
+    // For small datasets, send all at once
+    if (totalFiles <= BATCH_SIZE) {
+      const formData = new FormData();
+      formData.append('name', data.name);
+      if (data.description) {
+        formData.append('description', data.description);
+      }
+      formData.append('source', 'upload');
+
+      // Add all files
+      data.files.forEach((file) => {
+        formData.append('files', file);
+      });
+
+      const response = await apiClient.post('/datasets/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        timeout: 300000, // 5 minutes for file uploads
+      });
+      return response.data;
+    }
+
+    // For large datasets, send in batches
+    // First batch: Create dataset
+    const firstBatch = data.files.slice(0, BATCH_SIZE);
     const formData = new FormData();
     formData.append('name', data.name);
     if (data.description) {
@@ -119,8 +149,7 @@ class DatasetsService {
     }
     formData.append('source', 'upload');
 
-    // Add all files
-    data.files.forEach((file) => {
+    firstBatch.forEach((file) => {
       formData.append('files', file);
     });
 
@@ -128,8 +157,47 @@ class DatasetsService {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: 300000,
     });
-    return response.data;
+    const dataset = response.data;
+
+    // Report progress
+    if (data.onProgress) {
+      data.onProgress({
+        loaded: BATCH_SIZE,
+        total: totalFiles,
+        percentage: Math.round((BATCH_SIZE / totalFiles) * 100)
+      });
+    }
+
+    // Remaining batches: Add files to existing dataset
+    for (let i = BATCH_SIZE; i < totalFiles; i += BATCH_SIZE) {
+      const batch = data.files.slice(i, i + BATCH_SIZE);
+      const batchFormData = new FormData();
+
+      batch.forEach((file) => {
+        batchFormData.append('files', file);
+      });
+
+      await apiClient.post(`/datasets/${dataset.id}/add_files/`, batchFormData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        timeout: 300000,
+      });
+
+      // Report progress
+      if (data.onProgress) {
+        const loaded = Math.min(i + BATCH_SIZE, totalFiles);
+        data.onProgress({
+          loaded,
+          total: totalFiles,
+          percentage: Math.round((loaded / totalFiles) * 100)
+        });
+      }
+    }
+
+    return dataset;
   }
 
   /**

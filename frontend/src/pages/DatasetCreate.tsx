@@ -24,6 +24,7 @@ export const DatasetCreate: React.FC = () => {
   const [datasetName, setDatasetName] = useState('');
   const [datasetDescription, setDatasetDescription] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ loaded: 0, total: 0, percentage: 0 });
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [googleConnection, setGoogleConnection] = useState<GoogleDriveConnection | null>(null);
 
@@ -83,12 +84,16 @@ export const DatasetCreate: React.FC = () => {
   const handleConfirmImport = async () => {
     setShowConfirmModal(false);
     setIsUploading(true);
+    setUploadProgress({ loaded: 0, total: selectedFiles.length, percentage: 0 });
 
     try {
       await datasetsService.createDatasetWithFiles({
         name: datasetName,
         description: datasetDescription,
         files: selectedFiles,
+        onProgress: (progress) => {
+          setUploadProgress(progress);
+        }
       });
 
       showSuccess(`Dataset "${datasetName}" creado exitosamente con ${selectedFiles.length} archivo(s)`);
@@ -107,25 +112,45 @@ export const DatasetCreate: React.FC = () => {
     <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
       {/* Confirmation Modal */}
       {showConfirmModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 max-w-md w-full mx-4" style={{ borderRadius: '20px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' }}>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">
-              ¿Confirmar carga de archivos?
-            </h3>
-            <p className="text-sm text-gray-600 mb-6">
-              Estás a punto de subir <strong>{selectedFiles.length} archivo(s)</strong> a la plataforma.
-              Asegúrate de que la fuente sea confiable antes de proceder.
-            </p>
-            <div className="flex items-center justify-end gap-3">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
+            {/* Icon Header */}
+            <div className="flex flex-col items-center pt-8 pb-4">
+              <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 text-center">
+                ¿Confirmar carga de archivos?
+              </h3>
+            </div>
+
+            {/* Content */}
+            <div className="px-8 pb-6">
+              <p className="text-center text-gray-600 mb-2">
+                Estás a punto de subir
+              </p>
+              <p className="text-center">
+                <span className="text-3xl font-bold text-emerald-600">{selectedFiles.length}</span>
+                <span className="text-gray-700 ml-2">archivo(s)</span>
+              </p>
+              <p className="text-center text-sm text-gray-500 mt-4">
+                Asegúrate de que la fuente sea confiable antes de proceder
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-3 px-6 pb-6">
               <button
                 onClick={() => setShowConfirmModal(false)}
-                className="px-5 py-2.5 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors font-medium text-sm"
+                className="flex-1 px-5 py-3 text-gray-700 hover:bg-gray-100 rounded-xl transition-colors font-medium border border-gray-200"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleConfirmImport}
-                className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors font-medium text-sm shadow-md"
+                className="flex-1 px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-colors font-medium shadow-lg"
               >
                 Cargar ahora
               </button>
@@ -531,21 +556,43 @@ export const DatasetCreate: React.FC = () => {
 
           {/* Import Button (for files and folder) */}
           {(selectedMethod === 'files' || selectedMethod === 'folder') && selectedFiles.length > 0 && (
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={handleImportClick}
-                disabled={!datasetName || isUploading}
-                className="px-6 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {isUploading ? (
-                  <>
-                    <Spinner size="sm" />
-                    <span>Importando...</span>
-                  </>
-                ) : (
-                  `Importar ${selectedFiles.length} archivo(s)`
-                )}
-              </button>
+            <div className="mt-6">
+              {/* Progress Bar */}
+              {isUploading && uploadProgress.total > 0 && (
+                <div className="mb-4 bg-gray-100 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-700">
+                      Subiendo archivos...
+                    </span>
+                    <span className="text-sm text-gray-600">
+                      {uploadProgress.loaded} / {uploadProgress.total} ({uploadProgress.percentage}%)
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress.percentage}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <button
+                  onClick={handleImportClick}
+                  disabled={!datasetName || isUploading}
+                  className="px-6 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isUploading ? (
+                    <>
+                      <Spinner size="sm" />
+                      <span>Importando...</span>
+                    </>
+                  ) : (
+                    `Importar ${selectedFiles.length} archivo(s)`
+                  )}
+                </button>
+              </div>
             </div>
           )}
         </div>
