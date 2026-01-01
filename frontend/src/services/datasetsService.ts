@@ -113,7 +113,8 @@ class DatasetsService {
     files: File[];
     onProgress?: (progress: { loaded: number; total: number; percentage: number }) => void;
   }): Promise<Dataset> {
-    const BATCH_SIZE = 50; // Send 50 files at a time
+    const BATCH_SIZE = 20; // Send 20 files at a time (reduced to prevent server saturation)
+    const BATCH_DELAY = 1000; // Wait 1 second between batches
     const totalFiles = data.files.length;
 
     // For small datasets, send all at once
@@ -172,6 +173,9 @@ class DatasetsService {
 
     // Remaining batches: Add files to existing dataset
     for (let i = BATCH_SIZE; i < totalFiles; i += BATCH_SIZE) {
+      // Wait between batches to prevent server saturation
+      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
+
       const batch = data.files.slice(i, i + BATCH_SIZE);
       const batchFormData = new FormData();
 
