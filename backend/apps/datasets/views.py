@@ -82,23 +82,38 @@ class DatasetViewSet(viewsets.ModelViewSet):
                 # Process files if upload source
                 if source == 'upload':
                     files = request.FILES.getlist('files')
+                    file_paths = request.POST.getlist('file_paths')
+
                     if not files:
                         return Response(
                             {'error': 'No files provided'},
                             status=status.HTTP_400_BAD_REQUEST
                         )
 
-                    processor = DatasetProcessorService()
-                    results = processor.process_uploaded_files(dataset, files)
+                    # Create a list of (file, path) tuples
+                    files_with_paths = []
+                    for i, uploaded_file in enumerate(files):
+                        # Get corresponding path if available, otherwise use filename
+                        file_path = file_paths[i] if i < len(file_paths) else uploaded_file.name
+                        files_with_paths.append((uploaded_file, file_path))
 
-                    if not results['success']:
-                        return Response(
-                            {
-                                'error': 'Some files failed to process',
-                                'details': results
-                            },
-                            status=status.HTTP_400_BAD_REQUEST
-                        )
+                    # Process files in background thread to avoid timeout
+                    def process_files_in_background():
+                        """Background task to process uploaded files."""
+                        try:
+                            processor = DatasetProcessorService()
+                            results = processor.process_uploaded_files_with_paths(dataset, files_with_paths)
+                            logger.info(f"Background file processing completed for dataset {dataset.id}: {results}")
+                        except Exception as e:
+                            logger.exception(f"Error in background file processing: {e}")
+                            dataset.status = 'error'
+                            dataset.save()
+
+                    # Launch background thread
+                    thread = threading.Thread(target=process_files_in_background, daemon=True)
+                    thread.start()
+
+                    logger.info(f"Started background processing for uploaded files in dataset {dataset.id}")
 
                 # For drive source, download and process files from Google Drive
                 elif source == 'drive':
@@ -300,12 +315,17 @@ class DatasetViewSet(viewsets.ModelViewSet):
 
         Expects:
         - files: List[File] - Files to add to the dataset
+        - file_paths: List[str] - Relative paths for each file (preserves directory structure)
 
         This endpoint allows adding files to an existing dataset without
         creating a new one, enabling incremental data collection.
+
+        Files are saved immediately and processed asynchronously in the background
+        to avoid timeout issues with large batches.
         """
         dataset = self.get_object()
         files = request.FILES.getlist('files')
+        file_paths = request.POST.getlist('file_paths')
 
         if not files:
             return Response(
@@ -318,26 +338,40 @@ class DatasetViewSet(viewsets.ModelViewSet):
             dataset.status = 'processing'
             dataset.save()
 
-            # Process new files
-            processor = DatasetProcessorService()
-            results = processor.process_uploaded_files(dataset, files)
+            # Create a list of (file, path) tuples
+            files_with_paths = []
+            for i, uploaded_file in enumerate(files):
+                # Get corresponding path if available, otherwise use filename
+                file_path = file_paths[i] if i < len(file_paths) else uploaded_file.name
+                files_with_paths.append((uploaded_file, file_path))
 
-            if not results['success']:
-                return Response(
-                    {
-                        'error': 'Some files failed to process',
-                        'details': results
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            # Process files in background thread to avoid timeout
+            def process_files_in_background():
+                """Background task to process uploaded files."""
+                try:
+                    processor = DatasetProcessorService()
+                    results = processor.process_uploaded_files_with_paths(dataset, files_with_paths)
+                    logger.info(f"Background file processing completed for dataset {dataset.id}: {results}")
+                except Exception as e:
+                    logger.exception(f"Error in background file processing: {e}")
+                    dataset.status = 'error'
+                    dataset.save()
 
-            # Return updated dataset
+            # Launch background thread
+            thread = threading.Thread(target=process_files_in_background, daemon=True)
+            thread.start()
+
+            # Return immediately with success
             output_serializer = DatasetSerializer(dataset)
             return Response(
                 {
-                    'message': f'{results["processed"]} files added successfully',
+                    'message': f'{len(files)} files received. Processing in background...',
                     'dataset': output_serializer.data,
-                    'results': results
+                    'results': {
+                        'success': True,
+                        'received': len(files),
+                        'processing': True
+                    }
                 },
                 status=status.HTTP_200_OK
             )
