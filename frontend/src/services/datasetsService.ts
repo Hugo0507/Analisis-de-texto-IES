@@ -114,7 +114,8 @@ class DatasetsService {
     onProgress?: (progress: { loaded: number; total: number; percentage: number }) => void;
   }): Promise<Dataset> {
     const BATCH_SIZE = 10; // Send 10 files at a time (reduced to prevent server saturation)
-    const BATCH_DELAY = 3000; // Wait 3 seconds between batches
+    const BATCH_DELAY = 8000; // Wait 8 seconds between batches (prevent server restart)
+    const MAX_RETRIES = 5; // Retry failed batches up to 5 times (server might restart)
     const totalFiles = data.files.length;
 
     // For small datasets, send all at once
@@ -177,27 +178,80 @@ class DatasetsService {
       });
     }
 
-    // Remaining batches: Add files to existing dataset
-    for (let i = BATCH_SIZE; i < totalFiles; i += BATCH_SIZE) {
-      // Wait between batches to prevent server saturation
-      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
-
-      const batch = data.files.slice(i, i + BATCH_SIZE);
+    // Helper function to upload batch with retry logic
+    const uploadBatchWithRetry = async (
+      batchFiles: File[],
+      batchNumber: number,
+      retries: number = MAX_RETRIES
+    ): Promise<void> => {
       const batchFormData = new FormData();
 
-      batch.forEach((file) => {
+      batchFiles.forEach((file) => {
         batchFormData.append('files', file);
         // @ts-ignore - webkitRelativePath exists on File objects from directory inputs
         const relativePath = file.webkitRelativePath || file.name;
         batchFormData.append('file_paths', relativePath);
       });
 
-      await apiClient.post(`/datasets/${dataset.id}/add_files/`, batchFormData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        timeout: 600000, // 10 minutes
-      });
+      for (let attempt = 0; attempt < retries; attempt++) {
+        try {
+          await apiClient.post(`/datasets/${dataset.id}/add_files/`, batchFormData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+            timeout: 600000, // 10 minutes
+          });
+
+          // Success - exit retry loop
+          return;
+
+        } catch (error: any) {
+          const isLastAttempt = attempt === retries - 1;
+          const is401 = error.response?.status === 401;
+          const is429 = error.response?.status === 429; // Rate limit
+
+          console.warn(`Batch ${batchNumber} attempt ${attempt + 1} failed:`, error.message);
+
+          if (isLastAttempt) {
+            // Last attempt failed - throw error
+            throw new Error(
+              `Batch ${batchNumber} failed after ${retries} attempts: ${error.message}`
+            );
+          }
+
+          // Exponential backoff with longer delays for 401 (server restart)
+          // Normal: 3s, 6s, 12s, 24s, 48s
+          // For 401: 10s, 20s, 30s, 40s, 50s (give server time to restart)
+          let backoffDelay;
+          if (is401 || is429) {
+            // Server restart or rate limit - wait longer
+            backoffDelay = (attempt + 1) * 10000; // 10s, 20s, 30s, 40s, 50s
+          } else {
+            // Network error - exponential backoff
+            backoffDelay = Math.pow(2, attempt + 1) * 1500; // 3s, 6s, 12s, 24s, 48s
+          }
+
+          console.log(
+            `Batch ${batchNumber} attempt ${attempt + 1} failed. ` +
+            `Retrying in ${backoffDelay / 1000}s... ` +
+            `(${is401 ? 'Server restart' : is429 ? 'Rate limit' : 'Network error'})`
+          );
+
+          await new Promise(resolve => setTimeout(resolve, backoffDelay));
+        }
+      }
+    };
+
+    // Remaining batches: Add files to existing dataset
+    for (let i = BATCH_SIZE; i < totalFiles; i += BATCH_SIZE) {
+      // Wait between batches to prevent server saturation and rate limiting
+      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
+
+      const batch = data.files.slice(i, i + BATCH_SIZE);
+      const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+
+      // Upload with retry logic
+      await uploadBatchWithRetry(batch, batchNumber);
 
       // Report progress
       if (data.onProgress) {
