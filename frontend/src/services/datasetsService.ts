@@ -143,6 +143,8 @@ class DatasetsService {
       description: data.description,
       source: 'drive',
       source_url: data.source_url,
+    }, {
+      timeout: 180000, // 3 minutes for Google Drive operations
     });
     return response.data;
   }

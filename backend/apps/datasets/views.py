@@ -3,6 +3,7 @@ Views for Dataset management API.
 """
 
 import logging
+import threading
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -108,18 +109,23 @@ class DatasetViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST
                         )
 
-                    # Process Drive dataset
-                    drive_service = DriveDatasetService()
-                    results = drive_service.process_drive_dataset(dataset, source_url)
+                    # Process Drive dataset asynchronously in background
+                    def process_drive_in_background():
+                        """Background task to process Google Drive dataset."""
+                        try:
+                            drive_service = DriveDatasetService()
+                            results = drive_service.process_drive_dataset(dataset, source_url)
+                            logger.info(f"Drive processing completed for dataset {dataset.id}: {results}")
+                        except Exception as e:
+                            logger.exception(f"Error in background Drive processing: {e}")
+                            dataset.status = 'error'
+                            dataset.save()
 
-                    if not results['success']:
-                        return Response(
-                            {
-                                'error': 'Failed to process Google Drive folder',
-                                'details': results
-                            },
-                            status=status.HTTP_400_BAD_REQUEST
-                        )
+                    # Launch background thread
+                    thread = threading.Thread(target=process_drive_in_background, daemon=True)
+                    thread.start()
+
+                    logger.info(f"Started background processing for Drive dataset {dataset.id}")
 
                 # Return created dataset
                 output_serializer = DatasetSerializer(dataset)

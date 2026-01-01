@@ -25,6 +25,17 @@ export const DatasetView: React.FC = () => {
     loadDataset();
   }, [id]);
 
+  // Polling effect for datasets that are processing
+  useEffect(() => {
+    if (!dataset || dataset.status !== 'processing') return;
+
+    const pollInterval = setInterval(() => {
+      loadDataset();
+    }, 5000); // Poll every 5 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [dataset?.status]);
+
   const loadDataset = async () => {
     if (!id) return;
 
@@ -147,6 +158,28 @@ export const DatasetView: React.FC = () => {
 
       {/* Content */}
       <div className="p-8 space-y-6">
+        {/* Processing Banner */}
+        {dataset.status === 'processing' && (
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-blue-800">
+                  Procesando archivos desde Google Drive
+                </h3>
+                <p className="text-sm text-blue-700 mt-1">
+                  Los archivos se están descargando y procesando en segundo plano. Esta página se actualizará automáticamente cada 5 segundos.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Dataset Info Card */}
         <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Información General</h2>
