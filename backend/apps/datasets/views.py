@@ -109,12 +109,19 @@ class DatasetViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST
                         )
 
+                    # Verify user has connected Google Drive
+                    if not request.user.google_drive_connected:
+                        return Response(
+                            {'error': 'You must connect your Google Drive account first. Go to your profile to connect.'},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+
                     # Process Drive dataset asynchronously in background
                     def process_drive_in_background():
                         """Background task to process Google Drive dataset."""
                         try:
                             # Usar el servicio simple (más parecido a Colab)
-                            drive_service = SimpleDriveService()
+                            drive_service = SimpleDriveService(user=request.user)
 
                             # Extraer folder ID de la URL
                             folder_id = drive_service.drive_gateway.extract_folder_id(source_url)

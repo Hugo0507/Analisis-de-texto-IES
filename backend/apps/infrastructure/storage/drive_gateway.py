@@ -1,25 +1,24 @@
 """
 Google Drive Gateway.
 
-Handles OAuth2 and Service Account authentication for Google Drive operations.
-Supports both local development (OAuth2) and production (Service Account).
+Handles OAuth2 authentication for Google Drive operations using user tokens.
+Each user connects their own Google Drive account via OAuth2 flow.
 """
 
 import logging
-import os
-import pickle
 import json
-from typing import Dict, List, Optional
-from pathlib import Path
+from typing import Dict, List, Optional, TYPE_CHECKING
+from django.conf import settings
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from google.oauth2 import service_account
-from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 from googleapiclient.errors import HttpError
 import io
+
+if TYPE_CHECKING:
+    from apps.users.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -37,115 +36,99 @@ class DriveGateway:
     """
 
     # OAuth2 scopes
-    SCOPES = ['https://www.googleapis.com/auth/drive']
+    SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
 
-    def __init__(
-        self,
-        credentials_path: str = None,
-        token_path: str = None
-    ):
+    def __init__(self, user: 'User' = None):
         """
-        Initialize Drive Gateway.
+        Initialize Drive Gateway with user OAuth tokens.
 
         Args:
-            credentials_path: Path to OAuth2 credentials JSON
-            token_path: Path to store OAuth2 token
+            user: Django User instance with Google Drive connection.
+                  Must have google_drive_connected=True and valid tokens.
         """
-        self.credentials_path = credentials_path or os.getenv(
-            'GOOGLE_CREDENTIALS_PATH',
-            'credentials.json'
-        )
-        self.token_path = token_path or os.getenv(
-            'GOOGLE_TOKEN_PATH',
-            'token.pickle'
-        )
+        self.user = user
         self.service = None
         self.credentials = None
 
     def authenticate(self) -> bool:
         """
-        Authenticate with Google Drive.
+        Authenticate with Google Drive using user's OAuth tokens.
 
-        Supports two authentication methods:
-        1. Service Account (Production): Uses GOOGLE_SERVICE_ACCOUNT_JSON env var
-        2. OAuth2 (Development): Uses credentials.json and interactive flow
+        Uses encrypted tokens stored in the user's database record.
+        Automatically refreshes expired tokens and saves new tokens back to database.
 
         Returns:
-            True if authentication successful
+            True if authentication successful, False otherwise
+
+        Raises:
+            ValueError: If user is not provided or has not connected Google Drive
 
         Example:
-            >>> gateway = DriveGateway()
+            >>> from apps.users.models import User
+            >>> user = User.objects.get(email='user@example.com')
+            >>> gateway = DriveGateway(user=user)
             >>> if gateway.authenticate():
             >>>     print("Authenticated successfully")
         """
+        if not self.user:
+            logger.error("No user provided for authentication")
+            return False
+
+        if not self.user.google_drive_connected:
+            logger.error(f"User {self.user.email} has not connected Google Drive")
+            return False
+
         try:
-            # Method 1: Service Account (for production/cloud deployment)
-            service_account_json = os.getenv('GOOGLE_SERVICE_ACCOUNT_JSON')
+            # Import here to avoid circular imports
+            from apps.users.encryption import TokenEncryption
 
-            if service_account_json:
-                logger.info("Authenticating with Service Account")
+            # Decrypt tokens
+            encryption = TokenEncryption()
+            access_token = encryption.decrypt(self.user.google_drive_access_token)
+            refresh_token = encryption.decrypt(self.user.google_drive_refresh_token) if self.user.google_drive_refresh_token else None
 
-                # Parse JSON from environment variable
-                service_account_info = json.loads(service_account_json)
+            # Parse scopes
+            scopes = []
+            if self.user.google_drive_scopes:
+                try:
+                    scopes = json.loads(self.user.google_drive_scopes)
+                except json.JSONDecodeError:
+                    logger.warning(f"Failed to parse scopes for user {self.user.email}, using default")
+                    scopes = self.SCOPES
 
-                # Create credentials from service account
-                self.credentials = service_account.Credentials.from_service_account_info(
-                    service_account_info,
-                    scopes=self.SCOPES
-                )
+            # Create credentials object
+            self.credentials = Credentials(
+                token=access_token,
+                refresh_token=refresh_token,
+                token_uri='https://oauth2.googleapis.com/token',
+                client_id=settings.GOOGLE_OAUTH_CLIENT_ID,
+                client_secret=settings.GOOGLE_OAUTH_CLIENT_SECRET,
+                scopes=scopes
+            )
 
-                # Build service
-                self.service = build('drive', 'v3', credentials=self.credentials)
+            # Check if token is expired and refresh if needed
+            if self.credentials.expired and self.credentials.refresh_token:
+                logger.info(f"Refreshing expired token for user {self.user.email}")
+                self.credentials.refresh(Request())
 
-                logger.info("Service Account authentication successful")
-                return True
+                # Save new access token to database
+                self.user.google_drive_access_token = encryption.encrypt(self.credentials.token)
+                self.user.google_drive_token_expires_at = self.credentials.expiry
+                self.user.save(update_fields=[
+                    'google_drive_access_token',
+                    'google_drive_token_expires_at'
+                ])
 
-            # Method 2: OAuth2 (for local development)
-            logger.info("Attempting OAuth2 authentication")
+                logger.info(f"Token refreshed and saved for user {self.user.email}")
 
-            # Load token if exists
-            if os.path.exists(self.token_path):
-                with open(self.token_path, 'rb') as token:
-                    self.credentials = pickle.load(token)
-
-            # If no valid credentials, authenticate
-            if not self.credentials or not self.credentials.valid:
-                if self.credentials and self.credentials.expired and self.credentials.refresh_token:
-                    # Refresh token
-                    logger.info("Refreshing expired OAuth2 token")
-                    self.credentials.refresh(Request())
-                else:
-                    # Check if credentials file exists
-                    if not os.path.exists(self.credentials_path):
-                        logger.error(
-                            f"No credentials found. Either set GOOGLE_SERVICE_ACCOUNT_JSON "
-                            f"environment variable or provide {self.credentials_path} file."
-                        )
-                        return False
-
-                    # New authentication flow
-                    logger.info("Starting OAuth2 interactive flow")
-                    flow = InstalledAppFlow.from_client_secrets_file(
-                        self.credentials_path,
-                        self.SCOPES
-                    )
-                    self.credentials = flow.run_local_server(port=0)
-
-                # Save token
-                with open(self.token_path, 'wb') as token:
-                    pickle.dump(self.credentials, token)
-
-            # Build service
+            # Build Drive service
             self.service = build('drive', 'v3', credentials=self.credentials)
 
-            logger.info("OAuth2 authentication successful")
+            logger.info(f"Authenticated successfully for user {self.user.email}")
             return True
 
-        except json.JSONDecodeError as e:
-            logger.exception(f"Invalid GOOGLE_SERVICE_ACCOUNT_JSON format: {e}")
-            return False
         except Exception as e:
-            logger.exception(f"Drive authentication failed: {e}")
+            logger.exception(f"Drive authentication failed for user {self.user.email}: {e}")
             return False
 
     def list_files(
