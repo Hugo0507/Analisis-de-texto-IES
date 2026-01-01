@@ -15,7 +15,7 @@ export const MainLayout: React.FC = () => {
       <Sidebar />
 
       {/* Page Content */}
-      <main className="flex-1">
+      <main className="flex-1" style={{ minWidth: 0 }}>
         <Outlet />
       </main>
     </div>
