@@ -3,7 +3,6 @@ Views for Dataset management API.
 """
 
 import logging
-import threading
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -20,9 +19,6 @@ from .serializers import (
 from .services import DatasetProcessorService, SimpleDriveService
 
 logger = logging.getLogger(__name__)
-
-# Global lock to serialize file processing (prevent memory saturation)
-_file_processing_lock = threading.Lock()
 
 
 class IsAdminUser(IsAuthenticated):
@@ -100,28 +96,20 @@ class DatasetViewSet(viewsets.ModelViewSet):
                         file_path = file_paths[i] if i < len(file_paths) else uploaded_file.name
                         files_with_paths.append((uploaded_file, file_path))
 
-                    # Process files in background thread to avoid timeout
-                    def process_files_in_background():
-                        """Background task to process uploaded files."""
-                        # Acquire lock to serialize processing (only one batch at a time)
-                        with _file_processing_lock:
-                            try:
-                                logger.info(f"Acquired lock for processing {len(files)} files in dataset {dataset.id}")
-                                processor = DatasetProcessorService()
-                                results = processor.process_uploaded_files_with_paths(dataset, files_with_paths)
-                                logger.info(f"Background file processing completed for dataset {dataset.id}: {results}")
-                            except Exception as e:
-                                logger.exception(f"Error in background file processing: {e}")
-                                dataset.status = 'error'
-                                dataset.save()
-                            finally:
-                                logger.info(f"Released lock for dataset {dataset.id}")
+                    # Process files SYNCHRONOUSLY (fast - only saves files and metadata)
+                    processor = DatasetProcessorService()
+                    results = processor.process_uploaded_files_with_paths(dataset, files_with_paths)
 
-                    # Launch background thread
-                    thread = threading.Thread(target=process_files_in_background, daemon=True)
-                    thread.start()
+                    if not results['success']:
+                        return Response(
+                            {
+                                'error': 'Some files failed to process',
+                                'details': results
+                            },
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
 
-                    logger.info(f"Started background processing for uploaded files in dataset {dataset.id}")
+                    logger.info(f"File processing completed for dataset {dataset.id}: {results}")
 
                 # For drive source, download and process files from Google Drive
                 elif source == 'drive':
@@ -353,38 +341,26 @@ class DatasetViewSet(viewsets.ModelViewSet):
                 file_path = file_paths[i] if i < len(file_paths) else uploaded_file.name
                 files_with_paths.append((uploaded_file, file_path))
 
-            # Process files in background thread to avoid timeout
-            def process_files_in_background():
-                """Background task to process uploaded files."""
-                # Acquire lock to serialize processing (only one batch at a time)
-                with _file_processing_lock:
-                    try:
-                        logger.info(f"Acquired lock for processing {len(files)} files in dataset {dataset.id}")
-                        processor = DatasetProcessorService()
-                        results = processor.process_uploaded_files_with_paths(dataset, files_with_paths)
-                        logger.info(f"Background file processing completed for dataset {dataset.id}: {results}")
-                    except Exception as e:
-                        logger.exception(f"Error in background file processing: {e}")
-                        dataset.status = 'error'
-                        dataset.save()
-                    finally:
-                        logger.info(f"Released lock for dataset {dataset.id}")
+            # Process files SYNCHRONOUSLY (fast - only saves files and metadata, no NLP)
+            processor = DatasetProcessorService()
+            results = processor.process_uploaded_files_with_paths(dataset, files_with_paths)
 
-            # Launch background thread
-            thread = threading.Thread(target=process_files_in_background, daemon=True)
-            thread.start()
+            if not results['success']:
+                return Response(
+                    {
+                        'error': 'Some files failed to process',
+                        'details': results
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-            # Return immediately with success
+            # Return updated dataset
             output_serializer = DatasetSerializer(dataset)
             return Response(
                 {
-                    'message': f'{len(files)} files received. Processing in background...',
+                    'message': f'{results["processed"]} files added successfully',
                     'dataset': output_serializer.data,
-                    'results': {
-                        'success': True,
-                        'received': len(files),
-                        'processing': True
-                    }
+                    'results': results
                 },
                 status=status.HTTP_200_OK
             )
