@@ -26,7 +26,6 @@ import {
   DatasetCreate,
   DatasetView,
   DatasetEdit,
-  Datasets,
 } from './pages';
 
 function App() {
