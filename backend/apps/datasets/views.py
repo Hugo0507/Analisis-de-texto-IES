@@ -16,7 +16,7 @@ from .serializers import (
     DatasetCreateSerializer,
     DatasetFileSerializer
 )
-from .services import DatasetProcessorService
+from .services import DatasetProcessorService, DriveDatasetService
 
 logger = logging.getLogger(__name__)
 
@@ -99,10 +99,27 @@ class DatasetViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST
                         )
 
-                # For drive source, mark as pending (processing will be done separately)
+                # For drive source, download and process files from Google Drive
                 elif source == 'drive':
-                    dataset.status = 'pending'
-                    dataset.save()
+                    source_url = serializer.validated_data.get('source_url')
+                    if not source_url:
+                        return Response(
+                            {'error': 'source_url is required for drive source'},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+
+                    # Process Drive dataset
+                    drive_service = DriveDatasetService()
+                    results = drive_service.process_drive_dataset(dataset, source_url)
+
+                    if not results['success']:
+                        return Response(
+                            {
+                                'error': 'Failed to process Google Drive folder',
+                                'details': results
+                            },
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
 
                 # Return created dataset
                 output_serializer = DatasetSerializer(dataset)
