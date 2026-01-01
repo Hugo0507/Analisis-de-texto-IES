@@ -44,17 +44,17 @@ export const DatasetCreate: React.FC = () => {
 
     setIsUploading(true);
     try {
-      await datasetsService.createDatasetWithDrive({
+      const dataset = await datasetsService.createDatasetWithDrive({
         name: datasetName,
         description: datasetDescription,
         source_url: driveUrl,
       });
 
-      showSuccess('Dataset de Google Drive creado exitosamente. La sincronización se iniciará pronto.');
+      showSuccess('Dataset de Google Drive creado. Procesando archivos en segundo plano...');
 
-      // Navigate back to list
+      // Navigate to dataset view to see progress
       setTimeout(() => {
-        navigate('/admin/configuracion/datasets');
+        navigate(`/admin/configuracion/datasets/${dataset.id}`);
       }, 1500);
     } catch (error: any) {
       showError('Error al crear dataset: ' + (error.response?.data?.error || error.message));
