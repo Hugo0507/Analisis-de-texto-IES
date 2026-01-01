@@ -161,7 +161,7 @@ class GoogleDriveService {
   async connect(): Promise<GoogleDriveConnection> {
     try {
       // Step 1: Get authorization URL
-      const { authorization_url, state } = await this.getAuthorizationUrl();
+      const { authorization_url } = await this.getAuthorizationUrl();
 
       // Step 2: Open popup and wait for code
       const { code, state: returnedState } = await this.openOAuthPopup(authorization_url);

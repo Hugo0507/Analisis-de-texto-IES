@@ -7,6 +7,7 @@ Each user connects their own Google Drive account via OAuth2 flow.
 
 import logging
 import json
+from pathlib import Path
 from typing import Dict, List, Optional, TYPE_CHECKING
 from django.conf import settings
 
