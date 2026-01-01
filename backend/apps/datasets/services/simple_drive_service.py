@@ -92,12 +92,22 @@ class SimpleDriveService:
             from ..models import DatasetFile
 
             created_files_count = 0
+            directory_counts = {}  # Para contar archivos por carpeta
+
             for file_info in all_files:
                 # Saltar formatos de Google Docs que no podemos procesar
                 if file_info['mimeType'].startswith('application/vnd.google-apps'):
                     continue
 
                 try:
+                    relative_path = file_info.get('relative_path', '')
+                    directory_name = relative_path.split('/')[-1] if relative_path else ''
+
+                    # Contar archivos por carpeta (para logging)
+                    if relative_path not in directory_counts:
+                        directory_counts[relative_path] = 0
+                    directory_counts[relative_path] += 1
+
                     # Crear registro con metadata, sin contenido descargado
                     DatasetFile.objects.create(
                         dataset=dataset,
@@ -106,13 +116,19 @@ class SimpleDriveService:
                         file_path=f"drive://{file_info['id']}",  # Guardar ID de Drive
                         file_size_bytes=int(file_info.get('size', 0)),
                         mime_type=file_info['mimeType'],
-                        directory_path=file_info.get('relative_path', ''),
+                        directory_path=relative_path,  # Ruta completa: "Redalyc/subcarpeta"
+                        directory_name=directory_name,  # Nombre de carpeta inmediata: "subcarpeta"
                         status='pending'  # Pendiente de procesar cuando ejecute pipeline
                     )
                     created_files_count += 1
                 except Exception as e:
                     logger.warning(f"Error creando DatasetFile para {file_info['name']}: {e}")
                     continue
+
+            # Log de distribución por carpetas
+            logger.info(f"Distribución de archivos por carpeta:")
+            for dir_path, count in sorted(directory_counts.items()):
+                logger.info(f"  {dir_path or 'ROOT'}: {count} archivos")
 
             # 5. Actualizar estadísticas del dataset
             dataset.total_files = created_files_count
@@ -179,6 +195,8 @@ class SimpleDriveService:
         folder_map = {root_folder_id: ""}  # Root = ruta vacía
         to_process = [(root_folder_id, "")]
 
+        logger.info(f"Construyendo mapa de carpetas desde folder_id: {root_folder_id}")
+
         while to_process:
             current_id, current_path = to_process.pop(0)
 
@@ -191,15 +209,19 @@ class SimpleDriveService:
                 ).execute()
 
                 folders = results.get('files', [])
+                logger.info(f"Encontradas {len(folders)} subcarpetas en '{current_path or 'ROOT'}'")
+
                 for folder in folders:
                     folder_path = f"{current_path}/{folder['name']}" if current_path else folder['name']
                     folder_map[folder['id']] = folder_path
                     to_process.append((folder['id'], folder_path))
+                    logger.debug(f"  → Carpeta: {folder['name']} → Ruta: {folder_path}")
 
             except Exception as e:
                 logger.warning(f"Error construyendo mapa de carpetas: {e}")
                 continue
 
+        logger.info(f"Mapa de carpetas completado. Total carpetas: {len(folder_map)}")
         return folder_map
 
     def _download_to_local_structure(
