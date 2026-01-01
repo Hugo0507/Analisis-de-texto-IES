@@ -44,6 +44,49 @@ class User(AbstractUser):
     created_at = models.DateTimeField('Fecha de creación', auto_now_add=True)
     updated_at = models.DateTimeField('Fecha de actualización', auto_now=True)
 
+    # Google Drive OAuth fields
+    google_drive_connected = models.BooleanField(
+        'Conectado a Google Drive',
+        default=False,
+        help_text='Indica si el usuario ha conectado su cuenta de Google Drive'
+    )
+    google_drive_email = models.EmailField(
+        'Email de Google Drive',
+        blank=True,
+        null=True,
+        help_text='Email de la cuenta de Google Drive conectada'
+    )
+    google_drive_access_token = models.TextField(
+        'Token de Acceso de Google Drive',
+        blank=True,
+        null=True,
+        help_text='Token de acceso encriptado para Google Drive API'
+    )
+    google_drive_refresh_token = models.TextField(
+        'Token de Refresco de Google Drive',
+        blank=True,
+        null=True,
+        help_text='Token de refresco encriptado para renovar el access token'
+    )
+    google_drive_token_expires_at = models.DateTimeField(
+        'Expiración del Token',
+        blank=True,
+        null=True,
+        help_text='Fecha y hora de expiración del access token'
+    )
+    google_drive_scopes = models.TextField(
+        'Scopes de Google Drive',
+        blank=True,
+        null=True,
+        help_text='Permisos otorgados (JSON array)'
+    )
+    google_drive_connected_at = models.DateTimeField(
+        'Fecha de Conexión a Google Drive',
+        blank=True,
+        null=True,
+        help_text='Fecha y hora en que se conectó la cuenta de Google Drive'
+    )
+
     class Meta:
         verbose_name = 'Usuario'
         verbose_name_plural = 'Usuarios'

@@ -134,3 +134,37 @@ class ChangePasswordSerializer(serializers.Serializer):
         user.set_password(self.validated_data['new_password'])
         user.save()
         return user
+
+
+class GoogleDriveConnectionSerializer(serializers.Serializer):
+    """
+    Serializer for Google Drive connection status.
+
+    Used to display the current state of a user's Google Drive connection.
+    """
+
+    is_connected = serializers.BooleanField()
+    email = serializers.EmailField(required=False, allow_null=True)
+    connected_at = serializers.DateTimeField(required=False, allow_null=True)
+    scopes = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_null=True
+    )
+
+
+class OAuthCodeExchangeSerializer(serializers.Serializer):
+    """
+    Serializer for exchanging OAuth authorization code for tokens.
+
+    Used when the OAuth popup redirects back with the authorization code.
+    """
+
+    code = serializers.CharField(
+        required=True,
+        help_text="Authorization code from Google OAuth"
+    )
+    state = serializers.CharField(
+        required=True,
+        help_text="State parameter for CSRF protection"
+    )
