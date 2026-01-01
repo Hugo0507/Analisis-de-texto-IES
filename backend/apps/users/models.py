@@ -86,6 +86,13 @@ class User(AbstractUser):
         null=True,
         help_text='Fecha y hora en que se conectó la cuenta de Google Drive'
     )
+    google_drive_oauth_state = models.CharField(
+        'OAuth State Temporal',
+        max_length=64,
+        blank=True,
+        null=True,
+        help_text='Parámetro state temporal para protección CSRF en OAuth (se limpia después de usar)'
+    )
 
     class Meta:
         verbose_name = 'Usuario'
