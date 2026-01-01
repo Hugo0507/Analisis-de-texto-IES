@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { datasetsService } from '../services';
+import datasetsService from '../services/datasetsService';
 import { useToast } from '../contexts/ToastContext';
 import { Spinner } from '../components/atoms';
 
