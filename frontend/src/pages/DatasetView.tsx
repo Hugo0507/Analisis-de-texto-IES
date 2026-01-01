@@ -144,7 +144,7 @@ export const DatasetView: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
+    <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE', overflowX: 'hidden' }}>
       {/* Fixed Header */}
       <div className="sticky top-0 z-40 bg-white border-b border-gray-200" style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
         <div className="flex items-center justify-between px-8 py-4">
@@ -279,7 +279,7 @@ export const DatasetView: React.FC = () => {
 
         {/* Directory Distribution Section */}
         {directoryStats && directoryStats.pie_chart_data.length > 0 && (
-          <div className="space-y-4">
+          <div className="space-y-4" style={{ maxWidth: '100%', overflowX: 'hidden' }}>
             {/* Pie Chart */}
             <div className="bg-white p-4" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
               <h2 className="text-base font-semibold text-gray-900 mb-4">Distribución por Directorio</h2>
@@ -324,21 +324,21 @@ export const DatasetView: React.FC = () => {
             </div>
 
             {/* Distribution Table */}
-            <div className="bg-white p-4" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
+            <div className="bg-white p-4" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)', maxWidth: '100%' }}>
               <h2 className="text-base font-semibold text-gray-900 mb-4">Tabla de Distribución</h2>
-              <div className="overflow-x-auto" style={{ maxWidth: '100%' }}>
-                <table className="w-full text-xs">
+              <div className="overflow-x-auto border border-gray-200 rounded-lg" style={{ maxWidth: '100%', maxHeight: '400px', overflowY: 'auto' }}>
+                <table className="text-xs" style={{ minWidth: 'max-content' }}>
                   <thead>
                     <tr className="border-b border-gray-200">
-                      <th className="px-2 py-1 text-left text-xs font-semibold text-gray-700 uppercase sticky left-0 bg-white">
+                      <th className="px-2 py-1 text-left text-xs font-semibold text-gray-700 uppercase sticky left-0 bg-white z-10 shadow-sm">
                         Directorio
                       </th>
                       {directoryStats.all_extensions.map((ext) => (
-                        <th key={ext} className="px-2 py-1 text-center text-xs font-semibold text-gray-700 uppercase whitespace-nowrap">
+                        <th key={ext} className="px-2 py-1 text-center text-xs font-semibold text-gray-700 uppercase whitespace-nowrap bg-white">
                           {ext}
                         </th>
                       ))}
-                      <th className="px-2 py-1 text-center text-xs font-semibold text-emerald-700 uppercase bg-emerald-50 sticky right-0">
+                      <th className="px-2 py-1 text-center text-xs font-semibold text-emerald-700 uppercase bg-emerald-50 sticky right-0 z-10 shadow-sm">
                         Total
                       </th>
                     </tr>
@@ -346,26 +346,26 @@ export const DatasetView: React.FC = () => {
                   <tbody>
                     {directoryStats.table_data.map((row) => (
                       <tr key={row.directory} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="px-2 py-1 text-xs font-medium text-gray-900 sticky left-0 bg-white">{row.directory}</td>
+                        <td className="px-2 py-1 text-xs font-medium text-gray-900 sticky left-0 bg-white z-10">{row.directory}</td>
                         {directoryStats.all_extensions.map((ext) => (
                           <td key={ext} className="px-2 py-1 text-center text-xs text-gray-600 whitespace-nowrap">
                             {row.extensions[ext] || 0}
                           </td>
                         ))}
-                        <td className="px-2 py-1 text-center text-xs font-semibold text-emerald-700 bg-emerald-50 sticky right-0">
+                        <td className="px-2 py-1 text-center text-xs font-semibold text-emerald-700 bg-emerald-50 sticky right-0 z-10">
                           {row.total}
                         </td>
                       </tr>
                     ))}
                     {/* Totals Row */}
                     <tr className="bg-emerald-50 font-semibold">
-                      <td className="px-2 py-1 text-xs text-emerald-700 sticky left-0 bg-emerald-50">TOTAL</td>
+                      <td className="px-2 py-1 text-xs text-emerald-700 sticky left-0 bg-emerald-50 z-10">TOTAL</td>
                       {directoryStats.all_extensions.map((ext) => (
                         <td key={ext} className="px-2 py-1 text-center text-xs text-emerald-700 whitespace-nowrap">
                           {directoryStats.extension_totals[ext]}
                         </td>
                       ))}
-                      <td className="px-2 py-1 text-center text-xs text-emerald-700 bg-emerald-100 sticky right-0">
+                      <td className="px-2 py-1 text-center text-xs text-emerald-700 bg-emerald-100 sticky right-0 z-10">
                         {directoryStats.grand_total}
                       </td>
                     </tr>
