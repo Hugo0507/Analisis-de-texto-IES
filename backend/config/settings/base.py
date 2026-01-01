@@ -5,6 +5,7 @@ Base settings shared across all environments.
 
 import os
 from pathlib import Path
+from cryptography.fernet import Fernet
 
 # Build paths inside the project
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -328,10 +329,28 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 
 # ============================================================
-# GOOGLE DRIVE API
+# GOOGLE DRIVE API (Legacy - to be deprecated)
 # ============================================================
 GOOGLE_DRIVE_CREDENTIALS_FILE = BASE_DIR.parent / 'credentials.json'
 GOOGLE_DRIVE_TOKEN_FILE = BASE_DIR.parent / 'token.json'
+
+# ============================================================
+# GOOGLE OAUTH 2.0 (Google Drive User Authentication)
+# ============================================================
+GOOGLE_OAUTH_CLIENT_ID = os.environ.get('GOOGLE_OAUTH_CLIENT_ID', '')
+GOOGLE_OAUTH_CLIENT_SECRET = os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET', '')
+GOOGLE_OAUTH_REDIRECT_URI = os.environ.get(
+    'GOOGLE_OAUTH_REDIRECT_URI',
+    'http://localhost:3000/oauth/callback/google-drive'
+)
+
+# Encryption key for storing OAuth tokens securely in database
+# IMPORTANT: Generate this key once and store it securely in environment variables
+# To generate a new key, run: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+GOOGLE_OAUTH_ENCRYPTION_KEY = os.environ.get(
+    'GOOGLE_OAUTH_ENCRYPTION_KEY',
+    Fernet.generate_key().decode()  # Auto-generate in development only
+)
 
 # ============================================================
 # NLP/ML CONFIGURATION
