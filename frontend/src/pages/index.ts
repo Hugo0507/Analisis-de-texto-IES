@@ -20,3 +20,5 @@ export { UserDetail } from './UserDetail';
 export { Datasets } from './Datasets';
 export { DatasetList } from './DatasetList';
 export { DatasetCreate } from './DatasetCreate';
+export { DatasetView } from './DatasetView';
+export { DatasetEdit } from './DatasetEdit';
