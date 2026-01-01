@@ -117,7 +117,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
   // Sidebar for Configuration Routes - New Dark Design
   if (isConfigRoute) {
     return (
-      <aside className={`w-64 bg-slate-900 min-h-screen flex flex-col relative ${className}`}>
+      <aside className={`w-64 bg-slate-900 min-h-screen flex flex-col relative flex-shrink-0 ${className}`}>
         {/* Logo Institucional Top */}
         <div className="p-6 flex items-center justify-between">
           <img
@@ -244,7 +244,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
 
   // Original Sidebar for Dashboard Routes
   return (
-    <aside className={`w-64 bg-white shadow-lg min-h-screen ${className}`}>
+    <aside className={`w-64 bg-white shadow-lg min-h-screen flex-shrink-0 ${className}`}>
       <nav className="p-4 space-y-2">
         <div className="mb-6">
           <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 mb-2">
