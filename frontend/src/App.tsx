@@ -27,6 +27,7 @@ import {
   DatasetView,
   DatasetEdit,
 } from './pages';
+import { OAuthCallback } from './pages/OAuthCallback';
 
 function App() {
   return (
@@ -40,6 +41,9 @@ function App() {
           {/* Admin Authentication Routes */}
           <Route path="/admin" element={<Login />} />
           <Route path="/admin/forgot-password" element={<ForgotPassword />} />
+
+          {/* OAuth Callback Route (for Google Drive popup) */}
+          <Route path="/oauth/callback/google-drive" element={<OAuthCallback />} />
 
           {/* Public Dashboard Routes - Analysis Tools (NO LOGIN REQUIRED) */}
           <Route path="/dashboard" element={<MainLayout />}>
