@@ -21,6 +21,9 @@ from .services import DatasetProcessorService, SimpleDriveService
 
 logger = logging.getLogger(__name__)
 
+# Global lock to serialize file processing (prevent memory saturation)
+_file_processing_lock = threading.Lock()
+
 
 class IsAdminUser(IsAuthenticated):
     """
@@ -100,14 +103,19 @@ class DatasetViewSet(viewsets.ModelViewSet):
                     # Process files in background thread to avoid timeout
                     def process_files_in_background():
                         """Background task to process uploaded files."""
-                        try:
-                            processor = DatasetProcessorService()
-                            results = processor.process_uploaded_files_with_paths(dataset, files_with_paths)
-                            logger.info(f"Background file processing completed for dataset {dataset.id}: {results}")
-                        except Exception as e:
-                            logger.exception(f"Error in background file processing: {e}")
-                            dataset.status = 'error'
-                            dataset.save()
+                        # Acquire lock to serialize processing (only one batch at a time)
+                        with _file_processing_lock:
+                            try:
+                                logger.info(f"Acquired lock for processing {len(files)} files in dataset {dataset.id}")
+                                processor = DatasetProcessorService()
+                                results = processor.process_uploaded_files_with_paths(dataset, files_with_paths)
+                                logger.info(f"Background file processing completed for dataset {dataset.id}: {results}")
+                            except Exception as e:
+                                logger.exception(f"Error in background file processing: {e}")
+                                dataset.status = 'error'
+                                dataset.save()
+                            finally:
+                                logger.info(f"Released lock for dataset {dataset.id}")
 
                     # Launch background thread
                     thread = threading.Thread(target=process_files_in_background, daemon=True)
@@ -348,14 +356,19 @@ class DatasetViewSet(viewsets.ModelViewSet):
             # Process files in background thread to avoid timeout
             def process_files_in_background():
                 """Background task to process uploaded files."""
-                try:
-                    processor = DatasetProcessorService()
-                    results = processor.process_uploaded_files_with_paths(dataset, files_with_paths)
-                    logger.info(f"Background file processing completed for dataset {dataset.id}: {results}")
-                except Exception as e:
-                    logger.exception(f"Error in background file processing: {e}")
-                    dataset.status = 'error'
-                    dataset.save()
+                # Acquire lock to serialize processing (only one batch at a time)
+                with _file_processing_lock:
+                    try:
+                        logger.info(f"Acquired lock for processing {len(files)} files in dataset {dataset.id}")
+                        processor = DatasetProcessorService()
+                        results = processor.process_uploaded_files_with_paths(dataset, files_with_paths)
+                        logger.info(f"Background file processing completed for dataset {dataset.id}: {results}")
+                    except Exception as e:
+                        logger.exception(f"Error in background file processing: {e}")
+                        dataset.status = 'error'
+                        dataset.save()
+                    finally:
+                        logger.info(f"Released lock for dataset {dataset.id}")
 
             # Launch background thread
             thread = threading.Thread(target=process_files_in_background, daemon=True)
