@@ -107,7 +107,10 @@ export const DataPreparationCreate: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
             </button>
-            <h1 className="text-xl font-semibold text-gray-900">Nueva Preparación de Datos</h1>
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900">Nueva Preparación de Datos</h1>
+              <p className="text-sm text-gray-500">Configura la limpieza y transformación de datos para análisis NLP</p>
+            </div>
           </div>
 
           {/* Right: Save Button */}
