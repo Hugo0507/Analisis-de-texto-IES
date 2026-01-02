@@ -69,9 +69,9 @@ class DataPreparationViewSet(viewsets.ModelViewSet):
         # Crear preparación en estado pending
         preparation = serializer.save()
 
-        # TODO: Iniciar procesamiento en background thread
-        # from .tasks import process_data_preparation
-        # process_data_preparation(preparation.id)
+        # Iniciar procesamiento en background thread
+        from .processor import start_processing_thread
+        start_processing_thread(preparation.id)
 
         # Retornar preparación creada
         response_serializer = DataPreparationDetailSerializer(preparation)
