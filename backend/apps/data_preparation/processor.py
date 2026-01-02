@@ -7,6 +7,8 @@ Ejecuta en background usando threading (no Celery).
 
 import logging
 import threading
+import tempfile
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
@@ -113,6 +115,63 @@ class PDFExtractor:
             return text, 'pdfplumber'
 
         return None, 'failed'
+
+
+class DriveFileDownloader:
+    """
+    Descarga archivos temporales desde Google Drive.
+    """
+
+    @staticmethod
+    def download_from_drive(file_id: str, user) -> Optional[str]:
+        """
+        Descarga un archivo de Drive a un archivo temporal.
+
+        Args:
+            file_id: ID del archivo en Google Drive (sin el prefijo drive://)
+            user: Usuario propietario del archivo
+
+        Returns:
+            str: Ruta al archivo temporal descargado, o None si falla
+        """
+        try:
+            from apps.infrastructure.storage.drive_gateway import DriveGateway
+
+            gateway = DriveGateway(user=user)
+            gateway.authenticate()
+
+            # Crear archivo temporal
+            temp_fd, temp_path = tempfile.mkstemp(suffix='.pdf')
+            os.close(temp_fd)  # Cerrar el descriptor
+
+            # Descargar desde Drive
+            request = gateway.service.files().get_media(fileId=file_id)
+            with open(temp_path, 'wb') as f:
+                import io
+                from googleapiclient.http import MediaIoBaseDownload
+                downloader = MediaIoBaseDownload(f, request)
+                done = False
+                while not done:
+                    status, done = downloader.next_chunk()
+
+            logger.debug(f"Archivo descargado desde Drive: {file_id} -> {temp_path}")
+            return temp_path
+
+        except Exception as e:
+            logger.error(f"Error descargando archivo de Drive {file_id}: {e}")
+            return None
+
+    @staticmethod
+    def cleanup_temp_file(temp_path: str):
+        """
+        Elimina un archivo temporal.
+        """
+        try:
+            if temp_path and os.path.exists(temp_path):
+                os.remove(temp_path)
+                logger.debug(f"Archivo temporal eliminado: {temp_path}")
+        except Exception as e:
+            logger.warning(f"Error eliminando archivo temporal {temp_path}: {e}")
 
 
 class LanguageDetector:
@@ -239,17 +298,38 @@ class DataPreparationProcessor:
                 self.update_progress(DataPreparation.STAGE_EXTRACTING, progress)
 
                 pdf_path = pdf_file.file_path
-                text, method = PDFExtractor.extract_text(pdf_path)
+                temp_file_path = None
 
-                if text:
-                    files_with_text.append({
-                        'file_id': pdf_file.id,
-                        'file_name': pdf_file.original_filename,
-                        'text': text,
-                        'extraction_method': method
-                    })
-                else:
-                    logger.warning(f"No se pudo extraer texto de {pdf_file.original_filename}")
+                try:
+                    # Si el archivo está en Drive, descargarlo temporalmente
+                    if pdf_path.startswith('drive://'):
+                        drive_file_id = pdf_path.replace('drive://', '')
+                        temp_file_path = DriveFileDownloader.download_from_drive(
+                            drive_file_id,
+                            self.preparation.created_by
+                        )
+                        if not temp_file_path:
+                            logger.warning(f"No se pudo descargar {pdf_file.original_filename} desde Drive")
+                            continue
+                        pdf_path = temp_file_path
+
+                    # Extraer texto
+                    text, method = PDFExtractor.extract_text(pdf_path)
+
+                    if text:
+                        files_with_text.append({
+                            'file_id': pdf_file.id,
+                            'file_name': pdf_file.original_filename,
+                            'text': text,
+                            'extraction_method': method
+                        })
+                    else:
+                        logger.warning(f"No se pudo extraer texto de {pdf_file.original_filename}")
+
+                finally:
+                    # Limpiar archivo temporal si existe
+                    if temp_file_path:
+                        DriveFileDownloader.cleanup_temp_file(temp_file_path)
 
             if not files_with_text:
                 raise Exception("No se pudo extraer texto de ningún PDF")
