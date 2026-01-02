@@ -15,7 +15,7 @@ export const MainLayout: React.FC = () => {
       <Sidebar />
 
       {/* Page Content - Independent Scroll */}
-      <main className="flex-1 h-screen overflow-y-auto" style={{ minWidth: 0 }}>
+      <main className="flex-1 h-screen overflow-y-auto scrollbar-hide" style={{ minWidth: 0 }}>
         <Outlet />
       </main>
     </div>

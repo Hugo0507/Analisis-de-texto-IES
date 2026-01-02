@@ -18,7 +18,20 @@ code {
     monospace;
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar - Hidden but functional */
+.scrollbar-hide {
+  /* Firefox */
+  scrollbar-width: none;
+  /* IE and Edge */
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  /* Chrome, Safari and Opera */
+  display: none;
+}
+
+/* Default scrollbar for non-hidden elements */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
