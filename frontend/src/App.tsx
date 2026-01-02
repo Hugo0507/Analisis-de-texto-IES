@@ -26,9 +26,9 @@ import {
   DatasetCreate,
   DatasetView,
   DatasetEdit,
+  PreparacionDatos,
 } from './pages';
 import { OAuthCallback } from './pages/OAuthCallback';
-import { PreparacionDatos } from './pages/PreparacionDatos';
 
 function App() {
   return (
