@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, FileText, Sparkles, CheckCircle2, Settings } from 'lucide-react';
 import { TagsInput } from '../components/TagsInput';
 import dataPreparationService, { DataPreparationCreateRequest } from '../services/dataPreparationService';
-import datasetsService, { Dataset } from '../services/datasetsService';
+import datasetsService, { DatasetListItem } from '../services/datasetsService';
 import { useToast } from '../contexts/ToastContext';
 import { Spinner } from '../components/atoms';
 
@@ -30,7 +30,7 @@ export const DataPreparationCreate: React.FC = () => {
   const [enableDuplicateRemoval, setEnableDuplicateRemoval] = useState(true);
 
   // UI state
-  const [datasets, setDatasets] = useState<Dataset[]>([]);
+  const [datasets, setDatasets] = useState<DatasetListItem[]>([]);
   const [isLoadingDatasets, setIsLoadingDatasets] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
