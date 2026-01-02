@@ -28,6 +28,7 @@ import {
   DatasetEdit,
 } from './pages';
 import { OAuthCallback } from './pages/OAuthCallback';
+import { PreparacionDatos } from './pages/PreparacionDatos';
 
 function App() {
   return (
@@ -68,6 +69,11 @@ function App() {
               <Route path="datasets/nuevo" element={<DatasetCreate />} />
               <Route path="datasets/:id" element={<DatasetView />} />
               <Route path="datasets/:id/editar" element={<DatasetEdit />} />
+            </Route>
+
+            {/* Protected Admin Preprocessing Routes (LOGIN REQUIRED) */}
+            <Route path="/admin/preprocesamiento" element={<MainLayout />}>
+              <Route path="preparacion-datos" element={<PreparacionDatos />} />
             </Route>
           </Route>
 
