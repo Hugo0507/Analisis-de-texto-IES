@@ -22,3 +22,6 @@ export { DatasetCreate } from './DatasetCreate';
 export { DatasetView } from './DatasetView';
 export { DatasetEdit } from './DatasetEdit';
 export { PreparacionDatos } from './PreparacionDatos';
+export { DataPreparationList } from './DataPreparationList';
+export { DataPreparationCreate } from './DataPreparationCreate';
+export { DataPreparationView } from './DataPreparationView';

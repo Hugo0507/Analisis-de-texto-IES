@@ -27,6 +27,9 @@ import {
   DatasetView,
   DatasetEdit,
   PreparacionDatos,
+  DataPreparationList,
+  DataPreparationCreate,
+  DataPreparationView,
 } from './pages';
 import { OAuthCallback } from './pages/OAuthCallback';
 
@@ -73,7 +76,9 @@ function App() {
 
             {/* Protected Admin Preprocessing Routes (LOGIN REQUIRED) */}
             <Route path="/admin/preprocesamiento" element={<MainLayout />}>
-              <Route path="preparacion-datos" element={<PreparacionDatos />} />
+              <Route path="preparacion-datos" element={<DataPreparationList />} />
+              <Route path="preparacion-datos/nuevo" element={<DataPreparationCreate />} />
+              <Route path="preparacion-datos/:id" element={<DataPreparationView />} />
             </Route>
           </Route>
 
