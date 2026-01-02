@@ -140,9 +140,9 @@ class LanguageDetector:
             # Obtener confianza
             langs = detect_langs(text)
             confidence = 0.0
-            for l in langs:
-                if l.lang == lang:
-                    confidence = l.prob
+            for lang_info in langs:
+                if lang_info.lang == lang:
+                    confidence = lang_info.prob
                     break
 
             return lang, confidence
