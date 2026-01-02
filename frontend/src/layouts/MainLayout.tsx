@@ -10,12 +10,12 @@ import { Sidebar } from '../components/organisms';
 
 export const MainLayout: React.FC = () => {
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
+    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: '#F4F7FE' }}>
       {/* Sidebar */}
       <Sidebar />
 
-      {/* Page Content */}
-      <main className="flex-1" style={{ minWidth: 0 }}>
+      {/* Page Content - Independent Scroll */}
+      <main className="flex-1 h-screen overflow-y-auto" style={{ minWidth: 0 }}>
         <Outlet />
       </main>
     </div>
