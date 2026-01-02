@@ -238,7 +238,7 @@ class DataPreparationProcessor:
                 progress = int((idx / total_files) * 30)
                 self.update_progress(DataPreparation.STAGE_EXTRACTING, progress)
 
-                pdf_path = pdf_file.file.path
+                pdf_path = pdf_file.file_path
                 text, method = PDFExtractor.extract_text(pdf_path)
 
                 if text:
