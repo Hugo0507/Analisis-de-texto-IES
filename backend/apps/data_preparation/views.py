@@ -32,6 +32,7 @@ class DataPreparationViewSet(viewsets.ModelViewSet):
     """
 
     permission_classes = [IsAuthenticated]
+    pagination_class = None  # Disable pagination - return plain array
     queryset = DataPreparation.objects.all().select_related('dataset', 'created_by')
 
     def get_queryset(self):
