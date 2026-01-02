@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'apps.users',
     'apps.documents',
     'apps.datasets',
+    'apps.data_preparation',
     'apps.analysis',
     'apps.pipeline',
     'apps.infrastructure',
