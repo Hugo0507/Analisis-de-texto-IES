@@ -7,11 +7,12 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import datasetsService from '../services/datasetsService';
+import datasetsService, { UploadResult } from '../services/datasetsService';
 import { useToast } from '../contexts/ToastContext';
 import { Spinner } from '../components/atoms';
 import GoogleDriveConnect from '../components/GoogleDriveConnect';
 import { GoogleDriveConnection } from '../services/googleDriveService';
+import UploadSummaryModal from '../components/UploadSummaryModal';
 
 type ImportMethod = 'files' | 'folder' | 'drive';
 
@@ -28,6 +29,8 @@ export const DatasetCreate: React.FC = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [googleConnection, setGoogleConnection] = useState<GoogleDriveConnection | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
 
   // Build file tree from webkitRelativePath
   interface FileNode {
@@ -227,7 +230,7 @@ export const DatasetCreate: React.FC = () => {
     setUploadProgress({ loaded: 0, total: selectedFiles.length, percentage: 0 });
 
     try {
-      await datasetsService.createDatasetWithFiles({
+      const result = await datasetsService.createDatasetWithFiles({
         name: datasetName,
         description: datasetDescription,
         files: selectedFiles,
@@ -236,16 +239,28 @@ export const DatasetCreate: React.FC = () => {
         }
       });
 
-      showSuccess(`Dataset "${datasetName}" creado exitosamente con ${selectedFiles.length} archivo(s)`);
+      setUploadResult(result);
+      setIsUploading(false);
 
-      // Navigate back to list
-      setTimeout(() => {
-        navigate('/admin/configuracion/datasets');
-      }, 1500);
+      // Show appropriate message based on upload result
+      if (result.summary.failedFiles === 0) {
+        showSuccess(`Dataset "${datasetName}" creado exitosamente con ${result.summary.successfulFiles} archivo(s)`);
+      } else {
+        showSuccess(`Dataset "${datasetName}" creado. ${result.summary.successfulFiles} archivos cargados, ${result.summary.failedFiles} no procesados.`);
+      }
+
+      // Show summary modal
+      setShowSummaryModal(true);
     } catch (error: any) {
       showError('Error al importar archivos: ' + (error.response?.data?.error || error.message));
       setIsUploading(false);
     }
+  };
+
+  const handleCloseSummary = () => {
+    setShowSummaryModal(false);
+    // Navigate back to list after closing summary
+    navigate('/admin/configuracion/datasets');
   };
 
   return (
@@ -727,6 +742,15 @@ export const DatasetCreate: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Upload Summary Modal */}
+      {uploadResult && (
+        <UploadSummaryModal
+          isOpen={showSummaryModal}
+          onClose={handleCloseSummary}
+          summary={uploadResult.summary}
+        />
+      )}
     </div>
   );
 };

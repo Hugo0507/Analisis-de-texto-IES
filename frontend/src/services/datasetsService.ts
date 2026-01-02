@@ -106,18 +106,23 @@ class DatasetsService {
 
   /**
    * Create dataset with file upload (optimized for large batches)
+   *
+   * Now implements "Ignorar y Notificar" strategy:
+   * - Skips batches that fail all retries
+   * - Continues with remaining batches
+   * - Returns summary with failed files info
    */
   async createDatasetWithFiles(data: {
     name: string;
     description?: string;
     files: File[];
     onProgress?: (progress: { loaded: number; total: number; percentage: number }) => void;
-  }): Promise<Dataset> {
+  }): Promise<UploadResult> {
     const BATCH_SIZE = 5; // Send 5 files at a time (lighter requests, less network failures)
-    const BATCH_DELAY = 12000; // Wait 12 seconds between batches (prevent rate limiting)
+    const BATCH_DELAY = 8000; // Wait 8 seconds between batches (reduced - now we skip failed batches)
     const LONG_REST_INTERVAL = 5; // Every 5 batches, take a long rest
-    const LONG_REST_DELAY = 30000; // 30 seconds long rest to let HF "forget" the load
-    const MAX_RETRIES = 7; // Retry failed batches up to 7 times (handle rate limiting)
+    const LONG_REST_DELAY = 20000; // 20 seconds long rest (reduced - more tolerant to failures)
+    const MAX_RETRIES = 5; // Retry failed batches up to 5 times (reduced - skip faster if problematic)
     const totalFiles = data.files.length;
 
     // For small datasets, send all at once
@@ -143,7 +148,17 @@ class DatasetsService {
         },
         timeout: 600000, // 10 minutes for file uploads
       });
-      return response.data;
+
+      // Return with summary (all successful for small datasets)
+      return {
+        dataset: response.data,
+        summary: {
+          totalFiles,
+          successfulFiles: totalFiles,
+          failedFiles: 0,
+          failedBatches: []
+        }
+      };
     }
 
     // For large datasets, send in batches
@@ -181,11 +196,12 @@ class DatasetsService {
     }
 
     // Helper function to upload batch with retry logic
+    // Returns success status instead of throwing - implements "Ignorar y Notificar"
     const uploadBatchWithRetry = async (
       batchFiles: File[],
       batchNumber: number,
       retries: number = MAX_RETRIES
-    ): Promise<void> => {
+    ): Promise<{ success: boolean; error?: string }> => {
       const batchFormData = new FormData();
 
       batchFiles.forEach((file) => {
@@ -205,7 +221,7 @@ class DatasetsService {
           });
 
           // Success - exit retry loop
-          return;
+          return { success: true };
 
         } catch (error: any) {
           const isLastAttempt = attempt === retries - 1;
@@ -215,27 +231,31 @@ class DatasetsService {
           console.warn(`Batch ${batchNumber} attempt ${attempt + 1} failed:`, error.message);
 
           if (isLastAttempt) {
-            // Last attempt failed - throw error
-            throw new Error(
-              `Batch ${batchNumber} failed after ${retries} attempts: ${error.message}`
+            // Last attempt failed - return failure (DON'T throw)
+            console.error(
+              `⚠️ Batch ${batchNumber} failed after ${retries} attempts. SKIPPING and continuing...`
             );
+            return {
+              success: false,
+              error: `Failed after ${retries} attempts: ${error.message}`
+            };
           }
 
           // Exponential backoff with longer delays for rate limiting
-          // Rate limit (401/429): 15s, 30s, 45s, 60s, 75s, 90s, 105s
-          // Network error: 10s, 20s, 30s, 40s, 50s, 60s, 70s
+          // Rate limit (401/429): 15s, 30s, 45s, 60s, 75s
+          // Network error: 10s, 20s, 30s, 40s, 50s
           let backoffDelay: number;
           const isNetworkError = error.message?.includes('Network Error') || !error.response;
 
           if (is401 || is429) {
             // Rate limit or server restart - wait progressively longer
-            backoffDelay = (attempt + 1) * 15000; // 15s, 30s, 45s, 60s, 75s, 90s, 105s
+            backoffDelay = (attempt + 1) * 15000; // 15s, 30s, 45s, 60s, 75s
           } else if (isNetworkError) {
             // Network error (likely rate limiting) - wait long
-            backoffDelay = (attempt + 1) * 10000; // 10s, 20s, 30s, 40s, 50s, 60s, 70s
+            backoffDelay = (attempt + 1) * 10000; // 10s, 20s, 30s, 40s, 50s
           } else {
             // Other errors - shorter backoff
-            backoffDelay = Math.pow(2, attempt + 1) * 2000; // 4s, 8s, 16s, 32s, 64s, 128s, 256s
+            backoffDelay = Math.pow(2, attempt + 1) * 2000; // 4s, 8s, 16s, 32s, 64s
           }
 
           console.log(
@@ -247,7 +267,18 @@ class DatasetsService {
           await new Promise(resolve => setTimeout(resolve, backoffDelay));
         }
       }
+
+      // Shouldn't reach here, but return failure just in case
+      return { success: false, error: 'Unknown error' };
     };
+
+    // Track failed batches for final report
+    const failedBatches: Array<{
+      batchNumber: number;
+      files: string[];
+      error: string;
+    }> = [];
+    let successfulFiles = BATCH_SIZE; // First batch already uploaded
 
     // Remaining batches: Add files to existing dataset
     for (let i = BATCH_SIZE; i < totalFiles; i += BATCH_SIZE) {
@@ -267,10 +298,24 @@ class DatasetsService {
         await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
       }
 
-      // Upload with retry logic
-      await uploadBatchWithRetry(batch, batchNumber);
+      // Upload with retry logic - now returns success/failure instead of throwing
+      const result = await uploadBatchWithRetry(batch, batchNumber);
 
-      // Report progress
+      if (result.success) {
+        // Batch succeeded
+        successfulFiles += batch.length;
+        console.log(`✅ Batch ${batchNumber} uploaded successfully (${batch.length} files)`);
+      } else {
+        // Batch failed - record it and CONTINUE (don't stop)
+        console.warn(`⚠️ Batch ${batchNumber} SKIPPED due to errors. Continuing with next batch...`);
+        failedBatches.push({
+          batchNumber,
+          files: batch.map(f => f.webkitRelativePath || f.name),
+          error: result.error || 'Unknown error'
+        });
+      }
+
+      // Report progress (count all files, even failed ones, as "processed")
       if (data.onProgress) {
         const loaded = Math.min(i + BATCH_SIZE, totalFiles);
         data.onProgress({
@@ -280,11 +325,31 @@ class DatasetsService {
         });
       }
 
-      // Small additional delay AFTER successful upload to prevent burst
+      // Small additional delay AFTER upload attempt to prevent burst
       await new Promise(resolve => setTimeout(resolve, 2000)); // 2s cooldown
     }
 
-    return dataset;
+    // Calculate final summary
+    const failedFiles = failedBatches.reduce((sum, batch) => sum + batch.files.length, 0);
+
+    console.log(`
+📊 Upload Summary:
+   Total files: ${totalFiles}
+   ✅ Successful: ${successfulFiles}
+   ⚠️ Failed: ${failedFiles}
+   📦 Failed batches: ${failedBatches.length}
+    `);
+
+    // Return dataset with upload summary
+    return {
+      dataset,
+      summary: {
+        totalFiles,
+        successfulFiles,
+        failedFiles,
+        failedBatches
+      }
+    };
   }
 
   /**
@@ -364,6 +429,20 @@ class DatasetsService {
     });
     return response.data;
   }
+}
+
+export interface UploadResult {
+  dataset: Dataset;
+  summary: {
+    totalFiles: number;
+    successfulFiles: number;
+    failedFiles: number;
+    failedBatches: Array<{
+      batchNumber: number;
+      files: string[];  // File names
+      error: string;
+    }>;
+  };
 }
 
 export default new DatasetsService();
