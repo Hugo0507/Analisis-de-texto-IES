@@ -108,6 +108,10 @@ class DataPreparationService {
    */
   async getPreparations(): Promise<DataPreparationListItem[]> {
     const response = await apiClient.get('/data-preparation/');
+    // Handle both paginated and plain array responses
+    if (response.data && typeof response.data === 'object' && 'results' in response.data) {
+      return response.data.results;
+    }
     return response.data;
   }
 
