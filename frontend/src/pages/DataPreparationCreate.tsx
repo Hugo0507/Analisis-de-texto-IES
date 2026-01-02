@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, FileText, Sparkles, CheckCircle2, Settings } from 'lucide-react';
+import { FileText, Sparkles, CheckCircle2, Settings } from 'lucide-react';
 import { TagsInput } from '../components/TagsInput';
 import dataPreparationService, { DataPreparationCreateRequest } from '../services/dataPreparationService';
 import datasetsService, { DatasetListItem } from '../services/datasetsService';
@@ -51,8 +51,8 @@ export const DataPreparationCreate: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
 
     // Validations
     if (!name.trim()) {
@@ -93,28 +93,43 @@ export const DataPreparationCreate: React.FC = () => {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      {/* Fixed Header */}
+      <div className="sticky top-0 z-40 bg-white border-b border-gray-200" style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
+        <div className="flex items-center justify-between px-8 py-4">
+          {/* Left: Back Button + Title */}
+          <div className="flex items-center gap-3">
             <button
               onClick={() => navigate('/admin/preprocesamiento/preparacion-datos')}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+              title="Volver"
             >
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
+              <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
             </button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Nueva Preparación de Datos</h1>
-              <p className="text-sm text-gray-500 mt-1">
-                Configura la limpieza y transformación de datos para análisis NLP
-              </p>
-            </div>
+            <h1 className="text-xl font-semibold text-gray-900">Nueva Preparación de Datos</h1>
           </div>
+
+          {/* Right: Save Button */}
+          <button
+            onClick={() => handleSubmit()}
+            disabled={isSubmitting || !datasetId}
+            className="p-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+            title="Guardar"
+          >
+            {isSubmitting ? (
+              <Spinner size="sm" />
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </button>
         </div>
       </div>
 
-      {/* Form */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      {/* Content */}
+      <div className="p-8">
         <form onSubmit={handleSubmit}>
           {/* Nombre de la preparación */}
           <div className="mb-6">
@@ -126,13 +141,13 @@ export const DataPreparationCreate: React.FC = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ej: Limpieza Inicial - Dataset Tesis"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               required
             />
           </div>
 
           {/* Grid de 4 cards - 2x2 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Card 1: Configuración General */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <div className="flex items-center gap-3 mb-4">
@@ -156,7 +171,7 @@ export const DataPreparationCreate: React.FC = () => {
                     <select
                       value={datasetId || ''}
                       onChange={(e) => setDatasetId(Number(e.target.value))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                       required
                     >
                       <option value="">Selecciona un dataset</option>
@@ -216,7 +231,7 @@ export const DataPreparationCreate: React.FC = () => {
                       onChange={(e) => setFilterByPredominantLanguage(e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
                   </label>
                 </div>
               </div>
@@ -238,7 +253,7 @@ export const DataPreparationCreate: React.FC = () => {
                     type="checkbox"
                     checked={enableTokenization}
                     onChange={(e) => setEnableTokenization(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                    className="w-4 h-4 text-emerald-600 bg-gray-100 border-gray-300 rounded focus:ring-emerald-500"
                   />
                   <div>
                     <p className="text-sm font-medium text-gray-900">Tokenización</p>
@@ -252,7 +267,7 @@ export const DataPreparationCreate: React.FC = () => {
                     type="checkbox"
                     checked={enableLemmatization}
                     onChange={(e) => setEnableLemmatization(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                    className="w-4 h-4 text-emerald-600 bg-gray-100 border-gray-300 rounded focus:ring-emerald-500"
                   />
                   <div>
                     <p className="text-sm font-medium text-gray-900">Lematización (spaCy)</p>
@@ -266,7 +281,7 @@ export const DataPreparationCreate: React.FC = () => {
                     type="checkbox"
                     checked={enableSpecialCharsRemoval}
                     onChange={(e) => setEnableSpecialCharsRemoval(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                    className="w-4 h-4 text-emerald-600 bg-gray-100 border-gray-300 rounded focus:ring-emerald-500"
                   />
                   <div>
                     <p className="text-sm font-medium text-gray-900">Eliminación de Caracteres Especiales</p>
@@ -292,7 +307,7 @@ export const DataPreparationCreate: React.FC = () => {
                     type="checkbox"
                     checked={enableIntegrityCheck}
                     onChange={(e) => setEnableIntegrityCheck(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                    className="w-4 h-4 text-emerald-600 bg-gray-100 border-gray-300 rounded focus:ring-emerald-500"
                   />
                   <div>
                     <p className="text-sm font-medium text-gray-900">Verificación de Integridad</p>
@@ -306,7 +321,7 @@ export const DataPreparationCreate: React.FC = () => {
                     type="checkbox"
                     checked={enableDuplicateRemoval}
                     onChange={(e) => setEnableDuplicateRemoval(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                    className="w-4 h-4 text-emerald-600 bg-gray-100 border-gray-300 rounded focus:ring-emerald-500"
                   />
                   <div>
                     <p className="text-sm font-medium text-gray-900">Eliminación de Duplicados</p>
@@ -315,35 +330,6 @@ export const DataPreparationCreate: React.FC = () => {
                 </label>
               </div>
             </div>
-          </div>
-
-          {/* Botones de acción */}
-          <div className="flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => navigate('/admin/preprocesamiento/preparacion-datos')}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              disabled={isSubmitting}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting || !datasetId}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <Spinner size="sm" />
-                  <span>Iniciando...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  <span>Iniciar Preparación</span>
-                </>
-              )}
-            </button>
           </div>
         </form>
       </div>

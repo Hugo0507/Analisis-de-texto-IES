@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Eye, Trash2, AlertCircle } from 'lucide-react';
+import { Eye, Trash2, AlertCircle } from 'lucide-react';
 import dataPreparationService, { DataPreparationListItem } from '../services/dataPreparationService';
 import { useToast } from '../contexts/ToastContext';
 import { Spinner } from '../components/atoms';
@@ -63,23 +63,23 @@ export const DataPreparationList: React.FC = () => {
   const getStatusBadge = (status: string, progressPercentage: number) => {
     const badges = {
       pending: {
-        bg: 'bg-gray-100',
-        text: 'text-gray-800',
+        bg: 'bg-yellow-100',
+        text: 'text-yellow-700',
         label: 'Pendiente'
       },
       processing: {
         bg: 'bg-blue-100',
-        text: 'text-blue-800',
+        text: 'text-blue-700',
         label: 'En Proceso'
       },
       completed: {
-        bg: 'bg-green-100',
-        text: 'text-green-800',
+        bg: 'bg-emerald-100',
+        text: 'text-emerald-700',
         label: 'Completado'
       },
       error: {
         bg: 'bg-red-100',
-        text: 'text-red-800',
+        text: 'text-red-700',
         label: 'Error'
       }
     };
@@ -88,7 +88,7 @@ export const DataPreparationList: React.FC = () => {
 
     return (
       <div className="space-y-1">
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>
+        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${badge.bg} ${badge.text}`}>
           {status === 'processing' && (
             <span className="animate-pulse mr-1.5">●</span>
           )}
@@ -116,9 +116,9 @@ export const DataPreparationList: React.FC = () => {
     const name = dataPreparationService.getLanguageName(languageCode);
 
     return (
-      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-md">
+      <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
         <span className="text-base">{flag}</span>
-        <span className="text-xs font-medium text-blue-900">{name}</span>
+        <span>{name}</span>
       </div>
     );
   };
@@ -129,42 +129,60 @@ export const DataPreparationList: React.FC = () => {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
     });
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F4F7FE' }}>
-        <Spinner />
+      <div className="flex items-center justify-center h-96">
+        <Spinner size="lg" />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Preparación de Datos</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Limpieza y transformación de datos para análisis NLP
-            </p>
+      {/* Fixed Header */}
+      <div className="sticky top-0 z-40 bg-white border-b border-gray-200" style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
+        <div className="flex items-center justify-between px-8 py-4">
+          {/* Left: Icon + Title */}
+          <div className="flex items-center gap-3">
+            <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h1 className="text-xl font-semibold text-gray-900">Preparación de Datos</h1>
           </div>
-          <button
-            onClick={() => navigate('/admin/preprocesamiento/preparacion-datos/nuevo')}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Nueva Preparación</span>
-          </button>
+
+          {/* Right: Action Buttons */}
+          <div className="flex items-center gap-3">
+            {/* Refresh Button */}
+            <button
+              onClick={loadPreparations}
+              disabled={isLoading}
+              className="p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Refrescar lista"
+            >
+              <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+
+            {/* Add Button */}
+            <button
+              onClick={() => navigate('/admin/preprocesamiento/preparacion-datos/nuevo')}
+              className="p-3 bg-emerald-500 hover:bg-emerald-600 rounded-full transition-all shadow-md hover:shadow-lg"
+              title="Nueva preparación"
+            >
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="p-8">
         {preparations.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
@@ -178,9 +196,11 @@ export const DataPreparationList: React.FC = () => {
             </p>
             <button
               onClick={() => navigate('/admin/preprocesamiento/preparacion-datos/nuevo')}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
             >
-              <Plus className="w-4 h-4" />
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
               <span>Nueva Preparación</span>
             </button>
           </div>
