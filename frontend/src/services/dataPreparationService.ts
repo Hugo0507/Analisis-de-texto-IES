@@ -86,6 +86,17 @@ export interface StatsData {
   failed: number;
 }
 
+export interface FileDetail {
+  id: number;
+  original_filename: string;
+}
+
+export interface FileDetailsData {
+  processed: FileDetail[];
+  omitted: FileDetail[];
+  duplicates: FileDetail[];
+}
+
 // Códigos de idioma a nombres y banderas
 export const LANGUAGE_NAMES: Record<string, { name: string; flag: string }> = {
   'en': { name: 'Inglés', flag: '🇺🇸' },
@@ -153,6 +164,14 @@ class DataPreparationService {
    */
   async getStats(): Promise<StatsData> {
     const response = await apiClient.get('/data-preparation/stats/');
+    return response.data;
+  }
+
+  /**
+   * Obtener detalles de archivos (procesados, omitidos, duplicados)
+   */
+  async getFileDetails(id: number): Promise<FileDetailsData> {
+    const response = await apiClient.get(`/data-preparation/${id}/file_details/`);
     return response.data;
   }
 
