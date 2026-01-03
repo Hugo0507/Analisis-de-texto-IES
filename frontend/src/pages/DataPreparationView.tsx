@@ -18,9 +18,11 @@ import {
   ArrowRight,
   FileType
 } from 'lucide-react';
-import dataPreparationService, { DataPreparation } from '../services/dataPreparationService';
+import dataPreparationService, { DataPreparation, FileDetailsData, FileDetail } from '../services/dataPreparationService';
 import { useToast } from '../contexts/ToastContext';
 import { Spinner } from '../components/atoms';
+
+type FileModalType = 'processed' | 'omitted' | 'duplicates' | null;
 
 export const DataPreparationView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -29,6 +31,10 @@ export const DataPreparationView: React.FC = () => {
 
   const [preparation, setPreparation] = useState<DataPreparation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [fileModalOpen, setFileModalOpen] = useState(false);
+  const [fileModalType, setFileModalType] = useState<FileModalType>(null);
+  const [fileDetails, setFileDetails] = useState<FileDetailsData | null>(null);
+  const [loadingFiles, setLoadingFiles] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -54,6 +60,47 @@ export const DataPreparationView: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleCardClick = async (type: FileModalType) => {
+    if (!id) return;
+
+    setFileModalType(type);
+    setLoadingFiles(true);
+    setFileModalOpen(true);
+
+    try {
+      const details = await dataPreparationService.getFileDetails(Number(id));
+      setFileDetails(details);
+    } catch (error: any) {
+      showError('Error al cargar detalles de archivos');
+      setFileModalOpen(false);
+    } finally {
+      setLoadingFiles(false);
+    }
+  };
+
+  const closeFileModal = () => {
+    setFileModalOpen(false);
+    setFileModalType(null);
+  };
+
+  const getModalTitle = () => {
+    switch (fileModalType) {
+      case 'processed':
+        return 'Archivos Procesados';
+      case 'omitted':
+        return 'Archivos Omitidos';
+      case 'duplicates':
+        return 'Archivos Duplicados';
+      default:
+        return '';
+    }
+  };
+
+  const getModalFiles = (): FileDetail[] => {
+    if (!fileDetails || !fileModalType) return [];
+    return fileDetails[fileModalType];
   };
 
   if (isLoading || !preparation) {
@@ -341,20 +388,32 @@ export const DataPreparationView: React.FC = () => {
                   <p className="text-3xl font-bold text-blue-900">{preparation.total_files_analyzed}</p>
                 </div>
 
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <button
+                  onClick={() => handleCardClick('processed')}
+                  className="p-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors cursor-pointer text-left"
+                >
                   <p className="text-sm text-green-700 font-medium mb-1">Procesados</p>
                   <p className="text-3xl font-bold text-green-900">{preparation.files_processed}</p>
-                </div>
+                  <p className="text-xs text-green-600 mt-2">Click para ver archivos →</p>
+                </button>
 
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <button
+                  onClick={() => handleCardClick('omitted')}
+                  className="p-4 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors cursor-pointer text-left"
+                >
                   <p className="text-sm text-amber-700 font-medium mb-1">Omitidos</p>
                   <p className="text-3xl font-bold text-amber-900">{preparation.files_omitted}</p>
-                </div>
+                  <p className="text-xs text-amber-600 mt-2">Click para ver archivos →</p>
+                </button>
 
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <button
+                  onClick={() => handleCardClick('duplicates')}
+                  className="p-4 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors cursor-pointer text-left"
+                >
                   <p className="text-sm text-red-700 font-medium mb-1">Duplicados Eliminados</p>
                   <p className="text-3xl font-bold text-red-900">{preparation.duplicates_removed}</p>
-                </div>
+                  <p className="text-xs text-red-600 mt-2">Click para ver archivos →</p>
+                </button>
               </div>
             </div>
 
@@ -466,6 +525,88 @@ export const DataPreparationView: React.FC = () => {
           </>
         )}
       </div>
+
+      {/* File Details Modal */}
+      {fileModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+            onClick={closeFileModal}
+          />
+
+          {/* Modal */}
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 transform transition-all">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <FileText className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    {getModalTitle()}
+                  </h3>
+                </div>
+                <button
+                  onClick={closeFileModal}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="max-h-96 overflow-y-auto">
+                {loadingFiles ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Spinner size="lg" />
+                  </div>
+                ) : getModalFiles().length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-5xl mb-4">📂</div>
+                    <p className="text-gray-500">No hay archivos en esta categoría</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {getModalFiles().map((file, index) => (
+                      <div
+                        key={file.id}
+                        className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <span className="text-xs font-semibold text-blue-700">
+                            {index + 1}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {file.original_filename}
+                          </p>
+                        </div>
+                        <div className="flex-shrink-0">
+                          <span className="text-xs text-gray-500">ID: {file.id}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              {!loadingFiles && getModalFiles().length > 0 && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <p className="text-sm text-gray-600 text-center">
+                    Total: <strong>{getModalFiles().length}</strong> archivo{getModalFiles().length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
