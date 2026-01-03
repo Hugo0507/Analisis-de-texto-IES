@@ -25,6 +25,7 @@ class DataPreparationListSerializer(serializers.ModelSerializer):
     """
 
     dataset_name = serializers.CharField(source='dataset.name', read_only=True)
+    current_stage_label = serializers.SerializerMethodField()
 
     class Meta:
         model = DataPreparation
@@ -39,6 +40,14 @@ class DataPreparationListSerializer(serializers.ModelSerializer):
             'created_at',
         ]
         read_only_fields = fields
+
+    def get_current_stage_label(self, obj):
+        """Obtener etiqueta legible de la etapa actual."""
+        if not obj.current_stage:
+            return None
+
+        stage_labels = dict(DataPreparation.STAGE_CHOICES)
+        return stage_labels.get(obj.current_stage, obj.current_stage)
 
 
 class DataPreparationDetailSerializer(serializers.ModelSerializer):
