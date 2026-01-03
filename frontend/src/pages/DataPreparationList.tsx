@@ -18,6 +18,8 @@ export const DataPreparationList: React.FC = () => {
   const [preparations, setPreparations] = useState<DataPreparationListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [preparationToDelete, setPreparationToDelete] = useState<DataPreparationListItem | null>(null);
 
   useEffect(() => {
     loadPreparations();
@@ -43,21 +45,31 @@ export const DataPreparationList: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('¿Estás seguro de eliminar esta preparación?')) {
-      return;
-    }
+  const handleDeleteClick = (prep: DataPreparationListItem) => {
+    setPreparationToDelete(prep);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!preparationToDelete) return;
 
     try {
-      setDeletingId(id);
-      await dataPreparationService.deletePreparation(id);
+      setDeletingId(preparationToDelete.id);
+      setDeleteModalOpen(false);
+      await dataPreparationService.deletePreparation(preparationToDelete.id);
       showSuccess('Preparación eliminada correctamente');
       loadPreparations();
     } catch (error: any) {
       showError(error.response?.data?.error || 'Error al eliminar preparación');
     } finally {
       setDeletingId(null);
+      setPreparationToDelete(null);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteModalOpen(false);
+    setPreparationToDelete(null);
   };
 
   const getStatusBadge = (status: string, progressPercentage: number) => {
@@ -268,7 +280,7 @@ export const DataPreparationList: React.FC = () => {
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(prep.id)}
+                          onClick={() => handleDeleteClick(prep)}
                           disabled={deletingId === prep.id}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
                           title="Eliminar"
@@ -288,6 +300,64 @@ export const DataPreparationList: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteModalOpen && preparationToDelete && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+            onClick={handleDeleteCancel}
+          />
+
+          {/* Modal */}
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all">
+              {/* Icon */}
+              <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full">
+                <AlertCircle className="w-8 h-8 text-red-600" />
+              </div>
+
+              {/* Content */}
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  ¿Eliminar Preparación?
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Estás a punto de eliminar la preparación:
+                </p>
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <p className="text-sm font-semibold text-gray-900 mb-1">
+                    {preparationToDelete.name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Dataset: {preparationToDelete.dataset_name}
+                  </p>
+                </div>
+                <p className="text-sm text-red-600 font-medium mt-4">
+                  Esta acción no se puede deshacer.
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <button
+                  onClick={handleDeleteCancel}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDeleteConfirm}
+                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium shadow-md hover:shadow-lg"
+                >
+                  Sí, Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
