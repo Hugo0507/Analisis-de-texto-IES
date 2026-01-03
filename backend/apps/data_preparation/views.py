@@ -141,3 +141,38 @@ class DataPreparationViewSet(viewsets.ModelViewSet):
 
         serializer = StatsSerializer(data)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['get'])
+    def file_details(self, request, pk=None):
+        """
+        Obtener detalles de archivos procesados, omitidos y duplicados.
+
+        Endpoint: GET /api/v1/data-preparation/{id}/file_details/
+
+        Retorna nombres de archivos para cada categoría.
+        """
+        from apps.datasets.models import DatasetFile
+
+        preparation = self.get_object()
+
+        # Obtener nombres de archivos procesados
+        processed_files = DatasetFile.objects.filter(
+            id__in=preparation.processed_file_ids
+        ).values('id', 'original_filename')
+
+        # Obtener nombres de archivos omitidos
+        omitted_files = DatasetFile.objects.filter(
+            id__in=preparation.omitted_file_ids
+        ).values('id', 'original_filename')
+
+        # Para duplicados, necesitaríamos guardar los IDs en el processor
+        # Por ahora retornamos lista vacía
+        duplicate_files = []
+
+        data = {
+            'processed': list(processed_files),
+            'omitted': list(omitted_files),
+            'duplicates': duplicate_files,
+        }
+
+        return Response(data)

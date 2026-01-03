@@ -246,7 +246,7 @@ export const Users: React.FC = () => {
                           {/* Editar Button */}
                           <button
                             onClick={() => navigate(`/admin/configuracion/usuarios/${user.id}/editar`)}
-                            className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title="Editar usuario"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -257,7 +257,7 @@ export const Users: React.FC = () => {
                           {/* Eliminar Button */}
                           <button
                             onClick={() => openDeleteModal(user)}
-                            className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                             title="Eliminar usuario"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
