@@ -220,45 +220,59 @@ export const DataPreparationList: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <div className="bg-white p-7" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
                     ID
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Nombre del Dataset
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                    Nombre
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
                     Idioma Predominante
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
                     Estado
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
                     Fecha
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">
                     Acciones
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {preparations.map((prep) => (
-                  <tr key={prep.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      #{prep.id}
-                    </td>
+              <tbody>
+                {preparations.map((prep, index) => (
+                  <tr
+                    key={prep.id}
+                    className="border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/admin/preprocesamiento/preparacion-datos/${prep.id}`)}
+                  >
+                    {/* ID Column - Formatted with leading zero */}
                     <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm font-medium text-gray-900">
+                        {String(index + 1).padStart(2, '0')}
+                      </span>
+                    </td>
+
+                    {/* Nombre Column */}
+                    <td className="px-6 py-4">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{prep.name}</div>
-                        <div className="text-xs text-gray-500">{prep.dataset_name}</div>
+                        <p className="text-sm font-medium text-gray-900">{prep.name}</p>
+                        <p className="text-xs text-gray-500 mt-1">{prep.dataset_name}</p>
                       </div>
                     </td>
+
+                    {/* Idioma Column */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getLanguageBadge(prep.predominant_language)}
                     </td>
+
+                    {/* Estado Column */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(prep.status, prep.progress_percentage)}
                       {prep.current_stage_label && prep.status === 'processing' && (
@@ -267,11 +281,18 @@ export const DataPreparationList: React.FC = () => {
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(prep.created_at)}
+
+                    {/* Fecha Column */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-gray-600">
+                        {formatDate(prep.created_at)}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2">
+
+                    {/* Acciones Column */}
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                        {/* Ver Button */}
                         <button
                           onClick={() => navigate(`/admin/preprocesamiento/preparacion-datos/${prep.id}`)}
                           className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
@@ -279,6 +300,8 @@ export const DataPreparationList: React.FC = () => {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
+
+                        {/* Eliminar Button */}
                         <button
                           onClick={() => handleDeleteClick(prep)}
                           disabled={deletingId === prep.id}
@@ -296,7 +319,8 @@ export const DataPreparationList: React.FC = () => {
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
         )}
       </div>
