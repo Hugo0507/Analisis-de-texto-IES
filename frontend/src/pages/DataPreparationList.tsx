@@ -274,7 +274,7 @@ export const DataPreparationList: React.FC = () => {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => navigate(`/admin/preprocesamiento/preparacion-datos/${prep.id}`)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
                           title="Ver detalles"
                         >
                           <Eye className="w-4 h-4" />
@@ -282,7 +282,7 @@ export const DataPreparationList: React.FC = () => {
                         <button
                           onClick={() => handleDeleteClick(prep)}
                           disabled={deletingId === prep.id}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                          className="p-2 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50"
                           title="Eliminar"
                         >
                           {deletingId === prep.id ? (
