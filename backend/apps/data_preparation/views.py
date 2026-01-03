@@ -82,16 +82,10 @@ class DataPreparationViewSet(viewsets.ModelViewSet):
         """
         Eliminar preparación.
 
-        Solo se puede eliminar si no está en proceso.
+        Se puede eliminar incluso si está en proceso.
+        El thread continuará ejecutándose pero sin acceso a la base de datos.
         """
         instance = self.get_object()
-
-        if instance.is_processing:
-            return Response(
-                {'error': 'No se puede eliminar una preparación en proceso'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 

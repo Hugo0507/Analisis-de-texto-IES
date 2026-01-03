@@ -321,11 +321,45 @@ export const DataPreparationList: React.FC = () => {
               {/* Content */}
               <div className="text-center mb-6">
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  ¿Eliminar Preparación?
+                  {preparationToDelete.status === 'processing'
+                    ? '⚠️ ¿Eliminar Preparación en Proceso?'
+                    : '¿Eliminar Preparación?'}
                 </h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Estás a punto de eliminar la preparación:
-                </p>
+
+                {preparationToDelete.status === 'processing' ? (
+                  <>
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                      <p className="text-sm text-amber-800 font-medium mb-2">
+                        ⚠️ Advertencia: Proceso en Ejecución
+                      </p>
+                      <p className="text-xs text-amber-700">
+                        Esta preparación está procesándose actualmente ({preparationToDelete.progress_percentage}% completado).
+                      </p>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Si eliminas esta preparación:
+                    </p>
+                    <ul className="text-xs text-left text-gray-600 space-y-2 mb-4 bg-gray-50 rounded-lg p-4">
+                      <li className="flex items-start gap-2">
+                        <span className="text-red-500 mt-0.5">•</span>
+                        <span>Se perderá todo el progreso actual</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-red-500 mt-0.5">•</span>
+                        <span>El procesamiento se detendrá inmediatamente</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-red-500 mt-0.5">•</span>
+                        <span>No se guardarán los resultados parciales</span>
+                      </li>
+                    </ul>
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-600 mb-4">
+                    Estás a punto de eliminar la preparación:
+                  </p>
+                )}
+
                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                   <p className="text-sm font-semibold text-gray-900 mb-1">
                     {preparationToDelete.name}
@@ -333,7 +367,21 @@ export const DataPreparationList: React.FC = () => {
                   <p className="text-xs text-gray-500">
                     Dataset: {preparationToDelete.dataset_name}
                   </p>
+                  {preparationToDelete.status === 'processing' && (
+                    <div className="mt-2">
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${preparationToDelete.progress_percentage}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {preparationToDelete.current_stage_label || 'Procesando...'} - {preparationToDelete.progress_percentage}%
+                      </p>
+                    </div>
+                  )}
                 </div>
+
                 <p className="text-sm text-red-600 font-medium mt-4">
                   Esta acción no se puede deshacer.
                 </p>
@@ -349,9 +397,15 @@ export const DataPreparationList: React.FC = () => {
                 </button>
                 <button
                   onClick={handleDeleteConfirm}
-                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium shadow-md hover:shadow-lg"
+                  className={`flex-1 px-4 py-2.5 text-white rounded-lg transition-colors font-medium shadow-md hover:shadow-lg ${
+                    preparationToDelete.status === 'processing'
+                      ? 'bg-red-600 hover:bg-red-700'
+                      : 'bg-red-600 hover:bg-red-700'
+                  }`}
                 >
-                  Sí, Eliminar
+                  {preparationToDelete.status === 'processing'
+                    ? 'Sí, Detener y Eliminar'
+                    : 'Sí, Eliminar'}
                 </button>
               </div>
             </div>
