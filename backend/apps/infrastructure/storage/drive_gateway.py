@@ -37,7 +37,10 @@ class DriveGateway:
     """
 
     # OAuth2 scopes
-    SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
+    SCOPES = [
+        'https://www.googleapis.com/auth/drive.readonly',
+        'https://www.googleapis.com/auth/drive.file'
+    ]
 
     def __init__(self, user: 'User' = None):
         """
@@ -76,8 +79,8 @@ class DriveGateway:
             return False
 
         if not self.user.google_drive_connected:
-            logger.error(f"User {self.user.email} has not connected Google Drive")
-            return False
+            logger.warning(f"User {self.user.email} has not connected Google Drive - using fallback authentication")
+            return self._authenticate_fallback()
 
         try:
             # Import here to avoid circular imports
@@ -130,6 +133,47 @@ class DriveGateway:
 
         except Exception as e:
             logger.exception(f"Drive authentication failed for user {self.user.email}: {e}")
+            return False
+
+    def _authenticate_fallback(self) -> bool:
+        """
+        Fallback authentication using Service Account from environment variables.
+
+        This is a temporary solution for users who haven't connected OAuth2 yet.
+        Uses GOOGLE_SERVICE_ACCOUNT_JSON environment variable.
+
+        Returns:
+            True if authentication successful, False otherwise
+        """
+        try:
+            import os
+            from google.oauth2 import service_account
+
+            # Try to get service account credentials from environment
+            service_account_info = os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON')
+
+            if not service_account_info:
+                logger.error("No Google OAuth2 or Service Account credentials available")
+                return False
+
+            # Parse service account JSON
+            import json
+            credentials_dict = json.loads(service_account_info)
+
+            # Create credentials
+            self.credentials = service_account.Credentials.from_service_account_info(
+                credentials_dict,
+                scopes=self.SCOPES
+            )
+
+            # Build Drive service
+            self.service = build('drive', 'v3', credentials=self.credentials)
+
+            logger.info("Authenticated successfully using Service Account (fallback)")
+            return True
+
+        except Exception as e:
+            logger.exception(f"Fallback authentication failed: {e}")
             return False
 
     def list_files(
