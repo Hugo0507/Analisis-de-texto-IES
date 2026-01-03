@@ -394,7 +394,6 @@ export const DataPreparationView: React.FC = () => {
                 >
                   <p className="text-sm text-green-700 font-medium mb-1">Procesados</p>
                   <p className="text-3xl font-bold text-green-900">{preparation.files_processed}</p>
-                  <p className="text-xs text-green-600 mt-2">Click para ver archivos →</p>
                 </button>
 
                 <button
@@ -403,7 +402,6 @@ export const DataPreparationView: React.FC = () => {
                 >
                   <p className="text-sm text-amber-700 font-medium mb-1">Omitidos</p>
                   <p className="text-3xl font-bold text-amber-900">{preparation.files_omitted}</p>
-                  <p className="text-xs text-amber-600 mt-2">Click para ver archivos →</p>
                 </button>
 
                 <button
@@ -412,7 +410,6 @@ export const DataPreparationView: React.FC = () => {
                 >
                   <p className="text-sm text-red-700 font-medium mb-1">Duplicados Eliminados</p>
                   <p className="text-3xl font-bold text-red-900">{preparation.duplicates_removed}</p>
-                  <p className="text-xs text-red-600 mt-2">Click para ver archivos →</p>
                 </button>
               </div>
             </div>
