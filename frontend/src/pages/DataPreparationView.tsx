@@ -14,7 +14,9 @@ import {
   Globe,
   TrendingUp,
   Settings,
-  AlertTriangle
+  AlertTriangle,
+  ArrowRight,
+  FileType
 } from 'lucide-react';
 import dataPreparationService, { DataPreparation } from '../services/dataPreparationService';
 import { useToast } from '../contexts/ToastContext';
@@ -226,6 +228,103 @@ export const DataPreparationView: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {/* Section 2.5: Proceso de Conversión PDF → TXT */}
+            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 rounded-xl p-6 shadow-sm">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <FileType className="w-5 h-5 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-purple-900 mb-2">
+                    Proceso de Conversión y Extracción
+                  </h3>
+                  <p className="text-sm text-purple-800 leading-relaxed mb-4">
+                    Todos los archivos PDF fueron convertidos a formato TXT para permitir una mayor
+                    manipulación y análisis de la información. Este proceso incluye:
+                  </p>
+                </div>
+              </div>
+
+              {/* Flujo visual de conversión */}
+              <div className="flex items-center justify-center gap-4 bg-white/60 rounded-lg p-6 backdrop-blur-sm">
+                {/* PDF */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className="p-4 bg-red-100 rounded-xl border-2 border-red-300 shadow-sm">
+                    <svg className="w-10 h-10 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/>
+                      <path d="M14 2v6h6M10 13h4M10 17h4"/>
+                    </svg>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs font-semibold text-gray-700">Archivos PDF</p>
+                    <p className="text-xs text-gray-500">Originales</p>
+                  </div>
+                </div>
+
+                {/* Arrow 1 */}
+                <div className="flex flex-col items-center gap-1">
+                  <ArrowRight className="w-6 h-6 text-purple-600" />
+                  <span className="text-xs font-medium text-purple-700">Extracción</span>
+                </div>
+
+                {/* TXT */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className="p-4 bg-blue-100 rounded-xl border-2 border-blue-300 shadow-sm">
+                    <svg className="w-10 h-10 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"/>
+                      <path d="M14 2v6h6M10 9h4M10 13h4M10 17h4"/>
+                    </svg>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs font-semibold text-gray-700">Archivos TXT</p>
+                    <p className="text-xs text-gray-500">Texto Plano</p>
+                  </div>
+                </div>
+
+                {/* Arrow 2 */}
+                <div className="flex flex-col items-center gap-1">
+                  <ArrowRight className="w-6 h-6 text-purple-600" />
+                  <span className="text-xs font-medium text-purple-700">Procesamiento</span>
+                </div>
+
+                {/* Processed */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className="p-4 bg-emerald-100 rounded-xl border-2 border-emerald-300 shadow-sm">
+                    <CheckCircle2 className="w-10 h-10 text-emerald-600" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs font-semibold text-gray-700">Datos Limpios</p>
+                    <p className="text-xs text-gray-500">Listos para NLP</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Beneficios */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+                <div className="flex items-start gap-2 bg-white/60 rounded-lg p-3">
+                  <CheckCircle2 className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-medium text-gray-900">Mayor Flexibilidad</p>
+                    <p className="text-xs text-gray-600">Manipulación directa del texto</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2 bg-white/60 rounded-lg p-3">
+                  <CheckCircle2 className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-medium text-gray-900">Mejor Rendimiento</p>
+                    <p className="text-xs text-gray-600">Procesamiento más rápido</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2 bg-white/60 rounded-lg p-3">
+                  <CheckCircle2 className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-medium text-gray-900">Compatibilidad Total</p>
+                    <p className="text-xs text-gray-600">Integración con herramientas NLP</p>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* Section 3: Estadísticas */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
