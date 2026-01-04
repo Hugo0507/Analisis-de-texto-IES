@@ -178,9 +178,6 @@ export const NgramsCreate: React.FC = () => {
     );
   }
 
-  // Ensure variables are in scope
-  const hasPreparation = dataPreparationId !== 0;
-
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
       {/* Fixed Header */}
@@ -205,7 +202,7 @@ export const NgramsCreate: React.FC = () => {
           {/* Right: Save Button */}
           <button
             onClick={handleSubmit}
-            disabled={isLoading || !hasPreparation}
+            disabled={isLoading || !dataPreparationId}
             className="p-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
             title="Guardar"
           >
