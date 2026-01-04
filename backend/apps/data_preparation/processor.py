@@ -566,6 +566,8 @@ def update_data_preparation(preparation_id: int):
             total_new = len(added_ids)
             files_with_text = []
 
+            logger.info(f"Actualizando: {total_new} archivos nuevos para procesar")
+
             # Extraer texto de nuevos archivos (10-40%)
             for idx, pdf_file in enumerate(new_files):
                 progress = 10 + int((idx / total_new) * 30)
@@ -576,32 +578,56 @@ def update_data_preparation(preparation_id: int):
                 temp_file_path = None
 
                 try:
+                    logger.info(f"[UPDATE] Procesando archivo {idx+1}/{total_new}: {pdf_file.original_filename}")
+                    logger.info(f"[UPDATE] Ruta del archivo: {pdf_path}")
+
                     # Si el archivo está en Drive, descargarlo temporalmente
                     if pdf_path.startswith('drive://'):
                         drive_file_id = pdf_path.replace('drive://', '')
+                        logger.info(f"[UPDATE] Archivo en Drive, descargando: {drive_file_id}")
                         temp_file_path = DriveFileDownloader.download_from_drive(
                             drive_file_id,
                             preparation.created_by
                         )
                         if not temp_file_path:
-                            logger.warning(f"No se pudo descargar {pdf_file.original_filename} desde Drive")
+                            logger.warning(f"[UPDATE] No se pudo descargar {pdf_file.original_filename} desde Drive")
                             continue
                         pdf_path = temp_file_path
+                        logger.info(f"[UPDATE] Descarga exitosa: {temp_file_path}")
+                    else:
+                        logger.info(f"[UPDATE] Archivo local, usando ruta directa: {pdf_path}")
+                        # Verificar que el archivo existe
+                        import os
+                        if not os.path.exists(pdf_path):
+                            logger.error(f"[UPDATE] Archivo no existe en ruta: {pdf_path}")
+                            continue
+                        logger.info(f"[UPDATE] Archivo existe, tamaño: {os.path.getsize(pdf_path)} bytes")
 
                     # Extraer texto
+                    logger.info(f"[UPDATE] Extrayendo texto de: {pdf_path}")
                     text, method = PDFExtractor.extract_text(pdf_path)
 
                     if text:
+                        logger.info(f"[UPDATE] ✅ Texto extraído con {method}: {len(text)} caracteres")
                         files_with_text.append({
                             'file_id': pdf_file.id,
                             'file_name': pdf_file.original_filename,
                             'text': text,
                             'extraction_method': method
                         })
+                    else:
+                        logger.warning(f"[UPDATE] ⚠️ No se pudo extraer texto de {pdf_file.original_filename}")
+
+                except Exception as e:
+                    logger.error(f"[UPDATE] ❌ Error procesando {pdf_file.original_filename}: {str(e)}")
+                    import traceback
+                    logger.error(f"[UPDATE] Traceback: {traceback.format_exc()}")
 
                 finally:
                     if temp_file_path:
                         DriveFileDownloader.cleanup_temp_file(temp_file_path)
+
+            logger.info(f"Extracción completada: {len(files_with_text)} archivos con texto de {total_new} totales")
 
             # Detectar idioma de nuevos archivos (40-60%)
             preparation.progress_percentage = 40
