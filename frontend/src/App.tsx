@@ -34,6 +34,9 @@ import { BagOfWordsList } from './pages/BagOfWordsList';
 import { BagOfWordsCreate } from './pages/BagOfWordsCreate';
 import { BagOfWordsView } from './pages/BagOfWordsView';
 import { BagOfWordsEdit } from './pages/BagOfWordsEdit';
+import { NgramsList } from './pages/NgramsList';
+import { NgramsCreate } from './pages/NgramsCreate';
+import { NgramsView } from './pages/NgramsView';
 import { OAuthCallback } from './pages/OAuthCallback';
 
 function App() {
@@ -86,6 +89,9 @@ function App() {
               <Route path="bolsa-palabras/nuevo" element={<BagOfWordsCreate />} />
               <Route path="bolsa-palabras/:id" element={<BagOfWordsView />} />
               <Route path="bolsa-palabras/:id/editar" element={<BagOfWordsEdit />} />
+              <Route path="n-gramas" element={<NgramsList />} />
+              <Route path="n-gramas/nuevo" element={<NgramsCreate />} />
+              <Route path="n-gramas/:id" element={<NgramsView />} />
             </Route>
           </Route>
 
