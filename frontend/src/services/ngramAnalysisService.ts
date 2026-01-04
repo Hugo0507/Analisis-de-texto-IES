@@ -5,7 +5,7 @@
  * Permite crear, listar, ver y eliminar análisis comparativos de múltiples configuraciones de n-gramas.
  */
 
-import { apiClient } from './api';
+import apiClient from './api';
 
 export interface TopTerm {
   term: string;
