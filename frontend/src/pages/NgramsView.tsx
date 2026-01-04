@@ -7,7 +7,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ngramAnalysisService from '../services/ngramAnalysisService';
-import type { NgramAnalysis, NgramConfigResult } from '../services/ngramAnalysisService';
+import type { NgramAnalysis } from '../services/ngramAnalysisService';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
 
