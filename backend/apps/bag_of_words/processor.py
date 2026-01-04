@@ -85,10 +85,10 @@ def process_bag_of_words(bow_id: int):
 
         bow.vocabulary_size = len(vectorizer.vocabulary_)
         bow.matrix_shape = {
-            'rows': matrix.shape[0],
-            'cols': matrix.shape[1]
+            'rows': int(matrix.shape[0]),  # Convertir numpy.int64 a int
+            'cols': int(matrix.shape[1])   # Convertir numpy.int64 a int
         }
-        bow.matrix_sparsity = calculate_sparsity(matrix)
+        bow.matrix_sparsity = float(calculate_sparsity(matrix))  # Convertir a float
 
         # Guardar top términos
         bow.top_terms = stats['top_terms']
@@ -102,16 +102,18 @@ def process_bag_of_words(bow_id: int):
                 key=lambda x: stats['term_scores'].get(x[0], 0),
                 reverse=True
             )[:5000]
-            bow.vocabulary = dict(sorted_vocab)
+            # Convertir valores numpy.int64 a int
+            bow.vocabulary = {k: int(v) for k, v in sorted_vocab}
         else:
-            bow.vocabulary = vocab
+            # Convertir valores numpy.int64 a int
+            bow.vocabulary = {k: int(v) for k, v in vocab.items()}
 
         # Guardar feature names
         bow.feature_names = vectorizer.get_feature_names_out().tolist()
 
         # Estadísticas adicionales
-        bow.avg_terms_per_document = stats['avg_terms_per_doc']
-        bow.total_term_occurrences = stats['total_occurrences']
+        bow.avg_terms_per_document = float(stats['avg_terms_per_doc'])
+        bow.total_term_occurrences = int(stats['total_occurrences'])
 
         # COMPLETADO
         bow.status = BagOfWords.STATUS_COMPLETED
@@ -216,14 +218,15 @@ def calculate_sparsity(matrix) -> float:
     Returns:
         Porcentaje de ceros (0.0 a 1.0)
     """
-    total_elements = matrix.shape[0] * matrix.shape[1]
+    total_elements = int(matrix.shape[0]) * int(matrix.shape[1])
     if total_elements == 0:
         return 0.0
 
-    non_zero = matrix.nnz if hasattr(matrix, 'nnz') else np.count_nonzero(matrix)
+    non_zero = matrix.nnz if hasattr(matrix, 'nnz') else int(np.count_nonzero(matrix))
     zero_elements = total_elements - non_zero
 
-    return zero_elements / total_elements
+    # Convertir a float nativo de Python
+    return float(zero_elements / total_elements)
 
 
 def calculate_statistics(vectorizer, matrix) -> Dict[str, Any]:
@@ -264,7 +267,8 @@ def calculate_statistics(vectorizer, matrix) -> Dict[str, Any]:
     avg_terms = float(np.mean(terms_per_doc))
 
     # Total de ocurrencias (suma de todas las frecuencias)
-    total_occurrences = int(matrix.sum())
+    # Convertir numpy.int64 a int nativo de Python
+    total_occurrences = int(np.sum(matrix))
 
     return {
         'top_terms': top_terms,
