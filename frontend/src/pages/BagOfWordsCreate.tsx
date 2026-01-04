@@ -92,8 +92,10 @@ export const BagOfWordsCreate: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
 
     // Validaciones
     if (!formData.name.trim()) {
@@ -163,14 +165,34 @@ export const BagOfWordsCreate: React.FC = () => {
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate('/admin/preprocesamiento/bolsa-palabras')}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+              title="Volver"
             >
               <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
             </button>
-            <h1 className="text-xl font-semibold text-gray-900">Crear Análisis de Bolsa de Palabras</h1>
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900">Crear Análisis de Bolsa de Palabras</h1>
+              <p className="text-sm text-gray-500">Análisis de frecuencias de palabras usando Count Vectorizer</p>
+            </div>
           </div>
+
+          {/* Right: Save Button */}
+          <button
+            onClick={handleSubmit}
+            disabled={isLoading || !dataPreparationId}
+            className="p-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+            title="Guardar"
+          >
+            {isLoading ? (
+              <Spinner size="sm" />
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </button>
         </div>
       </div>
 
@@ -472,32 +494,6 @@ export const BagOfWordsCreate: React.FC = () => {
                   </div>
                 </div>
                 )}
-              </div>
-
-              {/* Botones de Acción */}
-              <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
-                <button
-                  type="button"
-                  onClick={() => navigate('/admin/preprocesamiento/bolsa-palabras')}
-                  disabled={isLoading}
-                  className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors font-medium shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  {isLoading ? (
-                    <>
-                      <Spinner size="sm" />
-                      Creando...
-                    </>
-                  ) : (
-                    'Crear Análisis BoW'
-                  )}
-                </button>
               </div>
             </form>
           )}
