@@ -145,14 +145,14 @@ def load_preprocessed_texts(data_prep) -> List[str]:
     Returns:
         Lista de textos preprocesados
     """
-    from apps.infrastructure.cache.redis_manager import RedisManager
+    from apps.infrastructure.cache.redis_cache import RedisCacheService
 
     try:
-        redis_manager = RedisManager()
+        redis_cache = RedisCacheService()
         cache_key = f"preprocessed_texts:{data_prep.id}"
 
         # Intentar cargar desde cache
-        cached_data = redis_manager.get(cache_key)
+        cached_data = redis_cache.get(cache_key)
 
         if cached_data and 'processed_texts' in cached_data:
             logger.info(f"Textos cargados desde cache para preparación {data_prep.id}")
