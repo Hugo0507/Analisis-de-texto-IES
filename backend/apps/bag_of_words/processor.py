@@ -137,7 +137,7 @@ def process_bag_of_words(bow_id: int):
 
 def load_preprocessed_texts(data_prep) -> List[str]:
     """
-    Cargar textos preprocesados desde el cache.
+    Cargar textos preprocesados desde la base de datos.
 
     Args:
         data_prep: Instancia de DataPreparation
@@ -145,24 +145,36 @@ def load_preprocessed_texts(data_prep) -> List[str]:
     Returns:
         Lista de textos preprocesados
     """
-    from apps.infrastructure.cache.redis_cache import RedisCacheService
+    from apps.datasets.models import DatasetFile
 
     try:
-        redis_cache = RedisCacheService()
-        cache_key = f"preprocessed_texts:{data_prep.id}"
+        # Obtener IDs de archivos procesados
+        file_ids = data_prep.processed_file_ids
 
-        # Intentar cargar desde cache
-        cached_data = redis_cache.get(cache_key)
+        if not file_ids:
+            logger.warning(
+                f"No hay archivos procesados en preparación {data_prep.id}. "
+                f"Asegúrate de que la preparación se completó correctamente."
+            )
+            return []
 
-        if cached_data and 'processed_texts' in cached_data:
-            logger.info(f"Textos cargados desde cache para preparación {data_prep.id}")
-            return cached_data['processed_texts']
+        # Cargar archivos desde la base de datos
+        files = DatasetFile.objects.filter(id__in=file_ids).only('preprocessed_text')
 
-        logger.warning(
-            f"No se encontraron textos en cache para preparación {data_prep.id}. "
-            f"Asegúrate de que la preparación guardó los textos en cache."
+        # Extraer textos preprocesados
+        texts = []
+        for file in files:
+            if file.preprocessed_text:
+                texts.append(file.preprocessed_text)
+            else:
+                logger.warning(f"Archivo {file.id} no tiene texto preprocesado")
+
+        logger.info(
+            f"Cargados {len(texts)} textos preprocesados desde la base de datos "
+            f"para preparación {data_prep.id}"
         )
-        return []
+
+        return texts
 
     except Exception as e:
         logger.error(f"Error cargando textos preprocesados: {str(e)}")
