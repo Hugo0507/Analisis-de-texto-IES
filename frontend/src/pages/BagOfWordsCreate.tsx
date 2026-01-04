@@ -248,7 +248,7 @@ export const BagOfWordsCreate: React.FC = () => {
                   Configuración de Bolsa de Palabras (Count Vectorizer)
                 </h2>
 
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {/* Max Features */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -263,17 +263,29 @@ export const BagOfWordsCreate: React.FC = () => {
                       required
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     />
-                    <p className="text-xs text-gray-500 mt-2">
-                      Máximo número de palabras/términos a considerar en el vocabulario
-                    </p>
+                    <div className="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <p className="text-xs text-blue-900 font-medium mb-1">📊 ¿Qué es esto?</p>
+                      <p className="text-xs text-blue-800 mb-2">
+                        Define el tamaño máximo de tu vocabulario. El sistema tomará las N palabras más frecuentes de tus documentos.
+                      </p>
+                      <p className="text-xs text-blue-900 font-medium mb-1">⚙️ ¿Qué pasa si lo cambio?</p>
+                      <ul className="text-xs text-blue-800 space-y-1 ml-4">
+                        <li><strong>Valor bajo (100-500):</strong> Vocabulario pequeño, análisis rápido, pero pierdes palabras específicas.</li>
+                        <li><strong>Valor medio (1000-5000):</strong> Balance óptimo entre detalle y rendimiento.</li>
+                        <li><strong>Valor alto (10000+):</strong> Vocabulario completo, análisis detallado, pero más lento y pesado.</li>
+                      </ul>
+                      <p className="text-xs text-blue-700 mt-2 italic">
+                        💡 Ejemplo: Si tienes 50,000 palabras únicas y pones 1000, solo verás las 1000 más frecuentes.
+                      </p>
+                    </div>
                   </div>
 
-                  {/* Min DF y Max DF en Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Min DF y Max DF */}
+                  <div className="space-y-6">
                     {/* Min DF */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Frecuencia Mínima (min_df) *
+                        Frecuencia Mínima de Documento (min_df) *
                       </label>
                       <input
                         type="number"
@@ -284,15 +296,27 @@ export const BagOfWordsCreate: React.FC = () => {
                         required
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                       />
-                      <p className="text-xs text-gray-500 mt-2">
-                        Ignorar términos en menos de N documentos
-                      </p>
+                      <div className="mt-2 bg-green-50 border border-green-200 rounded-lg p-3">
+                        <p className="text-xs text-green-900 font-medium mb-1">🔍 ¿Qué es esto?</p>
+                        <p className="text-xs text-green-800 mb-2">
+                          Elimina palabras que aparecen en muy pocos documentos (raras o poco relevantes).
+                        </p>
+                        <p className="text-xs text-green-900 font-medium mb-1">⚙️ ¿Qué pasa si lo cambio?</p>
+                        <ul className="text-xs text-green-800 space-y-1 ml-4">
+                          <li><strong>min_df = 1:</strong> Incluye TODAS las palabras (incluso si aparecen 1 sola vez).</li>
+                          <li><strong>min_df = 2:</strong> Ignora palabras que aparecen en 1 solo documento.</li>
+                          <li><strong>min_df = 5:</strong> Solo palabras que aparecen en al menos 5 documentos.</li>
+                        </ul>
+                        <p className="text-xs text-green-700 mt-2 italic">
+                          💡 Ejemplo: "typo123" aparece en 1 documento → con min_df=2 se elimina automáticamente.
+                        </p>
+                      </div>
                     </div>
 
                     {/* Max DF */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Frecuencia Máxima (max_df) *
+                        Frecuencia Máxima de Documento (max_df) *
                       </label>
                       <input
                         type="number"
@@ -305,49 +329,77 @@ export const BagOfWordsCreate: React.FC = () => {
                         required
                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                       />
-                      <p className="text-xs text-gray-500 mt-2">
-                        Ignorar términos en más de % documentos (0-1)
-                      </p>
+                      <div className="mt-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                        <p className="text-xs text-amber-900 font-medium mb-1">🚫 ¿Qué es esto?</p>
+                        <p className="text-xs text-amber-800 mb-2">
+                          Elimina palabras demasiado comunes (stopwords) que aparecen en casi todos los documentos.
+                        </p>
+                        <p className="text-xs text-amber-900 font-medium mb-1">⚙️ ¿Qué pasa si lo cambio?</p>
+                        <ul className="text-xs text-amber-800 space-y-1 ml-4">
+                          <li><strong>max_df = 1.0 (100%):</strong> Incluye TODAS las palabras, incluso las súper comunes.</li>
+                          <li><strong>max_df = 0.8 (80%):</strong> Ignora palabras que aparecen en más del 80% de documentos.</li>
+                          <li><strong>max_df = 0.5 (50%):</strong> Solo palabras que aparecen en máximo 50% de documentos.</li>
+                        </ul>
+                        <p className="text-xs text-amber-700 mt-2 italic">
+                          💡 Ejemplo: "el", "la", "de" aparecen en 95% documentos → con max_df=0.8 se eliminan.
+                        </p>
+                      </div>
                     </div>
                   </div>
 
-                  {/* N-gramas en Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Ngram Min */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        N-grama Mínimo *
-                      </label>
-                      <input
-                        type="number"
-                        name="ngram_min"
-                        value={formData.ngram_min}
-                        onChange={handleChange}
-                        min={1}
-                        required
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      />
-                      <p className="text-xs text-gray-500 mt-2">
-                        1 = unigramas (palabras individuales)
-                      </p>
+                  {/* N-gramas */}
+                  <div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+                      {/* Ngram Min */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          N-grama Mínimo *
+                        </label>
+                        <input
+                          type="number"
+                          name="ngram_min"
+                          value={formData.ngram_min}
+                          onChange={handleChange}
+                          min={1}
+                          required
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                        />
+                      </div>
+
+                      {/* Ngram Max */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          N-grama Máximo *
+                        </label>
+                        <input
+                          type="number"
+                          name="ngram_max"
+                          value={formData.ngram_max}
+                          onChange={handleChange}
+                          min={1}
+                          required
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                        />
+                      </div>
                     </div>
 
-                    {/* Ngram Max */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        N-grama Máximo *
-                      </label>
-                      <input
-                        type="number"
-                        name="ngram_max"
-                        value={formData.ngram_max}
-                        onChange={handleChange}
-                        min={1}
-                        required
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      />
-                      <p className="text-xs text-gray-500 mt-2">
-                        2 = bigramas, 3 = trigramas, etc.
+                    <div className="mt-2 bg-purple-50 border border-purple-200 rounded-lg p-3">
+                      <p className="text-xs text-purple-900 font-medium mb-1">🔤 ¿Qué son los N-gramas?</p>
+                      <p className="text-xs text-purple-800 mb-2">
+                        Define si analizas palabras individuales o combinaciones de palabras consecutivas.
+                      </p>
+                      <p className="text-xs text-purple-900 font-medium mb-1">⚙️ ¿Qué obtendrás con cada configuración?</p>
+                      <ul className="text-xs text-purple-800 space-y-1 ml-4">
+                        <li><strong>(1, 1) - Solo Unigramas:</strong> Palabras sueltas → "educación", "digital", "tecnología"</li>
+                        <li><strong>(1, 2) - Unigramas + Bigramas:</strong> Palabras + Pares → "educación digital", "tecnología avanzada"</li>
+                        <li><strong>(2, 2) - Solo Bigramas:</strong> Solo pares → "inteligencia artificial", "aprendizaje automático"</li>
+                        <li><strong>(1, 3) - Hasta Trigramas:</strong> Incluye frases → "transformación digital educativa"</li>
+                      </ul>
+                      <p className="text-xs text-purple-700 mt-2 italic">
+                        💡 Recomendación: (1, 1) para análisis general, (1, 2) para capturar expresiones comunes.
+                      </p>
+                      <p className="text-xs text-purple-700 mt-1 italic">
+                        ⚠️ Advertencia: Valores altos (3+) generan vocabularios muy grandes y pueden ser lentos.
                       </p>
                     </div>
                   </div>
