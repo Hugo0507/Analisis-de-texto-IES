@@ -48,15 +48,6 @@ class BagOfWords(models.Model):
         (STAGE_COMPLETED, 'Completado'),
     ]
 
-    # Métodos de vectorización
-    METHOD_COUNT = 'count'
-    METHOD_TFIDF = 'tfidf'
-
-    METHOD_CHOICES = [
-        (METHOD_COUNT, 'Count Vectorizer (Frecuencias)'),
-        (METHOD_TFIDF, 'TF-IDF Vectorizer (Importancia)'),
-    ]
-
     # === Información básica ===
     name = models.CharField(
         max_length=200,
@@ -83,14 +74,7 @@ class BagOfWords(models.Model):
         help_text="Usuario que creó este análisis"
     )
 
-    # === Configuración de vectorización ===
-    vectorization_method = models.CharField(
-        max_length=20,
-        choices=METHOD_CHOICES,
-        default=METHOD_TFIDF,
-        help_text="Método de vectorización a utilizar"
-    )
-
+    # === Configuración de vectorización (Count Vectorizer) ===
     max_features = models.IntegerField(
         default=1000,
         help_text="Número máximo de features (palabras) a considerar"
@@ -114,16 +98,6 @@ class BagOfWords(models.Model):
     ngram_max = models.IntegerField(
         default=1,
         help_text="Tamaño máximo de n-gramas (1 = unigramas, 2 = bigramas, etc.)"
-    )
-
-    use_idf = models.BooleanField(
-        default=True,
-        help_text="Usar IDF (solo para TF-IDF)"
-    )
-
-    sublinear_tf = models.BooleanField(
-        default=False,
-        help_text="Usar escala logarítmica para TF (solo para TF-IDF)"
     )
 
     # === Estado del procesamiento ===
@@ -239,7 +213,7 @@ class BagOfWords(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.name} ({self.get_vectorization_method_display()})"
+        return f"{self.name} (Bag of Words)"
 
     @property
     def ngram_range(self):

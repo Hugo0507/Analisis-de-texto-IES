@@ -82,18 +82,6 @@ export const BagOfWordsList: React.FC = () => {
     );
   };
 
-  const getMethodBadge = (method: string) => {
-    return method === 'tfidf' ? (
-      <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
-        TF-IDF
-      </span>
-    ) : (
-      <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-semibold">
-        Count
-      </span>
-    );
-  };
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('es-ES', {
@@ -190,9 +178,6 @@ export const BagOfWordsList: React.FC = () => {
                       Preparación de Datos
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                      Método
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
                       Estado
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
@@ -231,11 +216,6 @@ export const BagOfWordsList: React.FC = () => {
                           <p className="text-sm font-medium text-gray-900">{analysis.data_preparation_name}</p>
                           <p className="text-xs text-gray-500 mt-1">{analysis.dataset_name}</p>
                         </div>
-                      </td>
-
-                      {/* Método Column */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {getMethodBadge(analysis.vectorization_method)}
                       </td>
 
                       {/* Estado Column */}
