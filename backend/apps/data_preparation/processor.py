@@ -507,3 +507,187 @@ def start_processing_thread(preparation_id: int):
     )
     thread.start()
     logger.info(f"Thread iniciado para preparation {preparation_id}")
+
+
+def update_data_preparation(preparation_id: int):
+    """
+    Actualizar preparación existente con cambios en el dataset.
+
+    Detecta archivos agregados y eliminados:
+    - Archivos eliminados: Remueve de processed_file_ids y omitted_file_ids
+    - Archivos agregados: Procesa solo los archivos nuevos e incrementa contadores
+    """
+    try:
+        preparation = DataPreparation.objects.get(id=preparation_id)
+
+        # Cambiar estado a procesando
+        preparation.status = DataPreparation.STATUS_PROCESSING
+        preparation.current_stage = 'updating'
+        preparation.progress_percentage = 0
+        preparation.save()
+
+        # Obtener archivos PDF actuales del dataset
+        current_pdf_files = DatasetFile.objects.filter(
+            dataset=preparation.dataset,
+            mime_type='application/pdf'
+        ).values_list('id', flat=True)
+
+        current_file_ids = set(current_pdf_files)
+        processed_ids = set(preparation.processed_file_ids)
+        omitted_ids = set(preparation.omitted_file_ids)
+        all_original_ids = processed_ids | omitted_ids
+
+        # Detectar cambios
+        added_ids = current_file_ids - all_original_ids
+        deleted_ids = all_original_ids - current_file_ids
+
+        logger.info(f"Preparación {preparation_id}: {len(added_ids)} archivos agregados, {len(deleted_ids)} eliminados")
+
+        # PASO 1: Eliminar archivos borrados (10%)
+        preparation.progress_percentage = 10
+        preparation.save()
+
+        if deleted_ids:
+            # Remover de processed y omitted
+            new_processed_ids = [fid for fid in preparation.processed_file_ids if fid not in deleted_ids]
+            new_omitted_ids = [fid for fid in preparation.omitted_file_ids if fid not in deleted_ids]
+
+            preparation.processed_file_ids = new_processed_ids
+            preparation.omitted_file_ids = new_omitted_ids
+            preparation.files_processed = len(new_processed_ids)
+            preparation.files_omitted = len(new_omitted_ids)
+            preparation.save()
+
+            logger.info(f"Eliminados {len(deleted_ids)} archivos de la preparación")
+
+        # PASO 2: Procesar archivos nuevos (10-100%)
+        if added_ids:
+            new_files = DatasetFile.objects.filter(id__in=added_ids)
+            total_new = len(added_ids)
+            files_with_text = []
+
+            # Extraer texto de nuevos archivos (10-40%)
+            for idx, pdf_file in enumerate(new_files):
+                progress = 10 + int((idx / total_new) * 30)
+                preparation.progress_percentage = progress
+                preparation.save()
+
+                pdf_path = pdf_file.file_path
+                temp_file_path = None
+
+                try:
+                    # Si el archivo está en Drive, descargarlo temporalmente
+                    if pdf_path.startswith('drive://'):
+                        drive_file_id = pdf_path.replace('drive://', '')
+                        temp_file_path = DriveFileDownloader.download_from_drive(
+                            drive_file_id,
+                            preparation.created_by
+                        )
+                        if not temp_file_path:
+                            logger.warning(f"No se pudo descargar {pdf_file.original_filename} desde Drive")
+                            continue
+                        pdf_path = temp_file_path
+
+                    # Extraer texto
+                    text, method = PDFExtractor.extract_text(pdf_path)
+
+                    if text:
+                        files_with_text.append({
+                            'file_id': pdf_file.id,
+                            'file_name': pdf_file.original_filename,
+                            'text': text,
+                            'extraction_method': method
+                        })
+
+                finally:
+                    if temp_file_path:
+                        DriveFileDownloader.cleanup_temp_file(temp_file_path)
+
+            # Detectar idioma de nuevos archivos (40-60%)
+            preparation.progress_percentage = 40
+            preparation.save()
+
+            for idx, file_data in enumerate(files_with_text):
+                progress = 40 + int((idx / len(files_with_text)) * 20)
+                preparation.progress_percentage = progress
+                preparation.save()
+
+                lang, confidence = LanguageDetector.detect_language(file_data['text'])
+                file_data['language'] = lang
+                file_data['language_confidence'] = confidence
+
+            # Filtrar por idioma predominante original (60-70%)
+            preparation.progress_percentage = 60
+            preparation.save()
+
+            predominant_lang = preparation.predominant_language
+
+            if preparation.filter_by_predominant_language:
+                new_processed = [f for f in files_with_text if f['language'] == predominant_lang]
+                new_omitted = [f for f in files_with_text if f['language'] != predominant_lang]
+            else:
+                new_processed = files_with_text
+                new_omitted = []
+
+            # Aplicar stopwords y transformaciones (70-90%)
+            stopwords = get_combined_stopwords(
+                custom_stopwords=preparation.custom_stopwords,
+                language=predominant_lang
+            )
+
+            for idx, file_data in enumerate(new_processed):
+                progress = 70 + int((idx / len(new_processed)) * 20) if new_processed else 70
+                preparation.progress_percentage = progress
+                preparation.save()
+
+                text = file_data['text']
+                words = text.lower().split()
+                cleaned_words = [w for w in words if w not in stopwords]
+                file_data['cleaned_text'] = ' '.join(cleaned_words)
+
+            # Actualizar contadores (90%)
+            preparation.progress_percentage = 90
+            preparation.processed_file_ids.extend([f['file_id'] for f in new_processed])
+            preparation.omitted_file_ids.extend([f['file_id'] for f in new_omitted])
+            preparation.files_processed = len(preparation.processed_file_ids)
+            preparation.files_omitted = len(preparation.omitted_file_ids)
+            preparation.total_files_analyzed = preparation.files_processed + preparation.files_omitted
+            preparation.save()
+
+            logger.info(f"Procesados {len(new_processed)} archivos nuevos, omitidos {len(new_omitted)}")
+
+        # COMPLETADO (100%)
+        preparation.status = DataPreparation.STATUS_COMPLETED
+        preparation.current_stage = DataPreparation.STAGE_COMPLETED
+        preparation.progress_percentage = 100
+        preparation.processing_completed_at = timezone.now()
+        preparation.save()
+
+        logger.info(f"Actualización de preparación {preparation_id} completada exitosamente")
+
+    except Exception as e:
+        error_message = f"Error actualizando preparación: {str(e)}"
+        logger.exception(error_message)
+        try:
+            preparation = DataPreparation.objects.get(id=preparation_id)
+            preparation.status = DataPreparation.STATUS_ERROR
+            preparation.error_message = error_message
+            preparation.save()
+        except Exception as save_error:
+            logger.error(f"Error guardando error state: {save_error}")
+
+
+def start_update_thread(preparation_id: int):
+    """
+    Iniciar actualización en thread de background.
+
+    Args:
+        preparation_id: ID de la preparación a actualizar
+    """
+    thread = threading.Thread(
+        target=update_data_preparation,
+        args=(preparation_id,),
+        daemon=True
+    )
+    thread.start()
+    logger.info(f"Thread de actualización iniciado para preparation {preparation_id}")
