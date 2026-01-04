@@ -21,17 +21,27 @@ export const BagOfWordsCreate: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingPreparations, setIsLoadingPreparations] = useState(true);
   const [preparations, setPreparations] = useState<DataPreparationListItem[]>([]);
+  const [useDefaultConfig, setUseDefaultConfig] = useState(true);
+
+  // Valores por defecto
+  const DEFAULT_CONFIG = {
+    max_features: 100000, // Sin límite práctico (muy alto)
+    min_df: 1,
+    max_df: 1.0,
+    ngram_min: 1,
+    ngram_max: 2,
+  };
 
   // Formulario
   const [formData, setFormData] = useState<BagOfWordsCreateRequest>({
     name: '',
     description: '',
     data_preparation: 0,
-    max_features: 1000,
-    min_df: 1,
-    max_df: 1.0,
-    ngram_min: 1,
-    ngram_max: 1,
+    max_features: DEFAULT_CONFIG.max_features,
+    min_df: DEFAULT_CONFIG.min_df,
+    max_df: DEFAULT_CONFIG.max_df,
+    ngram_min: DEFAULT_CONFIG.ngram_min,
+    ngram_max: DEFAULT_CONFIG.ngram_max,
   });
 
   useEffect(() => {
@@ -62,6 +72,23 @@ export const BagOfWordsCreate: React.FC = () => {
       setFormData(prev => ({ ...prev, [name]: parseFloat(value) || 0 }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleConfigToggle = () => {
+    const newUseDefault = !useDefaultConfig;
+    setUseDefaultConfig(newUseDefault);
+
+    if (newUseDefault) {
+      // Restaurar valores por defecto
+      setFormData(prev => ({
+        ...prev,
+        max_features: DEFAULT_CONFIG.max_features,
+        min_df: DEFAULT_CONFIG.min_df,
+        max_df: DEFAULT_CONFIG.max_df,
+        ngram_min: DEFAULT_CONFIG.ngram_min,
+        ngram_max: DEFAULT_CONFIG.ngram_max,
+      }));
     }
   };
 
@@ -248,7 +275,47 @@ export const BagOfWordsCreate: React.FC = () => {
                   Configuración de Bolsa de Palabras (Count Vectorizer)
                 </h2>
 
-                <div className="space-y-6">
+                {/* Toggle Configuración */}
+                <div className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900 mb-1">Modo de Configuración</h3>
+                      <p className="text-xs text-gray-600">
+                        {useDefaultConfig
+                          ? '✅ Usando configuración por defecto (recomendado)'
+                          : '⚙️ Configuración personalizada'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleConfigToggle}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
+                        useDefaultConfig ? 'bg-emerald-500' : 'bg-gray-300'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          useDefaultConfig ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {useDefaultConfig && (
+                    <div className="mt-3 pt-3 border-t border-blue-200">
+                      <p className="text-xs text-gray-700 font-medium mb-2">Valores por defecto:</p>
+                      <ul className="text-xs text-gray-600 space-y-1">
+                        <li>• <strong>Palabras:</strong> Todas las encontradas (sin límite)</li>
+                        <li>• <strong>Frecuencia mínima:</strong> 1 (incluye palabras que aparecen 1+ veces)</li>
+                        <li>• <strong>Frecuencia máxima:</strong> 100% (incluye todas las palabras)</li>
+                        <li>• <strong>N-gramas:</strong> 1-2 (palabras individuales + pares de palabras)</li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+
+                {!useDefaultConfig && (
+                  <div className="space-y-6">
                   {/* Max Features */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -403,8 +470,8 @@ export const BagOfWordsCreate: React.FC = () => {
                       </p>
                     </div>
                   </div>
-
                 </div>
+                )}
               </div>
 
               {/* Botones de Acción */}
