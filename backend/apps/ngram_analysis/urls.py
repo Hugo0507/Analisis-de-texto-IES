@@ -7,7 +7,7 @@ from rest_framework.routers import DefaultRouter
 from .views import NgramAnalysisViewSet
 
 router = DefaultRouter()
-router.register(r'', NgramAnalysisViewSet, basename='ngram-analysis')
+router.register(r'ngram-analysis', NgramAnalysisViewSet, basename='ngram-analysis')
 
 urlpatterns = [
     path('', include(router.urls)),
