@@ -432,7 +432,7 @@ class DataPreparationProcessor:
                     cleaned = re.sub(r'[^a-zA-Z0-9\s]', '', text)
                     file_data['cleaned_text'] = cleaned
 
-            # ETAPA 6: Validación (90-100%)
+            # ETAPA 6: Validación (90-95%)
             self.update_progress(DataPreparation.STAGE_VALIDATING, 90)
 
             # Verificar integridad
@@ -465,6 +465,29 @@ class DataPreparationProcessor:
             self.preparation.duplicates_removed = duplicates_count
             self.preparation.files_processed = len(processed_files)
             self.preparation.save()
+
+            # ETAPA 7: Guardar textos preprocesados en BD (95-100%)
+            self.update_progress(DataPreparation.STAGE_VALIDATING, 95)
+
+            for idx, file_data in enumerate(processed_files):
+                progress = 95 + int((idx / len(processed_files)) * 5)
+                self.update_progress(DataPreparation.STAGE_VALIDATING, progress)
+
+                try:
+                    # Obtener el texto preprocesado final
+                    preprocessed_text = file_data.get('cleaned_text', file_data.get('text', ''))
+
+                    # Guardar en la base de datos
+                    DatasetFile.objects.filter(id=file_data['file_id']).update(
+                        preprocessed_text=preprocessed_text,
+                        txt_content=file_data.get('text', ''),
+                        language_code=file_data.get('language'),
+                        language_confidence=file_data.get('language_confidence', 0.0)
+                    )
+                except Exception as e:
+                    logger.error(f"Error guardando texto preprocesado para archivo {file_data['file_id']}: {e}")
+
+            logger.info(f"Textos preprocesados guardados en BD para {len(processed_files)} archivos")
 
             # COMPLETADO (100%)
             self.update_progress(
@@ -671,8 +694,31 @@ def update_data_preparation(preparation_id: int):
                 cleaned_words = [w for w in words if w not in stopwords]
                 file_data['cleaned_text'] = ' '.join(cleaned_words)
 
-            # Actualizar contadores (90%)
+            # Guardar textos preprocesados en BD (90-95%)
             preparation.progress_percentage = 90
+            for idx, file_data in enumerate(new_processed):
+                progress = 90 + int((idx / len(new_processed)) * 5) if new_processed else 90
+                preparation.progress_percentage = progress
+                preparation.save()
+
+                try:
+                    # Obtener el texto preprocesado final
+                    preprocessed_text = file_data.get('cleaned_text', file_data.get('text', ''))
+
+                    # Guardar en la base de datos
+                    DatasetFile.objects.filter(id=file_data['file_id']).update(
+                        preprocessed_text=preprocessed_text,
+                        txt_content=file_data.get('text', ''),
+                        language_code=file_data.get('language'),
+                        language_confidence=file_data.get('language_confidence', 0.0)
+                    )
+                except Exception as e:
+                    logger.error(f"Error guardando texto preprocesado para archivo {file_data['file_id']}: {e}")
+
+            logger.info(f"Textos preprocesados guardados en BD para {len(new_processed)} archivos nuevos")
+
+            # Actualizar contadores (95%)
+            preparation.progress_percentage = 95
             preparation.processed_file_ids.extend([f['file_id'] for f in new_processed])
             preparation.omitted_file_ids.extend([f['file_id'] for f in new_omitted])
             preparation.files_processed = len(preparation.processed_file_ids)
