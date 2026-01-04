@@ -4,6 +4,7 @@ Data Preparation Views
 ViewSet para gestión de preparación de datos NLP.
 """
 
+import logging
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -17,6 +18,8 @@ from .serializers import (
     ProgressSerializer,
     StatsSerializer,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class DataPreparationViewSet(viewsets.ModelViewSet):
@@ -180,49 +183,76 @@ class DataPreparationViewSet(viewsets.ModelViewSet):
 
         Compara archivos actuales del dataset con los procesados originalmente.
         """
-        from apps.datasets.models import DatasetFile
+        try:
+            from apps.datasets.models import DatasetFile
 
-        preparation = self.get_object()
+            preparation = self.get_object()
 
-        # Obtener archivos PDF actuales del dataset
-        current_pdf_files = DatasetFile.objects.filter(
-            dataset=preparation.dataset,
-            mime_type='application/pdf'
-        ).values_list('id', flat=True)
+            # Obtener archivos PDF actuales del dataset
+            current_pdf_files = DatasetFile.objects.filter(
+                dataset=preparation.dataset,
+                mime_type='application/pdf'
+            ).values_list('id', flat=True)
 
-        current_file_ids = set(current_pdf_files)
+            current_file_ids = set(current_pdf_files)
 
-        # IDs procesados y omitidos originalmente
-        processed_ids = set(preparation.processed_file_ids)
-        omitted_ids = set(preparation.omitted_file_ids)
-        all_original_ids = processed_ids | omitted_ids
+            # IDs procesados y omitidos originalmente
+            # Asegurar que sean listas antes de convertir a set
+            processed_ids = set(preparation.processed_file_ids if preparation.processed_file_ids else [])
+            omitted_ids = set(preparation.omitted_file_ids if preparation.omitted_file_ids else [])
+            all_original_ids = processed_ids | omitted_ids
 
-        # Detectar cambios
-        added_ids = current_file_ids - all_original_ids
-        deleted_ids = all_original_ids - current_file_ids
+            # Detectar cambios
+            added_ids = current_file_ids - all_original_ids
+            deleted_ids = all_original_ids - current_file_ids
 
-        # Obtener nombres de archivos agregados
-        added_files = DatasetFile.objects.filter(
-            id__in=added_ids
-        ).values('id', 'original_filename')
+            # Obtener nombres de archivos agregados
+            added_files = DatasetFile.objects.filter(
+                id__in=added_ids
+            ).values('id', 'original_filename')
 
-        # Obtener nombres de archivos eliminados desde los IDs guardados
-        # (ya no existen en BD, así que usamos los nombres que teníamos)
-        deleted_files = DatasetFile.objects.filter(
-            id__in=deleted_ids
-        ).values('id', 'original_filename')
+            # Para archivos eliminados, intentar obtenerlos de la BD
+            # Si ya no existen, solo mostramos el ID
+            deleted_files_list = []
+            for file_id in deleted_ids:
+                try:
+                    # Intentar obtener el archivo (puede que aún exista pero fue removido del dataset)
+                    file_obj = DatasetFile.objects.filter(id=file_id).first()
+                    if file_obj:
+                        deleted_files_list.append({
+                            'id': file_id,
+                            'original_filename': file_obj.original_filename
+                        })
+                    else:
+                        # Archivo ya no existe en BD
+                        deleted_files_list.append({
+                            'id': file_id,
+                            'original_filename': f'Archivo ID {file_id} (eliminado)'
+                        })
+                except Exception:
+                    deleted_files_list.append({
+                        'id': file_id,
+                        'original_filename': f'Archivo ID {file_id} (eliminado)'
+                    })
 
-        data = {
-            'has_changes': len(added_ids) > 0 or len(deleted_ids) > 0,
-            'added_count': len(added_ids),
-            'deleted_count': len(deleted_ids),
-            'added_files': list(added_files),
-            'deleted_files': list(deleted_files),
-            'current_total': len(current_file_ids),
-            'original_total': len(all_original_ids),
-        }
+            data = {
+                'has_changes': len(added_ids) > 0 or len(deleted_ids) > 0,
+                'added_count': len(added_ids),
+                'deleted_count': len(deleted_ids),
+                'added_files': list(added_files),
+                'deleted_files': deleted_files_list,
+                'current_total': len(current_file_ids),
+                'original_total': len(all_original_ids),
+            }
 
-        return Response(data)
+            return Response(data)
+
+        except Exception as e:
+            logger.error(f"Error detectando cambios en preparación {pk}: {str(e)}")
+            return Response(
+                {'error': f'Error detectando cambios: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @action(detail=True, methods=['post'])
     def update_preparation(self, request, pk=None):
