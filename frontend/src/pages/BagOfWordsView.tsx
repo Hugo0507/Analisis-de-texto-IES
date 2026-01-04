@@ -276,7 +276,7 @@ export const BagOfWordsView: React.FC = () => {
             {/* Top Términos */}
             <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Top Términos Más Importantes</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Palabras Más Frecuentes</h2>
                 <button
                   onClick={() => setShowTopTerms(!showTopTerms)}
                   className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
@@ -291,8 +291,8 @@ export const BagOfWordsView: React.FC = () => {
                     <thead>
                       <tr className="border-b border-gray-200">
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Rank</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Término</th>
-                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Score</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Palabra</th>
+                        <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Frecuencia</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -300,7 +300,7 @@ export const BagOfWordsView: React.FC = () => {
                         <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
                           <td className="px-4 py-3 text-sm text-gray-600">{term.rank}</td>
                           <td className="px-4 py-3 text-sm font-medium text-gray-900">{term.term}</td>
-                          <td className="px-4 py-3 text-sm text-right text-gray-700">{term.score.toFixed(4)}</td>
+                          <td className="px-4 py-3 text-sm text-right text-gray-700">{Math.round(term.score)}</td>
                         </tr>
                       ))}
                     </tbody>
