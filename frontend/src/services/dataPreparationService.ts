@@ -97,6 +97,16 @@ export interface FileDetailsData {
   duplicates: FileDetail[];
 }
 
+export interface DatasetChanges {
+  has_changes: boolean;
+  added_count: number;
+  deleted_count: number;
+  added_files: FileDetail[];
+  deleted_files: FileDetail[];
+  current_total: number;
+  original_total: number;
+}
+
 // Códigos de idioma a nombres y banderas
 export const LANGUAGE_NAMES: Record<string, { name: string; flag: string }> = {
   'en': { name: 'Inglés', flag: '🇺🇸' },
@@ -172,6 +182,22 @@ class DataPreparationService {
    */
   async getFileDetails(id: number): Promise<FileDetailsData> {
     const response = await apiClient.get(`/data-preparation/${id}/file_details/`);
+    return response.data;
+  }
+
+  /**
+   * Detectar cambios en el dataset original
+   */
+  async detectChanges(id: number): Promise<DatasetChanges> {
+    const response = await apiClient.get(`/data-preparation/${id}/detect_changes/`);
+    return response.data;
+  }
+
+  /**
+   * Actualizar preparación con cambios detectados
+   */
+  async updatePreparation(id: number): Promise<DataPreparation> {
+    const response = await apiClient.post(`/data-preparation/${id}/update_preparation/`);
     return response.data;
   }
 
