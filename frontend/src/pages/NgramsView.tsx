@@ -189,8 +189,8 @@ export const NgramsView: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Preparación de Datos</p>
-              <p className="text-sm text-gray-900 font-medium">{analysis.data_preparation.name}</p>
-              <p className="text-xs text-gray-500 mt-1">Dataset: {analysis.data_preparation.dataset.name}</p>
+              <p className="text-sm text-gray-900 font-medium">{analysis.data_preparation_name}</p>
+              <p className="text-xs text-gray-500 mt-1">Dataset: {analysis.dataset_name}</p>
             </div>
 
             <div>
