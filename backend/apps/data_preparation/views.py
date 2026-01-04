@@ -170,3 +170,83 @@ class DataPreparationViewSet(viewsets.ModelViewSet):
         }
 
         return Response(data)
+
+    @action(detail=True, methods=['get'])
+    def detect_changes(self, request, pk=None):
+        """
+        Detectar cambios en el dataset original.
+
+        Endpoint: GET /api/v1/data-preparation/{id}/detect_changes/
+
+        Compara archivos actuales del dataset con los procesados originalmente.
+        """
+        from apps.datasets.models import DatasetFile
+
+        preparation = self.get_object()
+
+        # Obtener archivos PDF actuales del dataset
+        current_pdf_files = DatasetFile.objects.filter(
+            dataset=preparation.dataset,
+            mime_type='application/pdf'
+        ).values_list('id', flat=True)
+
+        current_file_ids = set(current_pdf_files)
+
+        # IDs procesados y omitidos originalmente
+        processed_ids = set(preparation.processed_file_ids)
+        omitted_ids = set(preparation.omitted_file_ids)
+        all_original_ids = processed_ids | omitted_ids
+
+        # Detectar cambios
+        added_ids = current_file_ids - all_original_ids
+        deleted_ids = all_original_ids - current_file_ids
+
+        # Obtener nombres de archivos agregados
+        added_files = DatasetFile.objects.filter(
+            id__in=added_ids
+        ).values('id', 'original_filename')
+
+        # Obtener nombres de archivos eliminados desde los IDs guardados
+        # (ya no existen en BD, así que usamos los nombres que teníamos)
+        deleted_files = DatasetFile.objects.filter(
+            id__in=deleted_ids
+        ).values('id', 'original_filename')
+
+        data = {
+            'has_changes': len(added_ids) > 0 or len(deleted_ids) > 0,
+            'added_count': len(added_ids),
+            'deleted_count': len(deleted_ids),
+            'added_files': list(added_files),
+            'deleted_files': list(deleted_files),
+            'current_total': len(current_file_ids),
+            'original_total': len(all_original_ids),
+        }
+
+        return Response(data)
+
+    @action(detail=True, methods=['post'])
+    def update_preparation(self, request, pk=None):
+        """
+        Actualizar preparación con cambios detectados en el dataset.
+
+        Endpoint: POST /api/v1/data-preparation/{id}/update_preparation/
+
+        - Si archivos fueron eliminados: Remueve su información
+        - Si archivos fueron agregados: Procesa solo los archivos nuevos
+        """
+        preparation = self.get_object()
+
+        # Solo permitir actualizar si está completada
+        if preparation.status != DataPreparation.STATUS_COMPLETED:
+            return Response(
+                {'error': 'Solo se pueden actualizar preparaciones completadas'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Iniciar actualización en background thread
+        from .processor import start_update_thread
+        start_update_thread(preparation.id)
+
+        # Retornar preparación actualizada
+        response_serializer = DataPreparationDetailSerializer(preparation)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)

@@ -18,7 +18,7 @@ import {
   ArrowRight,
   FileType
 } from 'lucide-react';
-import dataPreparationService, { DataPreparation, FileDetailsData, FileDetail } from '../services/dataPreparationService';
+import dataPreparationService, { DataPreparation, FileDetailsData, FileDetail, DatasetChanges } from '../services/dataPreparationService';
 import { useToast } from '../contexts/ToastContext';
 import { Spinner } from '../components/atoms';
 
@@ -27,7 +27,7 @@ type FileModalType = 'processed' | 'omitted' | 'duplicates' | null;
 export const DataPreparationView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { showError } = useToast();
+  const { showError, showSuccess } = useToast();
 
   const [preparation, setPreparation] = useState<DataPreparation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,6 +35,8 @@ export const DataPreparationView: React.FC = () => {
   const [fileModalType, setFileModalType] = useState<FileModalType>(null);
   const [fileDetails, setFileDetails] = useState<FileDetailsData | null>(null);
   const [loadingFiles, setLoadingFiles] = useState(false);
+  const [datasetChanges, setDatasetChanges] = useState<DatasetChanges | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -59,6 +61,42 @@ export const DataPreparationView: React.FC = () => {
       showError('Error al cargar preparación');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Detectar cambios en el dataset cuando la preparación está completada
+  useEffect(() => {
+    if (!id || !preparation || preparation.status !== 'completed') return;
+
+    const checkChanges = async () => {
+      try {
+        const changes = await dataPreparationService.detectChanges(Number(id));
+        setDatasetChanges(changes);
+      } catch (error: any) {
+        console.error('Error detectando cambios:', error);
+      }
+    };
+
+    checkChanges();
+  }, [id, preparation?.status]);
+
+  const handleUpdate = async () => {
+    if (!id) return;
+
+    try {
+      setIsUpdating(true);
+      await dataPreparationService.updatePreparation(Number(id));
+      showSuccess('Actualización iniciada. El proceso se completará en segundo plano.');
+
+      // Limpiar cambios detectados
+      setDatasetChanges(null);
+
+      // Recargar preparación para mostrar progreso
+      await loadPreparation();
+    } catch (error: any) {
+      showError('Error al iniciar actualización: ' + (error.response?.data?.error || error.message));
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -182,6 +220,84 @@ export const DataPreparationView: React.FC = () => {
                 <p className="text-sm text-red-800">
                   {preparation.error_message || 'Ocurrió un error desconocido durante el procesamiento.'}
                 </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Dataset Changes Notification */}
+        {datasetChanges?.has_changes && isCompleted && (
+          <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-6 shadow-md">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3 flex-1">
+                <div className="p-2 bg-amber-100 rounded-lg">
+                  <AlertTriangle className="w-6 h-6 text-amber-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-amber-900 mb-2">
+                    Cambios Detectados en el Dataset
+                  </h3>
+                  <p className="text-sm text-amber-800 mb-4">
+                    El dataset original ha sido modificado desde que se realizó esta preparación.
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                    {datasetChanges.added_count > 0 && (
+                      <div className="bg-white/60 rounded-lg p-3 border border-amber-200">
+                        <p className="text-xs font-medium text-amber-900 mb-1">
+                          📁 Archivos Agregados
+                        </p>
+                        <p className="text-2xl font-bold text-amber-900">{datasetChanges.added_count}</p>
+                        <p className="text-xs text-amber-700 mt-1">
+                          Estos archivos serán procesados con la misma configuración
+                        </p>
+                      </div>
+                    )}
+
+                    {datasetChanges.deleted_count > 0 && (
+                      <div className="bg-white/60 rounded-lg p-3 border border-amber-200">
+                        <p className="text-xs font-medium text-amber-900 mb-1">
+                          🗑️ Archivos Eliminados
+                        </p>
+                        <p className="text-2xl font-bold text-amber-900">{datasetChanges.deleted_count}</p>
+                        <p className="text-xs text-amber-700 mt-1">
+                          Su información será removida de los resultados
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={handleUpdate}
+                      disabled={isUpdating}
+                      className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white font-medium rounded-lg transition-colors shadow-md flex items-center gap-2"
+                    >
+                      {isUpdating ? (
+                        <>
+                          <Spinner size="sm" />
+                          Actualizando...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          Actualizar Preparación
+                        </>
+                      )}
+                    </button>
+
+                    <div className="text-xs text-amber-700">
+                      <p className="font-medium">
+                        Total actual: {datasetChanges.current_total} archivos
+                      </p>
+                      <p>
+                        Original: {datasetChanges.original_total} archivos
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
