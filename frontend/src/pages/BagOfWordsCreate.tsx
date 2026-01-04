@@ -27,14 +27,11 @@ export const BagOfWordsCreate: React.FC = () => {
     name: '',
     description: '',
     data_preparation: 0,
-    vectorization_method: 'tfidf',
     max_features: 1000,
     min_df: 1,
     max_df: 1.0,
     ngram_min: 1,
     ngram_max: 1,
-    use_idf: true,
-    sublinear_tf: false,
   });
 
   useEffect(() => {
@@ -244,35 +241,14 @@ export const BagOfWordsCreate: React.FC = () => {
                 </div>
               </div>
 
-              {/* Configuración de Vectorización */}
+              {/* Configuración de Bolsa de Palabras */}
               <div className="mb-8">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <span className="w-8 h-8 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-sm font-bold">3</span>
-                  Configuración de Vectorización
+                  Configuración de Bolsa de Palabras (Count Vectorizer)
                 </h2>
 
                 <div className="space-y-4">
-                  {/* Método de Vectorización */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Método de Vectorización *
-                    </label>
-                    <select
-                      name="vectorization_method"
-                      value={formData.vectorization_method}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    >
-                      <option value="tfidf">TF-IDF Vectorizer (Importancia)</option>
-                      <option value="count">Count Vectorizer (Frecuencias)</option>
-                    </select>
-                    <p className="text-xs text-gray-500 mt-2">
-                      {formData.vectorization_method === 'tfidf'
-                        ? 'Calcula la importancia de cada término basándose en TF-IDF'
-                        : 'Cuenta las frecuencias de cada término en los documentos'}
-                    </p>
-                  </div>
-
                   {/* Max Features */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -376,42 +352,6 @@ export const BagOfWordsCreate: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Opciones TF-IDF */}
-                  {formData.vectorization_method === 'tfidf' && (
-                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 space-y-3">
-                      <h3 className="text-sm font-semibold text-purple-900 mb-2">Opciones TF-IDF</h3>
-
-                      {/* Use IDF */}
-                      <div className="flex items-center">
-                        <input
-                          type="checkbox"
-                          id="use_idf"
-                          name="use_idf"
-                          checked={formData.use_idf}
-                          onChange={handleChange}
-                          className="w-4 h-4 text-emerald-600 bg-gray-100 border-gray-300 rounded focus:ring-emerald-500"
-                        />
-                        <label htmlFor="use_idf" className="ml-2 text-sm text-gray-700">
-                          Usar IDF (Inverse Document Frequency)
-                        </label>
-                      </div>
-
-                      {/* Sublinear TF */}
-                      <div className="flex items-center">
-                        <input
-                          type="checkbox"
-                          id="sublinear_tf"
-                          name="sublinear_tf"
-                          checked={formData.sublinear_tf}
-                          onChange={handleChange}
-                          className="w-4 h-4 text-emerald-600 bg-gray-100 border-gray-300 rounded focus:ring-emerald-500"
-                        />
-                        <label htmlFor="sublinear_tf" className="ml-2 text-sm text-gray-700">
-                          Usar escala logarítmica para TF
-                        </label>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
 

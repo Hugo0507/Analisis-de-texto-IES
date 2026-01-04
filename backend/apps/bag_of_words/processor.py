@@ -9,7 +9,7 @@ import threading
 from datetime import datetime
 from typing import List, Dict, Any
 import numpy as np
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
@@ -58,7 +58,7 @@ def process_bag_of_words(bow_id: int):
         bow.save()
 
         # ETAPA 2: Vectorizar
-        logger.info(f"[BoW {bow_id}] Vectorizando con {bow.vectorization_method}...")
+        logger.info(f"[BoW {bow_id}] Vectorizando con Count Vectorizer...")
 
         vectorizer, matrix = vectorize_texts(bow, texts)
 
@@ -74,7 +74,7 @@ def process_bag_of_words(bow_id: int):
         # ETAPA 3: Calcular estadísticas
         logger.info(f"[BoW {bow_id}] Calculando estadísticas...")
 
-        stats = calculate_statistics(vectorizer, matrix, bow.vectorization_method)
+        stats = calculate_statistics(vectorizer, matrix)
 
         bow.current_stage = BagOfWords.STAGE_SAVING_RESULTS
         bow.progress_percentage = 80
@@ -171,7 +171,7 @@ def load_preprocessed_texts(data_prep) -> List[str]:
 
 def vectorize_texts(bow, texts: List[str]):
     """
-    Vectorizar textos usando el método configurado.
+    Vectorizar textos usando Count Vectorizer (Bolsa de Palabras).
 
     Args:
         bow: Instancia de BagOfWords con configuración
@@ -182,22 +182,12 @@ def vectorize_texts(bow, texts: List[str]):
     """
     ngram_range = (bow.ngram_min, bow.ngram_max)
 
-    if bow.vectorization_method == 'tfidf':
-        vectorizer = TfidfVectorizer(
-            max_features=bow.max_features,
-            min_df=bow.min_df,
-            max_df=bow.max_df,
-            ngram_range=ngram_range,
-            use_idf=bow.use_idf,
-            sublinear_tf=bow.sublinear_tf,
-        )
-    else:  # count
-        vectorizer = CountVectorizer(
-            max_features=bow.max_features,
-            min_df=bow.min_df,
-            max_df=bow.max_df,
-            ngram_range=ngram_range,
-        )
+    vectorizer = CountVectorizer(
+        max_features=bow.max_features,
+        min_df=bow.min_df,
+        max_df=bow.max_df,
+        ngram_range=ngram_range,
+    )
 
     matrix = vectorizer.fit_transform(texts)
 
@@ -224,30 +214,24 @@ def calculate_sparsity(matrix) -> float:
     return zero_elements / total_elements
 
 
-def calculate_statistics(vectorizer, matrix, method: str) -> Dict[str, Any]:
+def calculate_statistics(vectorizer, matrix) -> Dict[str, Any]:
     """
-    Calcular estadísticas de la matriz documento-término.
+    Calcular estadísticas de la matriz documento-término (Count Vectorizer).
 
     Args:
-        vectorizer: Vectorizador usado
+        vectorizer: Vectorizador CountVectorizer usado
         matrix: Matriz documento-término
-        method: Método de vectorización usado
 
     Returns:
         Diccionario con estadísticas
     """
     feature_names = vectorizer.get_feature_names_out()
 
-    # Sumar valores por columna (término)
-    if method == 'tfidf':
-        # Para TF-IDF, usar la suma de scores
-        term_scores = np.asarray(matrix.sum(axis=0)).flatten()
-    else:
-        # Para Count, usar frecuencias totales
-        term_scores = np.asarray(matrix.sum(axis=0)).flatten()
+    # Sumar frecuencias por columna (término)
+    term_scores = np.asarray(matrix.sum(axis=0)).flatten()
 
-    # Top términos
-    top_indices = term_scores.argsort()[-50:][::-1]  # Top 50
+    # Top términos (los 50 más frecuentes)
+    top_indices = term_scores.argsort()[-50:][::-1]
     top_terms = [
         {
             'term': feature_names[i],
@@ -257,7 +241,7 @@ def calculate_statistics(vectorizer, matrix, method: str) -> Dict[str, Any]:
         for idx, i in enumerate(top_indices)
     ]
 
-    # Crear diccionario término -> score para uso posterior
+    # Crear diccionario término -> score (frecuencia) para uso posterior
     term_score_dict = {
         feature_names[i]: float(term_scores[i])
         for i in range(len(feature_names))
@@ -267,12 +251,8 @@ def calculate_statistics(vectorizer, matrix, method: str) -> Dict[str, Any]:
     terms_per_doc = np.asarray((matrix > 0).sum(axis=1)).flatten()
     avg_terms = float(np.mean(terms_per_doc))
 
-    # Total de ocurrencias
-    if method == 'count':
-        total_occurrences = int(matrix.sum())
-    else:
-        # Para TF-IDF, contar ocurrencias binarias
-        total_occurrences = int((matrix > 0).sum())
+    # Total de ocurrencias (suma de todas las frecuencias)
+    total_occurrences = int(matrix.sum())
 
     return {
         'top_terms': top_terms,

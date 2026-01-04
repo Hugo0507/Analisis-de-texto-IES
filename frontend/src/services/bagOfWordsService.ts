@@ -38,16 +38,12 @@ export interface BagOfWords {
   data_preparation: DataPreparationInfo;
   created_by_email: string;
 
-  // Configuración
-  vectorization_method: 'count' | 'tfidf';
-  vectorization_method_label: string;
+  // Configuración (Count Vectorizer)
   max_features: number;
   min_df: number;
   max_df: number;
   ngram_min: number;
   ngram_max: number;
-  use_idf: boolean;
-  sublinear_tf: boolean;
 
   // Estado
   status: 'pending' | 'processing' | 'completed' | 'error';
@@ -79,8 +75,6 @@ export interface BagOfWordsListItem {
   name: string;
   data_preparation_name: string;
   dataset_name: string;
-  vectorization_method: 'count' | 'tfidf';
-  vectorization_method_label: string;
   status: 'pending' | 'processing' | 'completed' | 'error';
   progress_percentage: number;
   current_stage: string | null;
@@ -94,14 +88,11 @@ export interface BagOfWordsCreateRequest {
   name: string;
   description?: string;
   data_preparation: number;
-  vectorization_method: 'count' | 'tfidf';
   max_features: number;
   min_df: number;
   max_df: number;
   ngram_min: number;
   ngram_max: number;
-  use_idf: boolean;
-  sublinear_tf: boolean;
 }
 
 export interface BagOfWordsUpdateRequest {
@@ -222,28 +213,6 @@ class BagOfWordsService {
       params: { limit }
     });
     return response.data;
-  }
-
-  /**
-   * Obtener nombre del método de vectorización
-   */
-  getMethodLabel(method: 'count' | 'tfidf'): string {
-    const labels = {
-      'count': 'Count Vectorizer (Frecuencias)',
-      'tfidf': 'TF-IDF Vectorizer (Importancia)',
-    };
-    return labels[method] || method;
-  }
-
-  /**
-   * Obtener descripción del método de vectorización
-   */
-  getMethodDescription(method: 'count' | 'tfidf'): string {
-    const descriptions = {
-      'count': 'Cuenta las frecuencias de cada término en los documentos',
-      'tfidf': 'Calcula la importancia de cada término basándose en TF-IDF',
-    };
-    return descriptions[method] || '';
   }
 }
 

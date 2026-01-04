@@ -26,11 +26,6 @@ class BagOfWordsListSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
-    vectorization_method_label = serializers.CharField(
-        source='get_vectorization_method_display',
-        read_only=True
-    )
-
     current_stage_label = serializers.SerializerMethodField()
 
     class Meta:
@@ -40,8 +35,6 @@ class BagOfWordsListSerializer(serializers.ModelSerializer):
             'name',
             'data_preparation_name',
             'dataset_name',
-            'vectorization_method',
-            'vectorization_method_label',
             'status',
             'progress_percentage',
             'current_stage',
@@ -67,10 +60,6 @@ class BagOfWordsDetailSerializer(serializers.ModelSerializer):
     """
 
     data_preparation = serializers.SerializerMethodField()
-    vectorization_method_label = serializers.CharField(
-        source='get_vectorization_method_display',
-        read_only=True
-    )
     current_stage_label = serializers.SerializerMethodField()
     created_by_email = serializers.EmailField(
         source='created_by.email',
@@ -88,16 +77,12 @@ class BagOfWordsDetailSerializer(serializers.ModelSerializer):
             'data_preparation',
             'created_by_email',
 
-            # Configuración
-            'vectorization_method',
-            'vectorization_method_label',
+            # Configuración (Count Vectorizer)
             'max_features',
             'min_df',
             'max_df',
             'ngram_min',
             'ngram_max',
-            'use_idf',
-            'sublinear_tf',
 
             # Estado
             'status',
@@ -159,14 +144,11 @@ class BagOfWordsCreateSerializer(serializers.ModelSerializer):
             'name',
             'description',
             'data_preparation',
-            'vectorization_method',
             'max_features',
             'min_df',
             'max_df',
             'ngram_min',
             'ngram_max',
-            'use_idf',
-            'sublinear_tf',
         ]
 
     def validate_data_preparation(self, value):
@@ -212,13 +194,6 @@ class BagOfWordsCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 'ngram_max': 'ngram_max debe ser mayor o igual a ngram_min'
             })
-
-        # Validar que use_idf y sublinear_tf solo aplican para TF-IDF
-        if data.get('vectorization_method') == BagOfWords.METHOD_COUNT:
-            if data.get('use_idf') is not None:
-                data['use_idf'] = True  # Ignorar para Count
-            if data.get('sublinear_tf') is not None:
-                data['sublinear_tf'] = False  # Ignorar para Count
 
         return data
 

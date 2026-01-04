@@ -191,11 +191,6 @@ export const BagOfWordsView: React.FC = () => {
             </div>
 
             <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Método de Vectorización</p>
-              <p className="text-sm text-gray-900 font-medium">{analysis.vectorization_method_label}</p>
-            </div>
-
-            <div>
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Idioma Predominante</p>
               <p className="text-sm text-gray-900">{analysis.data_preparation.predominant_language || 'No detectado'}</p>
             </div>
@@ -238,20 +233,6 @@ export const BagOfWordsView: React.FC = () => {
               <p className="text-xs font-medium text-gray-500 mb-1">N-gramas</p>
               <p className="text-xl font-bold text-gray-900">{analysis.ngram_min}-{analysis.ngram_max}</p>
             </div>
-
-            {analysis.vectorization_method === 'tfidf' && (
-              <>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs font-medium text-gray-500 mb-1">Use IDF</p>
-                  <p className="text-sm font-semibold text-gray-900">{analysis.use_idf ? 'Sí' : 'No'}</p>
-                </div>
-
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs font-medium text-gray-500 mb-1">Sublinear TF</p>
-                  <p className="text-sm font-semibold text-gray-900">{analysis.sublinear_tf ? 'Sí' : 'No'}</p>
-                </div>
-              </>
-            )}
           </div>
         </div>
 
