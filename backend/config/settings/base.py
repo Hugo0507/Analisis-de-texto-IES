@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'apps.datasets',
     'apps.data_preparation',
     'apps.bag_of_words',
+    'apps.ngram_analysis',
     'apps.analysis',
     'apps.pipeline',
     'apps.infrastructure',
