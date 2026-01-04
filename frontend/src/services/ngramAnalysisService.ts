@@ -59,7 +59,10 @@ export interface NgramAnalysis {
   description: string | null;
 
   // Relaciones
-  data_preparation: DataPreparationInfo;
+  data_preparation: number;  // ID
+  data_preparation_name: string;
+  dataset_name: string;
+  created_by: number;
   created_by_email: string;
 
   // Configuraciones de n-gramas
@@ -83,6 +86,7 @@ export interface NgramAnalysis {
 
   // Estado y progreso
   status: 'pending' | 'processing' | 'completed' | 'error';
+  status_label: string;
   current_stage: string | null;
   current_stage_label: string | null;
   progress_percentage: number;
