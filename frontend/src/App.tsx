@@ -30,6 +30,10 @@ import {
   DataPreparationCreate,
   DataPreparationView,
 } from './pages';
+import { BagOfWordsList } from './pages/BagOfWordsList';
+import { BagOfWordsCreate } from './pages/BagOfWordsCreate';
+import { BagOfWordsView } from './pages/BagOfWordsView';
+import { BagOfWordsEdit } from './pages/BagOfWordsEdit';
 import { OAuthCallback } from './pages/OAuthCallback';
 
 function App() {
@@ -78,6 +82,10 @@ function App() {
               <Route path="preparacion-datos" element={<DataPreparationList />} />
               <Route path="preparacion-datos/nuevo" element={<DataPreparationCreate />} />
               <Route path="preparacion-datos/:id" element={<DataPreparationView />} />
+              <Route path="bolsa-palabras" element={<BagOfWordsList />} />
+              <Route path="bolsa-palabras/nuevo" element={<BagOfWordsCreate />} />
+              <Route path="bolsa-palabras/:id" element={<BagOfWordsView />} />
+              <Route path="bolsa-palabras/:id/editar" element={<BagOfWordsEdit />} />
             </Route>
           </Route>
 

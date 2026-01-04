@@ -89,6 +89,12 @@ const preprocessingNavItems: NavItem[] = [
     icon: 'prepare',
     description: 'Limpieza y transformación',
   },
+  {
+    path: '/admin/preprocesamiento/bolsa-palabras',
+    label: 'Bolsa de Palabras',
+    icon: 'bag-of-words',
+    description: 'Análisis BoW vectorizado',
+  },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
