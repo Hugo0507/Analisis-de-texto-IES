@@ -66,7 +66,14 @@ export const DataPreparationView: React.FC = () => {
 
   // Detectar cambios en el dataset cuando la preparación está completada
   useEffect(() => {
-    if (!id || !preparation || preparation.status !== 'completed') return;
+    if (!id || !preparation || preparation.status !== 'completed') {
+      // Si no está completada, limpiar cambios detectados
+      setDatasetChanges(null);
+      return;
+    }
+
+    // No detectar cambios si ya están detectados o si está actualizando
+    if (datasetChanges || isUpdating) return;
 
     const checkChanges = async () => {
       try {
@@ -78,23 +85,26 @@ export const DataPreparationView: React.FC = () => {
     };
 
     checkChanges();
-  }, [id, preparation?.status]);
+  }, [id, preparation?.status, isUpdating, datasetChanges]);
 
   const handleUpdate = async () => {
     if (!id) return;
 
     try {
       setIsUpdating(true);
+
+      // Limpiar cambios detectados ANTES de hacer la llamada
+      setDatasetChanges(null);
+
       await dataPreparationService.updatePreparation(Number(id));
       showSuccess('Actualización iniciada. El proceso se completará en segundo plano.');
-
-      // Limpiar cambios detectados
-      setDatasetChanges(null);
 
       // Recargar preparación para mostrar progreso
       await loadPreparation();
     } catch (error: any) {
       showError('Error al iniciar actualización: ' + (error.response?.data?.error || error.message));
+      // Si falla, no resetear isUpdating para evitar que se vuelva a mostrar el banner
+      return;
     } finally {
       setIsUpdating(false);
     }
@@ -226,7 +236,7 @@ export const DataPreparationView: React.FC = () => {
         )}
 
         {/* Dataset Changes Notification */}
-        {datasetChanges?.has_changes && isCompleted && (
+        {datasetChanges?.has_changes && isCompleted && !isProcessing && (
           <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-6 shadow-md">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3 flex-1">
