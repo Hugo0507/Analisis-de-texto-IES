@@ -181,7 +181,7 @@ export const BagOfWordsCreate: React.FC = () => {
           {/* Right: Save Button */}
           <button
             onClick={handleSubmit}
-            disabled={isLoading || !dataPreparationId}
+            disabled={isLoading || formData.data_preparation === 0}
             className="p-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
             title="Guardar"
           >

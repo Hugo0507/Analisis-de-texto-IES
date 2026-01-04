@@ -12,15 +12,6 @@ import type { DataPreparationListItem } from '../services/dataPreparationService
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
 
-// Configuraciones predefinidas recomendadas
-const PREDEFINED_CONFIGS: Array<[number, number]> = [
-  [1, 1],  // Solo unigramas (palabras individuales)
-  [1, 2],  // Unigramas + bigramas (recomendado)
-  [1, 3],  // Hasta trigramas
-  [2, 2],  // Solo bigramas
-  [2, 3],  // Bigramas + trigramas
-  [3, 3],  // Solo trigramas
-];
 
 interface ConfigOption {
   config: [number, number];
@@ -58,9 +49,9 @@ export const NgramsCreate: React.FC = () => {
   const [customMax, setCustomMax] = useState<number>(1);
 
   // Parámetros comunes (por defecto)
-  const [maxFeatures, setMaxFeatures] = useState(100000);
-  const [minDf, setMinDf] = useState(1);
-  const [maxDf, setMaxDf] = useState(1.0);
+  const [maxFeatures] = useState(100000);
+  const [minDf] = useState(1);
+  const [maxDf] = useState(1.0);
 
   useEffect(() => {
     loadPreparations();
@@ -69,7 +60,7 @@ export const NgramsCreate: React.FC = () => {
   const loadPreparations = async () => {
     setIsLoadingPreparations(true);
     try {
-      const data = await dataPreparationService.getDataPreparations();
+      const data = await dataPreparationService.getPreparations();
       const completed = data.filter((prep: DataPreparationListItem) => prep.status === 'completed');
       setPreparations(completed);
     } catch (error: any) {
@@ -178,9 +169,6 @@ export const NgramsCreate: React.FC = () => {
     );
   }
 
-  // Ensure variables are in scope
-  const hasPreparation = dataPreparationId !== 0;
-
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
       {/* Fixed Header */}
@@ -205,7 +193,7 @@ export const NgramsCreate: React.FC = () => {
           {/* Right: Save Button */}
           <button
             onClick={handleSubmit}
-            disabled={isLoading || !hasPreparation}
+            disabled={isLoading || dataPreparationId === 0}
             className="p-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
             title="Guardar"
           >
@@ -292,7 +280,7 @@ export const NgramsCreate: React.FC = () => {
                     <option value={0}>Selecciona una preparación de datos...</option>
                     {preparations.map((prep) => (
                       <option key={prep.id} value={prep.id}>
-                        {prep.name} ({prep.dataset_name} - {prep.files_processed} archivos)
+                        {prep.name} ({prep.dataset_name})
                       </option>
                     ))}
                   </select>
