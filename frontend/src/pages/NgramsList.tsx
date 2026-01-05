@@ -178,9 +178,6 @@ export const NgramsList: React.FC = () => {
                       Preparación de Datos
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                      Configuraciones
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
                       Estado
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
@@ -219,13 +216,6 @@ export const NgramsList: React.FC = () => {
                           <p className="text-sm font-medium text-gray-900">{analysis.data_preparation_name}</p>
                           <p className="text-xs text-gray-500 mt-1">{analysis.dataset_name}</p>
                         </div>
-                      </td>
-
-                      {/* Configuraciones Column */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">
-                          {analysis.total_configurations} configs
-                        </span>
                       </td>
 
                       {/* Estado Column */}
