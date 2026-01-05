@@ -118,6 +118,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
   const { user, logout } = useAuth();
   const isAdminRoute = location.pathname.startsWith('/admin/');
 
+  console.log('📍 [Sidebar] Ruta actual:', location.pathname);
+  console.log('📍 [Sidebar] Es ruta de admin:', isAdminRoute);
+
   // For dashboard routes, use analysisNavItems
   const navItems = analysisNavItems;
 
@@ -306,6 +309,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
                 <NavLink
                   key={item.path}
                   to={item.path}
+                  onClick={() => {
+                    console.log(`🟣 [Sidebar Admin - VECTORIZACIÓN] Click en: ${item.label}`);
+                    console.log(`🟣 [Sidebar Admin - VECTORIZACIÓN] Navegando a: ${item.path}`);
+                  }}
                   className={() =>
                     `flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 mb-2 ${
                       isActiveRoute
@@ -358,6 +365,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
           <NavLink
             key={item.path}
             to={item.path}
+            onClick={() => {
+              console.log(`🔗 [Sidebar Dashboard] Click en: ${item.label}`);
+              console.log(`🔗 [Sidebar Dashboard] Navegando a: ${item.path}`);
+            }}
             className={({ isActive }) =>
               `flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
                 isActive
