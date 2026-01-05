@@ -20,7 +20,10 @@ export const NgramsList: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [analysisToDelete, setAnalysisToDelete] = useState<NgramAnalysisListItem | null>(null);
 
+  console.log('🟡 [NgramsList] Página de lista renderizada');
+
   useEffect(() => {
+    console.log('🟡 [NgramsList] useEffect ejecutado - cargando análisis');
     loadAnalyses();
   }, []);
 
@@ -128,7 +131,7 @@ export const NgramsList: React.FC = () => {
 
             {/* Add Button */}
             <button
-              onClick={() => navigate('/admin/preprocesamiento/n-gramas/nuevo')}
+              onClick={() => navigate('/admin/vectorizacion/n-gramas/nuevo')}
               className="p-3 bg-emerald-500 hover:bg-emerald-600 rounded-full transition-all shadow-md hover:shadow-lg"
               title="Crear análisis de N-gramas"
             >
@@ -154,7 +157,7 @@ export const NgramsList: React.FC = () => {
                 Comienza creando tu primer análisis comparativo de N-gramas
               </p>
               <button
-                onClick={() => navigate('/admin/preprocesamiento/n-gramas/nuevo')}
+                onClick={() => navigate('/admin/vectorizacion/n-gramas/nuevo')}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full transition-colors font-medium shadow-md"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -196,7 +199,7 @@ export const NgramsList: React.FC = () => {
                     <tr
                       key={analysis.id}
                       className="border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
-                      onClick={() => navigate(`/admin/preprocesamiento/n-gramas/${analysis.id}`)}
+                      onClick={() => navigate(`/admin/vectorizacion/n-gramas/${analysis.id}`)}
                     >
                       {/* ID Column */}
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -242,7 +245,7 @@ export const NgramsList: React.FC = () => {
                         <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                           {/* Ver Button */}
                           <button
-                            onClick={() => navigate(`/admin/preprocesamiento/n-gramas/${analysis.id}`)}
+                            onClick={() => navigate(`/admin/vectorizacion/n-gramas/${analysis.id}`)}
                             className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
                             title="Ver análisis"
                           >
