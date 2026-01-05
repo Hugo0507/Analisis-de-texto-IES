@@ -20,7 +20,10 @@ export const BagOfWordsList: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [analysisToDelete, setAnalysisToDelete] = useState<BagOfWordsListItem | null>(null);
 
+  console.log('🟢 [BagOfWordsList] Página de lista renderizada');
+
   useEffect(() => {
+    console.log('🟢 [BagOfWordsList] useEffect ejecutado - cargando análisis');
     loadAnalyses();
   }, []);
 
@@ -128,7 +131,7 @@ export const BagOfWordsList: React.FC = () => {
 
             {/* Add Button */}
             <button
-              onClick={() => navigate('/admin/preprocesamiento/bolsa-palabras/nuevo')}
+              onClick={() => navigate('/admin/vectorizacion/bolsa-palabras/nuevo')}
               className="p-3 bg-emerald-500 hover:bg-emerald-600 rounded-full transition-all shadow-md hover:shadow-lg"
               title="Crear análisis BoW"
             >
@@ -154,7 +157,7 @@ export const BagOfWordsList: React.FC = () => {
                 Comienza creando tu primer análisis de Bolsa de Palabras
               </p>
               <button
-                onClick={() => navigate('/admin/preprocesamiento/bolsa-palabras/nuevo')}
+                onClick={() => navigate('/admin/vectorizacion/bolsa-palabras/nuevo')}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full transition-colors font-medium shadow-md"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -196,7 +199,7 @@ export const BagOfWordsList: React.FC = () => {
                     <tr
                       key={analysis.id}
                       className="border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
-                      onClick={() => navigate(`/admin/preprocesamiento/bolsa-palabras/${analysis.id}`)}
+                      onClick={() => navigate(`/admin/vectorizacion/bolsa-palabras/${analysis.id}`)}
                     >
                       {/* ID Column */}
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -242,7 +245,7 @@ export const BagOfWordsList: React.FC = () => {
                         <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                           {/* Ver Button */}
                           <button
-                            onClick={() => navigate(`/admin/preprocesamiento/bolsa-palabras/${analysis.id}`)}
+                            onClick={() => navigate(`/admin/vectorizacion/bolsa-palabras/${analysis.id}`)}
                             className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
                             title="Ver análisis"
                           >
