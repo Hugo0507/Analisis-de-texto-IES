@@ -28,6 +28,7 @@ urlpatterns = [
     path('api/v1/', include('apps.data_preparation.urls')),  # Data Preparation
     path('api/v1/', include('apps.bag_of_words.urls')),  # Bag of Words
     path('api/v1/', include('apps.ngram_analysis.urls')),  # Ngram Analysis
+    path('api/v1/', include('apps.tfidf_analysis.urls')),  # TF-IDF Analysis
     path('api/v1/analysis/', include('apps.analysis.urls')),
     path('api/v1/pipeline/', include('apps.pipeline.urls')),
 
