@@ -25,3 +25,6 @@ export { PreparacionDatos } from './PreparacionDatos';
 export { DataPreparationList } from './DataPreparationList';
 export { DataPreparationCreate } from './DataPreparationCreate';
 export { DataPreparationView } from './DataPreparationView';
+export { TfIdfList } from './TfIdfList';
+export { TfIdfCreate } from './TfIdfCreate';
+export { TfIdfView } from './TfIdfView';

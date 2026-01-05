@@ -37,6 +37,9 @@ import { BagOfWordsEdit } from './pages/BagOfWordsEdit';
 import { NgramsList } from './pages/NgramsList';
 import { NgramsCreate } from './pages/NgramsCreate';
 import { NgramsView } from './pages/NgramsView';
+import { TfIdfList } from './pages/TfIdfList';
+import { TfIdfCreate } from './pages/TfIdfCreate';
+import { TfIdfView } from './pages/TfIdfView';
 import { OAuthCallback } from './pages/OAuthCallback';
 
 function App() {
@@ -96,6 +99,9 @@ function App() {
               <Route path="n-gramas" element={<NgramsList />} />
               <Route path="n-gramas/nuevo" element={<NgramsCreate />} />
               <Route path="n-gramas/:id" element={<NgramsView />} />
+              <Route path="tf-idf" element={<TfIdfList />} />
+              <Route path="tf-idf/nuevo" element={<TfIdfCreate />} />
+              <Route path="tf-idf/:id" element={<TfIdfView />} />
             </Route>
           </Route>
 
