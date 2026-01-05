@@ -24,8 +24,8 @@ interface NavItem {
 
 const analysisNavItems: NavItem[] = [
   {
-    path: '/dashboard/pipeline',
-    label: 'Pipeline',
+    path: '/dashboard',
+    label: 'Dashboard',
     icon: '🏠',
     description: 'Vista general',
   },
@@ -36,22 +36,16 @@ const analysisNavItems: NavItem[] = [
     description: 'Gestión de archivos',
   },
   {
-    path: '/admin/vectorizacion/bolsa-palabras',
-    label: 'Bag of Words',
+    path: '/admin/vectorizacion/bolsa-palabras',  // CORREGIDO: Apunta directo a admin
+    label: 'Bolsa de Palabras',
     icon: '📝',
     description: 'Análisis BoW',
   },
   {
-    path: '/admin/vectorizacion/n-gramas',
-    label: 'N-gramas',
-    icon: '📊',
-    description: 'Análisis N-gramas',
-  },
-  {
-    path: '/admin/vectorizacion/tf-idf',
+    path: '/admin/vectorizacion/tf-idf',  // CORREGIDO: Apunta directo a admin
     label: 'TF-IDF',
-    icon: '📈',
-    description: 'Matriz TF-IDF',
+    icon: '📊',
+    description: 'Vectores TF-IDF',
   },
   {
     path: '/dashboard/topics',
@@ -68,7 +62,7 @@ const analysisNavItems: NavItem[] = [
   {
     path: '/dashboard/statistics',
     label: 'Estadísticas',
-    icon: '📉',
+    icon: '📈',
     description: 'Corpus y métricas',
   },
 ];
