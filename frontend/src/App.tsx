@@ -85,6 +85,10 @@ function App() {
               <Route path="preparacion-datos" element={<DataPreparationList />} />
               <Route path="preparacion-datos/nuevo" element={<DataPreparationCreate />} />
               <Route path="preparacion-datos/:id" element={<DataPreparationView />} />
+            </Route>
+
+            {/* Protected Admin Vectorization Routes (LOGIN REQUIRED) */}
+            <Route path="/admin/vectorizacion" element={<MainLayout />}>
               <Route path="bolsa-palabras" element={<BagOfWordsList />} />
               <Route path="bolsa-palabras/nuevo" element={<BagOfWordsCreate />} />
               <Route path="bolsa-palabras/:id" element={<BagOfWordsView />} />
