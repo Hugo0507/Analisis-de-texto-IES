@@ -460,118 +460,166 @@ export const TfIdfCreate: React.FC = () => {
             {/* Parámetros TF-IDF */}
             <div className="mb-8">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Parámetros TF-IDF</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Configura cómo se calculará la matriz TF-IDF. Estos parámetros controlan el filtrado de términos y las transformaciones aplicadas.
+              </p>
 
               {/* N-gram Range */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">N-grama Mínimo</label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={ngramMin}
-                    onChange={(e) => setNgramMin(Number(e.target.value))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">N-grama Máximo</label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={ngramMax}
-                    onChange={(e) => setNgramMax(Number(e.target.value))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  />
-                </div>
-              </div>
-
-              {/* Max Features, Min DF, Max DF */}
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Máx. Características
-                    <span className="ml-1 text-xs text-gray-500" title="Máximo número de términos en el vocabulario">ⓘ</span>
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={maxFeatures}
-                    onChange={(e) => setMaxFeatures(Number(e.target.value))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Min DF
-                    <span className="ml-1 text-xs text-gray-500" title="Frecuencia mínima de documentos">ⓘ</span>
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={minDf}
-                    onChange={(e) => setMinDf(Number(e.target.value))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Max DF
-                    <span className="ml-1 text-xs text-gray-500" title="Frecuencia máxima de documentos (0.0-1.0)">ⓘ</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min={0}
-                    max={1}
-                    value={maxDf}
-                    onChange={(e) => setMaxDf(Number(e.target.value))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  />
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <h3 className="text-sm font-semibold text-blue-900 mb-2">Rango de N-gramas</h3>
+                <p className="text-xs text-blue-800 mb-3">
+                  Define el tamaño de las secuencias de palabras a considerar. (1,1) = solo palabras individuales, (1,2) = palabras + pares, (2,2) = solo pares.
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">N-grama Mínimo</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={ngramMin}
+                      onChange={(e) => setNgramMin(Number(e.target.value))}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">N-grama Máximo</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={ngramMax}
+                      onChange={(e) => setNgramMax(Number(e.target.value))}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Boolean Parameters */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <input
-                    type="checkbox"
-                    id="useIdf"
-                    checked={useIdf}
-                    onChange={(e) => setUseIdf(e.target.checked)}
-                    className="w-4 h-4"
-                  />
-                  <label htmlFor="useIdf" className="text-sm text-gray-700 cursor-pointer">
-                    <span className="font-medium">Usar IDF</span>
-                    <span className="text-xs text-gray-500 ml-2">(Aplicar peso de frecuencia inversa de documentos)</span>
-                  </label>
+              {/* Filtros de Vocabulario */}
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                <h3 className="text-sm font-semibold text-amber-900 mb-2">Filtros de Vocabulario</h3>
+                <p className="text-xs text-amber-800 mb-3">
+                  Controlan qué términos se incluyen en el vocabulario final, eliminando términos muy raros o muy comunes.
+                </p>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Máx. Características
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={maxFeatures}
+                      onChange={(e) => setMaxFeatures(Number(e.target.value))}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Límite de términos en el vocabulario. Mantiene solo los más frecuentes. 100,000 = sin restricción práctica.
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Min DF
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={minDf}
+                      onChange={(e) => setMinDf(Number(e.target.value))}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Número mínimo de documentos donde debe aparecer un término. Elimina términos muy raros. 1 = incluir todos.
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Max DF
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min={0}
+                      max={1}
+                      value={maxDf}
+                      onChange={(e) => setMaxDf(Number(e.target.value))}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Proporción máxima de documentos (0.0-1.0). Elimina términos muy comunes. 1.0 = incluir todos, 0.85 = excluir si aparece en más del 85%.
+                    </p>
+                  </div>
                 </div>
+              </div>
 
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <input
-                    type="checkbox"
-                    id="smoothIdf"
-                    checked={smoothIdf}
-                    onChange={(e) => setSmoothIdf(e.target.checked)}
-                    className="w-4 h-4"
-                  />
-                  <label htmlFor="smoothIdf" className="text-sm text-gray-700 cursor-pointer">
-                    <span className="font-medium">Suavizar IDF</span>
-                    <span className="text-xs text-gray-500 ml-2">(Evitar división por cero en IDF)</span>
-                  </label>
-                </div>
+              {/* Transformaciones Opcionales */}
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-purple-900 mb-2">Transformaciones Opcionales</h3>
+                <p className="text-xs text-purple-800 mb-3">
+                  Ajustes matemáticos que pueden mejorar la calidad de la vectorización según tu caso de uso.
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-purple-100">
+                    <input
+                      type="checkbox"
+                      id="useIdf"
+                      checked={useIdf}
+                      onChange={(e) => setUseIdf(e.target.checked)}
+                      className="w-4 h-4 mt-1"
+                    />
+                    <label htmlFor="useIdf" className="text-sm text-gray-700 cursor-pointer flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Usar IDF</span>
+                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded-full">Recomendado</span>
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1">
+                        <strong>Activado:</strong> Aplica peso IDF que penaliza términos comunes (como "el", "de") y favorece términos específicos/discriminativos.
+                        <br />
+                        <strong>Desactivado:</strong> Solo usa frecuencias TF (convierte a Bolsa de Palabras normalizada).
+                      </p>
+                    </label>
+                  </div>
 
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <input
-                    type="checkbox"
-                    id="sublinearTf"
-                    checked={sublinearTf}
-                    onChange={(e) => setSublinearTf(e.target.checked)}
-                    className="w-4 h-4"
-                  />
-                  <label htmlFor="sublinearTf" className="text-sm text-gray-700 cursor-pointer">
-                    <span className="font-medium">TF Sublinear</span>
-                    <span className="text-xs text-gray-500 ml-2">(Aplicar escala logarítmica a TF)</span>
-                  </label>
+                  <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-purple-100">
+                    <input
+                      type="checkbox"
+                      id="smoothIdf"
+                      checked={smoothIdf}
+                      onChange={(e) => setSmoothIdf(e.target.checked)}
+                      className="w-4 h-4 mt-1"
+                    />
+                    <label htmlFor="smoothIdf" className="text-sm text-gray-700 cursor-pointer flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Suavizar IDF</span>
+                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded-full">Recomendado</span>
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1">
+                        Añade +1 al conteo de documentos para evitar división por cero. Hace que los valores IDF sean más conservadores.
+                        <br />
+                        <strong>Fórmula:</strong> log((n + 1) / (df + 1)) + 1 en lugar de log(n / df)
+                      </p>
+                    </label>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-purple-100">
+                    <input
+                      type="checkbox"
+                      id="sublinearTf"
+                      checked={sublinearTf}
+                      onChange={(e) => setSublinearTf(e.target.checked)}
+                      className="w-4 h-4 mt-1"
+                    />
+                    <label htmlFor="sublinearTf" className="text-sm text-gray-700 cursor-pointer flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">TF Sublinear</span>
+                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">Opcional</span>
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1">
+                        Aplica escala logarítmica a TF para reducir el impacto de términos muy frecuentes en un documento.
+                        <br />
+                        <strong>Fórmula:</strong> 1 + log(tf) en lugar de tf. Útil cuando hay documentos con repeticiones excesivas.
+                      </p>
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>

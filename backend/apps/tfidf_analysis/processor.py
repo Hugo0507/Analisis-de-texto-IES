@@ -141,7 +141,7 @@ def load_data_by_source(tfidf_analysis) -> Tuple[List[str], Tuple[int, int]]:
     Returns:
         Tuple (texts, ngram_range)
     """
-    from apps.data_preparation.models import DataPreparationFile
+    from apps.datasets.models import DatasetFile
 
     source_type = tfidf_analysis.source_type
 
@@ -151,10 +151,12 @@ def load_data_by_source(tfidf_analysis) -> Tuple[List[str], Tuple[int, int]]:
         if not prep or prep.status != 'completed':
             raise ValueError("Preparación de datos no está completada")
 
-        files = DataPreparationFile.objects.filter(
-            data_preparation=prep,
-            was_processed=True
-        )
+        # Obtener textos usando processed_file_ids
+        file_ids = prep.processed_file_ids
+        if not file_ids:
+            raise ValueError("No hay archivos procesados en la preparación de datos")
+
+        files = DatasetFile.objects.filter(id__in=file_ids).only('preprocessed_text')
         texts = [f.preprocessed_text for f in files if f.preprocessed_text]
         ngram_range = (tfidf_analysis.ngram_min, tfidf_analysis.ngram_max)
 
@@ -168,10 +170,11 @@ def load_data_by_source(tfidf_analysis) -> Tuple[List[str], Tuple[int, int]]:
             raise ValueError("Bolsa de Palabras no está completada")
 
         prep = bow.data_preparation
-        files = DataPreparationFile.objects.filter(
-            data_preparation=prep,
-            was_processed=True
-        )
+        file_ids = prep.processed_file_ids
+        if not file_ids:
+            raise ValueError("No hay archivos procesados en la preparación de datos")
+
+        files = DatasetFile.objects.filter(id__in=file_ids).only('preprocessed_text')
         texts = [f.preprocessed_text for f in files if f.preprocessed_text]
         ngram_range = (bow.ngram_min, bow.ngram_max)
 
@@ -193,10 +196,11 @@ def load_data_by_source(tfidf_analysis) -> Tuple[List[str], Tuple[int, int]]:
             raise ValueError(f"Configuración N-grama inválida: {config_str}")
 
         prep = ngram.data_preparation
-        files = DataPreparationFile.objects.filter(
-            data_preparation=prep,
-            was_processed=True
-        )
+        file_ids = prep.processed_file_ids
+        if not file_ids:
+            raise ValueError("No hay archivos procesados en la preparación de datos")
+
+        files = DatasetFile.objects.filter(id__in=file_ids).only('preprocessed_text')
         texts = [f.preprocessed_text for f in files if f.preprocessed_text]
 
         logger.info(f"Cargados {len(texts)} textos de N-grama config {ngram_range}")
@@ -218,10 +222,11 @@ def load_data_by_source(tfidf_analysis) -> Tuple[List[str], Tuple[int, int]]:
         ngram_range = (min_n, max_n)
 
         prep = ngram.data_preparation
-        files = DataPreparationFile.objects.filter(
-            data_preparation=prep,
-            was_processed=True
-        )
+        file_ids = prep.processed_file_ids
+        if not file_ids:
+            raise ValueError("No hay archivos procesados en la preparación de datos")
+
+        files = DatasetFile.objects.filter(id__in=file_ids).only('preprocessed_text')
         texts = [f.preprocessed_text for f in files if f.preprocessed_text]
 
         logger.info(f"Cargados {len(texts)} textos de TODAS las configs N-grama con rango {ngram_range}")
@@ -243,10 +248,11 @@ def load_data_by_source(tfidf_analysis) -> Tuple[List[str], Tuple[int, int]]:
         ngram_range = (min_n, max_n)
 
         prep = ngram.data_preparation
-        files = DataPreparationFile.objects.filter(
-            data_preparation=prep,
-            was_processed=True
-        )
+        file_ids = prep.processed_file_ids
+        if not file_ids:
+            raise ValueError("No hay archivos procesados en la preparación de datos")
+
+        files = DatasetFile.objects.filter(id__in=file_ids).only('preprocessed_text')
         texts = [f.preprocessed_text for f in files if f.preprocessed_text]
 
         logger.info(f"Cargados {len(texts)} textos del vocabulario completo N-grama con rango {ngram_range}")
