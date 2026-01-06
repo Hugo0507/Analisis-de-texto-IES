@@ -198,6 +198,39 @@ def load_texts(ner) -> Tuple[List[str], List[int]]:
     return texts, document_ids
 
 
+def split_text_into_chunks(text: str, max_length: int = 500000) -> List[str]:
+    """
+    Divide un texto largo en chunks manejables para spaCy.
+
+    Args:
+        text: Texto a dividir
+        max_length: Longitud máxima de cada chunk
+
+    Returns:
+        Lista de chunks de texto
+    """
+    if len(text) <= max_length:
+        return [text]
+
+    chunks = []
+    start = 0
+
+    while start < len(text):
+        end = start + max_length
+
+        # Si no es el último chunk, intentar cortar en un espacio
+        if end < len(text):
+            # Buscar el último espacio en los últimos 1000 caracteres
+            last_space = text.rfind(' ', end - 1000, end)
+            if last_space > start:
+                end = last_space
+
+        chunks.append(text[start:end])
+        start = end
+
+    return chunks
+
+
 def extract_entities(
     ner,
     nlp,
@@ -239,31 +272,50 @@ def extract_entities(
     total_docs = len(texts)
 
     for idx, (text, doc_id) in enumerate(zip(texts, document_ids)):
-        # Procesar documento con spaCy
-        doc = nlp(text)
+        # Dividir texto en chunks si es muy largo
+        chunks = split_text_into_chunks(text, max_length=500000)
 
-        # Extraer entidades del documento
-        for ent in doc.ents:
-            if ent.label_ in selected_entities:
-                # Normalizar texto de entidad (lowercase, strip)
-                ent_text = ent.text.strip()
-                if not ent_text:
-                    continue
+        if len(chunks) > 1:
+            logger.info(
+                f"Documento {doc_id} dividido en {len(chunks)} chunks "
+                f"(longitud original: {len(text):,} caracteres)"
+            )
 
-                key = (ent_text, ent.label_)
+        # Procesar cada chunk
+        for chunk_idx, chunk in enumerate(chunks):
+            try:
+                # Procesar chunk con spaCy
+                doc = nlp(chunk)
 
-                # Actualizar mapa de entidades
-                entities_map[key]["text"] = ent_text
-                entities_map[key]["label"] = ent.label_
-                entities_map[key]["documents"].add(doc_id)
-                entities_map[key]["frequency"] += 1
+                # Extraer entidades del chunk
+                for ent in doc.ents:
+                    if ent.label_ in selected_entities:
+                        # Normalizar texto de entidad (lowercase, strip)
+                        ent_text = ent.text.strip()
+                        if not ent_text:
+                            continue
 
-                # Para co-ocurrencias
-                entities_by_doc[doc_id].append(key)
+                        key = (ent_text, ent.label_)
 
-                # Contadores
-                total_entities += 1
-                entity_types_counter[ent.label_] += 1
+                        # Actualizar mapa de entidades
+                        entities_map[key]["text"] = ent_text
+                        entities_map[key]["label"] = ent.label_
+                        entities_map[key]["documents"].add(doc_id)
+                        entities_map[key]["frequency"] += 1
+
+                        # Para co-ocurrencias
+                        entities_by_doc[doc_id].append(key)
+
+                        # Contadores
+                        total_entities += 1
+                        entity_types_counter[ent.label_] += 1
+
+            except ValueError as e:
+                logger.error(
+                    f"Error procesando chunk {chunk_idx + 1}/{len(chunks)} "
+                    f"del documento {doc_id}: {str(e)}"
+                )
+                continue
 
         # Actualizar progreso cada 10 documentos
         if progress_callback and (idx + 1) % 10 == 0:
