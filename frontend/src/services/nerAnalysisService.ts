@@ -5,7 +5,7 @@
  * usando spaCy en el backend.
  */
 
-import apiClient from './apiClient';
+import apiClient from './api';
 
 // ============================================================
 // INTERFACES
