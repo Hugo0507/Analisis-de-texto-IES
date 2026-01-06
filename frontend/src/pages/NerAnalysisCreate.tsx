@@ -368,7 +368,7 @@ export const NerAnalysisCreate: React.FC = () => {
                       <option value={0}>Seleccionar preparación...</option>
                       {preparations.map(prep => (
                         <option key={prep.id} value={prep.id}>
-                          {prep.name} ({prep.predominant_language?.toUpperCase()}) - {prep.files_processed} archivos
+                          {prep.name} ({prep.predominant_language?.toUpperCase()}) - {prep.dataset_name}
                         </option>
                       ))}
                     </select>
