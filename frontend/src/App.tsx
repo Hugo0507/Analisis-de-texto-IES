@@ -40,6 +40,9 @@ import { NgramsView } from './pages/NgramsView';
 import { TfIdfList } from './pages/TfIdfList';
 import { TfIdfCreate } from './pages/TfIdfCreate';
 import { TfIdfView } from './pages/TfIdfView';
+import { NerAnalysisList } from './pages/NerAnalysisList';
+import { NerAnalysisCreate } from './pages/NerAnalysisCreate';
+import { NerAnalysisView } from './pages/NerAnalysisView';
 import { OAuthCallback } from './pages/OAuthCallback';
 
 function App() {
@@ -102,6 +105,13 @@ function App() {
               <Route path="tf-idf" element={<TfIdfList />} />
               <Route path="tf-idf/nuevo" element={<TfIdfCreate />} />
               <Route path="tf-idf/:id" element={<TfIdfView />} />
+            </Route>
+
+            {/* Protected Admin Modeling Routes (LOGIN REQUIRED) */}
+            <Route path="/admin/modelado" element={<MainLayout />}>
+              <Route path="ner" element={<NerAnalysisList />} />
+              <Route path="ner/nuevo" element={<NerAnalysisCreate />} />
+              <Route path="ner/:id" element={<NerAnalysisView />} />
             </Route>
           </Route>
 
