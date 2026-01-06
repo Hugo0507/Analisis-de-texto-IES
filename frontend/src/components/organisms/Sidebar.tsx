@@ -298,7 +298,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
 
           {/* VECTORIZACIÓN Section */}
           <div className="mb-6">
-            <h2 className="text-purple-400 font-bold text-sm uppercase tracking-wider px-3 mb-4">
+            <h2 className="text-emerald-400 font-bold text-sm uppercase tracking-wider px-3 mb-4">
               VECTORIZACIÓN
             </h2>
 
@@ -310,13 +310,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
                   key={item.path}
                   to={item.path}
                   onClick={() => {
-                    console.log(`🟣 [Sidebar Admin - VECTORIZACIÓN] Click en: ${item.label}`);
-                    console.log(`🟣 [Sidebar Admin - VECTORIZACIÓN] Navegando a: ${item.path}`);
+                    console.log(`🟢 [Sidebar Admin - VECTORIZACIÓN] Click en: ${item.label}`);
+                    console.log(`🟢 [Sidebar Admin - VECTORIZACIÓN] Navegando a: ${item.path}`);
                   }}
                   className={() =>
                     `flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 mb-2 ${
                       isActiveRoute
-                        ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-md'
+                        ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md'
                         : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                     }`
                   }
