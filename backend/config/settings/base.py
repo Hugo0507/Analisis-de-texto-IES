@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'apps.bag_of_words',
     'apps.ngram_analysis',
     'apps.tfidf_analysis',
+    'apps.ner_analysis',
     'apps.analysis',
     'apps.pipeline',
     'apps.infrastructure',

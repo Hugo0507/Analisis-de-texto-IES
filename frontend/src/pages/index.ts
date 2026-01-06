@@ -28,3 +28,6 @@ export { DataPreparationView } from './DataPreparationView';
 export { TfIdfList } from './TfIdfList';
 export { TfIdfCreate } from './TfIdfCreate';
 export { TfIdfView } from './TfIdfView';
+export { NerAnalysisList } from './NerAnalysisList';
+export { NerAnalysisCreate } from './NerAnalysisCreate';
+export { NerAnalysisView } from './NerAnalysisView';
