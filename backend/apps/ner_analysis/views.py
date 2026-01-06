@@ -369,8 +369,8 @@ class NerAnalysisViewSet(viewsets.ModelViewSet):
                 'name': 'Todas las Entidades',
                 'description': 'Extraer todas las entidades disponibles',
                 'entities': ['PERSON', 'NORP', 'FAC', 'ORG', 'GPE', 'LOC', 'PRODUCT',
-                           'EVENT', 'WORK_OF_ART', 'LAW', 'LANGUAGE', 'DATE', 'TIME',
-                           'PERCENT', 'MONEY', 'QUANTITY', 'ORDINAL', 'CARDINAL'],
+                             'EVENT', 'WORK_OF_ART', 'LAW', 'LANGUAGE', 'DATE', 'TIME',
+                             'PERCENT', 'MONEY', 'QUANTITY', 'ORDINAL', 'CARDINAL'],
                 'icon': 'globe'
             },
         ]

@@ -9,9 +9,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import nerAnalysisService from '../services/nerAnalysisService';
 import dataPreparationService from '../services/dataPreparationService';
-import datasetService from '../services/datasetService';
+import datasetsService from '../services/datasetsService';
 import type { DataPreparationListItem } from '../services/dataPreparationService';
-import type { DatasetListItem } from '../services/datasetService';
+import type { DatasetListItem } from '../services/datasetsService';
 import type { EntityGroup, EntityType, SpacyModel, NerSourceType } from '../services/nerAnalysisService';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
@@ -102,7 +102,7 @@ export const NerAnalysisCreate: React.FC = () => {
   const loadDatasets = async () => {
     setIsLoadingDatasets(true);
     try {
-      const data = await datasetService.getDatasets();
+      const data = await datasetsService.getDatasets();
       const completed = data.filter((ds: DatasetListItem) => ds.status === 'completed');
       setDatasets(completed);
     } catch (error: any) {
