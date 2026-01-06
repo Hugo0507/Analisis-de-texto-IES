@@ -41,9 +41,6 @@ COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Download spaCy models for NER analysis
-RUN python -m spacy download en_core_web_sm
-
 # Stage 3: Final production image
 FROM base as production
 
@@ -52,6 +49,10 @@ WORKDIR /app
 # Copy Python dependencies from previous stage
 COPY --from=dependencies /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=dependencies /usr/local/bin /usr/local/bin
+
+# Copy entrypoint script and make it executable (before switching to django user)
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 # Copy application code
 COPY --chown=django:django . .
@@ -63,9 +64,6 @@ RUN mkdir -p staticfiles mediafiles logs cache credentials && \
 # Switch to non-root user
 USER django
 
-# Collect static files (ignore errors if settings not fully configured)
-RUN python manage.py collectstatic --noinput --clear || true
-
 # Expose port
 EXPOSE 8000
 
@@ -73,8 +71,10 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD curl -f http://localhost:8000/api/v1/ || exit 1
 
-# Default command: Gunicorn for HTTP + Daphne for WebSockets
-# Override in docker-compose for specific needs
+# Set entrypoint
+ENTRYPOINT ["/entrypoint.sh"]
+
+# Default command: Gunicorn for HTTP
 CMD ["gunicorn", "config.wsgi:application", \
      "--bind", "0.0.0.0:8000", \
      "--workers", "4", \
