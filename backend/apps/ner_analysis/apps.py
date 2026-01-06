@@ -34,19 +34,23 @@ class NerAnalysisConfig(AppConfig):
                 spacy.load('en_core_web_sm')
                 logger.info('✅ spaCy model en_core_web_sm already loaded')
             except OSError:
-                logger.warning('⬇️  Downloading spaCy model en_core_web_sm...')
+                logger.warning('⬇️  Installing spaCy model en_core_web_sm...')
 
                 import subprocess
+                # Install directly via pip with specific wheel URL
                 result = subprocess.run(
-                    ['python', '-m', 'spacy', 'download', 'en_core_web_sm'],
+                    [
+                        'pip', 'install', '--no-cache-dir',
+                        'https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl'
+                    ],
                     capture_output=True,
                     text=True
                 )
 
                 if result.returncode == 0:
-                    logger.info('✅ spaCy model en_core_web_sm downloaded successfully')
+                    logger.info('✅ spaCy model en_core_web_sm installed successfully')
                 else:
-                    logger.error(f'❌ Failed to download spaCy model: {result.stderr}')
+                    logger.error(f'❌ Failed to install spaCy model: {result.stderr}')
 
         except Exception as e:
             logger.error(f'❌ Error initializing spaCy models: {str(e)}')

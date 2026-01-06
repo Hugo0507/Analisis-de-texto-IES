@@ -41,9 +41,9 @@ COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Download spaCy models for NER analysis
-RUN python -m spacy download en_core_web_sm && \
-    python -m spacy validate
+# Download spaCy models for NER analysis (install directly via pip)
+RUN pip install --no-cache-dir \
+    https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
 
 # Stage 3: Final production image
 FROM base as production
