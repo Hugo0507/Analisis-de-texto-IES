@@ -53,7 +53,7 @@ def process_ner_analysis(ner_id: int):
         if not texts:
             raise ValueError("No se encontraron textos para procesar")
 
-        logger.info(f"[NER {ner_id}] ✅ Cargados {len(texts)} documentos")
+        logger.info(f"[NER {ner_id}] [OK] Cargados {len(texts)} documentos")
 
         ner.documents_processed = len(texts)
         ner.current_stage = NerAnalysis.STAGE_EXTRACTING_ENTITIES
@@ -61,15 +61,15 @@ def process_ner_analysis(ner_id: int):
         ner.save()
 
         # ETAPA 3: Extraer entidades (30% -> 60%)
-        logger.info(f"[NER {ner_id}] Extrayendo entidades...")
+        logger.info(f"[NER {ner_id}] Extrayendo entidades de {len(texts)} documentos...")
         entities_data = extract_entities(
             ner, nlp, texts, document_ids,
             progress_callback=lambda p: update_progress(ner_id, 30 + int(p * 0.3))
         )
 
         logger.info(
-            f"[NER {ner_id}] ✅ Extraídas {entities_data['total_entities']} entidades "
-            f"({entities_data['unique_entities']} únicas)"
+            f"[NER {ner_id}] [OK] Extraídas {entities_data['total_entities']} entidades totales "
+            f"({entities_data['unique_entities']} únicas en {len(texts)} documentos)"
         )
 
         ner.current_stage = NerAnalysis.STAGE_CALCULATING_STATS
@@ -103,10 +103,10 @@ def process_ner_analysis(ner_id: int):
         ner.processing_completed_at = timezone.now()
         ner.save()
 
-        logger.info(f"[NER {ner_id}] ✅ Procesamiento completado exitosamente")
+        logger.info(f"[NER {ner_id}] [SUCCESS] Procesamiento completado exitosamente")
 
     except Exception as e:
-        logger.exception(f"[NER {ner_id}] ❌ Error en procesamiento: {str(e)}")
+        logger.exception(f"[NER {ner_id}] [ERROR] Error en procesamiento: {str(e)}")
 
         try:
             ner = NerAnalysis.objects.get(id=ner_id)
@@ -405,11 +405,25 @@ def analyze_cooccurrences(entities_data: Dict[str, Any]) -> List[Dict[str, Any]]
     # Mapear (ent1, ent2) -> {count, documents}
     cooccurrence_map = defaultdict(lambda: {"count": 0, "documents": set()})
 
+    total_docs = len(entities_by_doc)
+    processed_docs = 0
+
     # Por cada documento, calcular pares de entidades
     for doc_id, entities in entities_by_doc.items():
         # Obtener pares únicos de entidades en el documento
         unique_entities = list(set(entities))
 
+        # OPTIMIZACIÓN: Limitar a máximo 50 entidades por documento
+        # Evita complejidad O(n²) con documentos que tienen miles de entidades
+        if len(unique_entities) > 50:
+            logger.warning(
+                f"Documento {doc_id} tiene {len(unique_entities)} entidades únicas. "
+                f"Limitando a top 50 para evitar timeout en co-ocurrencias."
+            )
+            # Tomar las primeras 50 (podría ordenar por frecuencia si es necesario)
+            unique_entities = unique_entities[:50]
+
+        # Calcular pares (complejidad O(n²) pero limitada a 50*49/2 = 1,225 pares máximo)
         for i in range(len(unique_entities)):
             for j in range(i + 1, len(unique_entities)):
                 ent1 = unique_entities[i]
@@ -420,6 +434,17 @@ def analyze_cooccurrences(entities_data: Dict[str, Any]) -> List[Dict[str, Any]]
 
                 cooccurrence_map[pair]["count"] += 1
                 cooccurrence_map[pair]["documents"].add(doc_id)
+
+        # Logging de progreso cada 50 documentos
+        processed_docs += 1
+        if processed_docs % 50 == 0:
+            logger.info(
+                f"[COOCCURRENCE] Procesados {processed_docs}/{total_docs} documentos "
+                f"({processed_docs/total_docs*100:.1f}%). "
+                f"Pares únicos encontrados: {len(cooccurrence_map)}"
+            )
+
+    logger.info(f"[COOCCURRENCE] Análisis completado. Total pares únicos: {len(cooccurrence_map)}")
 
     # Convertir a lista y ordenar por frecuencia
     cooccurrences = []
@@ -494,13 +519,17 @@ def start_processing_thread(ner_id: int):
     """
     Iniciar procesamiento en thread de background.
 
+    NOTA: Los threads NO persisten después de reiniciar Gunicorn o cerrar sesión,
+    independientemente de si son daemon o no. Para persistencia real se requiere
+    implementar un sistema de tareas como Celery + Redis.
+
     Args:
         ner_id: ID del análisis NerAnalysis a procesar
     """
     thread = threading.Thread(
         target=process_ner_analysis,
         args=(ner_id,),
-        daemon=True
+        daemon=True  # daemon=True es más limpio (threads no bloquean shutdown)
     )
     thread.start()
-    logger.info(f"Thread de procesamiento NER iniciado para ID {ner_id}")
+    logger.info(f"[THREAD] Procesamiento NER iniciado para ID {ner_id}")
