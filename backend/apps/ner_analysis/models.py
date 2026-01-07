@@ -56,6 +56,7 @@ class NerAnalysis(models.Model):
     MODEL_EN_SM = 'en_core_web_sm'
     MODEL_EN_MD = 'en_core_web_md'
     MODEL_EN_LG = 'en_core_web_lg'
+    MODEL_EN_TRF = 'en_core_web_trf'
     MODEL_ES_SM = 'es_core_news_sm'
     MODEL_ES_MD = 'es_core_news_md'
     MODEL_ES_LG = 'es_core_news_lg'
@@ -64,6 +65,7 @@ class NerAnalysis(models.Model):
         (MODEL_EN_SM, 'Inglés (Pequeño) - en_core_web_sm'),
         (MODEL_EN_MD, 'Inglés (Mediano) - en_core_web_md'),
         (MODEL_EN_LG, 'Inglés (Grande) - en_core_web_lg'),
+        (MODEL_EN_TRF, 'Inglés (Alta Precisión) - en_core_web_trf'),
         (MODEL_ES_SM, 'Español (Pequeño) - es_core_news_sm'),
         (MODEL_ES_MD, 'Español (Mediano) - es_core_news_md'),
         (MODEL_ES_LG, 'Español (Grande) - es_core_news_lg'),

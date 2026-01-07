@@ -41,6 +41,7 @@ export type SpacyModel =
   | 'en_core_web_sm'
   | 'en_core_web_md'
   | 'en_core_web_lg'
+  | 'en_core_web_trf'
   | 'es_core_news_sm'
   | 'es_core_news_md'
   | 'es_core_news_lg';
