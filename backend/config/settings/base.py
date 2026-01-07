@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'apps.ngram_analysis',
     'apps.tfidf_analysis',
     'apps.ner_analysis',
+    'apps.topic_modeling',
     'apps.analysis',
     'apps.pipeline',
     'apps.infrastructure',
