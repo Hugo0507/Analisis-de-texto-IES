@@ -28,29 +28,51 @@ class NerAnalysisConfig(AppConfig):
 
         try:
             import spacy
+            import subprocess
 
-            # Check if model exists
-            try:
-                spacy.load('en_core_web_sm')
-                logger.info('✅ spaCy model en_core_web_sm already loaded')
-            except OSError:
-                logger.warning('⬇️  Installing spaCy model en_core_web_sm...')
+            # Modelos spaCy a verificar e instalar
+            models = [
+                {
+                    'name': 'en_core_web_sm',
+                    'version': '3.7.1',
+                    'url': 'https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl'
+                },
+                {
+                    'name': 'en_core_web_md',
+                    'version': '3.7.1',
+                    'url': 'https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.7.1/en_core_web_md-3.7.1-py3-none-any.whl'
+                },
+                {
+                    'name': 'en_core_web_lg',
+                    'version': '3.7.1',
+                    'url': 'https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.7.1/en_core_web_lg-3.7.1-py3-none-any.whl'
+                },
+                {
+                    'name': 'en_core_web_trf',
+                    'version': '3.7.3',
+                    'url': 'https://github.com/explosion/spacy-models/releases/download/en_core_web_trf-3.7.3/en_core_web_trf-3.7.3-py3-none-any.whl'
+                }
+            ]
 
-                import subprocess
-                # Install directly via pip with specific wheel URL
-                result = subprocess.run(
-                    [
-                        'pip', 'install', '--no-cache-dir',
-                        'https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl'
-                    ],
-                    capture_output=True,
-                    text=True
-                )
+            # Verificar e instalar cada modelo
+            for model in models:
+                try:
+                    spacy.load(model['name'])
+                    logger.info(f"✅ spaCy model {model['name']} already loaded")
+                except OSError:
+                    logger.warning(f"⬇️  Installing spaCy model {model['name']}...")
 
-                if result.returncode == 0:
-                    logger.info('✅ spaCy model en_core_web_sm installed successfully')
-                else:
-                    logger.error(f'❌ Failed to install spaCy model: {result.stderr}')
+                    # Install directly via pip with specific wheel URL
+                    result = subprocess.run(
+                        ['pip', 'install', '--no-cache-dir', model['url']],
+                        capture_output=True,
+                        text=True
+                    )
+
+                    if result.returncode == 0:
+                        logger.info(f"✅ spaCy model {model['name']} installed successfully")
+                    else:
+                        logger.error(f"❌ Failed to install {model['name']}: {result.stderr}")
 
         except Exception as e:
             logger.error(f'❌ Error initializing spaCy models: {str(e)}')
