@@ -58,9 +58,9 @@ class NerAnalysisConfig(AppConfig):
             for model in models:
                 try:
                     spacy.load(model['name'])
-                    logger.info(f"✅ spaCy model {model['name']} already loaded")
+                    logger.info(f"[OK] spaCy model {model['name']} already loaded")
                 except OSError:
-                    logger.warning(f"⬇️  Installing spaCy model {model['name']}...")
+                    logger.warning(f"[INSTALL] Installing spaCy model {model['name']}...")
 
                     # Install directly via pip with specific wheel URL
                     result = subprocess.run(
@@ -70,9 +70,9 @@ class NerAnalysisConfig(AppConfig):
                     )
 
                     if result.returncode == 0:
-                        logger.info(f"✅ spaCy model {model['name']} installed successfully")
+                        logger.info(f"[OK] spaCy model {model['name']} installed successfully")
                     else:
-                        logger.error(f"❌ Failed to install {model['name']}: {result.stderr}")
+                        logger.error(f"[ERROR] Failed to install {model['name']}: {result.stderr}")
 
         except Exception as e:
-            logger.error(f'❌ Error initializing spaCy models: {str(e)}')
+            logger.error(f'[ERROR] Error initializing spaCy models: {str(e)}')
