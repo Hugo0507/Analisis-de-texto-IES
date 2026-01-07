@@ -272,22 +272,32 @@ def extract_entities(
     total_docs = len(texts)
 
     for idx, (text, doc_id) in enumerate(zip(texts, document_ids)):
+        # Logging cada documento
+        logger.info(
+            f"[ENTITIES] Procesando documento {idx + 1}/{total_docs} "
+            f"(ID: {doc_id}, {len(text):,} caracteres)"
+        )
+
         # Dividir texto en chunks si es muy largo
         chunks = split_text_into_chunks(text, max_length=500000)
 
         if len(chunks) > 1:
-            logger.info(
-                f"Documento {doc_id} dividido en {len(chunks)} chunks "
+            logger.warning(
+                f"[ENTITIES] Documento {doc_id} dividido en {len(chunks)} chunks "
                 f"(longitud original: {len(text):,} caracteres)"
             )
 
         # Procesar cada chunk
         for chunk_idx, chunk in enumerate(chunks):
             try:
+                if len(chunks) > 1:
+                    logger.info(f"[ENTITIES] Procesando chunk {chunk_idx + 1}/{len(chunks)}")
+
                 # Procesar chunk con spaCy
                 doc = nlp(chunk)
 
                 # Extraer entidades del chunk
+                chunk_entities = 0
                 for ent in doc.ents:
                     if ent.label_ in selected_entities:
                         # Normalizar texto de entidad (lowercase, strip)
@@ -308,19 +318,40 @@ def extract_entities(
 
                         # Contadores
                         total_entities += 1
+                        chunk_entities += 1
                         entity_types_counter[ent.label_] += 1
+
+                if len(chunks) > 1:
+                    logger.info(
+                        f"[ENTITIES] Chunk {chunk_idx + 1}/{len(chunks)} completado: "
+                        f"{chunk_entities} entidades extraídas"
+                    )
 
             except ValueError as e:
                 logger.error(
-                    f"Error procesando chunk {chunk_idx + 1}/{len(chunks)} "
+                    f"[ERROR] Error procesando chunk {chunk_idx + 1}/{len(chunks)} "
+                    f"del documento {doc_id}: {str(e)}"
+                )
+                continue
+            except Exception as e:
+                logger.error(
+                    f"[ERROR] Error inesperado en chunk {chunk_idx + 1}/{len(chunks)} "
                     f"del documento {doc_id}: {str(e)}"
                 )
                 continue
 
-        # Actualizar progreso cada 10 documentos
-        if progress_callback and (idx + 1) % 10 == 0:
+        # Actualizar progreso CADA documento (no cada 10)
+        if progress_callback:
             progress = (idx + 1) / total_docs * 100
             progress_callback(progress)
+
+        # Logging de progreso cada 5 documentos
+        if (idx + 1) % 5 == 0:
+            logger.info(
+                f"[ENTITIES] Progreso: {idx + 1}/{total_docs} documentos "
+                f"({(idx + 1)/total_docs*100:.1f}%) - "
+                f"{total_entities} entidades totales extraídas"
+            )
 
     # Convertir entities_map a lista
     entities_list = []
