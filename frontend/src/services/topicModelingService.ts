@@ -229,7 +229,8 @@ const topicModelingService = {
    */
   getTopicModelings: async (): Promise<TopicModelingListItem[]> => {
     const response = await apiClient.get('/topic-modeling/');
-    return response.data;
+    // El backend devuelve formato paginado: { count, next, previous, results }
+    return response.data.results || response.data;
   },
 
   /**
