@@ -4,7 +4,7 @@
  * Servicio para gestionar análisis de BERTopic (Topic Modeling con BERT).
  */
 
-import { apiClient } from './apiClient';
+import apiClient from './api';
 
 // ============================================================
 // INTERFACES
