@@ -125,6 +125,12 @@ const modelingNavItems: NavItem[] = [
     icon: 'topic-modeling',
     description: 'Modelado de tópicos (LSA, NMF, PLSA, LDA)',
   },
+  {
+    path: '/admin/modelado/bertopic',
+    label: 'BERTopic',
+    icon: 'bertopic',
+    description: 'Topic Modeling con BERT (UMAP + HDBSCAN)',
+  },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
@@ -383,6 +389,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                     ) : item.icon === 'topic-modeling' ? (
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                    ) : item.icon === 'bertopic' ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
                     ) : null}
                   </svg>
                   <span className="text-sm font-medium">{item.label}</span>
