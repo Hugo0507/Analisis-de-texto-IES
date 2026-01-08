@@ -453,6 +453,22 @@ export const TopicModelingCreate: React.FC = () => {
               Configuración de Parámetros
             </h2>
 
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="text-sm text-blue-800">
+                  <p className="font-semibold mb-1">¿Qué es Topic Modeling?</p>
+                  <p>
+                    Es una técnica de NLP que identifica automáticamente temas/tópicos ocultos en un conjunto de documentos.
+                    Cada tópico es un grupo de palabras relacionadas semánticamente. Por ejemplo, un tópico podría ser
+                    "educación digital" con palabras como: tecnología, aprendizaje, virtual, plataforma, estudiantes.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-6">
               {/* Número de Tópicos */}
               <div>
@@ -479,9 +495,19 @@ export const TopicModelingCreate: React.FC = () => {
                   <span>75</span>
                   <span>100</span>
                 </div>
-                <p className="text-xs text-gray-600 mt-2">
-                  Número de tópicos a extraer del corpus. Valores típicos: 5-20 para datasets pequeños, 20-50 para datasets grandes.
-                </p>
+                <div className="bg-gray-50 rounded-lg p-3 mt-3">
+                  <p className="text-xs font-semibold text-gray-700 mb-1">💡 ¿Cuántos tópicos elegir?</p>
+                  <ul className="text-xs text-gray-600 space-y-1">
+                    <li>• <strong>2-5 tópicos:</strong> Para corpus muy enfocados en un tema específico</li>
+                    <li>• <strong>5-15 tópicos:</strong> Para datasets pequeños (100-500 documentos). Balance ideal entre especificidad y generalidad</li>
+                    <li>• <strong>15-30 tópicos:</strong> Para datasets medianos (500-2000 documentos)</li>
+                    <li>• <strong>30-50 tópicos:</strong> Para datasets grandes (2000+ documentos). Mayor granularidad en los temas</li>
+                    <li>• <strong>Más de 50:</strong> Solo para corpus muy grandes y diversos. Puede producir tópicos muy específicos o redundantes</li>
+                  </ul>
+                  <p className="text-xs text-gray-500 mt-2 italic">
+                    Consejo: Empieza con menos tópicos y aumenta gradualmente si necesitas más detalle.
+                  </p>
+                </div>
               </div>
 
               {/* Número de Palabras por Tópico */}
@@ -509,16 +535,28 @@ export const TopicModelingCreate: React.FC = () => {
                   <span>35</span>
                   <span>50</span>
                 </div>
-                <p className="text-xs text-gray-600 mt-2">
-                  Número de palabras más relevantes a mostrar por cada tópico. Recomendado: 10-15 palabras.
-                </p>
+                <div className="bg-gray-50 rounded-lg p-3 mt-3">
+                  <p className="text-xs font-semibold text-gray-700 mb-1">💡 ¿Cuántas palabras mostrar?</p>
+                  <ul className="text-xs text-gray-600 space-y-1">
+                    <li>• <strong>5-8 palabras:</strong> Vista compacta. Ideal para presentaciones o resúmenes ejecutivos</li>
+                    <li>• <strong>10-15 palabras:</strong> Balance óptimo (recomendado). Suficientes palabras para interpretar el tópico sin ruido</li>
+                    <li>• <strong>20-30 palabras:</strong> Vista detallada. Útil para análisis profundo o validación de tópicos</li>
+                    <li>• <strong>Más de 30:</strong> Puede incluir palabras menos relevantes que dificultan la interpretación</li>
+                  </ul>
+                  <p className="text-xs text-gray-500 mt-2 italic">
+                    Las palabras se ordenan por importancia (peso). Las primeras 5-10 son las más representativas del tópico.
+                  </p>
+                </div>
               </div>
 
               {/* Configuración Avanzada */}
               <div className="pt-4 border-t border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-700 mb-4">Configuración Avanzada (Opcional)</h3>
+                <div className="flex items-center gap-2 mb-4">
+                  <h3 className="text-sm font-semibold text-gray-700">Configuración Avanzada (Opcional)</h3>
+                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">Para usuarios experimentados</span>
+                </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-6">
                   {/* Max Iterations */}
                   <div>
                     <label htmlFor="maxIterations" className="block text-sm font-medium text-gray-700 mb-2">
@@ -533,20 +571,36 @@ export const TopicModelingCreate: React.FC = () => {
                       value={maxIterations}
                       onChange={(e) => setMaxIterations(Number(e.target.value))}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      disabled={selectedAlgorithmInfo?.category !== 'Probabilistic'}
                     />
-                    <p className="text-xs text-gray-600 mt-1">
-                      {selectedAlgorithmInfo?.category === 'Probabilistic'
-                        ? 'Número máximo de iteraciones para convergencia (PLSA/LDA)'
-                        : 'No aplicable para algoritmos no probabilísticos'}
-                    </p>
+                    {selectedAlgorithmInfo?.category === 'Probabilistic' ? (
+                      <div className="bg-purple-50 rounded-lg p-3 mt-2">
+                        <p className="text-xs font-semibold text-purple-800 mb-1">📊 ¿Qué es la convergencia?</p>
+                        <p className="text-xs text-purple-700 mb-2">
+                          Los algoritmos probabilísticos (PLSA/LDA) mejoran gradualmente en cada iteración. La convergencia
+                          ocurre cuando el modelo deja de mejorar significativamente.
+                        </p>
+                        <ul className="text-xs text-purple-700 space-y-1">
+                          <li>• <strong>100-500:</strong> Rápido pero puede no converger completamente</li>
+                          <li>• <strong>1000 (recomendado):</strong> Balance entre calidad y tiempo de procesamiento</li>
+                          <li>• <strong>2000-5000:</strong> Mayor calidad, útil para datasets complejos</li>
+                          <li>• <strong>Más de 5000:</strong> Generalmente innecesario, incrementa tiempo sin mejoras</li>
+                        </ul>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-500 mt-2 italic">
+                        ⚠️ Este parámetro solo aplica para algoritmos probabilísticos (PLSA/LDA).
+                        LSA y NMF no usan iteraciones, calculan tópicos directamente mediante descomposición matricial.
+                      </p>
+                    )}
                   </div>
 
                   {/* Random Seed */}
                   <div>
                     <label htmlFor="randomSeed" className="block text-sm font-medium text-gray-700 mb-2">
-                      Semilla Aleatoria
+                      Semilla Aleatoria (Random Seed)
                     </label>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 mb-2">
                       <input
                         type="checkbox"
                         id="useRandomSeed"
@@ -560,7 +614,7 @@ export const TopicModelingCreate: React.FC = () => {
                         className="rounded"
                       />
                       <label htmlFor="useRandomSeed" className="text-sm text-gray-700">
-                        Usar semilla para reproducibilidad
+                        Activar reproducibilidad de resultados
                       </label>
                     </div>
                     {useRandomSeed && (
@@ -569,13 +623,33 @@ export const TopicModelingCreate: React.FC = () => {
                         id="randomSeed"
                         value={randomSeed || 42}
                         onChange={(e) => setRandomSeed(Number(e.target.value))}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent mt-2"
-                        placeholder="Ej: 42"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                        placeholder="Ej: 42, 123, 2024"
                       />
                     )}
-                    <p className="text-xs text-gray-600 mt-1">
-                      Establece una semilla para obtener resultados reproducibles
-                    </p>
+                    <div className="bg-amber-50 rounded-lg p-3 mt-2">
+                      <p className="text-xs font-semibold text-amber-800 mb-1">🔄 ¿Qué es la reproducibilidad?</p>
+                      <p className="text-xs text-amber-700 mb-2">
+                        Los algoritmos de topic modeling incluyen componentes aleatorios en su inicialización.
+                        Usar una semilla fija garantiza obtener exactamente los mismos resultados en múltiples ejecuciones.
+                      </p>
+                      <div className="text-xs text-amber-700 space-y-1">
+                        <p><strong>✅ Activa la semilla cuando:</strong></p>
+                        <ul className="ml-4 space-y-0.5">
+                          <li>• Necesites comparar diferentes configuraciones de forma justa</li>
+                          <li>• Quieras replicar análisis para validación o publicación</li>
+                          <li>• Estés debuggeando o experimentando con parámetros</li>
+                        </ul>
+                        <p className="mt-2"><strong>❌ Desactiva la semilla cuando:</strong></p>
+                        <ul className="ml-4 space-y-0.5">
+                          <li>• Busques explorar diferentes inicializaciones aleatorias</li>
+                          <li>• No te importe la reproducibilidad exacta</li>
+                        </ul>
+                      </div>
+                      <p className="text-xs text-amber-600 mt-2 italic">
+                        💡 Números comunes: 42 (convención), 123, año actual (2024), o cualquier número entero.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
