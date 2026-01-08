@@ -284,7 +284,7 @@ export const BERTopicCreate: React.FC = () => {
                   <option value="">-- Seleccionar --</option>
                   {datasets.map((ds) => (
                     <option key={ds.id} value={ds.id}>
-                      {ds.name} ({ds.num_files} archivos)
+                      {ds.name} ({ds.total_files} archivos)
                     </option>
                   ))}
                 </select>
