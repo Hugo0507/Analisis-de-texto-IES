@@ -56,7 +56,7 @@ export const BERTopicCreate: React.FC = () => {
     setIsLoadingData(true);
     try {
       const [prepsData, datasetsData, modelsData] = await Promise.all([
-        dataPreparationService.getDataPreparations(),
+        dataPreparationService.getPreparations(),
         datasetsService.getDatasets(),
         bertopicService.getEmbeddingModels(),
       ]);
