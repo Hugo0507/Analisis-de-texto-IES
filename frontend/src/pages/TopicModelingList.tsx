@@ -28,9 +28,10 @@ export const TopicModelingList: React.FC = () => {
     setIsLoading(true);
     try {
       const data = await topicModelingService.getTopicModelings();
-      setAnalyses(data);
+      setAnalyses(Array.isArray(data) ? data : []);
     } catch (error: any) {
       showError('Error al cargar análisis: ' + (error.response?.data?.error || error.message));
+      setAnalyses([]);
     } finally {
       setIsLoading(false);
     }
