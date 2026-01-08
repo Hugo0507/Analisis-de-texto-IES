@@ -34,3 +34,6 @@ export { NerAnalysisView } from './NerAnalysisView';
 export { TopicModelingList } from './TopicModelingList';
 export { TopicModelingCreate } from './TopicModelingCreate';
 export { TopicModelingView } from './TopicModelingView';
+export { BERTopicList } from './BERTopicList';
+export { BERTopicCreate } from './BERTopicCreate';
+export { BERTopicView } from './BERTopicView';

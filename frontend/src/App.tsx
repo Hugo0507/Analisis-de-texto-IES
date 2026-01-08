@@ -46,6 +46,9 @@ import { NerAnalysisView } from './pages/NerAnalysisView';
 import { TopicModelingList } from './pages/TopicModelingList';
 import { TopicModelingCreate } from './pages/TopicModelingCreate';
 import { TopicModelingView } from './pages/TopicModelingView';
+import { BERTopicList } from './pages/BERTopicList';
+import { BERTopicCreate } from './pages/BERTopicCreate';
+import { BERTopicView } from './pages/BERTopicView';
 import { OAuthCallback } from './pages/OAuthCallback';
 
 function App() {
@@ -118,6 +121,9 @@ function App() {
               <Route path="topic-modeling" element={<TopicModelingList />} />
               <Route path="topic-modeling/nuevo" element={<TopicModelingCreate />} />
               <Route path="topic-modeling/:id" element={<TopicModelingView />} />
+              <Route path="bertopic" element={<BERTopicList />} />
+              <Route path="bertopic/nuevo" element={<BERTopicCreate />} />
+              <Route path="bertopic/:id" element={<BERTopicView />} />
             </Route>
           </Route>
 
