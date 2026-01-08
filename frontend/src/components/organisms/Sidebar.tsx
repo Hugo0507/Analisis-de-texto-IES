@@ -119,6 +119,12 @@ const modelingNavItems: NavItem[] = [
     icon: 'ner',
     description: 'Reconocimiento de entidades nombradas',
   },
+  {
+    path: '/admin/modelado/topic-modeling',
+    label: 'Topic Modeling',
+    icon: 'topic-modeling',
+    description: 'Modelado de tópicos (LSA, NMF, PLSA, LDA)',
+  },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
@@ -375,6 +381,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     {item.icon === 'ner' ? (
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    ) : item.icon === 'topic-modeling' ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
                     ) : null}
                   </svg>
                   <span className="text-sm font-medium">{item.label}</span>

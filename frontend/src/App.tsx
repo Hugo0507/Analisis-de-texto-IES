@@ -43,6 +43,9 @@ import { TfIdfView } from './pages/TfIdfView';
 import { NerAnalysisList } from './pages/NerAnalysisList';
 import { NerAnalysisCreate } from './pages/NerAnalysisCreate';
 import { NerAnalysisView } from './pages/NerAnalysisView';
+import { TopicModelingList } from './pages/TopicModelingList';
+import { TopicModelingCreate } from './pages/TopicModelingCreate';
+import { TopicModelingView } from './pages/TopicModelingView';
 import { OAuthCallback } from './pages/OAuthCallback';
 
 function App() {
@@ -112,6 +115,9 @@ function App() {
               <Route path="ner" element={<NerAnalysisList />} />
               <Route path="ner/nuevo" element={<NerAnalysisCreate />} />
               <Route path="ner/:id" element={<NerAnalysisView />} />
+              <Route path="topic-modeling" element={<TopicModelingList />} />
+              <Route path="topic-modeling/nuevo" element={<TopicModelingCreate />} />
+              <Route path="topic-modeling/:id" element={<TopicModelingView />} />
             </Route>
           </Route>
 

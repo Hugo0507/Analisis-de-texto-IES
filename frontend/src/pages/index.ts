@@ -31,3 +31,6 @@ export { TfIdfView } from './TfIdfView';
 export { NerAnalysisList } from './NerAnalysisList';
 export { NerAnalysisCreate } from './NerAnalysisCreate';
 export { NerAnalysisView } from './NerAnalysisView';
+export { TopicModelingList } from './TopicModelingList';
+export { TopicModelingCreate } from './TopicModelingCreate';
+export { TopicModelingView } from './TopicModelingView';
