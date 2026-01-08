@@ -407,9 +407,20 @@ export const TopicModelingView: React.FC = () => {
             {/* VISUALIZACIÓN 3: PALABRAS CLAVE DEL TÓPICO SELECCIONADO (BAR CHART) */}
             {barData && selectedTopicData && (
               <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Palabras Clave - {selectedTopicData.topic_label}
-                </h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900">Palabras Clave por Tópico</h2>
+                  <select
+                    value={selectedTopic}
+                    onChange={(e) => setSelectedTopic(Number(e.target.value))}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm font-medium"
+                  >
+                    {analysis.topics.map((topic, index) => (
+                      <option key={index} value={index}>
+                        {topic.topic_label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div style={{ height: '400px' }}>
                   <Bar data={barData} options={barOptions} />
                 </div>
@@ -418,9 +429,20 @@ export const TopicModelingView: React.FC = () => {
 
             {/* VISUALIZACIÓN 4: TABLA DE DOCUMENTOS POR TÓPICO */}
             <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Documentos - {selectedTopicData?.topic_label || 'Selecciona un tópico'}
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">Documentos por Tópico</h2>
+                <select
+                  value={selectedTopic}
+                  onChange={(e) => setSelectedTopic(Number(e.target.value))}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm font-medium"
+                >
+                  {analysis.topics.map((topic, index) => (
+                    <option key={index} value={index}>
+                      {topic.topic_label}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
