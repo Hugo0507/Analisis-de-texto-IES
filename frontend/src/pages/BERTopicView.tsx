@@ -46,6 +46,7 @@ export const BERTopicView: React.FC = () => {
 
       return () => clearInterval(interval);
     }
+    return undefined;
   }, [analysis]);
 
   const loadAnalysis = async () => {
