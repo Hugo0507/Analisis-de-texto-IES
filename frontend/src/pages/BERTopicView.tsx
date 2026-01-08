@@ -25,12 +25,11 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 export const BERTopicView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { showSuccess, showError } = useToast();
+  const { showError } = useToast();
 
   const [analysis, setAnalysis] = useState<BERTopicAnalysis | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTopic, setSelectedTopic] = useState<number>(0);
-  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (id) {
@@ -143,11 +142,6 @@ export const BERTopicView: React.FC = () => {
       </div>
     );
   }
-
-  // Filter topics for search in table
-  const filteredTopics = analysis.topics.filter((topic) =>
-    topic.words.some((w) => w.word.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
 
   // Prepare doughnut chart data
   const doughnutData = {
