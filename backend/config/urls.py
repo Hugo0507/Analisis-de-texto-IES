@@ -31,6 +31,7 @@ urlpatterns = [
     path('api/v1/', include('apps.tfidf_analysis.urls')),  # TF-IDF Analysis
     path('api/v1/', include('apps.ner_analysis.urls')),  # NER Analysis
     path('api/v1/', include('apps.topic_modeling.urls')),  # Topic Modeling
+    path('api/v1/', include('apps.bertopic.urls')),  # BERTopic Analysis
     path('api/v1/analysis/', include('apps.analysis.urls')),
     path('api/v1/pipeline/', include('apps.pipeline.urls')),
 
