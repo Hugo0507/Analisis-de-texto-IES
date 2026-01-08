@@ -15,7 +15,7 @@ import {
   ChartOptions,
 } from 'chart.js';
 import bertopicService from '../services/bertopicService';
-import type { BERTopicAnalysis, Topic } from '../services/bertopicService';
+import type { BERTopicAnalysis } from '../services/bertopicService';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
 
