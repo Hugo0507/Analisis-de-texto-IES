@@ -9,7 +9,8 @@ import { useNavigate } from 'react-router-dom';
 import bertopicService from '../services/bertopicService';
 import type { BERTopicCreateRequest, EmbeddingModel } from '../services/bertopicService';
 import dataPreparationService from '../services/dataPreparationService';
-import datasetService from '../services/datasetService';
+import datasetsService from '../services/datasetsService';
+import type { DatasetListItem } from '../services/datasetsService';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
 
@@ -17,12 +18,6 @@ interface DataPreparation {
   id: number;
   name: string;
   status: string;
-}
-
-interface Dataset {
-  id: number;
-  name: string;
-  num_files: number;
 }
 
 export const BERTopicCreate: React.FC = () => {
@@ -44,7 +39,7 @@ export const BERTopicCreate: React.FC = () => {
 
   // Data sources
   const [dataPreparations, setDataPreparations] = useState<DataPreparation[]>([]);
-  const [datasets, setDatasets] = useState<Dataset[]>([]);
+  const [datasets, setDatasets] = useState<DatasetListItem[]>([]);
 
   // Embedding models
   const [embeddingModels, setEmbeddingModels] = useState<EmbeddingModel[]>([]);
@@ -62,7 +57,7 @@ export const BERTopicCreate: React.FC = () => {
     try {
       const [prepsData, datasetsData, modelsData] = await Promise.all([
         dataPreparationService.getDataPreparations(),
-        datasetService.getDatasets(),
+        datasetsService.getDatasets(),
         bertopicService.getEmbeddingModels(),
       ]);
 
