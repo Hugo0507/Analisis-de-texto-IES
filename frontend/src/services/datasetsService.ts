@@ -199,7 +199,6 @@ class DatasetsService {
     // Returns success status instead of throwing - implements "Ignorar y Notificar"
     const uploadBatchWithRetry = async (
       batchFiles: File[],
-      batchNumber: number,
       retries: number = MAX_RETRIES
     ): Promise<{ success: boolean; error?: string }> => {
       const batchFormData = new FormData();
@@ -277,7 +276,7 @@ class DatasetsService {
       }
 
       // Upload with retry logic - now returns success/failure instead of throwing
-      const result = await uploadBatchWithRetry(batch, batchNumber);
+      const result = await uploadBatchWithRetry(batch);
 
       if (result.success) {
         // Batch succeeded
