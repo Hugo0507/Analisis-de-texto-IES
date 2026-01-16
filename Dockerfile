@@ -12,22 +12,24 @@ ENV PATH="/home/user/.local/bin:$PATH"
 
 WORKDIR /app
 
+# Instalar pip más reciente primero
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Instalar PyTorch CPU-only EN CAPA PERMANENTE (antes de CACHEBUST)
+# Esta capa NUNCA se invalidará, torch quedará cacheado para siempre
+RUN pip install --no-cache-dir --default-timeout=1000 \
+    --extra-index-url https://download.pytorch.org/whl/cpu \
+    torch==2.1.2+cpu torchvision==0.16.2+cpu
+
 # Build arg to force rebuild (change this to break cache)
-ARG CACHEBUST=2026-01-16-torch-separate-layer
+# TODO lo que viene después de esta línea se reconstruye en cada cambio
+ARG CACHEBUST=2026-01-16-torch-before-cachebust
 RUN echo "Cache bust: $CACHEBUST"
 
 # Copiar requirements del backend (usar requirements-hf.txt para Hugging Face)
 COPY --chown=user ./backend/requirements-hf.txt requirements.txt
 
-# Instalar pip más reciente primero
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel
-
-# Instalar PyTorch CPU-only PRIMERO (capa separada para caché)
-RUN pip install --no-cache-dir --default-timeout=1000 \
-    --extra-index-url https://download.pytorch.org/whl/cpu \
-    torch==2.1.2+cpu torchvision==0.16.2+cpu
-
-# Instalar resto de dependencias (sin caché)
+# Instalar resto de dependencias (sin caché, usa torch ya instalado)
 RUN pip install --no-cache-dir --default-timeout=1000 --upgrade -r requirements.txt
 
 # Verificar que simplejwt está instalado
