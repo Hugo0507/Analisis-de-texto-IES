@@ -13,7 +13,7 @@ ENV PATH="/home/user/.local/bin:$PATH"
 WORKDIR /app
 
 # Build arg to force rebuild (change this to break cache)
-ARG CACHEBUST=2026-01-16-torch-cpu-only
+ARG CACHEBUST=2026-01-16-torch-separate-layer
 RUN echo "Cache bust: $CACHEBUST"
 
 # Copiar requirements del backend (usar requirements-hf.txt para Hugging Face)
@@ -22,8 +22,13 @@ COPY --chown=user ./backend/requirements-hf.txt requirements.txt
 # Instalar pip más reciente primero
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Instalar dependencias (sin caché)
-RUN pip install --no-cache-dir --upgrade -r requirements.txt
+# Instalar PyTorch CPU-only PRIMERO (capa separada para caché)
+RUN pip install --no-cache-dir --default-timeout=1000 \
+    --extra-index-url https://download.pytorch.org/whl/cpu \
+    torch==2.1.2+cpu torchvision==0.16.2+cpu
+
+# Instalar resto de dependencias (sin caché)
+RUN pip install --no-cache-dir --default-timeout=1000 --upgrade -r requirements.txt
 
 # Verificar que simplejwt está instalado
 RUN pip list | grep simplejwt || echo "WARNING: simplejwt not found"
