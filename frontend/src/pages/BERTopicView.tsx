@@ -88,7 +88,7 @@ export const BERTopicView: React.FC = () => {
       if (progressData.status === 'completed') {
         await loadAnalysis();
       }
-    } catch (error) {
+    } catch {
     }
   };
 

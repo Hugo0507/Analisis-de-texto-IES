@@ -70,7 +70,7 @@ export const NerAnalysisView: React.FC = () => {
           error_message: progressData.error_message,
         });
       }
-    } catch (error) {
+    } catch {
       // Silently fail for progress updates
     }
   };

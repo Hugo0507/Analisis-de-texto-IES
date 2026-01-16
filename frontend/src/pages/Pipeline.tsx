@@ -149,7 +149,7 @@ export const Pipeline: React.FC = () => {
         // Connect WebSocket for real-time updates
         connectWebSocket(response.execution_id);
       }
-    } catch (error) {
+    } catch {
       alert('Error al iniciar el pipeline');
       setIsExecuting(false);
     }

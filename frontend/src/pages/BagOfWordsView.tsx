@@ -83,7 +83,7 @@ export const BagOfWordsView: React.FC = () => {
       if (progress.status === 'completed' || progress.status === 'error') {
         await loadAnalysis();
       }
-    } catch (error) {
+    } catch {
     }
   };
 

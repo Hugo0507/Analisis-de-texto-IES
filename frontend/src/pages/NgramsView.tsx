@@ -88,7 +88,7 @@ export const NgramsView: React.FC = () => {
       if (progress.status === 'completed' || progress.status === 'error') {
         await loadAnalysis();
       }
-    } catch (error) {
+    } catch {
     }
   };
 

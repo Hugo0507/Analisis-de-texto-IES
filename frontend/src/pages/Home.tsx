@@ -44,7 +44,7 @@ export const Home: React.FC = () => {
       try {
         const vocabResponse = await analysisService.getVocabularyStats();
         vocabularySize = vocabResponse.total_terms || 0;
-      } catch (error) {
+      } catch {
       }
 
       // Fetch pipeline history
@@ -58,7 +58,7 @@ export const Home: React.FC = () => {
           topicsAnalyzed = 10; // Default topics analyzed
           factorsIdentified = 8; // 8 categories
         }
-      } catch (error) {
+      } catch {
       }
 
       setMetrics({
@@ -67,7 +67,7 @@ export const Home: React.FC = () => {
         topicsAnalyzed,
         factorsIdentified,
       });
-    } catch (error) {
+    } catch {
     } finally {
       setIsLoading(false);
     }
@@ -83,7 +83,7 @@ export const Home: React.FC = () => {
         alert(`Pipeline iniciado: ${response.execution_id}`);
         // Redirect to pipeline monitor page (to be implemented)
       }
-    } catch (error) {
+    } catch {
       alert('Error al iniciar el pipeline');
     }
   };

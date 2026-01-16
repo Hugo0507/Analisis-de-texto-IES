@@ -110,18 +110,18 @@ export const PipelineMonitor: React.FC<PipelineMonitorProps> = ({
               onError(update.error);
             }
           }
-        } catch (error) {
+        } catch {
         }
       };
 
-      ws.onerror = (error) => {
+      ws.onerror = () => {
         setIsConnected(false);
       };
 
       ws.onclose = () => {
         setIsConnected(false);
       };
-    } catch (error) {
+    } catch {
     }
 
     // Cleanup on unmount
