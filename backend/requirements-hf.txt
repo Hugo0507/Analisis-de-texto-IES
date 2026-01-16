@@ -42,10 +42,7 @@ langdetect==1.0.9
 # ============================================================
 # MACHINE LEARNING & DATA SCIENCE
 # ============================================================
-# PyTorch CPU-only (lightweight, no CUDA) - Must be installed before sentence-transformers
---extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.1.2+cpu
-torchvision==0.16.2+cpu
+# PyTorch CPU-only installed separately in Dockerfile (cached layer)
 
 scikit-learn==1.3.2
 pandas==2.1.4
