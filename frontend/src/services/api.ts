@@ -27,11 +27,9 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`);
     return config;
   },
   (error) => {
-    console.error('[API] Request error:', error);
     return Promise.reject(error);
   }
 );
@@ -39,18 +37,15 @@ apiClient.interceptors.request.use(
 // Response interceptor
 apiClient.interceptors.response.use(
   (response) => {
-    console.log(`[API] Response ${response.status}:`, response.data);
     return response;
   },
   (error: AxiosError) => {
-    console.error('[API] Response error:', error.response?.data || error.message);
 
     // Handle specific error codes
     if (error.response?.status === 401) {
       // Unauthorized - but DON'T clear token immediately
       // (might be temporary server restart during file upload)
       // Let the retry logic in datasetsService handle it
-      console.warn('[API] 401 Unauthorized - might be temporary server restart');
 
       // Only redirect to login if this is NOT a file upload request
       const isFileUpload = error.config?.url?.includes('/datasets/') &&
