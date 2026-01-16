@@ -89,7 +89,6 @@ export const NgramsView: React.FC = () => {
         await loadAnalysis();
       }
     } catch (error) {
-      console.error('Error al cargar progreso:', error);
     }
   };
 

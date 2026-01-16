@@ -89,7 +89,6 @@ export const BERTopicView: React.FC = () => {
         await loadAnalysis();
       }
     } catch (error) {
-      console.error('Error polling progress:', error);
     }
   };
 

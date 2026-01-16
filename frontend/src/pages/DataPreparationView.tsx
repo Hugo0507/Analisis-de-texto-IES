@@ -80,7 +80,6 @@ export const DataPreparationView: React.FC = () => {
         const changes = await dataPreparationService.detectChanges(Number(id));
         setDatasetChanges(changes);
       } catch (error: any) {
-        console.error('Error detectando cambios:', error);
       }
     };
 

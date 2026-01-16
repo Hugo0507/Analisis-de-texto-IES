@@ -20,10 +20,8 @@ export const NgramsList: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [analysisToDelete, setAnalysisToDelete] = useState<NgramAnalysisListItem | null>(null);
 
-  console.log('🟡 [NgramsList] Página de lista renderizada');
 
   useEffect(() => {
-    console.log('🟡 [NgramsList] useEffect ejecutado - cargando análisis');
     loadAnalyses();
   }, []);
 

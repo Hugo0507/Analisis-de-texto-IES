@@ -13,14 +13,11 @@ export const BagOfWords: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log('🔵 [BagOfWords] Página de redirección montada');
-    console.log('🔵 [BagOfWords] Redirigiendo a: /admin/vectorizacion/bolsa-palabras');
 
     // Redirigir automáticamente a la interfaz de admin
     navigate('/admin/vectorizacion/bolsa-palabras', { replace: true });
   }, [navigate]);
 
-  console.log('🔵 [BagOfWords] Renderizando página de redirección...');
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-blue-50">

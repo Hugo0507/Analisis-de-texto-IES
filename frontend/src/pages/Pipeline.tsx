@@ -109,7 +109,6 @@ export const Pipeline: React.FC = () => {
         alert('Error al cargar documentos desde Drive');
       }
     } catch (error: any) {
-      console.error('Error connecting to Drive:', error);
 
       // Handle timeout specifically
       if (error.code === 'ECONNABORTED') {
@@ -151,7 +150,6 @@ export const Pipeline: React.FC = () => {
         connectWebSocket(response.execution_id);
       }
     } catch (error) {
-      console.error('Error executing pipeline:', error);
       alert('Error al iniciar el pipeline');
       setIsExecuting(false);
     }
@@ -162,7 +160,6 @@ export const Pipeline: React.FC = () => {
     const socket = new WebSocket(`${wsUrl}/pipeline/${execId}/`);
 
     socket.onopen = () => {
-      console.log('WebSocket connected');
     };
 
     socket.onmessage = (event) => {
@@ -195,11 +192,9 @@ export const Pipeline: React.FC = () => {
     };
 
     socket.onerror = (error) => {
-      console.error('WebSocket error:', error);
     };
 
     socket.onclose = () => {
-      console.log('WebSocket disconnected');
     };
 
     setWs(socket);

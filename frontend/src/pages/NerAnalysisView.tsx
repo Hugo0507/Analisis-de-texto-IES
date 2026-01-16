@@ -72,7 +72,6 @@ export const NerAnalysisView: React.FC = () => {
       }
     } catch (error) {
       // Silently fail for progress updates
-      console.error('Error updating progress:', error);
     }
   };
 

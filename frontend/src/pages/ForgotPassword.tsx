@@ -22,7 +22,6 @@ export const ForgotPassword: React.FC = () => {
 
     try {
       // TODO: Implement password recovery service
-      console.log('Password recovery for:', email);
 
       // Simulated API call
       await new Promise(resolve => setTimeout(resolve, 1500));

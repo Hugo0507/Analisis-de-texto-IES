@@ -60,14 +60,12 @@ export const PipelineMonitor: React.FC<PipelineMonitorProps> = ({
       ws = new WebSocket(url);
 
       ws.onopen = () => {
-        console.log('[PipelineMonitor] WebSocket connected');
         setIsConnected(true);
       };
 
       ws.onmessage = (event) => {
         try {
           const update: PipelineUpdate = JSON.parse(event.data);
-          console.log('[PipelineMonitor] Update received:', update);
 
           // Update progress
           setProgress(update.progress);
@@ -113,21 +111,17 @@ export const PipelineMonitor: React.FC<PipelineMonitorProps> = ({
             }
           }
         } catch (error) {
-          console.error('[PipelineMonitor] Error parsing message:', error);
         }
       };
 
       ws.onerror = (error) => {
-        console.error('[PipelineMonitor] WebSocket error:', error);
         setIsConnected(false);
       };
 
       ws.onclose = () => {
-        console.log('[PipelineMonitor] WebSocket disconnected');
         setIsConnected(false);
       };
     } catch (error) {
-      console.error('[PipelineMonitor] Error creating WebSocket:', error);
     }
 
     // Cleanup on unmount
