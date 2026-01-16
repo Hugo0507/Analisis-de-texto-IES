@@ -13,7 +13,7 @@ ENV PATH="/home/user/.local/bin:$PATH"
 WORKDIR /app
 
 # Build arg to force rebuild (change this to break cache)
-ARG CACHEBUST=2026-01-16-bertopic-deps-v2
+ARG CACHEBUST=2026-01-16-torch-cpu-only
 RUN echo "Cache bust: $CACHEBUST"
 
 # Copiar requirements del backend (usar requirements-hf.txt para Hugging Face)
