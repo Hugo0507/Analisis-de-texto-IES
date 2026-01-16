@@ -13,11 +13,11 @@ ENV PATH="/home/user/.local/bin:$PATH"
 WORKDIR /app
 
 # Build arg to force rebuild (change this to break cache)
-ARG CACHEBUST=2026-01-16-bertopic-deps
+ARG CACHEBUST=2026-01-16-bertopic-deps-v2
 RUN echo "Cache bust: $CACHEBUST"
 
-# Copiar requirements del backend
-COPY --chown=user ./backend/requirements.txt requirements.txt
+# Copiar requirements del backend (usar requirements-hf.txt para Hugging Face)
+COPY --chown=user ./backend/requirements-hf.txt requirements.txt
 
 # Instalar pip más reciente primero
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
