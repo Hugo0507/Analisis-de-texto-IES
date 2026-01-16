@@ -35,7 +35,7 @@ export const Factors: React.FC = () => {
       });
 
       setFactorData(response);
-    } catch (error) {
+    } catch {
       alert('Error al analizar factores');
     } finally {
       setIsLoading(false);

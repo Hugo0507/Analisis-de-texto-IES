@@ -46,10 +46,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           try {
             const freshUser = await authService.fetchCurrentUser();
             setUser(freshUser);
-          } catch (error) {
+          } catch {
           }
         }
-      } catch (error) {
+      } catch {
         authService.logout();
       } finally {
         setIsLoading(false);
@@ -78,7 +78,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const freshUser = await authService.fetchCurrentUser();
       setUser(freshUser);
-    } catch (error) {
+    } catch {
       logout();
       throw error;
     }
