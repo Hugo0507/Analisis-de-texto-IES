@@ -57,6 +57,9 @@ gensim==4.3.2
 # Transformers with compatible version for torch 2.1.2
 transformers==4.37.2
 
+# Hugging Face Hub with cached_download support (removed in 0.25.0+)
+huggingface_hub<0.25.0
+
 bertopic==0.16.0
 sentence-transformers==2.2.2
 umap-learn==0.5.5
