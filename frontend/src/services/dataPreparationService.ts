@@ -216,4 +216,5 @@ class DataPreparationService {
   }
 }
 
-export default new DataPreparationService();
+const dataPreparationService = new DataPreparationService();
+export default dataPreparationService;

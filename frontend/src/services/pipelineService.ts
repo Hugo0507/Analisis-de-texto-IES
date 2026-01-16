@@ -21,8 +21,8 @@ export interface ExecutePipelineResponse {
   completed_stages: number;
   failed_stages: number;
   skipped_stages: number;
-  stages: Record<string, any>;
-  results: Record<string, any>;
+  stages: Record<string, unknown>;
+  results: Record<string, unknown>;
 }
 
 export interface PipelineStatusResponse {
@@ -91,4 +91,5 @@ class PipelineService {
   }
 }
 
-export default new PipelineService();
+const pipelineService = new PipelineService();
+export default pipelineService;

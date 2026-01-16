@@ -216,4 +216,5 @@ class BagOfWordsService {
   }
 }
 
-export default new BagOfWordsService();
+const bagOfWordsService = new BagOfWordsService();
+export default bagOfWordsService;
