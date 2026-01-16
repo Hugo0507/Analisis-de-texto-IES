@@ -78,7 +78,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const freshUser = await authService.fetchCurrentUser();
       setUser(freshUser);
-    } catch {
+    } catch (error) {
       logout();
       throw error;
     }
