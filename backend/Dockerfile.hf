@@ -18,8 +18,11 @@ ENV PYTHONUNBUFFERED=1 \
     DJANGO_SECURE_SSL_REDIRECT=False \
     DEBUG=False
 
-# Install system dependencies (minimal - using wheels for all Python packages)
+# Install system dependencies (including compilers for hdbscan fallback)
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    libopenblas-dev \
     libpq-dev \
     wget \
     curl \
@@ -38,8 +41,9 @@ RUN pip install --no-cache-dir --default-timeout=1000 \
     torch==2.1.2+cpu torchvision==0.16.2+cpu
 
 # Copy requirements and install remaining Python dependencies
+# Prefer binary wheels over source builds to avoid long compilation times
 COPY requirements-hf.txt .
-RUN pip install --no-cache-dir --default-timeout=1000 -r requirements-hf.txt
+RUN pip install --no-cache-dir --default-timeout=1000 --prefer-binary -r requirements-hf.txt
 
 # Copy application code
 COPY . .
