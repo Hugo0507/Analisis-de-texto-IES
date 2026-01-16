@@ -45,7 +45,9 @@ RUN pip install --no-cache-dir --default-timeout=1000 \
 RUN pip install --no-cache-dir "cython<3.0.0" "setuptools<70.0.0" wheel numpy==1.26.2
 
 # Install hdbscan FIRST with --no-build-isolation to use our Cython version
-RUN pip install --no-cache-dir --default-timeout=1000 --no-build-isolation hdbscan==0.8.29
+# Set CFLAGS to ignore pointer type warnings (compatibility with newer compilers)
+ENV CFLAGS="-Wno-error=incompatible-pointer-types"
+RUN pip install --no-cache-dir --default-timeout=1000 --no-build-isolation hdbscan==0.8.33
 
 # Copy requirements and install remaining Python dependencies
 # Prefer binary wheels over source builds to avoid long compilation times
