@@ -7,6 +7,14 @@ echo "===== Django Backend Startup ====="
 echo "Starting at $(date)"
 echo ""
 
+# Verify BERTopic dependencies
+echo "🔍 Verifying BERTopic dependencies..."
+python -c "import bertopic; print(f'✅ bertopic: {bertopic.__version__}')" || echo "❌ bertopic NOT installed"
+python -c "import sentence_transformers; print(f'✅ sentence_transformers: {sentence_transformers.__version__}')" || echo "❌ sentence_transformers NOT installed"
+python -c "import umap; print(f'✅ umap: installed')" || echo "❌ umap NOT installed"
+python -c "import hdbscan; print(f'✅ hdbscan: installed')" || echo "❌ hdbscan NOT installed"
+echo ""
+
 # Run database migrations
 echo "📦 Running database migrations..."
 python manage.py migrate --noinput

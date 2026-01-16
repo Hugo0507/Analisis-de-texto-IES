@@ -1,3 +1,13 @@
+---
+title: Análisis IES Backend
+emoji: 🎓
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+app_port: 7860
+---
+
 # Análisis de Transformación Digital en Educación Superior
 
 Plataforma moderna de análisis NLP/ML para investigación académica sobre transformación digital en instituciones de educación superior.
