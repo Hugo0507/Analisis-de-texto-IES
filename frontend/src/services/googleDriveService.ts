@@ -195,4 +195,5 @@ class GoogleDriveService {
 }
 
 // Export singleton instance
-export default new GoogleDriveService();
+const googleDriveService = new GoogleDriveService();
+export default googleDriveService;
