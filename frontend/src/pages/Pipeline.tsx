@@ -191,7 +191,7 @@ export const Pipeline: React.FC = () => {
       }
     };
 
-    socket.onerror = (error) => {
+    socket.onerror = () => {
     };
 
     socket.onclose = () => {
