@@ -7,12 +7,18 @@ echo "===== Django Backend Startup ====="
 echo "Starting at $(date)"
 echo ""
 
-# Verify BERTopic dependencies
+# Verify and install BERTopic dependencies if missing
 echo "🔍 Verifying BERTopic dependencies..."
-python -c "import bertopic; print(f'✅ bertopic: {bertopic.__version__}')" || echo "❌ bertopic NOT installed"
-python -c "import sentence_transformers; print(f'✅ sentence_transformers: {sentence_transformers.__version__}')" || echo "❌ sentence_transformers NOT installed"
-python -c "import umap; print(f'✅ umap: installed')" || echo "❌ umap NOT installed"
-python -c "import hdbscan; print(f'✅ hdbscan: installed')" || echo "❌ hdbscan NOT installed"
+if ! python -c "import sentence_transformers" 2>/dev/null; then
+    echo "❌ sentence_transformers NOT installed - Installing now..."
+    pip install --no-cache-dir bertopic==0.16.0 sentence-transformers==2.2.2 umap-learn==0.5.5 hdbscan==0.8.33
+    echo "✅ BERTopic dependencies installed"
+else
+    python -c "import bertopic; print(f'✅ bertopic: {bertopic.__version__}')"
+    python -c "import sentence_transformers; print(f'✅ sentence_transformers: {sentence_transformers.__version__}')"
+    python -c "import umap; print('✅ umap: installed')"
+    python -c "import hdbscan; print('✅ hdbscan: installed')"
+fi
 echo ""
 
 # Run database migrations
