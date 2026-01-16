@@ -55,6 +55,10 @@ scipy==1.11.4                        # Scientific computing
 # TOPIC MODELING
 # ============================================================
 gensim==4.3.2                        # LDA, LSA topic modeling
+bertopic==0.16.0                     # BERTopic modeling
+sentence-transformers==2.2.2         # Sentence embeddings for BERTopic
+umap-learn==0.5.5                    # UMAP dimensionality reduction
+hdbscan==0.8.33                      # HDBSCAN clustering
 
 # ============================================================
 # PDF PROCESSING
