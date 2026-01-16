@@ -93,7 +93,7 @@ class DatasetsService {
    */
   async getDatasets(): Promise<DatasetListItem[]> {
     const response = await apiClient.get<PaginatedResponse<DatasetListItem>>('/datasets/');
-    return response.data.results || response.data as any;
+    return response.data.results || (response.data as unknown as DatasetListItem[]);
   }
 
   /**
@@ -223,46 +223,29 @@ class DatasetsService {
           // Success - exit retry loop
           return { success: true };
 
-        } catch (error: any) {
+        } catch (error: unknown) {
+          const errorObj = error as { response?: { status?: number }; message?: string };
           const isLastAttempt = attempt === retries - 1;
-          const is401 = error.response?.status === 401;
-          const is429 = error.response?.status === 429; // Rate limit
-
-          console.warn(`Batch ${batchNumber} attempt ${attempt + 1} failed:`, error.message);
+          const is401 = errorObj.response?.status === 401;
+          const is429 = errorObj.response?.status === 429;
 
           if (isLastAttempt) {
-            // Last attempt failed - return failure (DON'T throw)
-            console.error(
-              `⚠️ Batch ${batchNumber} failed after ${retries} attempts. SKIPPING and continuing...`
-            );
             return {
               success: false,
-              error: `Failed after ${retries} attempts: ${error.message}`
+              error: `Failed after ${retries} attempts: ${errorObj.message || 'Unknown error'}`
             };
           }
 
-          // Exponential backoff with longer delays for rate limiting
-          // Rate limit (401/429): 15s, 30s, 45s, 60s, 75s
-          // Network error: 10s, 20s, 30s, 40s, 50s
           let backoffDelay: number;
-          const isNetworkError = error.message?.includes('Network Error') || !error.response;
+          const isNetworkError = errorObj.message?.includes('Network Error') || !errorObj.response;
 
           if (is401 || is429) {
-            // Rate limit or server restart - wait progressively longer
-            backoffDelay = (attempt + 1) * 15000; // 15s, 30s, 45s, 60s, 75s
+            backoffDelay = (attempt + 1) * 15000;
           } else if (isNetworkError) {
-            // Network error (likely rate limiting) - wait long
-            backoffDelay = (attempt + 1) * 10000; // 10s, 20s, 30s, 40s, 50s
+            backoffDelay = (attempt + 1) * 10000;
           } else {
-            // Other errors - shorter backoff
-            backoffDelay = Math.pow(2, attempt + 1) * 2000; // 4s, 8s, 16s, 32s, 64s
+            backoffDelay = Math.pow(2, attempt + 1) * 2000;
           }
-
-          console.log(
-            `Batch ${batchNumber} attempt ${attempt + 1}/${retries} failed. ` +
-            `Retrying in ${backoffDelay / 1000}s... ` +
-            `(${is401 ? 'Auth error' : is429 ? 'Rate limit' : isNetworkError ? 'Network/Rate limit' : 'Other error'})`
-          );
 
           await new Promise(resolve => setTimeout(resolve, backoffDelay));
         }
@@ -287,14 +270,9 @@ class DatasetsService {
 
       // Long rest every N batches to let HF "forget" the load
       if (batchNumber % LONG_REST_INTERVAL === 0) {
-        console.log(
-          `✨ Long rest after ${batchNumber} batches. ` +
-          `Waiting ${LONG_REST_DELAY / 1000}s to let server cool down...`
-        );
         await new Promise(resolve => setTimeout(resolve, LONG_REST_DELAY));
       } else {
         // Normal delay between batches
-        console.log(`Waiting ${BATCH_DELAY / 1000}s before batch ${batchNumber}...`);
         await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
       }
 
@@ -304,10 +282,8 @@ class DatasetsService {
       if (result.success) {
         // Batch succeeded
         successfulFiles += batch.length;
-        console.log(`✅ Batch ${batchNumber} uploaded successfully (${batch.length} files)`);
       } else {
         // Batch failed - record it and CONTINUE (don't stop)
-        console.warn(`⚠️ Batch ${batchNumber} SKIPPED due to errors. Continuing with next batch...`);
         failedBatches.push({
           batchNumber,
           files: batch.map(f => f.webkitRelativePath || f.name),
@@ -331,14 +307,6 @@ class DatasetsService {
 
     // Calculate final summary
     const failedFiles = failedBatches.reduce((sum, batch) => sum + batch.files.length, 0);
-
-    console.log(`
-📊 Upload Summary:
-   Total files: ${totalFiles}
-   ✅ Successful: ${successfulFiles}
-   ⚠️ Failed: ${failedFiles}
-   📦 Failed batches: ${failedBatches.length}
-    `);
 
     // Return dataset with upload summary
     return {
