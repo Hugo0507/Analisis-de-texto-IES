@@ -18,10 +18,11 @@ ENV PYTHONUNBUFFERED=1 \
     DJANGO_SECURE_SSL_REDIRECT=False \
     DEBUG=False
 
-# Install system dependencies (including compilers for hdbscan fallback)
+# Install system dependencies (including compilers and Python headers for hdbscan)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
+    python3-dev \
     libopenblas-dev \
     libpq-dev \
     wget \
