@@ -31,10 +31,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Create app directory
 WORKDIR /app
 
-# Copy requirements and install Python dependencies
+# Install pip first
+RUN pip install --upgrade pip setuptools wheel
+
+# Install PyTorch CPU-only in PERMANENT LAYER (before copying any files)
+# This layer will NEVER be invalidated, torch stays cached forever
+RUN pip install --no-cache-dir --default-timeout=1000 \
+    --extra-index-url https://download.pytorch.org/whl/cpu \
+    torch==2.1.2+cpu torchvision==0.16.2+cpu
+
+# Copy requirements and install remaining Python dependencies
 COPY requirements-hf.txt .
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements-hf.txt
+RUN pip install --no-cache-dir --default-timeout=1000 -r requirements-hf.txt
 
 # Copy application code
 COPY . .
