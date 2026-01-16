@@ -89,8 +89,6 @@ export const BERTopicList: React.FC = () => {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
     });
   };
 
@@ -112,7 +110,7 @@ export const BERTopicList: React.FC = () => {
             <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
             </svg>
-            <h1 className="text-xl font-semibold text-gray-900">BERTopic - Análisis de Tópicos</h1>
+            <h1 className="text-xl font-semibold text-gray-900">BERTopic</h1>
           </div>
 
           {/* Right: Action Buttons */}
@@ -149,7 +147,7 @@ export const BERTopicList: React.FC = () => {
         <div className="bg-white p-7" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
           {analyses.length === 0 ? (
             <div className="text-center py-12">
-              <div className="text-6xl mb-4">💬</div>
+              <div className="text-6xl mb-4">📊</div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
                 No hay análisis creados
               </h3>
@@ -163,7 +161,7 @@ export const BERTopicList: React.FC = () => {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                Crear Análisis BERTopic
+                Crear Análisis
               </button>
             </div>
           ) : (
@@ -313,49 +311,9 @@ export const BERTopicList: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               ¿Eliminar análisis?
             </h3>
-
-            {analysisToDelete.status === 'processing' ? (
-              <>
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-                  <p className="text-sm text-amber-800 font-medium mb-2">
-                    ⚠️ Advertencia: Proceso en Ejecución
-                  </p>
-                  <div className="w-full bg-amber-200 rounded-full h-2 mb-2">
-                    <div
-                      className="bg-amber-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${analysisToDelete.progress_percentage}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-amber-700">
-                    Progreso: {analysisToDelete.progress_percentage}%
-                  </p>
-                </div>
-
-                <p className="text-sm text-gray-600 mb-4">
-                  Estás a punto de eliminar el análisis <strong>{analysisToDelete.name}</strong> que está actualmente en proceso.
-                </p>
-
-                <ul className="text-xs text-left text-gray-600 space-y-2 mb-4 bg-gray-50 p-3 rounded-lg">
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-500 mt-0.5">•</span>
-                    <span>Se perderá todo el progreso actual ({analysisToDelete.progress_percentage}%)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-500 mt-0.5">•</span>
-                    <span>El procesamiento se detendrá inmediatamente</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-500 mt-0.5">•</span>
-                    <span>No se guardarán los resultados parciales</span>
-                  </li>
-                </ul>
-              </>
-            ) : (
-              <p className="text-sm text-gray-600 mb-4">
-                Estás a punto de eliminar el análisis <strong>{analysisToDelete.name}</strong>. Esta acción no se puede deshacer.
-              </p>
-            )}
-
+            <p className="text-sm text-gray-600 mb-4">
+              Estás a punto de eliminar el análisis <strong>{analysisToDelete.name}</strong>. Esta acción no se puede deshacer.
+            </p>
             <div className="flex items-center justify-end gap-3">
               <button
                 onClick={closeDeleteModal}
@@ -367,7 +325,7 @@ export const BERTopicList: React.FC = () => {
                 onClick={confirmDelete}
                 className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors font-medium text-sm"
               >
-                {analysisToDelete.status === 'processing' ? 'Sí, Detener y Eliminar' : 'Sí, eliminar'}
+                Sí, eliminar
               </button>
             </div>
           </div>
