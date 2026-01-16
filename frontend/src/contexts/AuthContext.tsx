@@ -47,11 +47,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const freshUser = await authService.fetchCurrentUser();
             setUser(freshUser);
           } catch (error) {
-            console.warn('Could not refresh user data:', error);
           }
         }
       } catch (error) {
-        console.error('Auth initialization error:', error);
         authService.logout();
       } finally {
         setIsLoading(false);
@@ -81,7 +79,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const freshUser = await authService.fetchCurrentUser();
       setUser(freshUser);
     } catch (error) {
-      console.error('Failed to refresh user:', error);
       logout();
       throw error;
     }

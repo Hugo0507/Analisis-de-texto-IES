@@ -37,7 +37,6 @@ export const TopicModeling: React.FC = () => {
         [modelType]: response,
       }));
     } catch (error) {
-      console.error(`Error training ${modelType}:`, error);
       alert(`Error al entrenar modelo ${modelType.toUpperCase()}`);
     } finally {
       setIsLoading(false);

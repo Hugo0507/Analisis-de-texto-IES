@@ -103,7 +103,6 @@ export const BERTopicCreate: React.FC = () => {
       showSuccess(`Análisis "${response.name}" creado exitosamente. Procesamiento iniciado.`);
       navigate(`/admin/modelado/bertopic/${response.id}`);
     } catch (error: any) {
-      console.error('Error creating BERTopic:', error);
       const errorMsg = error.response?.data?.error || error.message || 'Error desconocido';
       showError('Error al crear análisis: ' + errorMsg);
     } finally {

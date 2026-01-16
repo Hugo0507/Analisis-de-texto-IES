@@ -36,7 +36,6 @@ export const GoogleDriveConnect: React.FC<GoogleDriveConnectProps> = ({
       setConnection(status);
       onConnectionChange?.(status);
     } catch (error: any) {
-      console.error('Failed to load connection status:', error);
       setError('Error al cargar el estado de conexión');
     } finally {
       setIsLoading(false);
@@ -52,7 +51,6 @@ export const GoogleDriveConnect: React.FC<GoogleDriveConnectProps> = ({
       setConnection(newConnection);
       onConnectionChange?.(newConnection);
     } catch (error: any) {
-      console.error('Connection error:', error);
 
       // User-friendly error messages
       let errorMessage = 'Error al conectar con Google Drive';
@@ -90,7 +88,6 @@ export const GoogleDriveConnect: React.FC<GoogleDriveConnectProps> = ({
       setConnection(newConnection);
       onConnectionChange?.(newConnection);
     } catch (error: any) {
-      console.error('Disconnect error:', error);
       setError('Error al desconectar Google Drive');
     } finally {
       setIsDisconnecting(false);
