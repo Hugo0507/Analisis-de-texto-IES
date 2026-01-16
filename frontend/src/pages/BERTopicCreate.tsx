@@ -119,65 +119,69 @@ export const BERTopicCreate: React.FC = () => {
 
   if (isLoadingData) {
     return (
-      <div className="flex justify-center items-center h-96">
+      <div className="flex items-center justify-center h-96">
         <Spinner size="lg" />
-        <span className="ml-3 text-lg text-gray-600">Cargando datos...</span>
       </div>
     );
   }
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="mb-8">
-        <button
-          onClick={() => navigate('/admin/modelado/bertopic')}
-          className="text-indigo-600 hover:text-indigo-800 font-semibold mb-4 flex items-center"
-        >
-          ← Volver a lista
-        </button>
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
-          Crear Análisis BERTopic
-        </h1>
-        <p className="text-gray-600">
-          Topic Modeling basado en BERT: Embeddings + UMAP + HDBSCAN
-        </p>
+    <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
+      {/* Fixed Header */}
+      <div className="sticky top-0 z-40 bg-white border-b border-gray-200" style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
+        <div className="flex items-center justify-between px-8 py-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/admin/modelado/bertopic')}
+              className="p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+              title="Volver"
+            >
+              <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+            </button>
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900">Crear Análisis BERTopic</h1>
+              <p className="text-sm text-gray-500">Topic Modeling con BERT</p>
+            </div>
+          </div>
+
+          {/* Right: Save Button */}
+          <button
+            onClick={handleSubmit}
+            disabled={isLoading}
+            className="p-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+            title="Guardar"
+          >
+            {isLoading ? (
+              <Spinner size="sm" />
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* Info Banner */}
-      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-8">
-        <p className="text-sm text-purple-900 font-semibold mb-1">
-          ¿Qué es BERTopic?
-        </p>
-        <p className="text-sm text-purple-800">
-          BERTopic es un algoritmo moderno de topic modeling que combina BERT embeddings
-          (comprensión semántica profunda), UMAP (reducción dimensional) y HDBSCAN (clustering
-          basado en densidad) para extraer tópicos coherentes de manera automática.
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-8">
-        {/* ============================================================ */}
-        {/* SECTION 1: BASIC INFORMATION */}
-        {/* ============================================================ */}
-        <div className="bg-white rounded-2xl shadow-sm p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-            <span className="bg-purple-100 text-purple-700 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">
-              1
-            </span>
-            Información Básica
-          </h2>
+      {/* Content */}
+      <div className="p-8">
+        <div className="max-w-4xl mx-auto">
+          <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Información Básica */}
+        <div className="bg-white p-8" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Información Básica</h2>
 
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nombre del Análisis *
+                Nombre del Análisis <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => updateFormField('name', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 placeholder="Ej: BERTopic - Artículos Científicos 2024"
                 required
               />
@@ -190,71 +194,94 @@ export const BERTopicCreate: React.FC = () => {
               <textarea
                 value={formData.description}
                 onChange={(e) => updateFormField('description', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="Descripción detallada del análisis..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                placeholder="Describe el propósito de este análisis..."
                 rows={3}
               />
             </div>
           </div>
         </div>
 
-        {/* ============================================================ */}
-        {/* SECTION 2: DATA SOURCE */}
-        {/* ============================================================ */}
-        <div className="bg-white rounded-2xl shadow-sm p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-            <span className="bg-purple-100 text-purple-700 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">
-              2
-            </span>
-            Origen de Datos
-          </h2>
+        {/* Origen de Datos */}
+        <div className="bg-white p-8" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Origen de Datos</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Selecciona desde dónde deseas crear el análisis BERTopic
+          </p>
 
           <div className="space-y-4">
             {/* Radio buttons */}
-            <div className="flex space-x-6">
-              <label className="flex items-center cursor-pointer">
-                <input
-                  type="radio"
-                  checked={formData.source_type === 'data_preparation'}
-                  onChange={() => {
-                    updateFormField('source_type', 'data_preparation');
-                    updateFormField('dataset', undefined);
-                  }}
-                  className="mr-2 text-purple-600 focus:ring-purple-500"
-                />
-                <span className="text-sm font-medium text-gray-700">
-                  Desde Preparación de Datos
-                </span>
-              </label>
-              <label className="flex items-center cursor-pointer">
-                <input
-                  type="radio"
-                  checked={formData.source_type === 'dataset'}
-                  onChange={() => {
-                    updateFormField('source_type', 'dataset');
-                    updateFormField('data_preparation', undefined);
-                  }}
-                  className="mr-2 text-purple-600 focus:ring-purple-500"
-                />
-                <span className="text-sm font-medium text-gray-700">
-                  Desde Dataset Directo
-                </span>
-              </label>
+            <div className="grid grid-cols-1 gap-3">
+              <div
+                onClick={() => {
+                  updateFormField('source_type', 'data_preparation');
+                  updateFormField('dataset', undefined);
+                }}
+                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  formData.source_type === 'data_preparation'
+                    ? 'border-emerald-500 bg-emerald-50'
+                    : 'border-gray-200 bg-white hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <input
+                    type="radio"
+                    checked={formData.source_type === 'data_preparation'}
+                    onChange={() => {
+                      updateFormField('source_type', 'data_preparation');
+                      updateFormField('dataset', undefined);
+                    }}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-gray-900">Desde Preparación de Datos</p>
+                    <p className="text-xs text-gray-600 mt-1">Crear análisis desde textos procesados</p>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                onClick={() => {
+                  updateFormField('source_type', 'dataset');
+                  updateFormField('data_preparation', undefined);
+                }}
+                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  formData.source_type === 'dataset'
+                    ? 'border-emerald-500 bg-emerald-50'
+                    : 'border-gray-200 bg-white hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <input
+                    type="radio"
+                    checked={formData.source_type === 'dataset'}
+                    onChange={() => {
+                      updateFormField('source_type', 'dataset');
+                      updateFormField('data_preparation', undefined);
+                    }}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-gray-900">Desde Dataset Directo</p>
+                    <p className="text-xs text-gray-600 mt-1">Crear análisis directamente desde dataset</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Data Preparation Select */}
             {formData.source_type === 'data_preparation' && (
-              <div>
+              <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Seleccionar Preparación de Datos *
+                  Seleccionar Preparación de Datos <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={formData.data_preparation || ''}
                   onChange={(e) => updateFormField('data_preparation', Number(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   required
                 >
-                  <option value="">-- Seleccionar --</option>
+                  <option value="">Selecciona una preparación...</option>
                   {dataPreparations.map((prep) => (
                     <option key={prep.id} value={prep.id}>
                       {prep.name}
@@ -271,17 +298,17 @@ export const BERTopicCreate: React.FC = () => {
 
             {/* Dataset Select */}
             {formData.source_type === 'dataset' && (
-              <div>
+              <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Seleccionar Dataset *
+                  Seleccionar Dataset <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={formData.dataset || ''}
                   onChange={(e) => updateFormField('dataset', Number(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   required
                 >
-                  <option value="">-- Seleccionar --</option>
+                  <option value="">Selecciona un dataset...</option>
                   {datasets.map((ds) => (
                     <option key={ds.id} value={ds.id}>
                       {ds.name} ({ds.total_files} archivos)
@@ -298,26 +325,19 @@ export const BERTopicCreate: React.FC = () => {
           </div>
         </div>
 
-        {/* ============================================================ */}
-        {/* SECTION 3: EMBEDDING MODEL */}
-        {/* ============================================================ */}
-        <div className="bg-white rounded-2xl shadow-sm p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-            <span className="bg-purple-100 text-purple-700 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">
-              3
-            </span>
-            Modelo de Embeddings
-          </h2>
+        {/* Modelo de Embeddings */}
+        <div className="bg-white p-8" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Modelo de Embeddings</h2>
 
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Seleccionar Modelo BERT *
+                Seleccionar Modelo BERT <span className="text-red-500">*</span>
               </label>
               <select
                 value={formData.embedding_model}
                 onChange={(e) => updateFormField('embedding_model', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 required
               >
                 {embeddingModels.map((model) => (
@@ -330,22 +350,22 @@ export const BERTopicCreate: React.FC = () => {
 
             {/* Model details */}
             {selectedModel && (
-              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-                <p className="font-semibold text-indigo-900 mb-2">{selectedModel.full_name}</p>
-                <p className="text-sm text-indigo-800 mb-3">{selectedModel.description}</p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="font-semibold text-blue-900 mb-2">{selectedModel.full_name}</p>
+                <p className="text-sm text-blue-800 mb-3">{selectedModel.description}</p>
 
                 <div className="grid grid-cols-2 gap-4 mb-3">
                   <div>
-                    <span className="text-xs font-semibold text-indigo-700">Idioma:</span>
-                    <p className="text-sm text-indigo-900">{selectedModel.language}</p>
+                    <span className="text-xs font-semibold text-blue-700">Idioma:</span>
+                    <p className="text-sm text-blue-900">{selectedModel.language}</p>
                   </div>
                   <div>
-                    <span className="text-xs font-semibold text-indigo-700">Tamaño:</span>
-                    <p className="text-sm text-indigo-900">{selectedModel.size_mb} MB</p>
+                    <span className="text-xs font-semibold text-blue-700">Tamaño:</span>
+                    <p className="text-sm text-blue-900">{selectedModel.size_mb} MB</p>
                   </div>
                   <div>
-                    <span className="text-xs font-semibold text-indigo-700">Velocidad:</span>
-                    <p className="text-sm text-indigo-900">
+                    <span className="text-xs font-semibold text-blue-700">Velocidad:</span>
+                    <p className="text-sm text-blue-900">
                       {selectedModel.speed === 'very_fast'
                         ? 'Muy rápido'
                         : selectedModel.speed === 'fast'
@@ -354,8 +374,8 @@ export const BERTopicCreate: React.FC = () => {
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs font-semibold text-indigo-700">Calidad:</span>
-                    <p className="text-sm text-indigo-900">
+                    <span className="text-xs font-semibold text-blue-700">Calidad:</span>
+                    <p className="text-sm text-blue-900">
                       {selectedModel.quality === 'excellent' ? 'Excelente' : 'Buena'}
                     </p>
                   </div>
@@ -383,23 +403,22 @@ export const BERTopicCreate: React.FC = () => {
           </div>
         </div>
 
-        {/* ============================================================ */}
-        {/* SECTION 4: PARAMETERS */}
-        {/* ============================================================ */}
-        <div className="bg-white rounded-2xl shadow-sm p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-            <span className="bg-purple-100 text-purple-700 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">
-              4
-            </span>
-            Configuración de Parámetros
-          </h2>
+        {/* Parámetros del Análisis */}
+        <div className="bg-white p-8" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Parámetros del Análisis</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Configura los parámetros de UMAP y HDBSCAN para el análisis BERTopic
+          </p>
 
           <div className="space-y-6">
             {/* UMAP Parameters */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-700 mb-3">
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-purple-900 mb-2">
                 Parámetros UMAP (Reducción Dimensional)
               </h3>
+              <p className="text-xs text-purple-800 mb-3">
+                Controla cómo se reduce la dimensionalidad de los embeddings
+              </p>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -412,7 +431,7 @@ export const BERTopicCreate: React.FC = () => {
                     max="50"
                     value={formData.n_neighbors}
                     onChange={(e) => updateFormField('n_neighbors', Number(e.target.value))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Número de vecinos a considerar. Valores más altos = tópicos más globales.
@@ -429,7 +448,7 @@ export const BERTopicCreate: React.FC = () => {
                     max="100"
                     value={formData.n_components}
                     onChange={(e) => updateFormField('n_components', Number(e.target.value))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Dimensionalidad reducida. Recomendado: 5 para la mayoría de casos.
@@ -439,10 +458,13 @@ export const BERTopicCreate: React.FC = () => {
             </div>
 
             {/* HDBSCAN Parameters */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-700 mb-3">
+            <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-indigo-900 mb-2">
                 Parámetros HDBSCAN (Clustering)
               </h3>
+              <p className="text-xs text-indigo-800 mb-3">
+                Controla cómo se forman los clusters de documentos similares
+              </p>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -455,7 +477,7 @@ export const BERTopicCreate: React.FC = () => {
                     max="100"
                     value={formData.min_cluster_size}
                     onChange={(e) => updateFormField('min_cluster_size', Number(e.target.value))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Tamaño mínimo de un cluster. Valores más altos = menos tópicos más grandes.
@@ -472,7 +494,7 @@ export const BERTopicCreate: React.FC = () => {
                     max="50"
                     value={formData.min_samples}
                     onChange={(e) => updateFormField('min_samples', Number(e.target.value))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Muestras mínimas para un punto core. Controla el ruido del clustering.
@@ -482,8 +504,11 @@ export const BERTopicCreate: React.FC = () => {
             </div>
 
             {/* Topic Configuration */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-700 mb-3">Configuración de Tópicos</h3>
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-amber-900 mb-2">Configuración de Tópicos</h3>
+              <p className="text-xs text-amber-800 mb-3">
+                Define cómo se representan los tópicos encontrados
+              </p>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -496,7 +521,7 @@ export const BERTopicCreate: React.FC = () => {
                     max="50"
                     value={formData.num_words}
                     onChange={(e) => updateFormField('num_words', Number(e.target.value))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Número de palabras representativas por tópico.
@@ -513,7 +538,7 @@ export const BERTopicCreate: React.FC = () => {
                     onChange={(e) =>
                       updateFormField('random_seed', e.target.value ? Number(e.target.value) : null)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     placeholder="Ej: 42"
                   />
                   <p className="text-xs text-gray-500 mt-1">
@@ -524,33 +549,9 @@ export const BERTopicCreate: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Submit Button */}
-        <div className="flex justify-end space-x-4">
-          <button
-            type="button"
-            onClick={() => navigate('/admin/modelado/bertopic')}
-            className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
-            disabled={isLoading}
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <Spinner size="sm" />
-                <span className="ml-2">Creando...</span>
-              </>
-            ) : (
-              'Crear Análisis BERTopic'
-            )}
-          </button>
+          </form>
         </div>
-      </form>
+      </div>
     </div>
   );
 };
