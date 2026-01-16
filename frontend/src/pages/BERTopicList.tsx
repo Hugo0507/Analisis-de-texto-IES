@@ -2,7 +2,7 @@
  * BERTopicList Page - Lista de Análisis BERTopic
  *
  * Vista principal del módulo de BERTopic.
- * Muestra tabla con todos los análisis creados.
+ * Muestra tabla con todos los análisis creados usando el diseño estándar del admin.
  */
 
 import React, { useState, useEffect } from 'react';
