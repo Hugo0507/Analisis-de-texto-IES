@@ -26,7 +26,7 @@ export const Documents: React.FC = () => {
       const response = await documentsService.list(page, 20);
       setDocuments(response.results);
       setTotalCount(response.count);
-    } catch (error) {
+    } catch {
     } finally {
       setIsLoading(false);
     }
