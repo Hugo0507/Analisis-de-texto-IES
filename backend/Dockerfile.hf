@@ -18,14 +18,19 @@ ENV PYTHONUNBUFFERED=1 \
     DJANGO_SECURE_SSL_REDIRECT=False \
     DEBUG=False
 
-# Install system dependencies
+# Install system dependencies (including C++ compiler for hdbscan)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    g++ \
+    gcc \
     libpq-dev \
     pkg-config \
     wget \
     curl \
     git \
+    python3-dev \
+    libatlas-base-dev \
+    gfortran \
     && rm -rf /var/lib/apt/lists/*
 
 # Create app directory
