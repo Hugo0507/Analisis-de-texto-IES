@@ -93,28 +93,6 @@ export const BERTopicView: React.FC = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const badges = {
-      pending: 'bg-yellow-100 text-yellow-700',
-      processing: 'bg-blue-100 text-blue-700',
-      completed: 'bg-emerald-100 text-emerald-700',
-      error: 'bg-red-100 text-red-700',
-    };
-
-    const labels = {
-      pending: 'Pendiente',
-      processing: 'Procesando',
-      completed: 'Completado',
-      error: 'Error',
-    };
-
-    return (
-      <span className={`px-4 py-2 rounded-full text-sm font-semibold ${badges[status as keyof typeof badges]}`}>
-        {labels[status as keyof typeof labels]}
-      </span>
-    );
-  };
-
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
