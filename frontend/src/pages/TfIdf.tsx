@@ -13,14 +13,11 @@ export const TfIdf: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log('🟣 [TfIdf] Página de redirección montada');
-    console.log('🟣 [TfIdf] Redirigiendo a: /admin/vectorizacion/tf-idf');
 
     // Redirigir automáticamente a la interfaz de admin
     navigate('/admin/vectorizacion/tf-idf', { replace: true });
   }, [navigate]);
 
-  console.log('🟣 [TfIdf] Renderizando página de redirección...');
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-purple-50">

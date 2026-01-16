@@ -27,7 +27,6 @@ export const Documents: React.FC = () => {
       setDocuments(response.results);
       setTotalCount(response.count);
     } catch (error) {
-      console.error('Error fetching documents:', error);
     } finally {
       setIsLoading(false);
     }

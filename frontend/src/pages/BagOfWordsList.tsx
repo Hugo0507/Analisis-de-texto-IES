@@ -20,10 +20,8 @@ export const BagOfWordsList: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [analysisToDelete, setAnalysisToDelete] = useState<BagOfWordsListItem | null>(null);
 
-  console.log('🟢 [BagOfWordsList] Página de lista renderizada');
 
   useEffect(() => {
-    console.log('🟢 [BagOfWordsList] useEffect ejecutado - cargando análisis');
     loadAnalyses();
   }, []);
 

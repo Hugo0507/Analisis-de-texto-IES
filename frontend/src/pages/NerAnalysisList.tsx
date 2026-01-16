@@ -20,10 +20,8 @@ export const NerAnalysisList: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [analysisToDelete, setAnalysisToDelete] = useState<NerAnalysisListItem | null>(null);
 
-  console.log('🟢 [NerAnalysisList] Página de lista renderizada');
 
   useEffect(() => {
-    console.log('🟢 [NerAnalysisList] useEffect ejecutado - cargando análisis');
     loadAnalyses();
   }, []);
 

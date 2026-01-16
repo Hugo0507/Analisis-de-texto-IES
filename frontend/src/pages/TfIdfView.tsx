@@ -86,7 +86,6 @@ export const TfIdfView: React.FC = () => {
         await loadAnalysis();
       }
     } catch (error) {
-      console.error('Error al cargar progreso:', error);
     }
   };
 

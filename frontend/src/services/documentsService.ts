@@ -102,7 +102,7 @@ class DocumentsService {
   /**
    * Detect language for documents (batch)
    */
-  async detectLanguageBatch(documentIds?: number[]): Promise<any> {
+  async detectLanguageBatch(documentIds?: number[]): Promise<unknown> {
     const response = await apiClient.post('/documents/detect-language-batch/', {
       document_ids: documentIds,
     });
@@ -112,7 +112,7 @@ class DocumentsService {
   /**
    * Convert PDFs to TXT (batch)
    */
-  async convertBatch(documentIds?: number[], downloadFromDrive: boolean = true): Promise<any> {
+  async convertBatch(documentIds?: number[], downloadFromDrive: boolean = true): Promise<unknown> {
     const response = await apiClient.post('/documents/convert-batch/', {
       document_ids: documentIds,
       download_from_drive: downloadFromDrive,
@@ -123,7 +123,7 @@ class DocumentsService {
   /**
    * Preprocess text (batch)
    */
-  async preprocessBatch(data: PreprocessTextRequest): Promise<any> {
+  async preprocessBatch(data: PreprocessTextRequest): Promise<unknown> {
     const response = await apiClient.post('/documents/preprocess-batch/', data);
     return response.data;
   }
