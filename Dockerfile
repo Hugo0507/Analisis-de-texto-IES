@@ -13,7 +13,7 @@ ENV PATH="/home/user/.local/bin:$PATH"
 WORKDIR /app
 
 # Build arg to force rebuild (change this to break cache)
-ARG CACHEBUST=2025-12-30-v2
+ARG CACHEBUST=2026-01-16-bertopic-deps
 RUN echo "Cache bust: $CACHEBUST"
 
 # Copiar requirements del backend
