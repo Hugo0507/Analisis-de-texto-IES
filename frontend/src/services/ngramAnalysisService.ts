@@ -210,4 +210,5 @@ class NgramAnalysisService {
   }
 }
 
-export default new NgramAnalysisService();
+const ngramAnalysisService = new NgramAnalysisService();
+export default ngramAnalysisService;

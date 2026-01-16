@@ -203,4 +203,5 @@ class TfIdfAnalysisService {
   }
 }
 
-export default new TfIdfAnalysisService();
+const tfIdfAnalysisService = new TfIdfAnalysisService();
+export default tfIdfAnalysisService;

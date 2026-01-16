@@ -137,4 +137,5 @@ class DocumentsService {
   }
 }
 
-export default new DocumentsService();
+const documentsService = new DocumentsService();
+export default documentsService;

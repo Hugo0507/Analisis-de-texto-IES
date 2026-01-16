@@ -445,4 +445,5 @@ export interface UploadResult {
   };
 }
 
-export default new DatasetsService();
+const datasetsService = new DatasetsService();
+export default datasetsService;
