@@ -13,6 +13,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 export interface SidebarProps {
   className?: string;
+  onClose?: () => void;
 }
 
 interface NavItem {
@@ -28,42 +29,6 @@ const analysisNavItems: NavItem[] = [
     label: 'Dashboard',
     icon: '🏠',
     description: 'Vista general',
-  },
-  {
-    path: '/dashboard/documents',
-    label: 'Documentos',
-    icon: '📄',
-    description: 'Gestión de archivos',
-  },
-  {
-    path: '/admin/vectorizacion/bolsa-palabras',  // CORREGIDO: Apunta directo a admin
-    label: 'Bolsa de Palabras',
-    icon: '📝',
-    description: 'Análisis BoW',
-  },
-  {
-    path: '/admin/vectorizacion/tf-idf',  // CORREGIDO: Apunta directo a admin
-    label: 'TF-IDF',
-    icon: '📊',
-    description: 'Vectores TF-IDF',
-  },
-  {
-    path: '/dashboard/topics',
-    label: 'Topic Modeling',
-    icon: '🔍',
-    description: 'LDA, NMF, LSA, pLSA',
-  },
-  {
-    path: '/dashboard/factors',
-    label: 'Análisis de Factores',
-    icon: '🎯',
-    description: '8 categorías',
-  },
-  {
-    path: '/dashboard/statistics',
-    label: 'Estadísticas',
-    icon: '📈',
-    description: 'Corpus y métricas',
   },
 ];
 
@@ -133,11 +98,18 @@ const modelingNavItems: NavItem[] = [
   },
 ];
 
-export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ className = '', onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const isAdminRoute = location.pathname.startsWith('/admin/');
+
+  // Handle navigation click - close sidebar on mobile
+  const handleNavClick = () => {
+    if (onClose) {
+      onClose();
+    }
+  };
 
 
   // For dashboard routes, use analysisNavItems
@@ -174,6 +146,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
       <aside className={`w-64 bg-slate-900 h-screen flex flex-col relative flex-shrink-0 overflow-y-auto scrollbar-hide ${className}`}>
         {/* Logo Institucional Top */}
         <div className="p-6 flex items-center justify-between">
+          {/* Close button - Mobile only */}
+          <button
+            onClick={onClose}
+            className="lg:hidden p-2 rounded-lg hover:bg-slate-800 transition-colors mr-2"
+            aria-label="Cerrar menú"
+          >
+            <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
           <img
             src="/Logo_tesis.png"
             alt="IES Logo"
@@ -260,6 +242,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
                 <NavLink
                   key={item.path}
                   to={item.path}
+                  onClick={handleNavClick}
                   className={() =>
                     `flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 mb-2 ${
                       isActiveRoute
@@ -295,6 +278,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
                 <NavLink
                   key={item.path}
                   to={item.path}
+                  onClick={handleNavClick}
                   className={() =>
                     `flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 mb-2 ${
                       isActiveRoute
@@ -328,8 +312,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
                 <NavLink
                   key={item.path}
                   to={item.path}
-                  onClick={() => {
-                  }}
+                  onClick={handleNavClick}
                   className={() =>
                     `flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 mb-2 ${
                       isActiveRoute
@@ -367,8 +350,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
                 <NavLink
                   key={item.path}
                   to={item.path}
-                  onClick={() => {
-                  }}
+                  onClick={handleNavClick}
                   className={() =>
                     `flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 mb-2 ${
                       isActiveRoute
@@ -410,6 +392,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
   // Original Sidebar for Dashboard Routes
   return (
     <aside className={`w-64 bg-white shadow-lg h-screen flex-shrink-0 flex flex-col overflow-y-auto scrollbar-hide ${className}`}>
+      {/* Close button - Mobile only */}
+      <div className="lg:hidden p-4 flex items-center justify-between border-b border-gray-200">
+        <img
+          src="/Logo_tesis.png"
+          alt="IES Logo"
+          className="h-8 w-auto"
+        />
+        <button
+          onClick={onClose}
+          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          aria-label="Cerrar menú"
+        >
+          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
       <nav className="p-4 space-y-2 flex-1">
         <div className="mb-6">
           <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 mb-2">
@@ -421,8 +421,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
           <NavLink
             key={item.path}
             to={item.path}
-            onClick={() => {
-            }}
+            onClick={handleNavClick}
             className={({ isActive }) =>
               `flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
                 isActive
@@ -439,30 +438,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
           </NavLink>
         ))}
 
-        {/* Pipeline Section */}
-        <div className="mt-8 pt-8 border-t border-gray-200">
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 mb-2">
-            Procesamiento
-          </h2>
-
-          <NavLink
-            to="/dashboard/pipeline"
-            className={({ isActive }) =>
-              `flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
-                isActive
-                  ? 'bg-green-50 text-green-700 font-medium shadow-sm'
-                  : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-              }`
-            }
-          >
-            <span className="text-2xl">⚙️</span>
-            <div className="flex-1">
-              <div className="text-sm font-medium">Pipeline NLP</div>
-              <div className="text-xs text-gray-500">Ejecución completa</div>
-            </div>
-          </NavLink>
-        </div>
-
         {/* Link to Configuration */}
         <div className="mt-8 pt-8 border-t border-gray-200">
           <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3 mb-2">
@@ -471,6 +446,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
 
           <NavLink
             to="/admin"
+            onClick={handleNavClick}
             className="flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
           >
             <span className="text-2xl">⚙️</span>

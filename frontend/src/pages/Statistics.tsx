@@ -1,117 +1,45 @@
 /**
  * Statistics Page
  *
- * Corpus statistics and file statistics.
+ * Statistics and metrics - Under Development
  */
 
-import React, { useState, useEffect } from 'react';
-import { MetricCard } from '../components/molecules';
-import { BarChartViz } from '../components/organisms';
+import React from 'react';
 
 export const Statistics: React.FC = () => {
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Mock loading
-    setTimeout(() => setIsLoading(false), 500);
-  }, []);
-
-  // Mock data for demonstration
-  const fileTypeData = [
-    { id: 'PDF', value: 45 },
-    { id: 'DOCX', value: 28 },
-    { id: 'TXT', value: 15 },
-    { id: 'HTML', value: 12 },
-  ];
-
-  const languageData = [
-    { id: 'Español', value: 67 },
-    { id: 'Inglés', value: 28 },
-    { id: 'Portugués', value: 5 },
-  ];
-
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h1 className="text-3xl font-bold text-navy-900 mb-2">
-          Estadísticas del Corpus
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="text-center max-w-md mx-auto p-8">
+        <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <svg
+            className="w-12 h-12 text-slate-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+            />
+          </svg>
+        </div>
+
+        <h1 className="text-2xl font-bold text-slate-800 mb-3">
+          Estamos en Desarrollo
         </h1>
-        <p className="text-gray-600">
-          Análisis estadístico de los documentos y el vocabulario
+
+        <p className="text-slate-500 mb-6">
+          Esta seccion se encuentra actualmente en construccion.
+          Pronto estara disponible con todas sus funcionalidades.
         </p>
-      </div>
 
-      {/* Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <MetricCard
-          title="Total Documentos"
-          value={100}
-          icon="📄"
-          variant="primary"
-          isLoading={isLoading}
-        />
-        <MetricCard
-          title="Total Palabras"
-          value="1.2M"
-          icon="📝"
-          variant="success"
-          isLoading={isLoading}
-        />
-        <MetricCard
-          title="Vocabulario Único"
-          value="45.3K"
-          icon="📚"
-          variant="default"
-          isLoading={isLoading}
-        />
-        <MetricCard
-          title="Idiomas Detectados"
-          value={3}
-          icon="🌍"
-          variant="warning"
-          isLoading={isLoading}
-        />
-      </div>
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <BarChartViz
-          data={fileTypeData}
-          title="Distribución por Tipo de Archivo"
-          height={300}
-          colorScheme="category10"
-        />
-
-        <BarChartViz
-          data={languageData}
-          title="Distribución por Idioma"
-          height={300}
-          colorScheme="set2"
-        />
-      </div>
-
-      {/* Additional Stats */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
-          Métricas Adicionales
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
-            <p className="text-sm text-gray-600 mb-1">Promedio de Palabras por Documento</p>
-            <p className="text-2xl font-bold text-gray-900">12,450</p>
-          </div>
-
-          <div>
-            <p className="text-sm text-gray-600 mb-1">Documento Más Largo</p>
-            <p className="text-2xl font-bold text-gray-900">45,230 palabras</p>
-          </div>
-
-          <div>
-            <p className="text-sm text-gray-600 mb-1">Documento Más Corto</p>
-            <p className="text-2xl font-bold text-gray-900">2,105 palabras</p>
-          </div>
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-700 rounded-full text-sm font-medium">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Estadisticas - Proximamente
         </div>
       </div>
     </div>
