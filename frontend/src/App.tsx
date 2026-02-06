@@ -58,7 +58,7 @@ function App() {
         <Router>
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<Navigate to="/dashboard/pipeline" replace />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
           {/* Admin Authentication Routes */}
           <Route path="/admin" element={<Login />} />
@@ -69,7 +69,7 @@ function App() {
 
           {/* Public Dashboard Routes - Analysis Tools (NO LOGIN REQUIRED) */}
           <Route path="/dashboard" element={<MainLayout />}>
-            <Route index element={<Navigate to="/dashboard/pipeline" replace />} />
+            <Route index element={<Pipeline />} />
             <Route path="pipeline" element={<Pipeline />} />
             <Route path="documents" element={<Documents />} />
             <Route path="bow" element={<BagOfWords />} />
