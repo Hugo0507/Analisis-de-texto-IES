@@ -2,264 +2,432 @@
  * Dashboard Service
  *
  * Aggregates data from multiple services for dashboard visualizations.
- * Provides unified data access for the Command Center dashboard.
+ * Consumes real data from Admin endpoints - NO mock data.
  */
 
+import datasetsService from './datasetsService';
 import dataPreparationService from './dataPreparationService';
-import type { DataPreparation } from './dataPreparationService';
+import bagOfWordsService from './bagOfWordsService';
+import ngramAnalysisService from './ngramAnalysisService';
+import tfIdfAnalysisService from './tfidfAnalysisService';
+import nerAnalysisService from './nerAnalysisService';
+import topicModelingService from './topicModelingService';
+import { bertopicService } from './bertopicService';
 
-// Dashboard-specific interfaces
+import type { Dataset, DirectoryStats } from './datasetsService';
+import type { DataPreparation, DataPreparationListItem } from './dataPreparationService';
+import type { BagOfWords, BagOfWordsListItem, TopTerm } from './bagOfWordsService';
+import type { NgramAnalysis, NgramAnalysisListItem } from './ngramAnalysisService';
+import type { TfIdfAnalysis, TfIdfAnalysisListItem } from './tfidfAnalysisService';
+import type { NerAnalysis, NerAnalysisListItem } from './nerAnalysisService';
+import type { TopicModeling, TopicModelingListItem } from './topicModelingService';
+import type { BERTopicAnalysis, BERTopicListItem } from './bertopicService';
 
-export interface PreprocessingMetrics {
-  totalFilesAnalyzed: number;
-  filesProcessed: number;
-  filesOmitted: number;
-  duplicatesRemoved: number;
-  preparationsCount: number;
-  completedPreparations: number;
-  processingPreparations: number;
-  failedPreparations: number;
+// ============================================================
+// PREPROCESSING DASHBOARD INTERFACES
+// ============================================================
+
+export interface PreprocessingDashboardData {
+  // Dataset info
+  dataset: Dataset | null;
+  directoryStats: DirectoryStats | null;
+
+  // Preparations for this dataset
+  preparations: DataPreparationListItem[];
+  selectedPreparation: DataPreparation | null;
+
+  // Aggregated metrics
+  metrics: {
+    totalFiles: number;
+    totalSizeMB: number;
+    dominantExtension: string;
+    filesProcessed: number;
+    filesOmitted: number;
+    duplicatesRemoved: number;
+  };
+
+  // Chart data
+  directoryDistribution: Array<{ id: string; label: string; value: number; color?: string }>;
+  extensionDistribution: Array<{ id: string; label: string; value: number; color?: string }>;
+  languageDistribution: Array<{ id: string; label: string; value: number; color?: string }>;
 }
 
-export interface LanguageDistribution {
-  id: string;
-  label: string;
-  value: number;
-  color?: string;
+// ============================================================
+// VECTORIZATION DASHBOARD INTERFACES
+// ============================================================
+
+export interface VectorizationDashboardData {
+  // Available analyses for dataset
+  bowAnalyses: BagOfWordsListItem[];
+  ngramAnalyses: NgramAnalysisListItem[];
+  tfidfAnalyses: TfIdfAnalysisListItem[];
+
+  // Selected analysis details
+  selectedBow: BagOfWords | null;
+  selectedNgram: NgramAnalysis | null;
+  selectedTfidf: TfIdfAnalysis | null;
+
+  // Word cloud data (from BoW top terms)
+  wordCloudData: Array<{ text: string; value: number }>;
+
+  // N-gram bar chart data
+  ngramBarData: Array<{ id: string; label: string; value: number }>;
+
+  // TF-IDF top terms
+  tfidfTopTerms: TopTerm[];
 }
 
-export interface TimelineData {
-  date: string;
-  count: number;
-  label?: string;
+// ============================================================
+// MODELING DASHBOARD INTERFACES
+// ============================================================
+
+export interface ModelingDashboardData {
+  // Available analyses
+  nerAnalyses: NerAnalysisListItem[];
+  topicModelingAnalyses: TopicModelingListItem[];
+  bertopicAnalyses: BERTopicListItem[];
+
+  // Selected analysis details
+  selectedNer: NerAnalysis | null;
+  selectedTopicModeling: TopicModeling | null;
+  selectedBertopic: BERTopicAnalysis | null;
+
+  // NER entity distribution
+  entityDistribution: Array<{ id: string; label: string; value: number; color?: string }>;
+  topEntitiesByType: Record<string, Array<{ text: string; frequency: number }>>;
+
+  // Topic modeling data
+  topics: Array<{ id: number; label: string; words: Array<{ word: string; weight: number }>; documentCount: number }>;
+  topicDistribution: Array<{ id: string; label: string; value: number }>;
+
+  // BERTopic clusters (for network visualization)
+  bertopicClusters: Array<{
+    topicId: number;
+    label: string;
+    words: Array<{ word: string; weight: number }>;
+    numDocuments: number;
+  }>;
 }
 
-export interface DashboardPreprocessingData {
-  metrics: PreprocessingMetrics;
-  languages: LanguageDistribution[];
-  timeline: TimelineData[];
-  recentPreparations: DataPreparation[];
-}
+// ============================================================
+// COLOR PALETTES
+// ============================================================
 
-export interface VectorizationMetrics {
-  totalBowAnalyses: number;
-  totalTfidfAnalyses: number;
-  totalNgramAnalyses: number;
-  averageVocabularySize: number;
-  totalUniqueTerms: number;
-}
+const DIRECTORY_COLORS = [
+  '#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899',
+  '#14b8a6', '#f97316', '#06b6d4', '#84cc16', '#a855f7',
+];
 
-export interface ModelingMetrics {
-  totalNerAnalyses: number;
-  totalTopicModels: number;
-  totalBertopicModels: number;
-  averageTopics: number;
-  entityTypes: Record<string, number>;
-}
-
-export interface IAMetrics {
-  modelsProcessed: number;
-  averageConfidence: number;
-  entitiesExtracted: number;
-  topicsDiscovered: number;
-}
-
-export interface GeneralSummary {
-  preprocessing: PreprocessingMetrics;
-  vectorization: VectorizationMetrics;
-  modeling: ModelingMetrics;
-  ia: IAMetrics;
-}
-
-// Language color mapping for consistent visualization
-const LANGUAGE_COLORS: Record<string, string> = {
-  es: '#10b981', // emerald
-  en: '#3b82f6', // blue
-  pt: '#f59e0b', // amber
-  fr: '#8b5cf6', // violet
-  de: '#ec4899', // pink
-  it: '#14b8a6', // teal
-  unknown: '#64748b', // slate
+const EXTENSION_COLORS: Record<string, string> = {
+  pdf: '#ef4444',
+  txt: '#3b82f6',
+  docx: '#2563eb',
+  xlsx: '#22c55e',
+  csv: '#84cc16',
+  json: '#f59e0b',
+  xml: '#8b5cf6',
+  html: '#ec4899',
+  default: '#64748b',
 };
 
+const ENTITY_COLORS: Record<string, string> = {
+  PERSON: '#3b82f6',
+  ORG: '#10b981',
+  GPE: '#f59e0b',
+  LOC: '#8b5cf6',
+  DATE: '#ec4899',
+  MONEY: '#22c55e',
+  EVENT: '#06b6d4',
+  PRODUCT: '#f97316',
+  default: '#64748b',
+};
+
+// ============================================================
+// SERVICE CLASS
+// ============================================================
+
 class DashboardService {
-  /**
-   * Get preprocessing dashboard data
-   */
-  async getPreprocessingData(): Promise<DashboardPreprocessingData> {
+  // ==========================================================
+  // PREPROCESSING DATA
+  // ==========================================================
+
+  async getPreprocessingData(datasetId: number): Promise<PreprocessingDashboardData> {
     try {
-      // Fetch data from data preparation service
-      const [preparations, stats] = await Promise.all([
-        dataPreparationService.getPreparations(),
-        dataPreparationService.getStats(),
+      // Fetch dataset and directory stats in parallel
+      const [dataset, directoryStats] = await Promise.all([
+        datasetsService.getDataset(datasetId),
+        datasetsService.getDirectoryStats(datasetId).catch(() => null),
       ]);
 
-      // Calculate aggregated metrics
-      let totalFilesAnalyzed = 0;
-      let filesProcessed = 0;
-      let filesOmitted = 0;
-      let duplicatesRemoved = 0;
-      const languageCounts: Record<string, number> = {};
-      const dateActivity: Record<string, number> = {};
+      // Fetch preparations for this dataset
+      const allPreparations = await dataPreparationService.getPreparations();
+      const preparations = allPreparations.filter(
+        p => p.dataset_name === dataset.name
+      );
 
-      // Get detailed info for completed preparations
-      const completedPreps = preparations.filter((p) => p.status === 'completed');
-
-      for (const prep of completedPreps.slice(0, 10)) {
-        try {
-          const detail = await dataPreparationService.getPreparation(prep.id);
-
-          totalFilesAnalyzed += detail.total_files_analyzed || 0;
-          filesProcessed += detail.files_processed || 0;
-          filesOmitted += detail.files_omitted || 0;
-          duplicatesRemoved += detail.duplicates_removed || 0;
-
-          // Aggregate language distribution
-          if (detail.detected_languages) {
-            Object.entries(detail.detected_languages).forEach(([lang, count]) => {
-              languageCounts[lang] = (languageCounts[lang] || 0) + count;
-            });
-          }
-
-          // Build timeline from processing dates
-          if (detail.processing_completed_at) {
-            const date = detail.processing_completed_at.split('T')[0];
-            dateActivity[date] = (dateActivity[date] || 0) + detail.files_processed;
-          }
-        } catch (error) {
-          console.warn(`Error fetching preparation ${prep.id}:`, error);
-        }
+      // Get the first completed preparation details if available
+      let selectedPreparation: DataPreparation | null = null;
+      const completedPrep = preparations.find(p => p.status === 'completed');
+      if (completedPrep) {
+        selectedPreparation = await dataPreparationService.getPreparation(completedPrep.id);
       }
 
-      // Transform language counts to chart data
-      const languages: LanguageDistribution[] = Object.entries(languageCounts)
-        .map(([id, value]) => ({
-          id,
-          label: dataPreparationService.getLanguageName(id),
-          value,
-          color: LANGUAGE_COLORS[id] || LANGUAGE_COLORS.unknown,
+      // Calculate metrics
+      const totalFiles = dataset.total_files;
+      const totalSizeMB = dataset.total_size_bytes / (1024 * 1024);
+
+      // Find dominant extension from files
+      const extensionCounts: Record<string, number> = {};
+      dataset.files.forEach(file => {
+        const ext = file.original_filename.split('.').pop()?.toLowerCase() || 'unknown';
+        extensionCounts[ext] = (extensionCounts[ext] || 0) + 1;
+      });
+      const dominantExtension = Object.entries(extensionCounts)
+        .sort((a, b) => b[1] - a[1])[0]?.[0]?.toUpperCase() || 'N/A';
+
+      // Build directory distribution from directoryStats
+      const directoryDistribution = directoryStats?.pie_chart_data.map((d, i) => ({
+        id: d.name,
+        label: d.name,
+        value: d.value,
+        color: DIRECTORY_COLORS[i % DIRECTORY_COLORS.length],
+      })) || [];
+
+      // Build extension distribution
+      const extensionDistribution = Object.entries(extensionCounts)
+        .map(([ext, count]) => ({
+          id: ext,
+          label: `.${ext}`,
+          value: count,
+          color: EXTENSION_COLORS[ext] || EXTENSION_COLORS.default,
         }))
         .sort((a, b) => b.value - a.value);
 
-      // Transform date activity to timeline data
-      const timeline: TimelineData[] = Object.entries(dateActivity)
-        .map(([date, count]) => ({
-          date,
-          count,
-          label: new Date(date).toLocaleDateString('es-ES', {
-            month: 'short',
-            day: 'numeric',
-          }),
-        }))
-        .sort((a, b) => a.date.localeCompare(b.date))
-        .slice(-30); // Last 30 days
-
-      // Get recent preparations with details
-      const recentPreparations: DataPreparation[] = [];
-      for (const prep of preparations.slice(0, 5)) {
-        try {
-          const detail = await dataPreparationService.getPreparation(prep.id);
-          recentPreparations.push(detail);
-        } catch (error) {
-          console.warn(`Error fetching preparation ${prep.id}:`, error);
-        }
-      }
+      // Build language distribution from preparation
+      const languageDistribution = selectedPreparation?.detected_languages
+        ? Object.entries(selectedPreparation.detected_languages).map(([lang, count]) => ({
+            id: lang,
+            label: dataPreparationService.getLanguageName(lang),
+            value: count,
+          }))
+        : [];
 
       return {
+        dataset,
+        directoryStats,
+        preparations,
+        selectedPreparation,
         metrics: {
-          totalFilesAnalyzed,
-          filesProcessed,
-          filesOmitted,
-          duplicatesRemoved,
-          preparationsCount: stats.total_preparations,
-          completedPreparations: stats.completed,
-          processingPreparations: stats.processing,
-          failedPreparations: stats.failed,
+          totalFiles,
+          totalSizeMB: Math.round(totalSizeMB * 100) / 100,
+          dominantExtension,
+          filesProcessed: selectedPreparation?.files_processed || 0,
+          filesOmitted: selectedPreparation?.files_omitted || 0,
+          duplicatesRemoved: selectedPreparation?.duplicates_removed || 0,
         },
-        languages,
-        timeline,
-        recentPreparations,
+        directoryDistribution,
+        extensionDistribution,
+        languageDistribution,
       };
     } catch (error) {
       console.error('Error fetching preprocessing data:', error);
-
-      // Return empty data on error
-      return {
-        metrics: {
-          totalFilesAnalyzed: 0,
-          filesProcessed: 0,
-          filesOmitted: 0,
-          duplicatesRemoved: 0,
-          preparationsCount: 0,
-          completedPreparations: 0,
-          processingPreparations: 0,
-          failedPreparations: 0,
-        },
-        languages: [],
-        timeline: [],
-        recentPreparations: [],
-      };
+      throw error;
     }
   }
 
-  /**
-   * Get vectorization dashboard data (placeholder for future implementation)
-   */
-  async getVectorizationData(): Promise<VectorizationMetrics> {
-    // TODO: Implement when vectorization endpoints are available
-    return {
-      totalBowAnalyses: 0,
-      totalTfidfAnalyses: 0,
-      totalNgramAnalyses: 0,
-      averageVocabularySize: 0,
-      totalUniqueTerms: 0,
-    };
+  async getPreparationDetail(preparationId: number): Promise<DataPreparation> {
+    return dataPreparationService.getPreparation(preparationId);
   }
 
-  /**
-   * Get modeling dashboard data (placeholder for future implementation)
-   */
-  async getModelingData(): Promise<ModelingMetrics> {
-    // TODO: Implement when modeling endpoints are available
-    return {
-      totalNerAnalyses: 0,
-      totalTopicModels: 0,
-      totalBertopicModels: 0,
-      averageTopics: 0,
-      entityTypes: {},
-    };
+  // ==========================================================
+  // VECTORIZATION DATA
+  // ==========================================================
+
+  async getVectorizationData(_datasetId: number): Promise<VectorizationDashboardData> {
+    try {
+      // Fetch all analyses
+      const [allBow, allNgram, allTfidf] = await Promise.all([
+        bagOfWordsService.getBagOfWords(),
+        ngramAnalysisService.getNgramAnalyses(),
+        tfIdfAnalysisService.getTfIdfAnalyses(),
+      ]);
+
+      // TODO: Filter by dataset when the API supports it
+      // For now, return all analyses
+      const bowAnalyses = allBow;
+      const ngramAnalyses = allNgram;
+      const tfidfAnalyses = allTfidf;
+
+      // Get first completed analysis of each type
+      let selectedBow: BagOfWords | null = null;
+      let selectedNgram: NgramAnalysis | null = null;
+      let selectedTfidf: TfIdfAnalysis | null = null;
+
+      const completedBow = bowAnalyses.find(b => b.status === 'completed');
+      if (completedBow) {
+        selectedBow = await bagOfWordsService.getBagOfWordsById(completedBow.id);
+      }
+
+      const completedNgram = ngramAnalyses.find(n => n.status === 'completed');
+      if (completedNgram) {
+        selectedNgram = await ngramAnalysisService.getNgramAnalysisById(completedNgram.id);
+      }
+
+      const completedTfidf = tfidfAnalyses.find(t => t.status === 'completed');
+      if (completedTfidf) {
+        selectedTfidf = await tfIdfAnalysisService.getTfIdfAnalysis(completedTfidf.id);
+      }
+
+      // Build word cloud data from BoW top terms
+      const wordCloudData = selectedBow?.top_terms?.map(t => ({
+        text: t.term,
+        value: t.score,
+      })) || [];
+
+      // Build n-gram bar data
+      let ngramBarData: Array<{ id: string; label: string; value: number }> = [];
+      if (selectedNgram?.results) {
+        // Get the first configuration's top terms
+        const firstConfig = Object.values(selectedNgram.results)[0];
+        if (firstConfig?.top_terms) {
+          ngramBarData = firstConfig.top_terms.slice(0, 20).map(t => ({
+            id: t.term,
+            label: t.term,
+            value: t.score,
+          }));
+        }
+      }
+
+      // TF-IDF top terms
+      const tfidfTopTerms = selectedTfidf?.tfidf_matrix?.top_terms || [];
+
+      return {
+        bowAnalyses,
+        ngramAnalyses,
+        tfidfAnalyses,
+        selectedBow,
+        selectedNgram,
+        selectedTfidf,
+        wordCloudData,
+        ngramBarData,
+        tfidfTopTerms,
+      };
+    } catch (error) {
+      console.error('Error fetching vectorization data:', error);
+      throw error;
+    }
   }
 
-  /**
-   * Get IA dashboard data (placeholder for future implementation)
-   */
-  async getIAData(): Promise<IAMetrics> {
-    // TODO: Implement when IA endpoints are available
-    return {
-      modelsProcessed: 0,
-      averageConfidence: 0,
-      entitiesExtracted: 0,
-      topicsDiscovered: 0,
-    };
+  async getBowDetail(bowId: number): Promise<BagOfWords> {
+    return bagOfWordsService.getBagOfWordsById(bowId);
   }
 
-  /**
-   * Get general summary for all dashboards
-   */
-  async getGeneralSummary(): Promise<GeneralSummary> {
-    const [prepData, vecData, modelData, iaData] = await Promise.all([
-      this.getPreprocessingData(),
-      this.getVectorizationData(),
-      this.getModelingData(),
-      this.getIAData(),
-    ]);
+  async getNgramDetail(ngramId: number): Promise<NgramAnalysis> {
+    return ngramAnalysisService.getNgramAnalysisById(ngramId);
+  }
 
-    return {
-      preprocessing: prepData.metrics,
-      vectorization: vecData,
-      modeling: modelData,
-      ia: iaData,
-    };
+  async getTfidfDetail(tfidfId: number): Promise<TfIdfAnalysis> {
+    return tfIdfAnalysisService.getTfIdfAnalysis(tfidfId);
+  }
+
+  // ==========================================================
+  // MODELING DATA
+  // ==========================================================
+
+  async getModelingData(_datasetId: number): Promise<ModelingDashboardData> {
+    try {
+      // Fetch all analyses
+      const [allNer, allTopicModeling, allBertopic] = await Promise.all([
+        nerAnalysisService.getNerAnalyses(),
+        topicModelingService.getTopicModelings(),
+        bertopicService.getBERTopicAnalyses(),
+      ]);
+
+      // Get first completed analysis of each type
+      let selectedNer: NerAnalysis | null = null;
+      let selectedTopicModeling: TopicModeling | null = null;
+      let selectedBertopic: BERTopicAnalysis | null = null;
+
+      const completedNer = allNer.find(n => n.status === 'completed');
+      if (completedNer) {
+        selectedNer = await nerAnalysisService.getNerAnalysisById(completedNer.id);
+      }
+
+      const completedTopic = allTopicModeling.find(t => t.status === 'completed');
+      if (completedTopic) {
+        selectedTopicModeling = await topicModelingService.getTopicModelingById(completedTopic.id);
+      }
+
+      const completedBertopic = allBertopic.find(b => b.status === 'completed');
+      if (completedBertopic) {
+        selectedBertopic = await bertopicService.getBERTopicById(completedBertopic.id);
+      }
+
+      // Build entity distribution from NER
+      const entityDistribution = selectedNer?.entity_distribution?.map(e => ({
+        id: e.label,
+        label: e.label,
+        value: e.value,
+        color: ENTITY_COLORS[e.label] || ENTITY_COLORS.default,
+      })) || [];
+
+      // Top entities by type
+      const topEntitiesByType = selectedNer?.top_entities_by_type || {};
+
+      // Topics from topic modeling
+      const topics = selectedTopicModeling?.topics?.map(t => ({
+        id: t.topic_id,
+        label: t.topic_label,
+        words: t.words,
+        documentCount: selectedTopicModeling?.topic_distribution?.find(
+          d => d.topic_id === t.topic_id
+        )?.document_count || 0,
+      })) || [];
+
+      // Topic distribution
+      const topicDistribution = selectedTopicModeling?.topic_distribution?.map(t => ({
+        id: `topic-${t.topic_id}`,
+        label: t.topic_label,
+        value: t.document_count,
+      })) || [];
+
+      // BERTopic clusters
+      const bertopicClusters = selectedBertopic?.topics?.map(t => ({
+        topicId: t.topic_id,
+        label: t.topic_label,
+        words: t.words,
+        numDocuments: t.num_documents,
+      })) || [];
+
+      return {
+        nerAnalyses: allNer,
+        topicModelingAnalyses: allTopicModeling,
+        bertopicAnalyses: allBertopic,
+        selectedNer,
+        selectedTopicModeling,
+        selectedBertopic,
+        entityDistribution,
+        topEntitiesByType,
+        topics,
+        topicDistribution,
+        bertopicClusters,
+      };
+    } catch (error) {
+      console.error('Error fetching modeling data:', error);
+      throw error;
+    }
+  }
+
+  async getNerDetail(nerId: number): Promise<NerAnalysis> {
+    return nerAnalysisService.getNerAnalysisById(nerId);
+  }
+
+  async getTopicModelingDetail(topicId: number): Promise<TopicModeling> {
+    return topicModelingService.getTopicModelingById(topicId);
+  }
+
+  async getBertopicDetail(bertopicId: number): Promise<BERTopicAnalysis> {
+    return bertopicService.getBERTopicById(bertopicId);
   }
 }
 

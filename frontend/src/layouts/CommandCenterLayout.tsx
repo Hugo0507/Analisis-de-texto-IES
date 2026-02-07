@@ -58,26 +58,6 @@ export const CommandCenterLayout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Mock data for filters - in real app, this comes from API
-  const mockDatasets = [
-    { value: 1, label: 'Dataset Principal', count: 1250 },
-    { value: 2, label: 'Dataset Secundario', count: 890 },
-    { value: 3, label: 'Dataset Pruebas', count: 340 },
-  ];
-
-  const mockLanguages = [
-    { code: 'ES', name: 'Español', count: 1500 },
-    { code: 'EN', name: 'English', count: 800 },
-    { code: 'PT', name: 'Português', count: 180 },
-  ];
-
-  const mockAlgorithms = ['LSA', 'NMF', 'LDA', 'BERTopic'];
-
-  const mockDateRange = {
-    min: new Date('2024-01-01'),
-    max: new Date('2024-12-31'),
-  };
-
   return (
     <FilterProvider>
       <div className="flex h-screen overflow-hidden bg-slate-950">
@@ -100,10 +80,6 @@ export const CommandCenterLayout: React.FC = () => {
           <FilterSidebar
             isCollapsed={sidebarCollapsed}
             onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-            datasets={mockDatasets}
-            languages={mockLanguages}
-            algorithms={mockAlgorithms}
-            dateRange={mockDateRange}
           />
         </div>
 
