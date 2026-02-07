@@ -62,8 +62,8 @@ export const DonutChartViz: React.FC<DonutChartVizProps> = ({
   // Get selected items from cross-filter
   const selectedValues = chartId === 'languages-donut'
     ? filters.selectedLanguages
-    : chartId === 'algorithms-chart'
-    ? filters.selectedAlgorithms
+    : chartId === 'directory-donut' && filters.selectedDirectory
+    ? [filters.selectedDirectory]
     : [];
 
   const handleClick = useCallback(

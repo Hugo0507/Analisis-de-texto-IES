@@ -1,88 +1,41 @@
 /**
  * FilterSidebar - Dashboard filter panel
  *
- * Collapsible sidebar with filters for cross-filtering dashboard charts.
- * Syncs bidirectionally with chart selections via FilterContext.
+ * Dataset selector is the MASTER filter - changing it refreshes all data.
+ * Secondary filters include directory and preparation selection.
  */
 
 import React, { useState } from 'react';
 import { useFilter } from '../../contexts/FilterContext';
-import { RangeSlider, MultiSelect, Autocomplete } from '../atoms';
-import type { MultiSelectOption, AutocompleteOption } from '../atoms';
 
 export interface FilterSidebarProps {
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
-  datasets?: MultiSelectOption[];
-  languages?: { code: string; name: string; count: number }[];
-  algorithms?: string[];
-  dateRange?: { min: Date; max: Date };
-  searchSuggestions?: AutocompleteOption[];
   className?: string;
 }
 
 export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   isCollapsed = false,
   onToggleCollapse,
-  datasets = [],
-  languages = [],
-  algorithms = [],
-  dateRange,
-  searchSuggestions = [],
   className = '',
 }) => {
   const {
     filters,
-    setDateRange,
-    setSelectedDatasets,
-    setSelectedLanguages,
-    setSelectedAlgorithms,
-    setSearchTerm,
+    datasets,
+    isLoadingDatasets,
+    setSelectedDataset,
+    setSelectedDirectory,
     resetFilters,
     hasActiveFilters,
   } = useFilter();
 
-  const [dateSliderValue, setDateSliderValue] = useState<[number, number]>([0, 100]);
+  const [isDatasetDropdownOpen, setIsDatasetDropdownOpen] = useState(false);
 
-  // Convert date range to slider values
-  const handleDateSliderChange = (value: [number, number]) => {
-    setDateSliderValue(value);
-    if (dateRange) {
-      const minTime = dateRange.min.getTime();
-      const maxTime = dateRange.max.getTime();
-      const range = maxTime - minTime;
-      const start = new Date(minTime + (value[0] / 100) * range);
-      const end = new Date(minTime + (value[1] / 100) * range);
-      setDateRange({ start, end });
-    }
-  };
-
-  const formatDateLabel = (percentage: number) => {
-    if (!dateRange) return `${percentage}%`;
-    const minTime = dateRange.min.getTime();
-    const maxTime = dateRange.max.getTime();
-    const date = new Date(minTime + (percentage / 100) * (maxTime - minTime));
-    return date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
-  };
-
-  // Toggle language selection
-  const toggleLanguage = (code: string) => {
-    const current = filters.selectedLanguages;
-    if (current.includes(code)) {
-      setSelectedLanguages(current.filter((l) => l !== code));
-    } else {
-      setSelectedLanguages([...current, code]);
-    }
-  };
-
-  // Toggle algorithm selection
-  const toggleAlgorithm = (algo: string) => {
-    const current = filters.selectedAlgorithms;
-    if (current.includes(algo)) {
-      setSelectedAlgorithms(current.filter((a) => a !== algo));
-    } else {
-      setSelectedAlgorithms([...current, algo]);
-    }
+  // Format file size
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   if (isCollapsed) {
@@ -90,7 +43,6 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
       <div
         className={`w-16 bg-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 flex flex-col items-center py-4 ${className}`}
       >
-        {/* Collapsed state - just icons */}
         <button
           onClick={onToggleCollapse}
           className="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors mb-6"
@@ -100,21 +52,10 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
           </svg>
         </button>
 
-        {/* Filter icons */}
         <div className="space-y-4">
           <div className="p-2 rounded-lg bg-slate-800/30 text-slate-500">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <div className="p-2 rounded-lg bg-slate-800/30 text-slate-500">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-            </svg>
-          </div>
-          <div className="p-2 rounded-lg bg-slate-800/30 text-slate-500">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
             </svg>
           </div>
         </div>
@@ -154,128 +95,165 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
       {/* Filters content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
-        {/* Date Range */}
+        {/* Dataset Selector - MASTER FILTER */}
         <div>
           <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-3">
             <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            Rango de Fechas
-          </label>
-          <RangeSlider
-            min={0}
-            max={100}
-            value={dateSliderValue}
-            onChange={handleDateSliderChange}
-            formatLabel={formatDateLabel}
-          />
-        </div>
-
-        {/* Datasets */}
-        <div>
-          <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-3">
-            <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
             </svg>
-            Datasets
+            Dataset
+            <span className="text-xs text-emerald-400 font-normal">(Principal)</span>
           </label>
-          <MultiSelect
-            options={datasets}
-            value={filters.selectedDatasets}
-            onChange={(val) => setSelectedDatasets(val as number[])}
-            placeholder="Seleccionar datasets..."
-          />
-        </div>
 
-        {/* Languages */}
-        <div>
-          <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-3">
-            <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-            </svg>
-            Idiomas
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {languages.map((lang) => {
-              const isSelected = filters.selectedLanguages.includes(lang.code);
-              return (
-                <button
-                  key={lang.code}
-                  onClick={() => toggleLanguage(lang.code)}
-                  className={`
-                    px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200
-                    ${isSelected
-                      ? 'bg-purple-500/30 text-purple-300 border border-purple-500/50 shadow-lg shadow-purple-500/20'
-                      : 'bg-slate-800/50 text-slate-400 border border-slate-600/50 hover:bg-slate-700/50'
-                    }
-                  `}
-                >
-                  {lang.name}
-                  <span className="ml-1 text-xs opacity-60">({lang.count})</span>
-                </button>
-              );
-            })}
+          <div className="relative">
+            <button
+              onClick={() => setIsDatasetDropdownOpen(!isDatasetDropdownOpen)}
+              disabled={isLoadingDatasets}
+              className={`
+                w-full flex items-center justify-between p-3
+                bg-slate-800/50 border border-slate-600/50 rounded-lg
+                text-left transition-all duration-200
+                ${isDatasetDropdownOpen ? 'ring-2 ring-emerald-500/50 border-emerald-500/50' : ''}
+                ${isLoadingDatasets ? 'opacity-50 cursor-wait' : 'hover:border-slate-500'}
+              `}
+            >
+              <div className="flex-1 min-w-0">
+                {isLoadingDatasets ? (
+                  <span className="text-slate-400 text-sm">Cargando...</span>
+                ) : filters.selectedDataset ? (
+                  <>
+                    <p className="text-white text-sm font-medium truncate">
+                      {filters.selectedDataset.name}
+                    </p>
+                    <p className="text-slate-400 text-xs mt-0.5">
+                      {filters.selectedDataset.total_files} archivos · {formatSize(filters.selectedDataset.total_size_bytes)}
+                    </p>
+                  </>
+                ) : (
+                  <span className="text-slate-400 text-sm">Seleccionar dataset...</span>
+                )}
+              </div>
+              <svg
+                className={`w-4 h-4 text-slate-400 transition-transform ${isDatasetDropdownOpen ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {/* Dataset Dropdown */}
+            {isDatasetDropdownOpen && (
+              <div className="absolute z-50 mt-1 w-full bg-slate-800 border border-slate-600/50 rounded-lg shadow-xl overflow-hidden">
+                <div className="max-h-64 overflow-y-auto">
+                  {datasets.length === 0 ? (
+                    <div className="px-3 py-4 text-center">
+                      <p className="text-slate-400 text-sm">No hay datasets disponibles</p>
+                      <p className="text-slate-500 text-xs mt-1">Crea uno en Admin primero</p>
+                    </div>
+                  ) : (
+                    datasets.map((dataset) => {
+                      const isSelected = filters.selectedDatasetId === dataset.id;
+                      const isCompleted = dataset.status === 'completed';
+                      return (
+                        <button
+                          key={dataset.id}
+                          onClick={() => {
+                            setSelectedDataset(dataset.id);
+                            setIsDatasetDropdownOpen(false);
+                          }}
+                          className={`
+                            w-full flex items-center gap-3 px-3 py-3 text-left transition-colors
+                            ${isSelected ? 'bg-emerald-500/10' : 'hover:bg-slate-700/50'}
+                          `}
+                        >
+                          {/* Status indicator */}
+                          <div
+                            className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                              isCompleted
+                                ? 'bg-emerald-500'
+                                : dataset.status === 'processing'
+                                ? 'bg-amber-500 animate-pulse'
+                                : 'bg-slate-500'
+                            }`}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm truncate ${isSelected ? 'text-white font-medium' : 'text-slate-300'}`}>
+                              {dataset.name}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {dataset.total_files} archivos · {formatSize(dataset.total_size_bytes)}
+                            </p>
+                          </div>
+                          {isSelected && (
+                            <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Algorithms */}
-        <div>
-          <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-3">
-            <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-            </svg>
-            Algoritmos
-          </label>
-          <div className="space-y-2">
-            {algorithms.map((algo) => {
-              const isSelected = filters.selectedAlgorithms.includes(algo);
-              return (
-                <label
-                  key={algo}
-                  className="flex items-center gap-3 cursor-pointer group"
-                >
-                  <div
-                    className={`
-                      w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200
-                      ${isSelected
-                        ? 'bg-amber-500 border-amber-500'
-                        : 'border-slate-600 group-hover:border-slate-500'
-                      }
-                    `}
-                  >
-                    {isSelected && (
-                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </div>
-                  <span
-                    className={`text-sm transition-colors ${isSelected ? 'text-white' : 'text-slate-400'}`}
-                    onClick={() => toggleAlgorithm(algo)}
-                  >
-                    {algo}
-                  </span>
-                </label>
-              );
-            })}
+        {/* Directory Filter */}
+        {filters.selectedDirectory && (
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-3">
+              <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+              Directorio Activo
+            </label>
+            <div className="flex items-center gap-2 p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
+              <span className="text-cyan-300 text-sm flex-1 truncate">{filters.selectedDirectory}</span>
+              <button
+                onClick={() => setSelectedDirectory(null)}
+                className="p-1 hover:bg-cyan-500/20 rounded transition-colors"
+              >
+                <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Search */}
-        <div>
-          <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-3">
-            <svg className="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            Búsqueda
-          </label>
-          <Autocomplete
-            value={filters.searchTerm}
-            onChange={setSearchTerm}
-            options={searchSuggestions}
-            placeholder="Buscar términos, tópicos..."
-          />
-        </div>
+        {/* Info Card */}
+        {filters.selectedDataset && (
+          <div className="p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+            <h4 className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">
+              Dataset Seleccionado
+            </h4>
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-400">Archivos</span>
+                <span className="text-white font-medium">{filters.selectedDataset.total_files}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-400">Tamaño</span>
+                <span className="text-white font-medium">{formatSize(filters.selectedDataset.total_size_bytes)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-400">Estado</span>
+                <span className={`font-medium ${
+                  filters.selectedDataset.status === 'completed' ? 'text-emerald-400' :
+                  filters.selectedDataset.status === 'processing' ? 'text-amber-400' :
+                  'text-slate-400'
+                }`}>
+                  {filters.selectedDataset.status === 'completed' ? 'Completado' :
+                   filters.selectedDataset.status === 'processing' ? 'Procesando' :
+                   filters.selectedDataset.status}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Footer actions */}
@@ -286,19 +264,19 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
             Filtros activos
           </div>
         )}
-        <div className="flex gap-2">
-          <button
-            onClick={resetFilters}
-            className="flex-1 px-3 py-2 text-sm font-medium text-slate-400 bg-slate-800/50 border border-slate-600/50 rounded-lg hover:bg-slate-700/50 transition-colors"
-          >
-            Reset
-          </button>
-          <button
-            className="flex-1 px-3 py-2 text-sm font-medium text-white bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-lg hover:from-emerald-600 hover:to-cyan-600 transition-all shadow-lg shadow-emerald-500/25"
-          >
-            Aplicar
-          </button>
-        </div>
+        <button
+          onClick={resetFilters}
+          disabled={!hasActiveFilters}
+          className={`
+            w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors
+            ${hasActiveFilters
+              ? 'text-slate-300 bg-slate-800/50 border border-slate-600/50 hover:bg-slate-700/50'
+              : 'text-slate-500 bg-slate-800/30 border border-slate-700/30 cursor-not-allowed'
+            }
+          `}
+        >
+          Limpiar Filtros
+        </button>
       </div>
     </div>
   );
