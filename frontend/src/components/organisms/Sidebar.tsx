@@ -26,8 +26,32 @@ interface NavItem {
 const analysisNavItems: NavItem[] = [
   {
     path: '/dashboard',
-    label: 'Dashboard',
-    icon: '🏠',
+    label: 'Preprocesamiento',
+    icon: '📊',
+    description: 'Métricas de limpieza',
+  },
+  {
+    path: '/dashboard/vectorizacion',
+    label: 'Vectorización',
+    icon: '🔢',
+    description: 'Análisis de vectores',
+  },
+  {
+    path: '/dashboard/modelado',
+    label: 'Modelado',
+    icon: '🧠',
+    description: 'Modelos NLP',
+  },
+  {
+    path: '/dashboard/ia',
+    label: 'IA',
+    icon: '🤖',
+    description: 'Análisis IA',
+  },
+  {
+    path: '/dashboard/resumen',
+    label: 'Resumen',
+    icon: '📈',
     description: 'Vista general',
   },
 ];

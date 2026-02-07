@@ -21,3 +21,12 @@ export type { ProgressBarProps } from './ProgressBar';
 
 export { Toast } from './Toast';
 export type { ToastProps } from './Toast';
+
+export { RangeSlider } from './RangeSlider';
+export type { RangeSliderProps } from './RangeSlider';
+
+export { MultiSelect } from './MultiSelect';
+export type { MultiSelectProps, MultiSelectOption } from './MultiSelect';
+
+export { Autocomplete } from './Autocomplete';
+export type { AutocompleteProps, AutocompleteOption } from './Autocomplete';

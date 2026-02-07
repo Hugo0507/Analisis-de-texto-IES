@@ -9,6 +9,14 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { ProtectedRoute } from './components/guards/ProtectedRoute';
 import { MainLayout } from './layouts/MainLayout';
+import { CommandCenterLayout } from './layouts/CommandCenterLayout';
+import {
+  PreprocesamientoDashboard,
+  VectorizacionDashboard,
+  ModeladoDashboard,
+  IADashboard,
+  GeneralDashboard,
+} from './components/templates';
 import {
   Login,
   ForgotPassword,
@@ -67,8 +75,18 @@ function App() {
           {/* OAuth Callback Route (for Google Drive popup) */}
           <Route path="/oauth/callback/google-drive" element={<OAuthCallback />} />
 
-          {/* Public Dashboard Routes - Analysis Tools (NO LOGIN REQUIRED) */}
-          <Route path="/dashboard" element={<MainLayout />}>
+          {/* Command Center Dashboard Routes - Visualization Analytics (NO LOGIN REQUIRED) */}
+          <Route path="/dashboard" element={<CommandCenterLayout />}>
+            <Route index element={<PreprocesamientoDashboard />} />
+            <Route path="preprocesamiento" element={<PreprocesamientoDashboard />} />
+            <Route path="vectorizacion" element={<VectorizacionDashboard />} />
+            <Route path="modelado" element={<ModeladoDashboard />} />
+            <Route path="ia" element={<IADashboard />} />
+            <Route path="resumen" element={<GeneralDashboard />} />
+          </Route>
+
+          {/* Public Dashboard Tools Routes - Analysis Tools (NO LOGIN REQUIRED) */}
+          <Route path="/dashboard/tools" element={<MainLayout />}>
             <Route index element={<Pipeline />} />
             <Route path="pipeline" element={<Pipeline />} />
             <Route path="documents" element={<Documents />} />
