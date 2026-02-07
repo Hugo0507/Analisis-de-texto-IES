@@ -12,3 +12,6 @@ export type { SearchBarProps } from './SearchBar';
 
 export { StageCard } from './StageCard';
 export type { StageCardProps } from './StageCard';
+
+export { ChartCard } from './ChartCard';
+export type { ChartCardProps } from './ChartCard';
