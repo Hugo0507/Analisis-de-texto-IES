@@ -16,6 +16,10 @@ class NerAnalysisListSerializer(serializers.ModelSerializer):
         source='get_spacy_model_display',
         read_only=True
     )
+    created_by_email = serializers.EmailField(
+        source='created_by.email',
+        read_only=True
+    )
     current_stage_label = serializers.SerializerMethodField()
     entity_types_count = serializers.SerializerMethodField()
 
@@ -28,6 +32,7 @@ class NerAnalysisListSerializer(serializers.ModelSerializer):
             'source_name',
             'spacy_model',
             'spacy_model_label',
+            'created_by_email',
             'status',
             'progress_percentage',
             'current_stage',

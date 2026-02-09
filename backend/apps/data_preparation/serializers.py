@@ -25,6 +25,7 @@ class DataPreparationListSerializer(serializers.ModelSerializer):
     """
 
     dataset_name = serializers.CharField(source='dataset.name', read_only=True)
+    created_by_email = serializers.EmailField(source='created_by.email', read_only=True)
     current_stage_label = serializers.SerializerMethodField()
 
     class Meta:
@@ -33,6 +34,7 @@ class DataPreparationListSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'dataset_name',
+            'created_by_email',
             'predominant_language',
             'status',
             'progress_percentage',

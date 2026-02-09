@@ -1,18 +1,18 @@
 /**
  * Dashboard Service
  *
- * Aggregates data from multiple services for dashboard visualizations.
- * Consumes real data from Admin endpoints - NO mock data.
+ * Aggregates data from multiple public services for dashboard visualizations.
+ * Uses public API endpoints - no authentication required.
  */
 
-import datasetsService from './datasetsService';
-import dataPreparationService from './dataPreparationService';
-import bagOfWordsService from './bagOfWordsService';
-import ngramAnalysisService from './ngramAnalysisService';
-import tfIdfAnalysisService from './tfidfAnalysisService';
-import nerAnalysisService from './nerAnalysisService';
-import topicModelingService from './topicModelingService';
-import { bertopicService } from './bertopicService';
+import publicDatasetsService from './publicDatasetsService';
+import publicDataPreparationService from './publicDataPreparationService';
+import publicBagOfWordsService from './publicBagOfWordsService';
+import publicNgramAnalysisService from './publicNgramAnalysisService';
+import publicTfIdfAnalysisService from './publicTfidfAnalysisService';
+import publicNerAnalysisService from './publicNerAnalysisService';
+import publicTopicModelingService from './publicTopicModelingService';
+import publicBertopicService from './publicBertopicService';
 
 import type { Dataset, DirectoryStats } from './datasetsService';
 import type { DataPreparation, DataPreparationListItem } from './dataPreparationService';
@@ -155,12 +155,12 @@ class DashboardService {
     try {
       // Fetch dataset and directory stats in parallel
       const [dataset, directoryStats] = await Promise.all([
-        datasetsService.getDataset(datasetId),
-        datasetsService.getDirectoryStats(datasetId).catch(() => null),
+        publicDatasetsService.getDataset(datasetId),
+        publicDatasetsService.getDirectoryStats(datasetId).catch(() => null),
       ]);
 
       // Fetch preparations for this dataset
-      const allPreparations = await dataPreparationService.getPreparations();
+      const allPreparations = await publicDataPreparationService.getPreparations();
       const preparations = allPreparations.filter(
         p => p.dataset_name === dataset.name
       );
@@ -169,7 +169,7 @@ class DashboardService {
       let selectedPreparation: DataPreparation | null = null;
       const completedPrep = preparations.find(p => p.status === 'completed');
       if (completedPrep) {
-        selectedPreparation = await dataPreparationService.getPreparation(completedPrep.id);
+        selectedPreparation = await publicDataPreparationService.getPreparation(completedPrep.id);
       }
 
       // Calculate metrics
@@ -207,7 +207,7 @@ class DashboardService {
       const languageDistribution = selectedPreparation?.detected_languages
         ? Object.entries(selectedPreparation.detected_languages).map(([lang, count]) => ({
             id: lang,
-            label: dataPreparationService.getLanguageName(lang),
+            label: publicDataPreparationService.getLanguageName(lang),
             value: count,
           }))
         : [];
@@ -236,7 +236,7 @@ class DashboardService {
   }
 
   async getPreparationDetail(preparationId: number): Promise<DataPreparation> {
-    return dataPreparationService.getPreparation(preparationId);
+    return publicDataPreparationService.getPreparation(preparationId);
   }
 
   // ==========================================================
@@ -247,13 +247,12 @@ class DashboardService {
     try {
       // Fetch all analyses
       const [allBow, allNgram, allTfidf] = await Promise.all([
-        bagOfWordsService.getBagOfWords(),
-        ngramAnalysisService.getNgramAnalyses(),
-        tfIdfAnalysisService.getTfIdfAnalyses(),
+        publicBagOfWordsService.getBagOfWords(),
+        publicNgramAnalysisService.getNgramAnalyses(),
+        publicTfIdfAnalysisService.getTfIdfAnalyses(),
       ]);
 
-      // TODO: Filter by dataset when the API supports it
-      // For now, return all analyses
+      // Return all analyses (public API already filters to completed only)
       const bowAnalyses = allBow;
       const ngramAnalyses = allNgram;
       const tfidfAnalyses = allTfidf;
@@ -265,17 +264,17 @@ class DashboardService {
 
       const completedBow = bowAnalyses.find(b => b.status === 'completed');
       if (completedBow) {
-        selectedBow = await bagOfWordsService.getBagOfWordsById(completedBow.id);
+        selectedBow = await publicBagOfWordsService.getBagOfWordsById(completedBow.id);
       }
 
       const completedNgram = ngramAnalyses.find(n => n.status === 'completed');
       if (completedNgram) {
-        selectedNgram = await ngramAnalysisService.getNgramAnalysisById(completedNgram.id);
+        selectedNgram = await publicNgramAnalysisService.getNgramAnalysisById(completedNgram.id);
       }
 
       const completedTfidf = tfidfAnalyses.find(t => t.status === 'completed');
       if (completedTfidf) {
-        selectedTfidf = await tfIdfAnalysisService.getTfIdfAnalysis(completedTfidf.id);
+        selectedTfidf = await publicTfIdfAnalysisService.getTfIdfAnalysis(completedTfidf.id);
       }
 
       // Build word cloud data from BoW top terms
@@ -319,15 +318,15 @@ class DashboardService {
   }
 
   async getBowDetail(bowId: number): Promise<BagOfWords> {
-    return bagOfWordsService.getBagOfWordsById(bowId);
+    return publicBagOfWordsService.getBagOfWordsById(bowId);
   }
 
   async getNgramDetail(ngramId: number): Promise<NgramAnalysis> {
-    return ngramAnalysisService.getNgramAnalysisById(ngramId);
+    return publicNgramAnalysisService.getNgramAnalysisById(ngramId);
   }
 
   async getTfidfDetail(tfidfId: number): Promise<TfIdfAnalysis> {
-    return tfIdfAnalysisService.getTfIdfAnalysis(tfidfId);
+    return publicTfIdfAnalysisService.getTfIdfAnalysis(tfidfId);
   }
 
   // ==========================================================
@@ -338,9 +337,9 @@ class DashboardService {
     try {
       // Fetch all analyses
       const [allNer, allTopicModeling, allBertopic] = await Promise.all([
-        nerAnalysisService.getNerAnalyses(),
-        topicModelingService.getTopicModelings(),
-        bertopicService.getBERTopicAnalyses(),
+        publicNerAnalysisService.getNerAnalyses(),
+        publicTopicModelingService.getTopicModelings(),
+        publicBertopicService.getBERTopicAnalyses(),
       ]);
 
       // Get first completed analysis of each type
@@ -350,17 +349,17 @@ class DashboardService {
 
       const completedNer = allNer.find(n => n.status === 'completed');
       if (completedNer) {
-        selectedNer = await nerAnalysisService.getNerAnalysisById(completedNer.id);
+        selectedNer = await publicNerAnalysisService.getNerAnalysisById(completedNer.id);
       }
 
       const completedTopic = allTopicModeling.find(t => t.status === 'completed');
       if (completedTopic) {
-        selectedTopicModeling = await topicModelingService.getTopicModelingById(completedTopic.id);
+        selectedTopicModeling = await publicTopicModelingService.getTopicModelingById(completedTopic.id);
       }
 
       const completedBertopic = allBertopic.find(b => b.status === 'completed');
       if (completedBertopic) {
-        selectedBertopic = await bertopicService.getBERTopicById(completedBertopic.id);
+        selectedBertopic = await publicBertopicService.getBERTopicById(completedBertopic.id);
       }
 
       // Build entity distribution from NER
@@ -419,15 +418,15 @@ class DashboardService {
   }
 
   async getNerDetail(nerId: number): Promise<NerAnalysis> {
-    return nerAnalysisService.getNerAnalysisById(nerId);
+    return publicNerAnalysisService.getNerAnalysisById(nerId);
   }
 
   async getTopicModelingDetail(topicId: number): Promise<TopicModeling> {
-    return topicModelingService.getTopicModelingById(topicId);
+    return publicTopicModelingService.getTopicModelingById(topicId);
   }
 
   async getBertopicDetail(bertopicId: number): Promise<BERTopicAnalysis> {
-    return bertopicService.getBERTopicById(bertopicId);
+    return publicBertopicService.getBERTopicById(bertopicId);
   }
 }
 

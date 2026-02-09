@@ -30,6 +30,14 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   } = useFilter();
 
   const [isDatasetDropdownOpen, setIsDatasetDropdownOpen] = useState(false);
+  const [datasetSearchTerm, setDatasetSearchTerm] = useState('');
+
+  // Filter datasets by search term
+  const filteredDatasets = datasets.filter(d =>
+    d.name.toLowerCase().includes(datasetSearchTerm.toLowerCase()) ||
+    (d.created_by_email && d.created_by_email.toLowerCase().includes(datasetSearchTerm.toLowerCase())) ||
+    (d.description && d.description.toLowerCase().includes(datasetSearchTerm.toLowerCase()))
+  );
 
   // Format file size
   const formatSize = (bytes: number) => {
@@ -146,14 +154,31 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
             {/* Dataset Dropdown */}
             {isDatasetDropdownOpen && (
               <div className="absolute z-50 mt-1 w-full bg-slate-800 border border-slate-600/50 rounded-lg shadow-xl overflow-hidden">
+                {/* Search input */}
+                {datasets.length > 3 && (
+                  <div className="p-2 border-b border-slate-700/50">
+                    <input
+                      type="text"
+                      value={datasetSearchTerm}
+                      onChange={(e) => setDatasetSearchTerm(e.target.value)}
+                      placeholder="Buscar dataset..."
+                      className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600/50 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                      autoFocus
+                    />
+                  </div>
+                )}
                 <div className="max-h-64 overflow-y-auto">
-                  {datasets.length === 0 ? (
+                  {filteredDatasets.length === 0 ? (
                     <div className="px-3 py-4 text-center">
-                      <p className="text-slate-400 text-sm">No hay datasets disponibles</p>
-                      <p className="text-slate-500 text-xs mt-1">Crea uno en Admin primero</p>
+                      <p className="text-slate-400 text-sm">
+                        {datasets.length === 0 ? 'No hay datasets disponibles' : 'Sin resultados'}
+                      </p>
+                      {datasets.length === 0 && (
+                        <p className="text-slate-500 text-xs mt-1">Crea uno en Admin primero</p>
+                      )}
                     </div>
                   ) : (
-                    datasets.map((dataset) => {
+                    filteredDatasets.map((dataset) => {
                       const isSelected = filters.selectedDatasetId === dataset.id;
                       const isCompleted = dataset.status === 'completed';
                       return (
@@ -162,6 +187,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                           onClick={() => {
                             setSelectedDataset(dataset.id);
                             setIsDatasetDropdownOpen(false);
+                            setDatasetSearchTerm('');
                           }}
                           className={`
                             w-full flex items-center gap-3 px-3 py-3 text-left transition-colors
@@ -182,8 +208,9 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                             <p className={`text-sm truncate ${isSelected ? 'text-white font-medium' : 'text-slate-300'}`}>
                               {dataset.name}
                             </p>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-slate-500 truncate">
                               {dataset.total_files} archivos · {formatSize(dataset.total_size_bytes)}
+                              {dataset.created_by_email && ` · ${dataset.created_by_email}`}
                             </p>
                           </div>
                           {isSelected && (
@@ -196,6 +223,12 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                     })
                   )}
                 </div>
+                {/* Result count */}
+                {datasets.length > 3 && (
+                  <div className="px-3 py-2 border-t border-slate-700/50 text-xs text-slate-500">
+                    {filteredDatasets.length} de {datasets.length} datasets
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -6,7 +6,7 @@
  */
 
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
-import datasetsService from '../services/datasetsService';
+import publicDatasetsService from '../services/publicDatasetsService';
 import type { DatasetListItem } from '../services/datasetsService';
 
 export interface DateRange {
@@ -123,7 +123,7 @@ export const FilterProvider: React.FC<FilterProviderProps> = ({ children }) => {
   const loadDatasets = async () => {
     try {
       setIsLoadingDatasets(true);
-      const data = await datasetsService.getDatasets();
+      const data = await publicDatasetsService.getDatasets();
       setDatasets(data);
 
       // Auto-select first completed dataset if none selected
