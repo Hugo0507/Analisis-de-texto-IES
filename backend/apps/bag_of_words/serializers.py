@@ -26,6 +26,11 @@ class BagOfWordsListSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
+    created_by_email = serializers.EmailField(
+        source='created_by.email',
+        read_only=True
+    )
+
     current_stage_label = serializers.SerializerMethodField()
 
     class Meta:
@@ -35,6 +40,7 @@ class BagOfWordsListSerializer(serializers.ModelSerializer):
             'name',
             'data_preparation_name',
             'dataset_name',
+            'created_by_email',
             'status',
             'progress_percentage',
             'current_stage',

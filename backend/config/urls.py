@@ -34,6 +34,7 @@ urlpatterns = [
     path('api/v1/', include('apps.bertopic.urls')),  # BERTopic Analysis
     path('api/v1/analysis/', include('apps.analysis.urls')),
     path('api/v1/pipeline/', include('apps.pipeline.urls')),
+    path('api/v1/public/', include('apps.public_api.urls')),  # Public Dashboard API
 
     # OpenAPI/Swagger Documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
