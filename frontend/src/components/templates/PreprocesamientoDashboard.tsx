@@ -14,7 +14,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { DashboardGrid, MetricCardDark, DonutChartViz } from '../organisms';
 import type { DonutChartData } from '../organisms/DonutChartViz';
 import { ChartCard } from '../molecules';
-import dashboardService, { DIRECTORY_COLORS, EXTENSION_COLORS } from '../../services/dashboardService';
+import dashboardService, { EXTENSION_COLORS } from '../../services/dashboardService';
 import type { PreprocessingDashboardData } from '../../services/dashboardService';
 import { useFilter } from '../../contexts/FilterContext';
 import { LANGUAGE_NAMES } from '../../services/dataPreparationService';
@@ -109,11 +109,18 @@ export const PreprocesamientoDashboard: React.FC = () => {
   // CROSS-FILTERING LOGIC
   // ============================================================
 
-  // Extract per-file data for cross-filtering
+  // Original distributions from dashboardService (backend-computed, always complete)
+  const originalDistributions = useMemo(() => ({
+    dirs: data?.directoryDistribution || [],
+    exts: data?.extensionDistribution || [],
+    langs: data?.languageDistribution || [],
+  }), [data?.directoryDistribution, data?.extensionDistribution, data?.languageDistribution]);
+
+  // Extract per-file data for cross-filtering (only used when a filter is active)
   const fileData: FileEntry[] = useMemo(() => {
     if (!data?.dataset?.files) return [];
     return data.dataset.files.map(f => ({
-      directory: f.directory_name || 'root',
+      directory: f.directory_name || f.directory_path?.split('/')[0] || 'root',
       extension: f.original_filename.split('.').pop()?.toLowerCase() || 'unknown',
       language: f.language_code || null,
       size: f.file_size_bytes,
@@ -122,49 +129,20 @@ export const PreprocesamientoDashboard: React.FC = () => {
 
   const hasFileLanguages = useMemo(() => fileData.some(f => f.language !== null), [fileData]);
 
-  // Full distributions (unfiltered) - used as base for the chart that owns the filter
-  const fullDistributions = useMemo(() => {
-    const dirCounts: Record<string, number> = {};
-    const extCounts: Record<string, number> = {};
-    const langCounts: Record<string, number> = {};
-
-    fileData.forEach(f => {
-      dirCounts[f.directory] = (dirCounts[f.directory] || 0) + 1;
-      extCounts[f.extension] = (extCounts[f.extension] || 0) + 1;
-      if (f.language) {
-        langCounts[f.language] = (langCounts[f.language] || 0) + 1;
-      }
-    });
-
-    const dirs = Object.entries(dirCounts)
-      .map(([k, v], i) => ({ id: k, label: k, value: v, color: DIRECTORY_COLORS[i % DIRECTORY_COLORS.length] }))
-      .sort((a, b) => b.value - a.value);
-
-    const exts = Object.entries(extCounts)
-      .map(([k, v]) => ({ id: k, label: `.${k}`, value: v, color: EXTENSION_COLORS[k] || EXTENSION_COLORS.default }))
-      .sort((a, b) => b.value - a.value);
-
-    const langs = hasFileLanguages
-      ? Object.entries(langCounts)
-          .map(([k, v]) => ({ id: k, label: getLanguageName(k), value: v }))
-          .sort((a, b) => b.value - a.value)
-      : data?.languageDistribution || [];
-
-    return { dirs, exts, langs };
-  }, [fileData, hasFileLanguages, data?.languageDistribution]);
-
-  // Filtered distributions (when cross-filter is active) - used for charts NOT owning the filter
+  // Filtered distributions - only computed when cross-filter is active
   const filteredResults = useMemo(() => {
+    // No filter: return original data from the service
     if (!crossFilter) {
       return {
-        dirs: fullDistributions.dirs,
-        exts: fullDistributions.exts,
-        langs: fullDistributions.langs,
-        fileCount: fileData.length,
-        sizeMB: fileData.reduce((s, f) => s + f.size, 0) / (1024 * 1024),
+        dirs: originalDistributions.dirs,
+        exts: originalDistributions.exts,
+        langs: originalDistributions.langs,
+        fileCount: data?.metrics?.totalFiles || 0,
+        sizeMB: data?.metrics?.totalSizeMB || 0,
       };
     }
 
+    // Apply the active cross-filter to file-level data
     let filtered = fileData;
     if (crossFilter.chartId === 'directory-donut') {
       filtered = fileData.filter(f => f.directory === crossFilter.segmentId);
@@ -174,6 +152,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
       filtered = fileData.filter(f => f.language === crossFilter.segmentId);
     }
 
+    // Recompute distributions from filtered files
     const dirCounts: Record<string, number> = {};
     const extCounts: Record<string, number> = {};
     const langCounts: Record<string, number> = {};
@@ -186,8 +165,8 @@ export const PreprocesamientoDashboard: React.FC = () => {
       }
     });
 
-    // Preserve colors from full distributions
-    const dirColorMap = Object.fromEntries(fullDistributions.dirs.map(d => [d.id, d.color]));
+    // Preserve colors from original distributions
+    const dirColorMap = Object.fromEntries(originalDistributions.dirs.map(d => [d.id, d.color || '#64748b']));
 
     const dirs = Object.entries(dirCounts)
       .map(([k, v]) => ({ id: k, label: k, value: v, color: dirColorMap[k] || '#64748b' }))
@@ -201,7 +180,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
       ? Object.entries(langCounts)
           .map(([k, v]) => ({ id: k, label: getLanguageName(k), value: v }))
           .sort((a, b) => b.value - a.value)
-      : fullDistributions.langs;
+      : originalDistributions.langs;
 
     return {
       dirs,
@@ -210,7 +189,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
       fileCount: filtered.length,
       sizeMB: filtered.reduce((s, f) => s + f.size, 0) / (1024 * 1024),
     };
-  }, [crossFilter, fileData, fullDistributions, hasFileLanguages]);
+  }, [crossFilter, fileData, originalDistributions, hasFileLanguages, data?.metrics]);
 
   // ============================================================
   // CROSS-FILTER HANDLERS
@@ -227,10 +206,10 @@ export const PreprocesamientoDashboard: React.FC = () => {
   const clearFilter = useCallback(() => setCrossFilterState(null), []);
 
   // Helpers to get distribution arrays by chartId
-  const getFullDist = (chartId: string): DonutChartData[] => {
-    if (chartId === 'directory-donut') return fullDistributions.dirs;
-    if (chartId === 'extension-donut') return fullDistributions.exts;
-    return fullDistributions.langs;
+  const getOriginalDist = (chartId: string): DonutChartData[] => {
+    if (chartId === 'directory-donut') return originalDistributions.dirs;
+    if (chartId === 'extension-donut') return originalDistributions.exts;
+    return originalDistributions.langs;
   };
 
   const getFilteredDist = (chartId: string): DonutChartData[] => {
@@ -239,28 +218,28 @@ export const PreprocesamientoDashboard: React.FC = () => {
     return filteredResults.langs;
   };
 
-  // Get chart data: active filter chart shows full data with highlight; others show filtered data
+  // Get chart data: active filter chart shows original data with highlight; others show filtered data
   const getChartData = (chartId: string): { chartData: DonutChartData[]; selectedId: string | undefined } => {
     if (!crossFilter) {
-      return { chartData: getFullDist(chartId), selectedId: undefined };
+      return { chartData: getOriginalDist(chartId), selectedId: undefined };
     }
     if (crossFilter.chartId === chartId) {
-      return { chartData: getFullDist(chartId), selectedId: crossFilter.segmentId };
+      return { chartData: getOriginalDist(chartId), selectedId: crossFilter.segmentId };
     }
     return { chartData: getFilteredDist(chartId), selectedId: undefined };
   };
 
   // Get dynamic center values
   const getCenterProps = (chartId: string): { centerValue: number; centerLabel: string } => {
-    const fullData = getFullDist(chartId);
+    const origData = getOriginalDist(chartId);
     const defaultLabel = chartId === 'languages-donut' ? 'docs' : 'archivos';
-    const totalAll = fullData.reduce((s: number, d) => s + d.value, 0);
+    const totalAll = origData.reduce((s: number, d) => s + d.value, 0);
 
     if (!crossFilter) {
       return { centerValue: totalAll, centerLabel: defaultLabel };
     }
     if (crossFilter.chartId === chartId) {
-      const segment = fullData.find(d => d.id === crossFilter.segmentId);
+      const segment = origData.find(d => d.id === crossFilter.segmentId);
       return {
         centerValue: segment?.value || 0,
         centerLabel: segment?.label || crossFilter.segmentId,
@@ -288,8 +267,9 @@ export const PreprocesamientoDashboard: React.FC = () => {
     }
     // Compute from filtered files
     const dominantExt = filteredResults.exts.length > 0 ? filteredResults.exts[0].id.toUpperCase() : 'N/A';
-    const langTotal = filteredResults.langs.reduce((s, l) => s + l.value, 0);
-    const topLang = filteredResults.langs.length > 0 ? filteredResults.langs[0] : null;
+    const filteredLangs = filteredResults.langs as DonutChartData[];
+    const langTotal = filteredLangs.reduce((s: number, l) => s + l.value, 0);
+    const topLang = filteredLangs.length > 0 ? filteredLangs[0] : null;
     const langPercentage = langTotal > 0 && topLang
       ? Math.round((topLang.value / langTotal) * 100)
       : 0;
