@@ -44,6 +44,8 @@ export interface PreprocessingDashboardData {
     filesProcessed: number;
     filesOmitted: number;
     duplicatesRemoved: number;
+    predominantLanguage: string;
+    predominantLanguagePercentage: number;
   };
 
   // Chart data
@@ -113,12 +115,12 @@ export interface ModelingDashboardData {
 // COLOR PALETTES
 // ============================================================
 
-const DIRECTORY_COLORS = [
+export const DIRECTORY_COLORS = [
   '#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899',
   '#14b8a6', '#f97316', '#06b6d4', '#84cc16', '#a855f7',
 ];
 
-const EXTENSION_COLORS: Record<string, string> = {
+export const EXTENSION_COLORS: Record<string, string> = {
   pdf: '#ef4444',
   txt: '#3b82f6',
   docx: '#2563eb',
@@ -224,6 +226,8 @@ class DashboardService {
           filesProcessed: selectedPreparation?.files_processed || 0,
           filesOmitted: selectedPreparation?.files_omitted || 0,
           duplicatesRemoved: selectedPreparation?.duplicates_removed || 0,
+          predominantLanguage: selectedPreparation?.predominant_language || 'N/A',
+          predominantLanguagePercentage: selectedPreparation?.predominant_language_percentage || 0,
         },
         directoryDistribution,
         extensionDistribution,

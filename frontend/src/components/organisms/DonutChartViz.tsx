@@ -29,6 +29,9 @@ export interface DonutChartVizProps {
   centerValue?: string | number;
   className?: string;
   onSegmentClick?: (datum: DonutChartData) => void;
+  selectedId?: string | null;
+  skipCrossFilter?: boolean;
+  onClearFilter?: () => void;
 }
 
 const defaultColors = [
@@ -56,24 +59,29 @@ export const DonutChartViz: React.FC<DonutChartVizProps> = ({
   centerValue,
   className = '',
   onSegmentClick,
+  selectedId,
+  skipCrossFilter = false,
+  onClearFilter,
 }) => {
   const { filters, setCrossFilter, clearCrossFilter } = useFilter();
 
   // Get selected items from cross-filter
-  const selectedValues = chartId === 'languages-donut'
-    ? filters.selectedLanguages
-    : chartId === 'directory-donut' && filters.selectedDirectory
-    ? [filters.selectedDirectory]
-    : [];
+  const selectedValues = selectedId !== undefined
+    ? (selectedId ? [selectedId] : [])
+    : (chartId === 'languages-donut'
+      ? filters.selectedLanguages
+      : chartId === 'directory-donut' && filters.selectedDirectory
+      ? [filters.selectedDirectory]
+      : []);
 
   const handleClick = useCallback(
     (datum: any) => {
       const clickedId = datum.id;
 
-      // Trigger cross-filter update
-      setCrossFilter(chartId, clickedId);
+      if (!skipCrossFilter) {
+        setCrossFilter(chartId, clickedId);
+      }
 
-      // Call custom handler if provided
       onSegmentClick?.({
         id: clickedId,
         label: datum.label,
@@ -81,7 +89,7 @@ export const DonutChartViz: React.FC<DonutChartVizProps> = ({
         color: datum.color,
       });
     },
-    [chartId, setCrossFilter, onSegmentClick]
+    [chartId, setCrossFilter, onSegmentClick, skipCrossFilter]
   );
 
   // Apply visual highlighting based on selection
@@ -175,7 +183,13 @@ export const DonutChartViz: React.FC<DonutChartVizProps> = ({
       {/* Clear filter button when active */}
       {selectedValues.length > 0 && chartId && (
         <button
-          onClick={() => clearCrossFilter(chartId)}
+          onClick={() => {
+            if (skipCrossFilter && onClearFilter) {
+              onClearFilter();
+            } else {
+              clearCrossFilter(chartId);
+            }
+          }}
           className="absolute top-2 right-2 p-1.5 rounded-full bg-slate-700/50 hover:bg-slate-600/50 transition-colors"
           title="Limpiar filtro"
         >

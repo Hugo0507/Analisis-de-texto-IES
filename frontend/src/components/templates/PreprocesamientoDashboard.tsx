@@ -3,19 +3,26 @@
  *
  * Displays metrics and charts for data preprocessing analysis.
  * Features:
- * - Metric cards for key KPIs (files, size, processed, duplicates)
- * - Donut chart for directory distribution
- * - Donut chart for extension distribution
- * - Donut chart for language distribution
+ * - Metric cards for key KPIs (files, size, extension, language)
+ * - Donut charts with Power BI-style cross-filtering
+ * - Dynamic center labels that update on selection
+ * - Synced metrics that recalculate when filtering
  * - Preparation selector for switching between preparations
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { DashboardGrid, MetricCardDark, DonutChartViz } from '../organisms';
+import type { DonutChartData } from '../organisms/DonutChartViz';
 import { ChartCard } from '../molecules';
-import dashboardService from '../../services/dashboardService';
+import dashboardService, { DIRECTORY_COLORS, EXTENSION_COLORS } from '../../services/dashboardService';
 import type { PreprocessingDashboardData } from '../../services/dashboardService';
 import { useFilter } from '../../contexts/FilterContext';
+import { LANGUAGE_NAMES } from '../../services/dataPreparationService';
+
+// Helper
+const getLanguageName = (code: string): string => {
+  return LANGUAGE_NAMES[code]?.name || code.toUpperCase();
+};
 
 // Icons for metric cards
 const FileIcon = () => (
@@ -48,11 +55,31 @@ const ExtensionIcon = () => (
   </svg>
 );
 
+const LanguageIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+  </svg>
+);
+
+// File-level data for cross-filtering
+interface FileEntry {
+  directory: string;
+  extension: string;
+  language: string | null;
+  size: number;
+}
+
 export const PreprocesamientoDashboard: React.FC = () => {
   const [data, setData] = useState<PreprocessingDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [crossFilter, setCrossFilterState] = useState<{ chartId: string; segmentId: string } | null>(null);
   const { filters, setSelectedPreparation } = useFilter();
+
+  // Reset cross-filter when dataset changes
+  useEffect(() => {
+    setCrossFilterState(null);
+  }, [filters.selectedDatasetId]);
 
   // Fetch data when selected dataset changes
   useEffect(() => {
@@ -78,19 +105,221 @@ export const PreprocesamientoDashboard: React.FC = () => {
     }
   };
 
-  // Apply language filter
-  const filteredLanguages = data?.languageDistribution.filter((lang) => {
-    if (filters.selectedLanguages.length === 0) return true;
-    return filters.selectedLanguages.includes(lang.id);
-  }) || [];
+  // ============================================================
+  // CROSS-FILTERING LOGIC
+  // ============================================================
 
-  // Filter directory distribution based on selected directory
-  const filteredDirectories = data?.directoryDistribution.filter((dir) => {
-    if (!filters.selectedDirectory) return true;
-    return dir.id === filters.selectedDirectory;
-  }) || [];
+  // Extract per-file data for cross-filtering
+  const fileData: FileEntry[] = useMemo(() => {
+    if (!data?.dataset?.files) return [];
+    return data.dataset.files.map(f => ({
+      directory: f.directory_name || 'root',
+      extension: f.original_filename.split('.').pop()?.toLowerCase() || 'unknown',
+      language: f.language_code || null,
+      size: f.file_size_bytes,
+    }));
+  }, [data]);
 
-  // No dataset selected state
+  const hasFileLanguages = useMemo(() => fileData.some(f => f.language !== null), [fileData]);
+
+  // Full distributions (unfiltered) - used as base for the chart that owns the filter
+  const fullDistributions = useMemo(() => {
+    const dirCounts: Record<string, number> = {};
+    const extCounts: Record<string, number> = {};
+    const langCounts: Record<string, number> = {};
+
+    fileData.forEach(f => {
+      dirCounts[f.directory] = (dirCounts[f.directory] || 0) + 1;
+      extCounts[f.extension] = (extCounts[f.extension] || 0) + 1;
+      if (f.language) {
+        langCounts[f.language] = (langCounts[f.language] || 0) + 1;
+      }
+    });
+
+    const dirs = Object.entries(dirCounts)
+      .map(([k, v], i) => ({ id: k, label: k, value: v, color: DIRECTORY_COLORS[i % DIRECTORY_COLORS.length] }))
+      .sort((a, b) => b.value - a.value);
+
+    const exts = Object.entries(extCounts)
+      .map(([k, v]) => ({ id: k, label: `.${k}`, value: v, color: EXTENSION_COLORS[k] || EXTENSION_COLORS.default }))
+      .sort((a, b) => b.value - a.value);
+
+    const langs = hasFileLanguages
+      ? Object.entries(langCounts)
+          .map(([k, v]) => ({ id: k, label: getLanguageName(k), value: v }))
+          .sort((a, b) => b.value - a.value)
+      : data?.languageDistribution || [];
+
+    return { dirs, exts, langs };
+  }, [fileData, hasFileLanguages, data?.languageDistribution]);
+
+  // Filtered distributions (when cross-filter is active) - used for charts NOT owning the filter
+  const filteredResults = useMemo(() => {
+    if (!crossFilter) {
+      return {
+        dirs: fullDistributions.dirs,
+        exts: fullDistributions.exts,
+        langs: fullDistributions.langs,
+        fileCount: fileData.length,
+        sizeMB: fileData.reduce((s, f) => s + f.size, 0) / (1024 * 1024),
+      };
+    }
+
+    let filtered = fileData;
+    if (crossFilter.chartId === 'directory-donut') {
+      filtered = fileData.filter(f => f.directory === crossFilter.segmentId);
+    } else if (crossFilter.chartId === 'extension-donut') {
+      filtered = fileData.filter(f => f.extension === crossFilter.segmentId);
+    } else if (crossFilter.chartId === 'languages-donut' && hasFileLanguages) {
+      filtered = fileData.filter(f => f.language === crossFilter.segmentId);
+    }
+
+    const dirCounts: Record<string, number> = {};
+    const extCounts: Record<string, number> = {};
+    const langCounts: Record<string, number> = {};
+
+    filtered.forEach(f => {
+      dirCounts[f.directory] = (dirCounts[f.directory] || 0) + 1;
+      extCounts[f.extension] = (extCounts[f.extension] || 0) + 1;
+      if (f.language) {
+        langCounts[f.language] = (langCounts[f.language] || 0) + 1;
+      }
+    });
+
+    // Preserve colors from full distributions
+    const dirColorMap = Object.fromEntries(fullDistributions.dirs.map(d => [d.id, d.color]));
+
+    const dirs = Object.entries(dirCounts)
+      .map(([k, v]) => ({ id: k, label: k, value: v, color: dirColorMap[k] || '#64748b' }))
+      .sort((a, b) => b.value - a.value);
+
+    const exts = Object.entries(extCounts)
+      .map(([k, v]) => ({ id: k, label: `.${k}`, value: v, color: EXTENSION_COLORS[k] || EXTENSION_COLORS.default }))
+      .sort((a, b) => b.value - a.value);
+
+    const langs = hasFileLanguages
+      ? Object.entries(langCounts)
+          .map(([k, v]) => ({ id: k, label: getLanguageName(k), value: v }))
+          .sort((a, b) => b.value - a.value)
+      : fullDistributions.langs;
+
+    return {
+      dirs,
+      exts,
+      langs,
+      fileCount: filtered.length,
+      sizeMB: filtered.reduce((s, f) => s + f.size, 0) / (1024 * 1024),
+    };
+  }, [crossFilter, fileData, fullDistributions, hasFileLanguages]);
+
+  // ============================================================
+  // CROSS-FILTER HANDLERS
+  // ============================================================
+
+  const handleSegmentClick = useCallback((chartId: string) => (datum: DonutChartData) => {
+    setCrossFilterState(prev =>
+      prev?.chartId === chartId && prev?.segmentId === datum.id
+        ? null
+        : { chartId, segmentId: datum.id }
+    );
+  }, []);
+
+  const clearFilter = useCallback(() => setCrossFilterState(null), []);
+
+  // Helpers to get distribution arrays by chartId
+  const getFullDist = (chartId: string): DonutChartData[] => {
+    if (chartId === 'directory-donut') return fullDistributions.dirs;
+    if (chartId === 'extension-donut') return fullDistributions.exts;
+    return fullDistributions.langs;
+  };
+
+  const getFilteredDist = (chartId: string): DonutChartData[] => {
+    if (chartId === 'directory-donut') return filteredResults.dirs;
+    if (chartId === 'extension-donut') return filteredResults.exts;
+    return filteredResults.langs;
+  };
+
+  // Get chart data: active filter chart shows full data with highlight; others show filtered data
+  const getChartData = (chartId: string): { chartData: DonutChartData[]; selectedId: string | undefined } => {
+    if (!crossFilter) {
+      return { chartData: getFullDist(chartId), selectedId: undefined };
+    }
+    if (crossFilter.chartId === chartId) {
+      return { chartData: getFullDist(chartId), selectedId: crossFilter.segmentId };
+    }
+    return { chartData: getFilteredDist(chartId), selectedId: undefined };
+  };
+
+  // Get dynamic center values
+  const getCenterProps = (chartId: string): { centerValue: number; centerLabel: string } => {
+    const fullData = getFullDist(chartId);
+    const defaultLabel = chartId === 'languages-donut' ? 'docs' : 'archivos';
+    const totalAll = fullData.reduce((s: number, d) => s + d.value, 0);
+
+    if (!crossFilter) {
+      return { centerValue: totalAll, centerLabel: defaultLabel };
+    }
+    if (crossFilter.chartId === chartId) {
+      const segment = fullData.find(d => d.id === crossFilter.segmentId);
+      return {
+        centerValue: segment?.value || 0,
+        centerLabel: segment?.label || crossFilter.segmentId,
+      };
+    }
+    const filteredData = getFilteredDist(chartId);
+    const filteredTotal = filteredData.reduce((s: number, d) => s + d.value, 0);
+    return { centerValue: filteredTotal, centerLabel: 'filtrados' };
+  };
+
+  // ============================================================
+  // SYNCED METRICS
+  // ============================================================
+
+  const syncedMetrics = useMemo(() => {
+    if (!crossFilter || !data?.metrics) {
+      const predominantLang = data?.metrics?.predominantLanguage || 'N/A';
+      return {
+        fileCount: data?.metrics?.totalFiles || 0,
+        sizeMB: data?.metrics?.totalSizeMB || 0,
+        dominantExtension: data?.metrics?.dominantExtension || 'N/A',
+        predominantLanguage: predominantLang === 'N/A' ? 'N/A' : getLanguageName(predominantLang),
+        predominantLanguagePercentage: data?.metrics?.predominantLanguagePercentage || 0,
+      };
+    }
+    // Compute from filtered files
+    const dominantExt = filteredResults.exts.length > 0 ? filteredResults.exts[0].id.toUpperCase() : 'N/A';
+    const langTotal = filteredResults.langs.reduce((s, l) => s + l.value, 0);
+    const topLang = filteredResults.langs.length > 0 ? filteredResults.langs[0] : null;
+    const langPercentage = langTotal > 0 && topLang
+      ? Math.round((topLang.value / langTotal) * 100)
+      : 0;
+
+    return {
+      fileCount: filteredResults.fileCount,
+      sizeMB: Math.round(filteredResults.sizeMB * 100) / 100,
+      dominantExtension: dominantExt,
+      predominantLanguage: topLang ? getLanguageName(topLang.id) : 'N/A',
+      predominantLanguagePercentage: langPercentage,
+    };
+  }, [crossFilter, data?.metrics, filteredResults]);
+
+  // ============================================================
+  // RENDER HELPERS
+  // ============================================================
+
+  // Cross-filter label for indicator
+  const crossFilterLabel = useMemo(() => {
+    if (!crossFilter) return '';
+    if (crossFilter.chartId === 'directory-donut') return `Directorio: ${crossFilter.segmentId}`;
+    if (crossFilter.chartId === 'extension-donut') return `Extensión: .${crossFilter.segmentId}`;
+    if (crossFilter.chartId === 'languages-donut') return `Idioma: ${getLanguageName(crossFilter.segmentId)}`;
+    return crossFilter.segmentId;
+  }, [crossFilter]);
+
+  // ============================================================
+  // EARLY RETURNS
+  // ============================================================
+
   if (!filters.selectedDatasetId) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -144,6 +373,14 @@ export const PreprocesamientoDashboard: React.FC = () => {
   const metrics = data?.metrics;
   const dataset = data?.dataset;
 
+  // Chart data
+  const dirChart = getChartData('directory-donut');
+  const extChart = getChartData('extension-donut');
+  const langChart = getChartData('languages-donut');
+  const dirCenter = getCenterProps('directory-donut');
+  const extCenter = getCenterProps('extension-donut');
+  const langCenter = getCenterProps('languages-donut');
+
   return (
     <div className="space-y-6">
       {/* Page Title */}
@@ -175,24 +412,68 @@ export const PreprocesamientoDashboard: React.FC = () => {
         )}
       </div>
 
+      {/* Cross-filter active indicator */}
+      {crossFilter && (
+        <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            <span className="text-sm text-amber-300">
+              Filtrado activo: <span className="font-medium text-amber-200">{crossFilterLabel}</span>
+            </span>
+          </div>
+          <button
+            onClick={clearFilter}
+            className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-amber-300 bg-amber-500/20 rounded-lg hover:bg-amber-500/30 transition-colors"
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Limpiar
+          </button>
+        </div>
+      )}
+
       {/* KPI Metrics Row */}
       <DashboardGrid columns={4} gap="md">
         <MetricCardDark
           title="Archivos Totales"
-          value={metrics?.totalFiles || 0}
-          subtitle="En el dataset"
+          value={syncedMetrics.fileCount}
+          subtitle={crossFilter ? 'Archivos filtrados' : 'En el dataset'}
           icon={<FileIcon />}
           accentColor="cyan"
         />
 
         <MetricCardDark
           title="Tamaño Total"
-          value={`${metrics?.totalSizeMB?.toFixed(1) || 0} MB`}
-          subtitle="Volumen de datos"
+          value={`${syncedMetrics.sizeMB.toFixed(1)} MB`}
+          subtitle={crossFilter ? 'Volumen filtrado' : 'Volumen de datos'}
           icon={<SizeIcon />}
           accentColor="purple"
         />
 
+        <MetricCardDark
+          title="Extensión Principal"
+          value={syncedMetrics.dominantExtension}
+          subtitle={crossFilter ? 'Más común (filtrado)' : 'Tipo más común'}
+          icon={<ExtensionIcon />}
+          accentColor="amber"
+        />
+
+        <MetricCardDark
+          title="Idioma Predominante"
+          value={syncedMetrics.predominantLanguage}
+          subtitle={
+            syncedMetrics.predominantLanguage !== 'N/A'
+              ? `${syncedMetrics.predominantLanguagePercentage}% de los documentos`
+              : 'Ejecuta una preparación'
+          }
+          icon={<LanguageIcon />}
+          accentColor="purple"
+        />
+      </DashboardGrid>
+
+      {/* Secondary Metrics Row */}
+      <DashboardGrid columns={3} gap="md">
         <MetricCardDark
           title="Procesados"
           value={metrics?.filesProcessed || 0}
@@ -201,17 +482,6 @@ export const PreprocesamientoDashboard: React.FC = () => {
           accentColor="emerald"
         />
 
-        <MetricCardDark
-          title="Extensión Principal"
-          value={metrics?.dominantExtension || 'N/A'}
-          subtitle="Tipo más común"
-          icon={<ExtensionIcon />}
-          accentColor="amber"
-        />
-      </DashboardGrid>
-
-      {/* Secondary Metrics Row */}
-      <DashboardGrid columns={2} gap="md">
         <MetricCardDark
           title="Duplicados Eliminados"
           value={metrics?.duplicatesRemoved || 0}
@@ -246,17 +516,21 @@ export const PreprocesamientoDashboard: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
             </svg>
           }
-          isActive={filters.activeChart === 'directory-donut'}
+          isActive={crossFilter?.chartId === 'directory-donut'}
           onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
           isLoading={isLoading}
         >
           <div className="h-[260px]">
-            {(data?.directoryDistribution?.length || 0) > 0 ? (
+            {dirChart.chartData.length > 0 ? (
               <DonutChartViz
-                data={filteredDirectories.length > 0 ? filteredDirectories : data?.directoryDistribution || []}
+                data={dirChart.chartData}
                 chartId="directory-donut"
-                centerValue={data?.directoryDistribution?.reduce((sum, d) => sum + d.value, 0) || 0}
-                centerLabel="archivos"
+                centerValue={dirCenter.centerValue}
+                centerLabel={dirCenter.centerLabel}
+                selectedId={dirChart.selectedId}
+                skipCrossFilter
+                onSegmentClick={handleSegmentClick('directory-donut')}
+                onClearFilter={clearFilter}
               />
             ) : (
               <div className="flex items-center justify-center h-full text-slate-500">
@@ -277,17 +551,21 @@ export const PreprocesamientoDashboard: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
           }
-          isActive={filters.activeChart === 'extension-donut'}
+          isActive={crossFilter?.chartId === 'extension-donut'}
           onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
           isLoading={isLoading}
         >
           <div className="h-[260px]">
-            {(data?.extensionDistribution?.length || 0) > 0 ? (
+            {extChart.chartData.length > 0 ? (
               <DonutChartViz
-                data={data?.extensionDistribution || []}
+                data={extChart.chartData}
                 chartId="extension-donut"
-                centerValue={data?.extensionDistribution?.reduce((sum, e) => sum + e.value, 0) || 0}
-                centerLabel="archivos"
+                centerValue={extCenter.centerValue}
+                centerLabel={extCenter.centerLabel}
+                selectedId={extChart.selectedId}
+                skipCrossFilter
+                onSegmentClick={handleSegmentClick('extension-donut')}
+                onClearFilter={clearFilter}
               />
             ) : (
               <div className="flex items-center justify-center h-full text-slate-500">
@@ -308,17 +586,21 @@ export const PreprocesamientoDashboard: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
             </svg>
           }
-          isActive={filters.activeChart === 'languages-donut'}
+          isActive={crossFilter?.chartId === 'languages-donut'}
           onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
           isLoading={isLoading}
         >
           <div className="h-[260px]">
-            {filteredLanguages.length > 0 ? (
+            {langChart.chartData.length > 0 ? (
               <DonutChartViz
-                data={filteredLanguages}
+                data={langChart.chartData}
                 chartId="languages-donut"
-                centerValue={filteredLanguages.reduce((sum, l) => sum + l.value, 0)}
-                centerLabel="docs"
+                centerValue={langCenter.centerValue}
+                centerLabel={langCenter.centerLabel}
+                selectedId={langChart.selectedId}
+                skipCrossFilter
+                onSegmentClick={handleSegmentClick('languages-donut')}
+                onClearFilter={clearFilter}
               />
             ) : (
               <div className="flex items-center justify-center h-full text-slate-500 text-sm text-center px-4">
