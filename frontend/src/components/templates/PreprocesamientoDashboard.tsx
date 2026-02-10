@@ -2,19 +2,17 @@
  * PreprocesamientoDashboard - Preprocessing visualization dashboard
  *
  * Displays metrics and charts for data preprocessing analysis.
- * Features:
- * - Metric cards for key KPIs (files, size, extension, language)
- * - Donut charts with Power BI-style cross-filtering
- * - Dynamic center labels that update on selection
- * - Synced metrics that recalculate when filtering
- * - Preparation selector for switching between preparations
+ * Cross-filtering is highlight-based (Power BI style):
+ * - ALL charts ALWAYS show the original backend distributions
+ * - Clicking a segment highlights matching segments in other charts (dims the rest)
+ * - No data is ever removed; context is always preserved
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { DashboardGrid, MetricCardDark, DonutChartViz } from '../organisms';
 import type { DonutChartData } from '../organisms/DonutChartViz';
 import { ChartCard } from '../molecules';
-import dashboardService, { EXTENSION_COLORS } from '../../services/dashboardService';
+import dashboardService from '../../services/dashboardService';
 import type { PreprocessingDashboardData } from '../../services/dashboardService';
 import { useFilter } from '../../contexts/FilterContext';
 import { LANGUAGE_NAMES } from '../../services/dataPreparationService';
@@ -61,7 +59,7 @@ const LanguageIcon = () => (
   </svg>
 );
 
-// File-level data for cross-filtering
+// File-level entry for cross-referencing
 interface FileEntry {
   directory: string;
   extension: string;
@@ -106,17 +104,17 @@ export const PreprocesamientoDashboard: React.FC = () => {
   };
 
   // ============================================================
-  // CROSS-FILTERING LOGIC
+  // ORIGINAL DISTRIBUTIONS (always from backend, never recomputed)
   // ============================================================
 
-  // Original distributions from dashboardService (backend-computed, always complete)
-  const originalDistributions = useMemo(() => ({
-    dirs: data?.directoryDistribution || [],
-    exts: data?.extensionDistribution || [],
-    langs: data?.languageDistribution || [],
-  }), [data?.directoryDistribution, data?.extensionDistribution, data?.languageDistribution]);
+  const originalDirs = data?.directoryDistribution || [];
+  const originalExts = data?.extensionDistribution || [];
+  const originalLangs = data?.languageDistribution || [];
 
-  // Extract per-file data for cross-filtering (only used when a filter is active)
+  // ============================================================
+  // FILE-LEVEL DATA (for computing highlight sets when cross-filtering)
+  // ============================================================
+
   const fileData: FileEntry[] = useMemo(() => {
     if (!data?.dataset?.files) return [];
     return data.dataset.files.map(f => ({
@@ -127,69 +125,81 @@ export const PreprocesamientoDashboard: React.FC = () => {
     }));
   }, [data]);
 
-  const hasFileLanguages = useMemo(() => fileData.some(f => f.language !== null), [fileData]);
+  // ============================================================
+  // CROSS-FILTER: Compute highlight sets and filtered metrics
+  // ============================================================
 
-  // Filtered distributions - only computed when cross-filter is active
-  const filteredResults = useMemo(() => {
-    // No filter: return original data from the service
-    if (!crossFilter) {
-      return {
-        dirs: originalDistributions.dirs,
-        exts: originalDistributions.exts,
-        langs: originalDistributions.langs,
-        fileCount: data?.metrics?.totalFiles || 0,
-        sizeMB: data?.metrics?.totalSizeMB || 0,
-      };
-    }
+  const crossFilterState = useMemo(() => {
+    if (!crossFilter) return null;
 
-    // Apply the active cross-filter to file-level data
-    let filtered = fileData;
+    // Filter files matching the active cross-filter
+    let matchingFiles = fileData;
     if (crossFilter.chartId === 'directory-donut') {
-      filtered = fileData.filter(f => f.directory === crossFilter.segmentId);
+      matchingFiles = fileData.filter(f => f.directory === crossFilter.segmentId);
     } else if (crossFilter.chartId === 'extension-donut') {
-      filtered = fileData.filter(f => f.extension === crossFilter.segmentId);
-    } else if (crossFilter.chartId === 'languages-donut' && hasFileLanguages) {
-      filtered = fileData.filter(f => f.language === crossFilter.segmentId);
+      matchingFiles = fileData.filter(f => f.extension === crossFilter.segmentId);
+    } else if (crossFilter.chartId === 'languages-donut') {
+      matchingFiles = fileData.filter(f => f.language === crossFilter.segmentId);
     }
 
-    // Recompute distributions from filtered files
-    const dirCounts: Record<string, number> = {};
+    // Collect which segment IDs in each dimension have matching files
+    const matchingDirIds = new Set(matchingFiles.map(f => f.directory));
+    const matchingExtIds = new Set(matchingFiles.map(f => f.extension));
+    const matchingLangIds = new Set(
+      matchingFiles.filter(f => f.language).map(f => f.language!)
+    );
+
+    // Intersect with original distribution IDs to validate
+    const origDirIds = new Set(originalDirs.map(d => d.id));
+    const origExtIds = new Set(originalExts.map(d => d.id));
+    const origLangIds = new Set(originalLangs.map(d => d.id));
+
+    const validDirIds = [...matchingDirIds].filter(id => origDirIds.has(id));
+    const validExtIds = [...matchingExtIds].filter(id => origExtIds.has(id));
+    const validLangIds = [...matchingLangIds].filter(id => origLangIds.has(id));
+
+    // Build activeSegments for each chart:
+    // - Owning chart: highlight only the clicked segment
+    // - Non-owning charts: highlight segments with matching files (empty = no dimming)
+    const dirSegments = crossFilter.chartId === 'directory-donut'
+      ? [crossFilter.segmentId]
+      : validDirIds.length > 0 ? validDirIds : []; // empty = show all at full opacity
+
+    const extSegments = crossFilter.chartId === 'extension-donut'
+      ? [crossFilter.segmentId]
+      : validExtIds.length > 0 ? validExtIds : [];
+
+    const langSegments = crossFilter.chartId === 'languages-donut'
+      ? [crossFilter.segmentId]
+      : validLangIds.length > 0 ? validLangIds : [];
+
+    // Filtered metrics from matching files
     const extCounts: Record<string, number> = {};
     const langCounts: Record<string, number> = {};
-
-    filtered.forEach(f => {
-      dirCounts[f.directory] = (dirCounts[f.directory] || 0) + 1;
+    matchingFiles.forEach(f => {
       extCounts[f.extension] = (extCounts[f.extension] || 0) + 1;
       if (f.language) {
         langCounts[f.language] = (langCounts[f.language] || 0) + 1;
       }
     });
 
-    // Preserve colors from original distributions
-    const dirColorMap = Object.fromEntries(originalDistributions.dirs.map(d => [d.id, d.color || '#64748b']));
-
-    const dirs = Object.entries(dirCounts)
-      .map(([k, v]) => ({ id: k, label: k, value: v, color: dirColorMap[k] || '#64748b' }))
-      .sort((a, b) => b.value - a.value);
-
-    const exts = Object.entries(extCounts)
-      .map(([k, v]) => ({ id: k, label: `.${k}`, value: v, color: EXTENSION_COLORS[k] || EXTENSION_COLORS.default }))
-      .sort((a, b) => b.value - a.value);
-
-    const langs = hasFileLanguages
-      ? Object.entries(langCounts)
-          .map(([k, v]) => ({ id: k, label: getLanguageName(k), value: v }))
-          .sort((a, b) => b.value - a.value)
-      : originalDistributions.langs;
+    const sortedExts = Object.entries(extCounts).sort((a, b) => b[1] - a[1]);
+    const sortedLangs = Object.entries(langCounts).sort((a, b) => b[1] - a[1]);
+    const langTotal = sortedLangs.reduce((s, [, v]) => s + v, 0);
 
     return {
-      dirs,
-      exts,
-      langs,
-      fileCount: filtered.length,
-      sizeMB: filtered.reduce((s, f) => s + f.size, 0) / (1024 * 1024),
+      dirSegments,
+      extSegments,
+      langSegments,
+      fileCount: matchingFiles.length,
+      sizeMB: matchingFiles.reduce((s, f) => s + f.size, 0) / (1024 * 1024),
+      dominantExtension: sortedExts.length > 0 ? sortedExts[0][0].toUpperCase() : 'N/A',
+      dominantLanguage: sortedLangs.length > 0 ? getLanguageName(sortedLangs[0][0]) : 'N/A',
+      dominantLanguagePercentage: langTotal > 0 && sortedLangs.length > 0
+        ? Math.round((sortedLangs[0][1] / langTotal) * 100)
+        : 0,
     };
-  }, [crossFilter, fileData, originalDistributions, hasFileLanguages, data?.metrics]);
+  }, [crossFilter, fileData, originalDirs, originalExts, originalLangs]);
 
   // ============================================================
   // CROSS-FILTER HANDLERS
@@ -198,56 +208,48 @@ export const PreprocesamientoDashboard: React.FC = () => {
   const handleSegmentClick = useCallback((chartId: string) => (datum: DonutChartData) => {
     setCrossFilterState(prev =>
       prev?.chartId === chartId && prev?.segmentId === datum.id
-        ? null
+        ? null // Toggle off
         : { chartId, segmentId: datum.id }
     );
   }, []);
 
   const clearFilter = useCallback(() => setCrossFilterState(null), []);
 
-  // Helpers to get distribution arrays by chartId
-  const getOriginalDist = (chartId: string): DonutChartData[] => {
-    if (chartId === 'directory-donut') return originalDistributions.dirs;
-    if (chartId === 'extension-donut') return originalDistributions.exts;
-    return originalDistributions.langs;
-  };
+  // ============================================================
+  // DYNAMIC CENTER VALUES
+  // ============================================================
 
-  const getFilteredDist = (chartId: string): DonutChartData[] => {
-    if (chartId === 'directory-donut') return filteredResults.dirs;
-    if (chartId === 'extension-donut') return filteredResults.exts;
-    return filteredResults.langs;
-  };
-
-  // Get chart data: active filter chart shows original data with highlight; others show filtered data
-  const getChartData = (chartId: string): { chartData: DonutChartData[]; selectedId: string | undefined } => {
-    if (!crossFilter) {
-      return { chartData: getOriginalDist(chartId), selectedId: undefined };
-    }
-    if (crossFilter.chartId === chartId) {
-      return { chartData: getOriginalDist(chartId), selectedId: crossFilter.segmentId };
-    }
-    return { chartData: getFilteredDist(chartId), selectedId: undefined };
-  };
-
-  // Get dynamic center values
-  const getCenterProps = (chartId: string): { centerValue: number; centerLabel: string } => {
-    const origData = getOriginalDist(chartId);
+  const getCenterProps = (chartId: string, chartData: DonutChartData[]): { centerValue: number; centerLabel: string } => {
+    const total = chartData.reduce((s, d) => s + d.value, 0);
     const defaultLabel = chartId === 'languages-donut' ? 'docs' : 'archivos';
-    const totalAll = origData.reduce((s: number, d) => s + d.value, 0);
 
-    if (!crossFilter) {
-      return { centerValue: totalAll, centerLabel: defaultLabel };
+    if (!crossFilter || !crossFilterState) {
+      return { centerValue: total, centerLabel: defaultLabel };
     }
+
     if (crossFilter.chartId === chartId) {
-      const segment = origData.find(d => d.id === crossFilter.segmentId);
+      // Owning chart: show the value of the clicked segment
+      const segment = chartData.find(d => d.id === crossFilter.segmentId);
       return {
         centerValue: segment?.value || 0,
         centerLabel: segment?.label || crossFilter.segmentId,
       };
     }
-    const filteredData = getFilteredDist(chartId);
-    const filteredTotal = filteredData.reduce((s: number, d) => s + d.value, 0);
-    return { centerValue: filteredTotal, centerLabel: 'filtrados' };
+
+    // Non-owning chart: show sum of highlighted segments
+    const highlights = chartId === 'directory-donut' ? crossFilterState.dirSegments
+      : chartId === 'extension-donut' ? crossFilterState.extSegments
+      : crossFilterState.langSegments;
+
+    if (highlights.length === 0) {
+      // No valid highlights = show total (graceful fallback)
+      return { centerValue: total, centerLabel: defaultLabel };
+    }
+
+    const highlightedTotal = chartData
+      .filter(d => highlights.includes(d.id))
+      .reduce((s, d) => s + d.value, 0);
+    return { centerValue: highlightedTotal, centerLabel: 'filtrados' };
   };
 
   // ============================================================
@@ -255,39 +257,30 @@ export const PreprocesamientoDashboard: React.FC = () => {
   // ============================================================
 
   const syncedMetrics = useMemo(() => {
-    if (!crossFilter || !data?.metrics) {
-      const predominantLang = data?.metrics?.predominantLanguage || 'N/A';
-      return {
-        fileCount: data?.metrics?.totalFiles || 0,
-        sizeMB: data?.metrics?.totalSizeMB || 0,
-        dominantExtension: data?.metrics?.dominantExtension || 'N/A',
-        predominantLanguage: predominantLang === 'N/A' ? 'N/A' : getLanguageName(predominantLang),
-        predominantLanguagePercentage: data?.metrics?.predominantLanguagePercentage || 0,
-      };
-    }
-    // Compute from filtered files
-    const dominantExt = filteredResults.exts.length > 0 ? filteredResults.exts[0].id.toUpperCase() : 'N/A';
-    const filteredLangs = filteredResults.langs as DonutChartData[];
-    const langTotal = filteredLangs.reduce((s: number, l) => s + l.value, 0);
-    const topLang = filteredLangs.length > 0 ? filteredLangs[0] : null;
-    const langPercentage = langTotal > 0 && topLang
-      ? Math.round((topLang.value / langTotal) * 100)
-      : 0;
+    const predominantLang = data?.metrics?.predominantLanguage || 'N/A';
+    const defaultMetrics = {
+      fileCount: data?.metrics?.totalFiles || 0,
+      sizeMB: data?.metrics?.totalSizeMB || 0,
+      dominantExtension: data?.metrics?.dominantExtension || 'N/A',
+      predominantLanguage: predominantLang === 'N/A' ? 'N/A' : getLanguageName(predominantLang),
+      predominantLanguagePercentage: data?.metrics?.predominantLanguagePercentage || 0,
+    };
+
+    if (!crossFilterState) return defaultMetrics;
 
     return {
-      fileCount: filteredResults.fileCount,
-      sizeMB: Math.round(filteredResults.sizeMB * 100) / 100,
-      dominantExtension: dominantExt,
-      predominantLanguage: topLang ? getLanguageName(topLang.id) : 'N/A',
-      predominantLanguagePercentage: langPercentage,
+      fileCount: crossFilterState.fileCount,
+      sizeMB: Math.round(crossFilterState.sizeMB * 100) / 100,
+      dominantExtension: crossFilterState.dominantExtension,
+      predominantLanguage: crossFilterState.dominantLanguage,
+      predominantLanguagePercentage: crossFilterState.dominantLanguagePercentage,
     };
-  }, [crossFilter, data?.metrics, filteredResults]);
+  }, [crossFilterState, data?.metrics]);
 
   // ============================================================
   // RENDER HELPERS
   // ============================================================
 
-  // Cross-filter label for indicator
   const crossFilterLabel = useMemo(() => {
     if (!crossFilter) return '';
     if (crossFilter.chartId === 'directory-donut') return `Directorio: ${crossFilter.segmentId}`;
@@ -353,13 +346,10 @@ export const PreprocesamientoDashboard: React.FC = () => {
   const metrics = data?.metrics;
   const dataset = data?.dataset;
 
-  // Chart data
-  const dirChart = getChartData('directory-donut');
-  const extChart = getChartData('extension-donut');
-  const langChart = getChartData('languages-donut');
-  const dirCenter = getCenterProps('directory-donut');
-  const extCenter = getCenterProps('extension-donut');
-  const langCenter = getCenterProps('languages-donut');
+  // Center props for each chart
+  const dirCenter = getCenterProps('directory-donut', originalDirs);
+  const extCenter = getCenterProps('extension-donut', originalExts);
+  const langCenter = getCenterProps('languages-donut', originalLangs);
 
   return (
     <div className="space-y-6">
@@ -501,13 +491,13 @@ export const PreprocesamientoDashboard: React.FC = () => {
           isLoading={isLoading}
         >
           <div className="h-[260px]">
-            {dirChart.chartData.length > 0 ? (
+            {originalDirs.length > 0 ? (
               <DonutChartViz
-                data={dirChart.chartData}
+                data={originalDirs}
                 chartId="directory-donut"
                 centerValue={dirCenter.centerValue}
                 centerLabel={dirCenter.centerLabel}
-                selectedId={dirChart.selectedId}
+                activeSegments={crossFilterState?.dirSegments}
                 skipCrossFilter
                 onSegmentClick={handleSegmentClick('directory-donut')}
                 onClearFilter={clearFilter}
@@ -536,13 +526,13 @@ export const PreprocesamientoDashboard: React.FC = () => {
           isLoading={isLoading}
         >
           <div className="h-[260px]">
-            {extChart.chartData.length > 0 ? (
+            {originalExts.length > 0 ? (
               <DonutChartViz
-                data={extChart.chartData}
+                data={originalExts}
                 chartId="extension-donut"
                 centerValue={extCenter.centerValue}
                 centerLabel={extCenter.centerLabel}
-                selectedId={extChart.selectedId}
+                activeSegments={crossFilterState?.extSegments}
                 skipCrossFilter
                 onSegmentClick={handleSegmentClick('extension-donut')}
                 onClearFilter={clearFilter}
@@ -571,13 +561,13 @@ export const PreprocesamientoDashboard: React.FC = () => {
           isLoading={isLoading}
         >
           <div className="h-[260px]">
-            {langChart.chartData.length > 0 ? (
+            {originalLangs.length > 0 ? (
               <DonutChartViz
-                data={langChart.chartData}
+                data={originalLangs}
                 chartId="languages-donut"
                 centerValue={langCenter.centerValue}
                 centerLabel={langCenter.centerLabel}
-                selectedId={langChart.selectedId}
+                activeSegments={crossFilterState?.langSegments}
                 skipCrossFilter
                 onSegmentClick={handleSegmentClick('languages-donut')}
                 onClearFilter={clearFilter}

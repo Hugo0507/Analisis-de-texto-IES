@@ -2,6 +2,7 @@
  * DonutChartViz - Interactive donut chart with cross-filtering support
  *
  * Uses @nivo/pie for rendering. Supports bidirectional filtering via FilterContext.
+ * Cross-filtering highlights matching segments (Power BI style) without removing data.
  */
 
 import React, { useCallback } from 'react';
@@ -29,7 +30,8 @@ export interface DonutChartVizProps {
   centerValue?: string | number;
   className?: string;
   onSegmentClick?: (datum: DonutChartData) => void;
-  selectedId?: string | null;
+  /** Segments to visually highlight. Empty array = all at full opacity. Undefined = use FilterContext. */
+  activeSegments?: string[];
   skipCrossFilter?: boolean;
   onClearFilter?: () => void;
 }
@@ -59,15 +61,15 @@ export const DonutChartViz: React.FC<DonutChartVizProps> = ({
   centerValue,
   className = '',
   onSegmentClick,
-  selectedId,
+  activeSegments,
   skipCrossFilter = false,
   onClearFilter,
 }) => {
   const { filters, setCrossFilter, clearCrossFilter } = useFilter();
 
-  // Get selected items from cross-filter
-  const selectedValues = selectedId !== undefined
-    ? (selectedId ? [selectedId] : [])
+  // Determine which segments should be highlighted
+  const highlightedIds: string[] = activeSegments !== undefined
+    ? activeSegments
     : (chartId === 'languages-donut'
       ? filters.selectedLanguages
       : chartId === 'directory-donut' && filters.selectedDirectory
@@ -96,8 +98,8 @@ export const DonutChartViz: React.FC<DonutChartVizProps> = ({
   const processedData = data.map((d, index) => ({
     ...d,
     color: d.color || colors[index % colors.length],
-    // Dim non-selected items when there's an active selection
-    opacity: selectedValues.length === 0 || selectedValues.includes(d.id) ? 1 : 0.3,
+    // No highlights = everything full opacity; with highlights = dim non-matching
+    opacity: highlightedIds.length === 0 || highlightedIds.includes(d.id) ? 1 : 0.3,
   }));
 
   return (
@@ -113,6 +115,7 @@ export const DonutChartViz: React.FC<DonutChartVizProps> = ({
         borderWidth={0}
         enableArcLabels={enableArcLabels}
         enableArcLinkLabels={enableArcLinkLabels}
+        arcLinkLabel="label"
         arcLinkLabelsSkipAngle={10}
         arcLinkLabelsTextColor="#94a3b8"
         arcLinkLabelsThickness={2}
@@ -165,10 +168,10 @@ export const DonutChartViz: React.FC<DonutChartVizProps> = ({
       />
 
       {/* Center label */}
-      {(centerLabel || centerValue) && (
+      {(centerLabel || centerValue !== undefined) && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center">
-            {centerValue && (
+            {centerValue !== undefined && (
               <p className="text-2xl font-bold text-white">
                 {typeof centerValue === 'number' ? centerValue.toLocaleString() : centerValue}
               </p>
@@ -181,7 +184,7 @@ export const DonutChartViz: React.FC<DonutChartVizProps> = ({
       )}
 
       {/* Clear filter button when active */}
-      {selectedValues.length > 0 && chartId && (
+      {highlightedIds.length > 0 && chartId && (
         <button
           onClick={() => {
             if (skipCrossFilter && onClearFilter) {
