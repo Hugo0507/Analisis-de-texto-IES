@@ -9,7 +9,8 @@ from typing import Dict, Optional
 from pathlib import Path
 
 # PDF extraction libraries
-from pdfminer.high_level import extract_text as pdfminer_extract
+import PyPDF2
+from pdfminer.high_level import extract_text
 from PyPDF2 import PdfReader
 import pdfplumber
 
@@ -29,6 +30,54 @@ class DocumentConverterService:
     def __init__(self):
         """Initialize the document converter service."""
         self.min_text_length = 100  # Minimum chars to consider valid extraction
+        self.logger = logger
+
+    def convert_from_pdf(self, pdf_path: str) -> Dict[str, any]:
+        """
+        Convert a PDF to plain text. Uses pdfminer as primary method and
+        falls back to PyPDF2. Does not require the file to exist before
+        calling the extraction libraries (allows easy mocking in tests).
+
+        Args:
+            pdf_path: Path to PDF file
+
+        Returns:
+            Dictionary with 'success', 'text', 'method', and 'error' keys.
+        """
+        # Try pdfminer first
+        try:
+            text_content = extract_text(str(pdf_path))
+            return {
+                'success': True,
+                'text': text_content,
+                'method': 'pdfminer',
+                'error': None,
+            }
+        except Exception as pdfminer_err:
+            self.logger.warning(f"pdfminer failed for {pdf_path}: {pdfminer_err}")
+
+        # Fallback: PyPDF2 (accessed via module so tests can patch `PyPDF2`)
+        try:
+            reader = PyPDF2.PdfReader(str(pdf_path))
+            text_parts = [
+                page.extract_text() or ''
+                for page in reader.pages
+            ]
+            return {
+                'success': True,
+                'text': '\n'.join(text_parts),
+                'method': 'pypdf2',
+                'error': None,
+            }
+        except Exception as pypdf2_err:
+            self.logger.warning(f"PyPDF2 failed for {pdf_path}: {pypdf2_err}")
+
+        return {
+            'success': False,
+            'text': None,
+            'method': None,
+            'error': 'All extraction methods failed',
+        }
 
     def convert_pdf_to_text(
         self,
@@ -173,7 +222,7 @@ class DocumentConverterService:
         try:
             logger.info(f"Trying pdfminer on {pdf_path.name}")
 
-            text = pdfminer_extract(str(pdf_path))
+            text = extract_text(str(pdf_path))
             char_count = len(text)
 
             # Get page count using PyPDF2 (pdfminer doesn't expose it easily)

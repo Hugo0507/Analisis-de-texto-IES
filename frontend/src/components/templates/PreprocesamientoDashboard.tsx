@@ -118,7 +118,8 @@ export const PreprocesamientoDashboard: React.FC = () => {
   const fileData: FileEntry[] = useMemo(() => {
     if (!data?.dataset?.files) return [];
     return data.dataset.files.map(f => ({
-      directory: f.directory_name || f.directory_path?.split('/')[0] || 'root',
+      // Use root-level directory (first segment of path) to match directoryStats.pie_chart_data keys
+      directory: f.directory_path?.split('/')[0] || f.directory_name || 'root',
       extension: f.original_filename.split('.').pop()?.toLowerCase() || 'unknown',
       language: f.language_code || null,
       size: f.file_size_bytes,
@@ -320,23 +321,46 @@ export const PreprocesamientoDashboard: React.FC = () => {
   const metrics = data?.metrics;
   const dataset = data?.dataset;
 
-  // Determine chart data:
-  // - Owning chart: shows original full data (visual muting via activeSegments)
-  // - Non-owning charts: show recalculated distributions from the filtered file subset
-  const dirChartData = crossFilter && crossFilterState && crossFilter.chartId !== 'directory-donut'
-    ? crossFilterState.filteredDirDist
-    : originalDirs;
-  const extChartData = crossFilter && crossFilterState && crossFilter.chartId !== 'extension-donut'
-    ? crossFilterState.filteredExtDist
-    : originalExts;
-  const langChartData = crossFilter && crossFilterState && crossFilter.chartId !== 'languages-donut'
-    ? crossFilterState.filteredLangDist
-    : originalLangs;
+  // Determine chart data and active segments:
+  // - Owning chart: original data + activeSegments=[clickedId] → unselected segments muted
+  // - Non-owning chart with matches: filtered distribution (recalculated), all at full color
+  // - Non-owning chart with NO matches: original data + activeSegments=[] → all segments muted (gray)
+  //   This avoids "No hay datos" when the filter dimension has no overlap
+  const dirIsOwner = crossFilter?.chartId === 'directory-donut';
+  const extIsOwner = crossFilter?.chartId === 'extension-donut';
+  const langIsOwner = crossFilter?.chartId === 'languages-donut';
 
-  // activeSegments: only the owning chart uses this (to mute unselected segments)
-  const dirActiveSegments = crossFilter?.chartId === 'directory-donut' ? [crossFilter.segmentId] : undefined;
-  const extActiveSegments = crossFilter?.chartId === 'extension-donut' ? [crossFilter.segmentId] : undefined;
-  const langActiveSegments = crossFilter?.chartId === 'languages-donut' ? [crossFilter.segmentId] : undefined;
+  const dirHasFiltered = (crossFilterState?.filteredDirDist.length ?? 0) > 0;
+  const extHasFiltered = (crossFilterState?.filteredExtDist.length ?? 0) > 0;
+  const langHasFiltered = (crossFilterState?.filteredLangDist.length ?? 0) > 0;
+
+  const dirChartData = dirIsOwner || !crossFilter
+    ? originalDirs
+    : (dirHasFiltered ? crossFilterState!.filteredDirDist : originalDirs);
+
+  const extChartData = extIsOwner || !crossFilter
+    ? originalExts
+    : (extHasFiltered ? crossFilterState!.filteredExtDist : originalExts);
+
+  const langChartData = langIsOwner || !crossFilter
+    ? originalLangs
+    : (langHasFiltered ? crossFilterState!.filteredLangDist : originalLangs);
+
+  // activeSegments:
+  // - owning chart: [clickedId] → mutes everything else
+  // - non-owning with matches: undefined → all segments at full color
+  // - non-owning with NO matches: [] → all segments muted (signals "nothing matches here")
+  const dirActiveSegments = dirIsOwner
+    ? [crossFilter!.segmentId]
+    : (crossFilter && !dirHasFiltered ? [] : undefined);
+
+  const extActiveSegments = extIsOwner
+    ? [crossFilter!.segmentId]
+    : (crossFilter && !extHasFiltered ? [] : undefined);
+
+  const langActiveSegments = langIsOwner
+    ? [crossFilter!.segmentId]
+    : (crossFilter && !langHasFiltered ? [] : undefined);
 
   // Center props for each chart
   const dirCenter = getCenterProps('directory-donut', dirChartData);

@@ -3,6 +3,8 @@ Triple Layer Cache Service
 Provides caching across Redis, Database, and Google Drive
 """
 
+import hashlib
+import json
 import logging
 from typing import Any, Optional
 from django.core.cache import cache
@@ -22,54 +24,81 @@ class TripleLayerCacheService:
     def __init__(self):
         self.redis_enabled = hasattr(settings, 'CACHES') and 'default' in settings.CACHES
 
-    def get(self, key: str) -> Optional[Any]:
+    def generate_config_hash(self, config: dict) -> str:
+        """
+        Generate a deterministic hash string from a configuration dictionary.
+
+        Args:
+            config: Dictionary with configuration parameters
+
+        Returns:
+            MD5 hex digest string
+        """
+        config_str = json.dumps(config, sort_keys=True, default=str)
+        return hashlib.md5(config_str.encode()).hexdigest()
+
+    def get(self, namespace: str, key: str = None) -> Optional[Any]:
         """
         Get value from cache (checks all layers)
 
         Args:
-            key: Cache key
+            namespace: Cache namespace or full key (when key is None)
+            key: Cache key within namespace (optional)
 
         Returns:
             Cached value or None if not found
         """
+        full_key = f"{namespace}:{key}" if key is not None else namespace
+
         if not self.redis_enabled:
             return None
 
         try:
             # Layer 1: Redis
-            value = cache.get(key)
+            value = cache.get(full_key)
             if value is not None:
-                logger.debug(f"Cache HIT (Redis): {key}")
+                logger.debug(f"Cache HIT (Redis): {full_key}")
                 return value
 
-            logger.debug(f"Cache MISS: {key}")
+            logger.debug(f"Cache MISS: {full_key}")
             return None
 
         except Exception as e:
-            logger.error(f"Cache error for key {key}: {str(e)}")
+            logger.error(f"Cache error for key {full_key}: {str(e)}")
             return None
 
-    def set(self, key: str, value: Any, timeout: Optional[int] = None) -> bool:
+    def set(
+        self,
+        namespace: str,
+        key: str,
+        value: Any = None,
+        timeout: Optional[int] = None,
+        save_to_drive: bool = False,
+    ) -> bool:
         """
         Set value in cache
 
         Args:
-            key: Cache key
+            namespace: Cache namespace
+            key: Cache key within namespace
             value: Value to cache
             timeout: Cache timeout in seconds (None = default)
+            save_to_drive: Whether to persist to Google Drive (Layer 3, not implemented)
 
         Returns:
             True if successful, False otherwise
         """
+        full_key = f"{namespace}:{key}"
+
         if not self.redis_enabled:
             return False
 
         try:
-            cache.set(key, value, timeout)
-            logger.debug(f"Cache SET: {key}")
+            cache.set(full_key, value, timeout)
+            logger.debug(f"Cache SET: {full_key}")
             return True
         except Exception as e:
-            logger.error(f"Cache set error for key {key}: {str(e)}")
+            logger.error(f"Cache set error for key {full_key}: {str(e)}")
             return False
 
     def delete(self, key: str) -> bool:
@@ -111,23 +140,24 @@ class TripleLayerCacheService:
             logger.error(f"Cache clear error: {str(e)}")
             return False
 
-    def get_or_set(self, key: str, default_func: callable, timeout: Optional[int] = None) -> Any:
+    def get_or_set(self, namespace: str, key: str, default_func: callable, timeout: Optional[int] = None) -> Any:
         """
         Get value from cache or set it if not found
 
         Args:
-            key: Cache key
+            namespace: Cache namespace
+            key: Cache key within namespace
             default_func: Function to call if cache miss
             timeout: Cache timeout in seconds
 
         Returns:
             Cached or newly computed value
         """
-        value = self.get(key)
+        value = self.get(namespace, key)
         if value is not None:
             return value
 
         # Cache miss - compute value
         value = default_func()
-        self.set(key, value, timeout)
+        self.set(namespace, key, value, timeout)
         return value

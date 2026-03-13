@@ -27,6 +27,53 @@ class LanguageDetectorService:
         ]
         self.min_text_length = 50  # Minimum characters for reliable detection
 
+    def detect(self, text: str) -> Dict:
+        """
+        Detect language from text with a standardised success/error response.
+
+        Args:
+            text: Text to analyse
+
+        Returns:
+            Dictionary with keys: 'success', 'language', 'confidence', 'reliable'
+            On failure: 'success': False, 'error': <message>
+        """
+        if not text or len(text.strip()) == 0:
+            return {'success': False, 'error': 'Text is empty'}
+
+        cleaned = self._clean_text(text)
+        if not cleaned:
+            return {'success': False, 'error': 'Text is empty after cleaning'}
+
+        try:
+            detections = detect_langs(cleaned)
+            if detections:
+                best = detections[0]
+                return {
+                    'success': True,
+                    'language': best.lang,
+                    'confidence': round(best.prob, 4),
+                    'reliable': best.prob > 0.9,
+                }
+            return {'success': False, 'error': 'No language detected'}
+
+        except LangDetectException:
+            # Fallback for very short texts that lack sufficient features
+            try:
+                lang = detect(cleaned)
+                return {
+                    'success': True,
+                    'language': lang,
+                    'confidence': 0.5,
+                    'reliable': False,
+                }
+            except Exception:
+                return {'success': False, 'error': 'Could not detect language'}
+
+        except Exception as e:
+            logger.exception(f"Unexpected error in detect: {e}")
+            return {'success': False, 'error': str(e)}
+
     def detect_from_text(
         self,
         text: str,
