@@ -142,55 +142,38 @@ export const PreprocesamientoDashboard: React.FC = () => {
       matchingFiles = fileData.filter(f => f.language === crossFilter.segmentId);
     }
 
-    // Collect which segment IDs in each dimension have matching files
-    const matchingDirIds = new Set(matchingFiles.map(f => f.directory));
-    const matchingExtIds = new Set(matchingFiles.map(f => f.extension));
-    const matchingLangIds = new Set(
-      matchingFiles.filter(f => f.language).map(f => f.language!)
-    );
-
-    // Intersect with original distribution IDs to validate
-    const origDirIds = new Set(originalDirs.map(d => d.id));
-    const origExtIds = new Set(originalExts.map(d => d.id));
-    const origLangIds = new Set(originalLangs.map(d => d.id));
-
-    const validDirIds = [...matchingDirIds].filter(id => origDirIds.has(id));
-    const validExtIds = [...matchingExtIds].filter(id => origExtIds.has(id));
-    const validLangIds = [...matchingLangIds].filter(id => origLangIds.has(id));
-
-    // Build activeSegments for each chart:
-    // - Owning chart: highlight only the clicked segment
-    // - Non-owning charts: highlight segments with matching files (empty = no dimming)
-    const dirSegments = crossFilter.chartId === 'directory-donut'
-      ? [crossFilter.segmentId]
-      : validDirIds.length > 0 ? validDirIds : []; // empty = show all at full opacity
-
-    const extSegments = crossFilter.chartId === 'extension-donut'
-      ? [crossFilter.segmentId]
-      : validExtIds.length > 0 ? validExtIds : [];
-
-    const langSegments = crossFilter.chartId === 'languages-donut'
-      ? [crossFilter.segmentId]
-      : validLangIds.length > 0 ? validLangIds : [];
-
-    // Filtered metrics from matching files
+    // Count occurrences per dimension in matching files
+    const dirCounts: Record<string, number> = {};
     const extCounts: Record<string, number> = {};
     const langCounts: Record<string, number> = {};
     matchingFiles.forEach(f => {
+      dirCounts[f.directory] = (dirCounts[f.directory] || 0) + 1;
       extCounts[f.extension] = (extCounts[f.extension] || 0) + 1;
-      if (f.language) {
-        langCounts[f.language] = (langCounts[f.language] || 0) + 1;
-      }
+      if (f.language) langCounts[f.language] = (langCounts[f.language] || 0) + 1;
     });
 
+    // Filtered distributions for non-owning charts (preserving original colors and labels)
+    const filteredDirDist = originalDirs
+      .filter(d => (dirCounts[d.id] || 0) > 0)
+      .map(d => ({ ...d, value: dirCounts[d.id] }));
+
+    const filteredExtDist = originalExts
+      .filter(d => (extCounts[d.id] || 0) > 0)
+      .map(d => ({ ...d, value: extCounts[d.id] }));
+
+    const filteredLangDist = originalLangs
+      .filter(d => (langCounts[d.id] || 0) > 0)
+      .map(d => ({ ...d, value: langCounts[d.id] }));
+
+    // Dominant extension/language in the filtered set
     const sortedExts = Object.entries(extCounts).sort((a, b) => b[1] - a[1]);
     const sortedLangs = Object.entries(langCounts).sort((a, b) => b[1] - a[1]);
     const langTotal = sortedLangs.reduce((s, [, v]) => s + v, 0);
 
     return {
-      dirSegments,
-      extSegments,
-      langSegments,
+      filteredDirDist,
+      filteredExtDist,
+      filteredLangDist,
       fileCount: matchingFiles.length,
       sizeMB: matchingFiles.reduce((s, f) => s + f.size, 0) / (1024 * 1024),
       dominantExtension: sortedExts.length > 0 ? sortedExts[0][0].toUpperCase() : 'N/A',
@@ -228,28 +211,19 @@ export const PreprocesamientoDashboard: React.FC = () => {
     }
 
     if (crossFilter.chartId === chartId) {
-      // Owning chart: show the value of the clicked segment
-      const segment = chartData.find(d => d.id === crossFilter.segmentId);
+      // Owning chart: show the clicked segment's original value and label
+      const originalDist = chartId === 'directory-donut' ? originalDirs
+        : chartId === 'extension-donut' ? originalExts
+        : originalLangs;
+      const seg = originalDist.find(d => d.id === crossFilter.segmentId);
       return {
-        centerValue: segment?.value || 0,
-        centerLabel: segment?.label || crossFilter.segmentId,
+        centerValue: seg?.value || 0,
+        centerLabel: seg?.label || crossFilter.segmentId,
       };
     }
 
-    // Non-owning chart: show sum of highlighted segments
-    const highlights = chartId === 'directory-donut' ? crossFilterState.dirSegments
-      : chartId === 'extension-donut' ? crossFilterState.extSegments
-      : crossFilterState.langSegments;
-
-    if (highlights.length === 0) {
-      // No valid highlights = show total (graceful fallback)
-      return { centerValue: total, centerLabel: defaultLabel };
-    }
-
-    const highlightedTotal = chartData
-      .filter(d => highlights.includes(d.id))
-      .reduce((s, d) => s + d.value, 0);
-    return { centerValue: highlightedTotal, centerLabel: 'filtrados' };
+    // Non-owning chart: show total matching files count
+    return { centerValue: crossFilterState.fileCount, centerLabel: 'filtrados' };
   };
 
   // ============================================================
@@ -346,10 +320,28 @@ export const PreprocesamientoDashboard: React.FC = () => {
   const metrics = data?.metrics;
   const dataset = data?.dataset;
 
+  // Determine chart data:
+  // - Owning chart: shows original full data (visual muting via activeSegments)
+  // - Non-owning charts: show recalculated distributions from the filtered file subset
+  const dirChartData = crossFilter && crossFilterState && crossFilter.chartId !== 'directory-donut'
+    ? crossFilterState.filteredDirDist
+    : originalDirs;
+  const extChartData = crossFilter && crossFilterState && crossFilter.chartId !== 'extension-donut'
+    ? crossFilterState.filteredExtDist
+    : originalExts;
+  const langChartData = crossFilter && crossFilterState && crossFilter.chartId !== 'languages-donut'
+    ? crossFilterState.filteredLangDist
+    : originalLangs;
+
+  // activeSegments: only the owning chart uses this (to mute unselected segments)
+  const dirActiveSegments = crossFilter?.chartId === 'directory-donut' ? [crossFilter.segmentId] : undefined;
+  const extActiveSegments = crossFilter?.chartId === 'extension-donut' ? [crossFilter.segmentId] : undefined;
+  const langActiveSegments = crossFilter?.chartId === 'languages-donut' ? [crossFilter.segmentId] : undefined;
+
   // Center props for each chart
-  const dirCenter = getCenterProps('directory-donut', originalDirs);
-  const extCenter = getCenterProps('extension-donut', originalExts);
-  const langCenter = getCenterProps('languages-donut', originalLangs);
+  const dirCenter = getCenterProps('directory-donut', dirChartData);
+  const extCenter = getCenterProps('extension-donut', extChartData);
+  const langCenter = getCenterProps('languages-donut', langChartData);
 
   return (
     <div className="space-y-6">
@@ -491,13 +483,13 @@ export const PreprocesamientoDashboard: React.FC = () => {
           isLoading={isLoading}
         >
           <div className="h-[260px]">
-            {originalDirs.length > 0 ? (
+            {dirChartData.length > 0 ? (
               <DonutChartViz
-                data={originalDirs}
+                data={dirChartData}
                 chartId="directory-donut"
                 centerValue={dirCenter.centerValue}
                 centerLabel={dirCenter.centerLabel}
-                activeSegments={crossFilterState?.dirSegments}
+                activeSegments={dirActiveSegments}
                 skipCrossFilter
                 onSegmentClick={handleSegmentClick('directory-donut')}
                 onClearFilter={clearFilter}
@@ -526,13 +518,13 @@ export const PreprocesamientoDashboard: React.FC = () => {
           isLoading={isLoading}
         >
           <div className="h-[260px]">
-            {originalExts.length > 0 ? (
+            {extChartData.length > 0 ? (
               <DonutChartViz
-                data={originalExts}
+                data={extChartData}
                 chartId="extension-donut"
                 centerValue={extCenter.centerValue}
                 centerLabel={extCenter.centerLabel}
-                activeSegments={crossFilterState?.extSegments}
+                activeSegments={extActiveSegments}
                 skipCrossFilter
                 onSegmentClick={handleSegmentClick('extension-donut')}
                 onClearFilter={clearFilter}
@@ -561,13 +553,13 @@ export const PreprocesamientoDashboard: React.FC = () => {
           isLoading={isLoading}
         >
           <div className="h-[260px]">
-            {originalLangs.length > 0 ? (
+            {langChartData.length > 0 ? (
               <DonutChartViz
-                data={originalLangs}
+                data={langChartData}
                 chartId="languages-donut"
                 centerValue={langCenter.centerValue}
                 centerLabel={langCenter.centerLabel}
-                activeSegments={crossFilterState?.langSegments}
+                activeSegments={langActiveSegments}
                 skipCrossFilter
                 onSegmentClick={handleSegmentClick('languages-donut')}
                 onClearFilter={clearFilter}

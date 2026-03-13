@@ -94,13 +94,15 @@ export const DonutChartViz: React.FC<DonutChartVizProps> = ({
     [chartId, setCrossFilter, onSegmentClick, skipCrossFilter]
   );
 
-  // Apply visual highlighting based on selection
-  const processedData = data.map((d, index) => ({
-    ...d,
-    color: d.color || colors[index % colors.length],
-    // No highlights = everything full opacity; with highlights = dim non-matching
-    opacity: highlightedIds.length === 0 || highlightedIds.includes(d.id) ? 1 : 0.3,
-  }));
+  // Apply visual highlighting: selected segments keep their color, unselected get a muted gray
+  const processedData = data.map((d, index) => {
+    const originalColor = d.color || colors[index % colors.length];
+    const isActive = highlightedIds.length === 0 || highlightedIds.includes(d.id);
+    return {
+      ...d,
+      color: isActive ? originalColor : '#334155',
+    };
+  });
 
   return (
     <div className={`relative w-full h-full ${className}`}>
