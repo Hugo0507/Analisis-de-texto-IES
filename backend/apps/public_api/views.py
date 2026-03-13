@@ -9,6 +9,14 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+from rest_framework.pagination import PageNumberPagination
+
+
+class PublicAPIPagination(PageNumberPagination):
+    """Pagination for public API endpoints."""
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 # --- Dataset ---
 from apps.datasets.models import Dataset, DatasetFile
@@ -76,7 +84,7 @@ class PublicDatasetViewSet(viewsets.ReadOnlyModelViewSet):
     """Public read-only access to completed datasets from all users."""
 
     permission_classes = [AllowAny]
-    pagination_class = None
+    pagination_class = PublicAPIPagination
     queryset = Dataset.objects.filter(
         status='completed'
     ).prefetch_related('files').select_related('created_by').order_by('-created_at')
@@ -163,7 +171,7 @@ class PublicDataPreparationViewSet(viewsets.ReadOnlyModelViewSet):
     """Public read-only access to completed data preparations from all users."""
 
     permission_classes = [AllowAny]
-    pagination_class = None
+    pagination_class = PublicAPIPagination
     queryset = DataPreparation.objects.filter(
         status='completed'
     ).select_related('dataset', 'created_by').order_by('-created_at')
@@ -182,7 +190,7 @@ class PublicBagOfWordsViewSet(viewsets.ReadOnlyModelViewSet):
     """Public read-only access to completed BoW analyses from all users."""
 
     permission_classes = [AllowAny]
-    pagination_class = None
+    pagination_class = PublicAPIPagination
     queryset = BagOfWords.objects.filter(
         status='completed'
     ).select_related(
@@ -246,7 +254,7 @@ class PublicNgramAnalysisViewSet(viewsets.ReadOnlyModelViewSet):
     """Public read-only access to completed N-gram analyses from all users."""
 
     permission_classes = [AllowAny]
-    pagination_class = None
+    pagination_class = PublicAPIPagination
     queryset = NgramAnalysis.objects.filter(
         status='completed'
     ).select_related(
@@ -279,7 +287,7 @@ class PublicTfIdfAnalysisViewSet(viewsets.ReadOnlyModelViewSet):
     """Public read-only access to completed TF-IDF analyses from all users."""
 
     permission_classes = [AllowAny]
-    pagination_class = None
+    pagination_class = PublicAPIPagination
     queryset = TfIdfAnalysis.objects.filter(
         status='completed'
     ).select_related(
@@ -313,7 +321,7 @@ class PublicNerAnalysisViewSet(viewsets.ReadOnlyModelViewSet):
     """Public read-only access to completed NER analyses from all users."""
 
     permission_classes = [AllowAny]
-    pagination_class = None
+    pagination_class = PublicAPIPagination
     queryset = NerAnalysis.objects.filter(
         status='completed'
     ).select_related(
@@ -337,7 +345,7 @@ class PublicTopicModelingViewSet(viewsets.ReadOnlyModelViewSet):
     """Public read-only access to completed Topic Modeling analyses from all users."""
 
     permission_classes = [AllowAny]
-    pagination_class = None
+    pagination_class = PublicAPIPagination
     queryset = TopicModeling.objects.filter(
         status='completed'
     ).select_related('created_by').order_by('-created_at')
@@ -356,7 +364,7 @@ class PublicBERTopicViewSet(viewsets.ReadOnlyModelViewSet):
     """Public read-only access to completed BERTopic analyses from all users."""
 
     permission_classes = [AllowAny]
-    pagination_class = None
+    pagination_class = PublicAPIPagination
     queryset = BERTopicAnalysis.objects.filter(
         status='completed'
     ).select_related('created_by').order_by('-created_at')

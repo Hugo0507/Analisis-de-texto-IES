@@ -94,7 +94,7 @@ pytest==7.4.3                        # Testing framework
 pytest-django==4.7.0                 # Django plugin for pytest
 pytest-cov==4.1.0                    # Code coverage
 pytest-asyncio==0.21.1               # Async testing
-factory-boy==3.3.0                   # Test fixtures
+factory-boy==3.3.1                   # Test fixtures (Factory Boy)
 
 # ============================================================
 # CODE QUALITY & LINTING
