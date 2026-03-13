@@ -1,7 +1,7 @@
 # ============================================================================
 # CI/CD Pipeline - GitHub Actions
 # ============================================================================
-# Runs tests, linting, and builds for every push/PR
+# Runs tests, linting, security audits, and builds for every push/PR
 
 name: CI/CD Pipeline
 
@@ -31,6 +31,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
+          cache-dependency-path: './backend/requirements.txt'
 
       - name: Install dependencies
         working-directory: ./backend
@@ -85,6 +86,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
+          cache-dependency-path: './backend/requirements.txt'
 
       - name: Install dependencies
         working-directory: ./backend
@@ -112,6 +114,42 @@ jobs:
           file: ./backend/coverage.xml
           flags: backend
           name: backend-coverage
+
+  # ==================== Security Audit ====================
+
+  security-audit:
+    name: Security - Dependency Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: './backend/requirements.txt'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: './frontend/package-lock.json'
+
+      - name: Audit Python dependencies
+        working-directory: ./backend
+        continue-on-error: true
+        run: |
+          pip install pip-audit
+          pip-audit -r requirements.txt
+
+      - name: Audit npm dependencies
+        working-directory: ./frontend
+        continue-on-error: true
+        run: npm audit --production
 
   # ==================== Frontend Jobs ====================
 
@@ -201,68 +239,47 @@ jobs:
           path: frontend/build/
           retention-days: 7
 
-  # ==================== Docker Build Jobs (Disabled - Not needed for HF) ====================
+  # ==================== Docker Build ====================
 
-  # docker-build:
-  #   name: Docker - Build Images
-  #   runs-on: ubuntu-latest
-  #   needs: [backend-lint, frontend-build]
-  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-  #
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-  #
-  #     - name: Set up Docker Buildx
-  #       uses: docker/setup-buildx-action@v3
-  #
-  #     - name: Log in to Docker Hub
-  #       uses: docker/login-action@v3
-  #       with:
-  #         username: ${{ secrets.DOCKER_USERNAME }}
-  #         password: ${{ secrets.DOCKER_PASSWORD }}
-  #
-  #     - name: Build and push backend image
-  #       uses: docker/build-push-action@v5
-  #       with:
-  #         context: ./backend
-  #         file: ./backend/Dockerfile
-  #         push: true
-  #         tags: |
-  #           ${{ secrets.DOCKER_USERNAME }}/nlp-analysis-backend:latest
-  #           ${{ secrets.DOCKER_USERNAME }}/nlp-analysis-backend:${{ github.sha }}
-  #         cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/nlp-analysis-backend:buildcache
-  #         cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/nlp-analysis-backend:buildcache,mode=max
-  #
-  #     - name: Build and push frontend image
-  #       uses: docker/build-push-action@v5
-  #       with:
-  #         context: ./frontend
-  #         file: ./frontend/Dockerfile
-  #         push: true
-  #         tags: |
-  #           ${{ secrets.DOCKER_USERNAME }}/nlp-analysis-frontend:latest
-  #           ${{ secrets.DOCKER_USERNAME }}/nlp-analysis-frontend:${{ github.sha }}
-  #         cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/nlp-analysis-frontend:buildcache
-  #         cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/nlp-analysis-frontend:buildcache,mode=max
+  docker-build:
+    name: Docker - Build Images
+    runs-on: ubuntu-latest
+    needs: [backend-lint, backend-tests, frontend-build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
-  # ==================== Deployment Job (Optional) ====================
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  # deploy:
-  #   name: Deploy to Production
-  #   runs-on: ubuntu-latest
-  #   needs: [docker-build]
-  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-  #
-  #   steps:
-  #     - name: Deploy to server
-  #       uses: appleboy/ssh-action@master
-  #       with:
-  #         host: ${{ secrets.DEPLOY_HOST }}
-  #         username: ${{ secrets.DEPLOY_USER }}
-  #         key: ${{ secrets.DEPLOY_SSH_KEY }}
-  #         script: |
-  #           cd /path/to/app
-  #           docker-compose -f docker-compose.prod.yml pull
-  #           docker-compose -f docker-compose.prod.yml up -d
-  #           docker-compose -f docker-compose.prod.yml exec backend python manage.py migrate --noinput
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/nlp-analysis-backend:latest
+            ${{ secrets.DOCKER_USERNAME }}/nlp-analysis-backend:${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/nlp-analysis-backend:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/nlp-analysis-backend:buildcache,mode=max
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/nlp-analysis-frontend:latest
+            ${{ secrets.DOCKER_USERNAME }}/nlp-analysis-frontend:${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/nlp-analysis-frontend:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/nlp-analysis-frontend:buildcache,mode=max

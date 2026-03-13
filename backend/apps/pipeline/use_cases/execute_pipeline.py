@@ -79,6 +79,24 @@ class ExecutePipelineUseCase:
         self.analyze_factors_uc = AnalyzeFactorsUseCase()
         self.channel_layer = get_channel_layer()
 
+        # Stage dispatch map - maps stage names to their execution methods
+        self._stage_handlers = {
+            'language_detection': self._run_language_detection,
+            'txt_conversion': self._run_txt_conversion,
+            'preprocessing': self._run_preprocessing,
+            'bow_generation': self._run_bow_generation,
+            'tfidf_calculation': self._run_tfidf_calculation,
+            'lda_training': self._run_topic_model('lda'),
+            'nmf_training': self._run_topic_model('nmf'),
+            'lsa_training': self._run_topic_model('lsa'),
+            'plsa_training': self._run_topic_model('plsa'),
+            'topic_comparison': self._run_topic_comparison,
+            'factor_analysis': self._run_factor_analysis,
+            'consolidation': self._run_stub('Consolidation'),
+            'cache_validation': self._run_stub('Cache validation'),
+            'final_report': self._run_stub('Final report generation'),
+        }
+
     def execute(
         self,
         document_ids: Optional[List[int]] = None,
@@ -197,118 +215,12 @@ class ExecutePipelineUseCase:
         stage_start_time = datetime.now()
 
         try:
-            # Ejecutar la etapa correspondiente
-            if stage_name == 'language_detection':
-                result = self.detect_language_uc.execute_batch(document_ids=document_ids)
-
-            elif stage_name == 'txt_conversion':
-                result = self.convert_documents_uc.execute_batch(
-                    document_ids=document_ids,
-                    download_from_drive=True
-                )
-
-            elif stage_name == 'preprocessing':
-                result = self.preprocess_text_uc.execute_batch(
-                    document_ids=document_ids,
-                    remove_stopwords=True,
-                    remove_punctuation=True,
-                    remove_numbers=True,
-                    apply_stemming=False,
-                    min_word_length=3,
-                    max_word_length=30
-                )
-
-            elif stage_name == 'bow_generation':
-                result = self.generate_bow_uc.execute(
-                    document_ids=document_ids,
-                    max_features=5000,
-                    min_df=2,
-                    max_df=0.85,
-                    ngram_range=(1, 1),
-                    use_cache=use_cache
-                )
-
-            elif stage_name == 'tfidf_calculation':
-                result = self.calculate_tfidf_uc.execute(
-                    document_ids=document_ids,
-                    max_features=5000,
-                    norm='l2',
-                    use_idf=True,
-                    sublinear_tf=False,
-                    use_cache=use_cache
-                )
-
-            elif stage_name == 'lda_training':
-                result = self.train_topic_models_uc.execute(
-                    model_type='lda',
-                    n_topics=10,
-                    document_ids=document_ids,
-                    use_cache=use_cache
-                )
-
-            elif stage_name == 'nmf_training':
-                result = self.train_topic_models_uc.execute(
-                    model_type='nmf',
-                    n_topics=10,
-                    document_ids=document_ids,
-                    use_cache=use_cache
-                )
-
-            elif stage_name == 'lsa_training':
-                result = self.train_topic_models_uc.execute(
-                    model_type='lsa',
-                    n_topics=10,
-                    document_ids=document_ids,
-                    use_cache=use_cache
-                )
-
-            elif stage_name == 'plsa_training':
-                result = self.train_topic_models_uc.execute(
-                    model_type='plsa',
-                    n_topics=10,
-                    document_ids=document_ids,
-                    use_cache=use_cache
-                )
-
-            elif stage_name == 'topic_comparison':
-                result = self.train_topic_models_uc.compare_models(
-                    document_ids=document_ids,
-                    n_topics=10
-                )
-
-            elif stage_name == 'factor_analysis':
-                result = self.analyze_factors_uc.execute(
-                    document_ids=document_ids,
-                    normalize_by_length=True,
-                    use_cache=use_cache
-                )
-
-            elif stage_name == 'consolidation':
-                # TODO: Implementar consolidación final
-                result = {
-                    'success': True,
-                    'message': 'Consolidation stage not yet implemented'
-                }
-
-            elif stage_name == 'cache_validation':
-                # TODO: Validar estado del caché
-                result = {
-                    'success': True,
-                    'message': 'Cache validation not yet implemented'
-                }
-
-            elif stage_name == 'final_report':
-                # TODO: Generar reporte final
-                result = {
-                    'success': True,
-                    'message': 'Final report generation not yet implemented'
-                }
-
+            # Dispatch to stage handler
+            handler = self._stage_handlers.get(stage_name)
+            if not handler:
+                result = {'success': False, 'error': f'Unknown stage: {stage_name}'}
             else:
-                result = {
-                    'success': False,
-                    'error': f'Unknown stage: {stage_name}'
-                }
+                result = handler(document_ids=document_ids, use_cache=use_cache)
 
             # Calcular duración
             stage_duration = (datetime.now() - stage_start_time).total_seconds()
@@ -370,6 +282,63 @@ class ExecutePipelineUseCase:
                 'error': str(e),
                 'data': None
             }
+
+    # --- Stage handler methods ---
+
+    def _run_language_detection(self, document_ids, **kwargs):
+        return self.detect_language_uc.execute_batch(document_ids=document_ids)
+
+    def _run_txt_conversion(self, document_ids, **kwargs):
+        return self.convert_documents_uc.execute_batch(
+            document_ids=document_ids, download_from_drive=True
+        )
+
+    def _run_preprocessing(self, document_ids, **kwargs):
+        return self.preprocess_text_uc.execute_batch(
+            document_ids=document_ids,
+            remove_stopwords=True, remove_punctuation=True,
+            remove_numbers=True, apply_stemming=False,
+            min_word_length=3, max_word_length=30
+        )
+
+    def _run_bow_generation(self, document_ids, use_cache=True, **kwargs):
+        return self.generate_bow_uc.execute(
+            document_ids=document_ids, max_features=5000,
+            min_df=2, max_df=0.85, ngram_range=(1, 1), use_cache=use_cache
+        )
+
+    def _run_tfidf_calculation(self, document_ids, use_cache=True, **kwargs):
+        return self.calculate_tfidf_uc.execute(
+            document_ids=document_ids, max_features=5000,
+            norm='l2', use_idf=True, sublinear_tf=False, use_cache=use_cache
+        )
+
+    def _run_topic_model(self, model_type):
+        """Factory that returns a handler for a specific topic model type."""
+        def handler(document_ids, use_cache=True, **kwargs):
+            return self.train_topic_models_uc.execute(
+                model_type=model_type, n_topics=10,
+                document_ids=document_ids, use_cache=use_cache
+            )
+        return handler
+
+    def _run_topic_comparison(self, document_ids, **kwargs):
+        return self.train_topic_models_uc.compare_models(
+            document_ids=document_ids, n_topics=10
+        )
+
+    def _run_factor_analysis(self, document_ids, use_cache=True, **kwargs):
+        return self.analyze_factors_uc.execute(
+            document_ids=document_ids, normalize_by_length=True,
+            use_cache=use_cache
+        )
+
+    @staticmethod
+    def _run_stub(stage_label):
+        """Factory that returns a stub handler for unimplemented stages."""
+        def handler(**kwargs):
+            return {'success': True, 'message': f'{stage_label} not yet implemented'}
+        return handler
 
     def _record_stage_skipped(self, execution_id: uuid.UUID, stage_name: str):
         """Registrar etapa como omitida."""
