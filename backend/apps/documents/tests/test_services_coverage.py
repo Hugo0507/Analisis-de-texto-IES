@@ -452,6 +452,7 @@ class TestTripleLayerCacheService:
         if not service.redis_enabled:
             pytest.skip("Cache not configured")
         called = []
+
         def compute():
             called.append(1)
             return 'computed_value'
