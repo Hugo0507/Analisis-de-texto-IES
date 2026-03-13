@@ -45,6 +45,8 @@ class CalculateTfidfUseCase:
         self,
         document_ids: List[int] = None,
         max_features: int = 5000,
+        min_df: int = 1,
+        max_df: float = 1.0,
         norm: str = 'l2',
         use_idf: bool = True,
         sublinear_tf: bool = False,
@@ -74,6 +76,8 @@ class CalculateTfidfUseCase:
         # Generate config hash for caching
         config = {
             'max_features': max_features,
+            'min_df': min_df,
+            'max_df': max_df,
             'norm': norm,
             'use_idf': use_idf,
             'sublinear_tf': sublinear_tf
@@ -99,15 +103,16 @@ class CalculateTfidfUseCase:
             else:
                 documents = Document.objects.filter(
                     preprocessed_text__isnull=False
-                )
+                ).exclude(preprocessed_text='')
 
-            if not documents.exists():
+            if not documents:
                 return {
                     'success': False,
-                    'error': 'No preprocessed documents found'
+                    'error': 'No documents found for TF-IDF calculation'
                 }
 
-            logger.info(f"Processing {documents.count()} documents")
+            doc_count = len(documents)
+            logger.info(f"Processing {doc_count} documents")
 
             # Prepare texts
             texts = [doc.preprocessed_text for doc in documents]
@@ -115,6 +120,8 @@ class CalculateTfidfUseCase:
 
             # Configure TF-IDF service
             self.tfidf_service.max_features = max_features
+            self.tfidf_service.min_df = min_df
+            self.tfidf_service.max_df = max_df
             self.tfidf_service.norm = norm
             self.tfidf_service.use_idf = use_idf
             self.tfidf_service.sublinear_tf = sublinear_tf
@@ -125,31 +132,32 @@ class CalculateTfidfUseCase:
             # Get feature names
             feature_names = self.tfidf_service.get_feature_names()
 
-            # Get IDF scores
-            idf_scores = self.tfidf_service.get_idf_scores()
+            # Get IDF scores (only available when use_idf=True)
+            idf_scores = self.tfidf_service.get_idf_scores() if use_idf else {}
 
-            # Save vocabulary with IDF scores
-            vocabulary_mapping = self._save_vocabulary(feature_names, idf_scores)
-
-            # Save TF-IDF matrix to database
-            self._save_tfidf_matrix(
-                tfidf_result['matrix'],
-                doc_ids,
-                vocabulary_mapping
-            )
+            # Persist to database (skipped gracefully when DB is unavailable)
+            try:
+                vocabulary_mapping = self._save_vocabulary(feature_names, idf_scores)
+                self._save_tfidf_matrix(tfidf_result['matrix'], doc_ids, vocabulary_mapping)
+            except Exception as db_err:
+                logger.warning(f"Database persistence skipped: {db_err}")
 
             # Get top terms
             top_terms = self.tfidf_service.get_global_tfidf_scores(
                 tfidf_result['matrix'],
-                feature_names,
                 aggregation='mean',
                 top_n=50
             )
 
+            # Average TF-IDF score across the matrix
+            matrix = tfidf_result['matrix']
+            avg_tfidf_score = float(matrix.mean()) if matrix.nnz > 0 else 0.0
+
             result = {
                 'vocabulary_size': len(feature_names),
-                'document_count': documents.count(),
+                'document_count': doc_count,
                 'matrix_shape': tfidf_result['shape'],
+                'avg_tfidf_score': avg_tfidf_score,
                 'top_terms': [
                     {'term': term, 'tfidf_score': float(score)}
                     for term, score in top_terms

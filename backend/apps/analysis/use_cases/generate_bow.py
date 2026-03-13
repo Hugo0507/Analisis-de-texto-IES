@@ -46,8 +46,8 @@ class GenerateBowUseCase:
         self,
         document_ids: List[int] = None,
         max_features: int = 5000,
-        min_df: int = 2,
-        max_df: float = 0.85,
+        min_df: int = 1,
+        max_df: float = 1.0,
         ngram_range: tuple = (1, 1),
         use_cache: bool = True
     ) -> Dict[str, any]:
@@ -100,15 +100,16 @@ class GenerateBowUseCase:
             else:
                 documents = Document.objects.filter(
                     preprocessed_text__isnull=False
-                )
+                ).exclude(preprocessed_text='')
 
-            if not documents.exists():
+            if not documents:
                 return {
                     'success': False,
-                    'error': 'No preprocessed documents found'
+                    'error': 'No documents found for preprocessing'
                 }
 
-            logger.info(f"Processing {documents.count()} documents")
+            doc_count = len(documents)
+            logger.info(f"Processing {doc_count} documents")
 
             # Prepare texts
             texts = [doc.preprocessed_text for doc in documents]
@@ -126,15 +127,12 @@ class GenerateBowUseCase:
             # Get feature names (vocabulary)
             feature_names = self.bow_service.get_feature_names()
 
-            # Save vocabulary to database
-            vocabulary_mapping = self._save_vocabulary(feature_names)
-
-            # Save BoW matrix to database
-            self._save_bow_matrix(
-                bow_result['matrix'],
-                doc_ids,
-                vocabulary_mapping
-            )
+            # Persist to database (skipped gracefully when DB is unavailable)
+            try:
+                vocabulary_mapping = self._save_vocabulary(feature_names)
+                self._save_bow_matrix(bow_result['matrix'], doc_ids, vocabulary_mapping)
+            except Exception as db_err:
+                logger.warning(f"Database persistence skipped: {db_err}")
 
             # Get top terms
             top_terms = self.bow_service.get_global_term_frequency(
@@ -144,7 +142,7 @@ class GenerateBowUseCase:
 
             result = {
                 'vocabulary_size': len(feature_names),
-                'document_count': documents.count(),
+                'document_count': doc_count,
                 'matrix_shape': bow_result['shape'],
                 'sparsity': bow_result['sparsity'],
                 'top_terms': [
