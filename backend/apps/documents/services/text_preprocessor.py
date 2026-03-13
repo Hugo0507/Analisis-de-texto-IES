@@ -119,11 +119,15 @@ class TextPreprocessorService:
         """
         if not text:
             return {
+                'success': False,
+                'error': 'Text is empty',
                 'preprocessed_text': '',
                 'tokens': [],
                 'token_count': 0,
-                'sentence_count': 0
+                'sentence_count': 0,
             }
+
+        original_length = len(text)
 
         # 1. Lowercase
         if lowercase:
@@ -154,11 +158,13 @@ class TextPreprocessorService:
             ]
 
         # 7. Remove stopwords (if specified)
+        tokens_before_stopwords = len(tokens)
         if remove_stopwords:
             tokens = [
                 token for token in tokens
                 if token not in self.stopwords
             ]
+        removed_stopwords = tokens_before_stopwords - len(tokens)
 
         # 8. Filter by length
         tokens = [
@@ -184,10 +190,16 @@ class TextPreprocessorService:
         preprocessed_text = ' '.join(tokens)
 
         return {
+            'success': True,
             'preprocessed_text': preprocessed_text,
             'tokens': tokens,
             'token_count': len(tokens),
-            'sentence_count': sentence_count
+            'sentence_count': sentence_count,
+            'statistics': {
+                'original_length': original_length,
+                'token_count': len(tokens),
+                'removed_stopwords': removed_stopwords,
+            },
         }
 
     def tokenize_words(self, text: str) -> List[str]:
