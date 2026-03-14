@@ -518,7 +518,7 @@ export const Factors: React.FC = () => {
                   <div className="flex items-center gap-3">
                     {catStat && (
                       <span className="text-xs text-slate-500">
-                        {catStat.total_mentions ?? 0} menciones
+                        {catStat.total_frequency ?? 0} menciones
                       </span>
                     )}
                     {isExpanded ? (
@@ -575,8 +575,8 @@ export const Factors: React.FC = () => {
               <tbody className="divide-y divide-slate-50">
                 {coOccurrence.map((pair: any, i: number) => (
                   <tr key={i} className="hover:bg-slate-50">
-                    <td className="py-2 pr-4 text-slate-700">{pair.factor1}</td>
-                    <td className="py-2 pr-4 text-slate-700">{pair.factor2}</td>
+                    <td className="py-2 pr-4 text-slate-700">{pair.factor1_name}</td>
+                    <td className="py-2 pr-4 text-slate-700">{pair.factor2_name}</td>
                     <td className="py-2 pr-4 text-right font-mono text-slate-600">{pair.co_occurrence_count}</td>
                     <td className="py-2 text-right font-mono text-slate-600">
                       {pair.correlation?.toFixed(3) ?? '—'}
