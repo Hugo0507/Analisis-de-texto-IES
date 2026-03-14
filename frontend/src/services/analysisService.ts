@@ -107,15 +107,19 @@ export interface FactorAnalysisResponse {
   factor_count: number;
   global_statistics: Factor[];
   category_statistics: Record<string, {
-    factor_count: number;
+    n_factors: number;
     avg_relevance: number;
-    total_mentions: number;
+    total_frequency: number;
+    factors: string[];
   }>;
   co_occurrence: Array<{
-    factor1: string;
-    factor2: string;
+    factor1_id: number;
+    factor1_name: string;
+    factor1_category: string;
+    factor2_id: number;
+    factor2_name: string;
+    factor2_category: string;
     co_occurrence_count: number;
-    correlation: number;
   }>;
   consolidated_ranking: Array<{
     rank: number;
