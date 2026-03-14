@@ -52,69 +52,75 @@ class BibExtractorService:
         """
         Main entry point for PDF metadata extraction.
 
-        Pipeline (stops at first successful DOI → CrossRef enrichment):
-          1. Embedded PDF metadata (title/author/keywords if present)
-          2. DOI from filename  (Sage, Taylor & Francis name files as 10.XXXX_xxx.pdf)
-          3. DOI from PDF text  (pdfplumber → PyPDF2 → pdfminer, first 5 pages)
-          4. CrossRef lookup by DOI  (complete authoritative metadata)
-          5. CrossRef search by title (fallback when DOI not found)
+        Guaranteed minimum: bib_title is ALWAYS populated from the filename
+        even when PDF parsing and CrossRef both fail.
+
+        Pipeline:
+          1. Title from filename  (instant, no API — guaranteed fallback)
+          2. Embedded PDF metadata (may improve title, adds authors/keywords)
+          3. DOI from filename  (Sage/T&F: 10.XXXX_xxx.pdf)
+          4. DOI from PDF text  (pdfplumber → PyPDF2 → pdfminer)
+          5. CrossRef by DOI  → full metadata
+          6. CrossRef search by title → authors, year, journal (when no DOI)
         """
         fname = original_filename or Path(file_path).name
         logger.info(f"[BibExtractor] Processing: {fname}")
 
+        # Step 1: title from filename — GUARANTEED, happens before anything else
         metadata = {}
+        title_from_name = self._title_from_filename(fname)
+        if title_from_name:
+            metadata['bib_title'] = title_from_name
+            logger.info(f"[BibExtractor] Title from filename: {title_from_name[:80]}")
 
-        # Step 1: embedded PDF info dictionary
-        embedded = self._extract_pdf_info(file_path)
-        metadata.update(embedded)
-        if embedded:
-            logger.info(f"[BibExtractor] Embedded metadata: {list(embedded.keys())}")
+        try:
+            # Step 2: embedded PDF metadata
+            embedded = self._extract_pdf_info(file_path)
+            if embedded:
+                logger.info(f"[BibExtractor] Embedded: {list(embedded.keys())}")
+                embedded_title = embedded.pop('bib_title', None)
+                # Prefer embedded title only if it's longer (more complete)
+                if embedded_title and len(embedded_title) > len(metadata.get('bib_title', '')):
+                    metadata['bib_title'] = embedded_title
+                metadata.update(embedded)
 
-        # Step 2: DOI from filename (common for Sage, T&F exports)
-        doi = metadata.get('bib_doi')
-        if not doi:
-            doi = self._extract_doi_from_filename(fname)
+            # Step 3: DOI from filename
+            doi = metadata.get('bib_doi') or self._extract_doi_from_filename(fname)
             if doi:
                 logger.info(f"[BibExtractor] DOI from filename: {doi}")
 
-        # Step 3: DOI from PDF text content
-        if not doi:
-            doi = self._extract_doi_from_text(file_path)
+            # Step 4: DOI from PDF text
+            if not doi:
+                doi = self._extract_doi_from_text(file_path)
+                if doi:
+                    logger.info(f"[BibExtractor] DOI from text: {doi}")
+
+            # Step 5: CrossRef by DOI
             if doi:
-                logger.info(f"[BibExtractor] DOI from text: {doi}")
-            else:
-                logger.info(f"[BibExtractor] No DOI found in text for {fname}")
+                doi = self._clean_doi(doi)
+                metadata['bib_doi'] = doi
+                crossref = self._fetch_crossref(doi)
+                if crossref:
+                    logger.info(f"[BibExtractor] CrossRef (DOI): {list(crossref.keys())}")
+                    crossref_title = crossref.pop('bib_title', None)
+                    # Accept CrossRef title if plausible length (>60% of our title)
+                    if crossref_title and len(crossref_title) >= len(metadata.get('bib_title', '')) * 0.6:
+                        metadata['bib_title'] = crossref_title
+                    metadata.update(crossref)
+                    return metadata
 
-        # Step 4: CrossRef lookup by DOI
-        if doi:
-            doi = self._clean_doi(doi)
-            metadata['bib_doi'] = doi
-            crossref = self._fetch_crossref(doi)
-            if crossref:
-                logger.info(f"[BibExtractor] CrossRef enriched: {list(crossref.keys())}")
-                metadata.update(crossref)
-                return metadata
-            else:
-                logger.info(f"[BibExtractor] CrossRef returned nothing for DOI {doi}")
+            # Step 6: CrossRef search by title → authors/year/journal
+            search_title = metadata.get('bib_title', '')
+            if search_title and not metadata.get('bib_authors'):
+                crossref = self._search_crossref_by_title(search_title)
+                if crossref:
+                    logger.info(f"[BibExtractor] CrossRef (title): {list(crossref.keys())}")
+                    crossref.pop('bib_title', None)  # keep our title
+                    metadata.update(crossref)
 
-        # Step 5: guarantee title from filename (no API needed)
-        # This runs BEFORE CrossRef title search so even if the API fails
-        # the title field is always populated for descriptive filenames.
-        if not metadata.get('bib_title'):
-            title_from_name = self._title_from_filename(fname)
-            if title_from_name:
-                metadata['bib_title'] = title_from_name
-                logger.info(f"[BibExtractor] Title from filename: {title_from_name[:60]}")
-
-        # Step 6: CrossRef search by title to fill in authors, year, journal, etc.
-        search_title = metadata.get('bib_title', '')
-        if search_title and len(search_title) > 15 and not metadata.get('bib_authors'):
-            crossref = self._search_crossref_by_title(search_title)
-            if crossref:
-                logger.info(f"[BibExtractor] CrossRef title-search enriched: {list(crossref.keys())}")
-                # Don't overwrite the title we just set from the filename
-                crossref.pop('bib_title', None)
-                metadata.update(crossref)
+        except Exception as e:
+            logger.warning(f"[BibExtractor] Extraction error for {fname}: {e}")
+            # bib_title already set from step 1 — return what we have
 
         return metadata
 
@@ -179,39 +185,42 @@ class BibExtractorService:
         """
         Extract a human-readable title from a PDF filename.
 
-        Many researchers save PDFs with the paper title as the filename:
+        Handles:
           "Digital transformation in higher education.pdf"
-          "Smith 2023 - Industry 4.0 skills review.pdf"
+          "fourth-industrial-revolution-skills-review.pdf"
+          "Smith_2023_Industry_4.0_review.pdf"
 
-        Rules:
-        - Skip filenames that look like DOIs (10.XXXX_...)
-        - Skip filenames that look like internal database IDs
-          (all lowercase letters, digits and dashes, no spaces)
-        - Replace underscores/dashes with spaces
-        - Remove trailing hash suffixes added during storage (_a3f8b2c1)
+        Skips known opaque ID patterns:
+          - DOIs: 10.XXXX_...
+          - ScienceDirect PIIs: 1-s2.0-S...-main
+          - Pure hex/UUID strings
         """
         stem = Path(filename).stem
 
-        # Skip DOI-pattern filenames (handled by _extract_doi_from_filename)
-        if re.match(r'^10\.\d{4,}', stem):
+        # Skip DOI-encoded filenames (10.XXXX_suffix)
+        if re.match(r'^10\.\d{4,}[_/]', stem):
             return ''
 
-        # Skip opaque IDs like "1-s2.0-S0360131523000702-main" or "abc123def456"
-        if re.match(r'^[a-z0-9\-]{20,}$', stem):
+        # Skip ScienceDirect PII IDs: "1-s2.0-S0747563223003461-main"
+        if re.match(r'^\d+-s\d+\.\d+-[A-Z0-9]+-\w+$', stem):
             return ''
 
-        # Remove trailing hash suffix added by _save_file: "_a3f8b2c1" (8 hex chars)
-        cleaned = re.sub(r'_[0-9a-f]{8}$', '', stem)
+        # Skip pure UUID / hex strings (no letters that form words)
+        if re.match(r'^[0-9a-f\-]{32,}$', stem, re.IGNORECASE):
+            return ''
 
-        # Replace underscores and dashes used as word separators with spaces
-        # but only when surrounded by word chars (not within numbers like "4.0")
-        cleaned = re.sub(r'(?<=\w)[_-](?=\w)', ' ', cleaned)
+        # Remove trailing storage hash suffix: _a3f8b2c1 (8 hex chars)
+        cleaned = re.sub(r'_[0-9a-f]{8}$', '', stem, flags=re.IGNORECASE)
+
+        # Replace underscores/dashes between word characters with spaces
+        # Preserves: "4.0", "COVID-19", numbers
+        cleaned = re.sub(r'(?<=[A-Za-z0-9])[_](?=[A-Za-z0-9])', ' ', cleaned)
+        cleaned = re.sub(r'(?<=[A-Za-z])-(?=[A-Za-z])', ' ', cleaned)
 
         # Collapse multiple spaces
         cleaned = re.sub(r'\s+', ' ', cleaned).strip()
 
-        # Must be a plausible title length
-        return cleaned if len(cleaned) > 10 else ''
+        return cleaned if len(cleaned) > 5 else ''
 
     def _extract_doi_from_text(self, file_path: str) -> Optional[str]:
         """
@@ -313,20 +322,47 @@ class BibExtractorService:
 
     def _search_crossref_by_title(self, title: str) -> dict:
         """
-        Search CrossRef by title when no DOI is available.
+        Search CrossRef by title to get authors, year, journal, etc.
 
-        Uses the bibliographic query API — returns the top-ranked result.
-        Only used as a last resort; result may not always be the correct paper.
+        Tries progressively shorter queries when longer ones return no results:
+          1. First 10 significant words
+          2. First 6 words
+          3. First 4 words (minimum useful query)
+
+        Shorter queries have better recall; longer ones have better precision.
         """
+        words = [w for w in title.split() if len(w) > 2]  # skip stop-word-size tokens
+        if len(words) < 3:
+            return {}
+
+        queries = []
+        if len(words) >= 10:
+            queries.append(' '.join(words[:10]))
+        if len(words) >= 6:
+            queries.append(' '.join(words[:6]))
+        queries.append(' '.join(words[:4]))
+
+        # Deduplicate while preserving order
+        seen = set()
+        queries = [q for q in queries if not (q in seen or seen.add(q))]
+
+        for query in queries:
+            result = self._crossref_query(query)
+            if result:
+                return result
+        return {}
+
+    def _crossref_query(self, query: str) -> dict:
+        """Execute a single CrossRef title query."""
         try:
             params = {
-                'query.bibliographic': title,
+                'query.title': query,
                 'rows': 1,
                 'filter': 'type:journal-article',
                 'select': 'title,author,issued,container-title,DOI,abstract,volume,issue,page,subject',
             }
             response = requests.get(
-                f"{CROSSREF_BASE}",
+                CROSSREF_BASE,
                 params=params,
                 timeout=15,
                 headers={'User-Agent': USER_AGENT},
@@ -336,14 +372,12 @@ class BibExtractorService:
             items = response.json().get('message', {}).get('items', [])
             if not items:
                 return {}
-
             result = self._parse_crossref_message(items[0])
-            # Store the DOI found via search
             if items[0].get('DOI'):
                 result['bib_doi'] = items[0]['DOI']
             return result
         except Exception as e:
-            logger.warning(f"[BibExtractor] CrossRef title search failed: {e}")
+            logger.warning(f"[BibExtractor] CrossRef query failed: {e}")
             return {}
 
     def _parse_crossref_message(self, data: dict) -> dict:

@@ -274,7 +274,6 @@ export const DatasetView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('files');
   const [inclusionFilter, setInclusionFilter] = useState<InclusionStatus | 'all'>('all');
   const [editingFile, setEditingFile] = useState<DatasetFile | null>(null);
-  const [isAutoDetecting, setIsAutoDetecting] = useState(false);
   const [isExtractingMeta, setIsExtractingMeta] = useState(false);
 
   useEffect(() => {
@@ -322,19 +321,6 @@ export const DatasetView: React.FC = () => {
     }
   };
 
-  const handleAutoDetect = async () => {
-    if (!id) return;
-    setIsAutoDetecting(true);
-    try {
-      const result = await datasetsService.autoDetectSources(parseInt(id));
-      showSuccess(result.message);
-      await loadDataset();
-    } catch {
-      showError('Error al auto-detectar fuentes');
-    } finally {
-      setIsAutoDetecting(false);
-    }
-  };
 
   const handleSaveFileBib = useCallback(async (fileId: number, data: FileBibUpdate) => {
     if (!id) return;
@@ -447,19 +433,6 @@ export const DatasetView: React.FC = () => {
                 </svg>
               )}
               Extraer metadatos bibliográficos
-            </button>
-            <button
-              onClick={handleAutoDetect}
-              disabled={isAutoDetecting}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-              title="Detecta la base de datos de origen desde el nombre del directorio"
-            >
-              {isAutoDetecting ? <Spinner size="sm" /> : (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              )}
-              Detectar fuente
             </button>
             <button
               onClick={() => navigate(`/admin/configuracion/datasets/${id}/editar`)}
