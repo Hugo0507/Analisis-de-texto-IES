@@ -4,7 +4,7 @@
 # Multi-stage build for optimized and secure production image
 
 # Stage 1: Base image with system dependencies
-FROM python:3.11-slim as base
+FROM python:3.11 as base
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -43,12 +43,12 @@ COPY requirements.txt .
 
 # Install Python dependencies
 # 1. Herramientas básicas de compilación
-RUN pip install --upgrade pip setuptools wheel cython
+RUN pip install --upgrade pip setuptools wheel
 
-# 2. Pre-requisitos pesados para hdbscan y umap
-RUN pip install --no-cache-dir numpy scipy
+# 2. Pre-requisitos de hdbscan (cython, numpy, scipy, scikit-learn deben estar antes)
+RUN pip install --no-cache-dir cython numpy scipy scikit-learn
 
-# 3. hdbscan por separado para asegurar que el compilador lo tome bien
+# 3. hdbscan por separado con todas sus dependencias ya resueltas
 RUN pip install --no-cache-dir hdbscan
 
 # 4. Resto de dependencias
