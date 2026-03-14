@@ -199,6 +199,8 @@ export const Factors: React.FC = () => {
       if (rawError.toLowerCase().includes('no factors found') || rawError.toLowerCase().includes('seed factors')) {
         setNoFactorsInDb(true);
         showError('El catálogo de factores no está inicializado. Usa el botón "Inicializar catálogo" para cargarlo.');
+      } else if (rawError.toLowerCase().includes('no preprocessed documents')) {
+        showError('No hay documentos preprocesados. Ejecuta una Preparación de Datos antes de correr el análisis de factores.');
       } else {
         showError('Error al ejecutar el análisis: ' + rawError);
       }
