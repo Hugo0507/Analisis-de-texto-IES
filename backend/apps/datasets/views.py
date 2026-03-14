@@ -19,7 +19,7 @@ from .serializers import (
     DatasetFileSerializer,
     DatasetFileUpdateSerializer,
 )
-from .services import DatasetProcessorService, SimpleDriveService
+from .services import DatasetProcessorService, SimpleDriveService, BibExtractorService
 
 logger = logging.getLogger(__name__)
 
@@ -368,6 +368,109 @@ class DatasetViewSet(viewsets.ModelViewSet):
         return Response({
             'message': f'{updated} archivo(s) actualizados con base de datos detectada automáticamente.',
             'updated': updated,
+            'total': dataset.files.count(),
+        })
+
+    @action(detail=True, methods=['post'], url_path='auto_extract_metadata')
+    def auto_extract_metadata(self, request, pk=None):
+        """
+        Automatically extract bibliographic metadata (title, authors, year,
+        journal, DOI, abstract, keywords) for all PDF files in a dataset.
+
+        Pipeline per file:
+          1. Embedded PDF metadata
+          2. DOI from filename (Sage, Taylor & Francis patterns)
+          3. DOI from PDF text (pdfplumber → PyPDF2 → pdfminer)
+          4. CrossRef lookup by DOI
+          5. CrossRef title search (fallback)
+
+        Query params:
+          - force=true  → re-extract even files that already have a title
+                          (default: skip files that already have bib_title)
+        """
+        dataset = self.get_object()
+        force = request.query_params.get('force', '').lower() == 'true'
+
+        pdf_files = dataset.files.filter(
+            mime_type='application/pdf'
+        ) | dataset.files.filter(original_filename__iendswith='.pdf')
+
+        # De-duplicate
+        pdf_files = pdf_files.distinct()
+
+        if not force:
+            pdf_files = pdf_files.filter(bib_title__isnull=True)
+
+        total = pdf_files.count()
+
+        if total == 0:
+            return Response({
+                'message': 'Todos los archivos ya tienen metadatos. Usa force=true para re-extraer.',
+                'updated': 0,
+                'total': dataset.files.count(),
+            })
+
+        extractor = BibExtractorService()
+        BIB_FIELDS = [
+            'bib_title', 'bib_authors', 'bib_year', 'bib_journal', 'bib_doi',
+            'bib_abstract', 'bib_keywords', 'bib_source_db',
+            'bib_volume', 'bib_issue', 'bib_pages',
+        ]
+
+        def run_extraction():
+            updated = 0
+            failed = 0
+            for f in pdf_files:
+                try:
+                    meta = extractor.extract_from_pdf(
+                        f.file_path,
+                        original_filename=f.original_filename,
+                    )
+                    if not meta:
+                        # At minimum auto-detect source from directory
+                        if not f.bib_source_db:
+                            detected = f.auto_detect_source_db()
+                            if detected:
+                                f.bib_source_db = detected
+                                f.save(update_fields=['bib_source_db'])
+                        continue
+
+                    update_fields = []
+                    for field in BIB_FIELDS:
+                        value = meta.get(field)
+                        if value and (force or not getattr(f, field)):
+                            setattr(f, field, value)
+                            update_fields.append(field)
+
+                    # Always auto-detect source if still missing
+                    if not f.bib_source_db:
+                        detected = f.auto_detect_source_db()
+                        if detected:
+                            f.bib_source_db = detected
+                            if 'bib_source_db' not in update_fields:
+                                update_fields.append('bib_source_db')
+
+                    if update_fields:
+                        f.save(update_fields=update_fields)
+                        updated += 1
+
+                except Exception as e:
+                    logger.error(f"auto_extract_metadata failed for file {f.id}: {e}")
+                    failed += 1
+
+            logger.info(
+                f"auto_extract_metadata done for dataset {dataset.id}: "
+                f"updated={updated}, failed={failed}"
+            )
+
+        # Run in background thread so the request returns immediately
+        thread = threading.Thread(target=run_extraction, daemon=True)
+        thread.start()
+
+        return Response({
+            'message': f'Extrayendo metadatos de {total} archivo(s) en segundo plano. '
+                       f'Recarga la página en unos segundos para ver los resultados.',
+            'processing': total,
             'total': dataset.files.count(),
         })
 

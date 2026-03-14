@@ -507,6 +507,23 @@ class DatasetsService {
   }
 
   /**
+   * Trigger automatic extraction of bibliographic metadata (title, authors, year,
+   * journal, DOI, abstract, keywords) for all PDFs in a dataset via CrossRef API.
+   * Runs in background — returns immediately with count of files being processed.
+   * @param force  if true, re-extracts even files that already have a title
+   */
+  async autoExtractMetadata(
+    datasetId: number,
+    force = false,
+  ): Promise<{ message: string; processing: number; total: number }> {
+    const url = force
+      ? `/datasets/${datasetId}/auto_extract_metadata/?force=true`
+      : `/datasets/${datasetId}/auto_extract_metadata/`;
+    const response = await apiClient.post(url);
+    return response.data;
+  }
+
+  /**
    * Get PRISMA report for a dataset
    */
   async getPrismaReport(datasetId: number): Promise<PrismaReport> {
