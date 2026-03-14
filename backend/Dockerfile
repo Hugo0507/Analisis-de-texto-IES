@@ -42,8 +42,17 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install Python dependencies
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+# 1. Herramientas básicas de compilación
+RUN pip install --upgrade pip setuptools wheel cython
+
+# 2. Pre-requisitos pesados para hdbscan y umap
+RUN pip install --no-cache-dir numpy scipy
+
+# 3. hdbscan por separado para asegurar que el compilador lo tome bien
+RUN pip install --no-cache-dir hdbscan
+
+# 4. Resto de dependencias
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Download spaCy models for NER analysis (install directly via pip)
 RUN pip install --no-cache-dir \
