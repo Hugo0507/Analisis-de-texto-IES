@@ -15,7 +15,9 @@ from .serializers import (
     DatasetSerializer,
     DatasetListSerializer,
     DatasetCreateSerializer,
-    DatasetFileSerializer
+    DatasetUpdateSerializer,
+    DatasetFileSerializer,
+    DatasetFileUpdateSerializer,
 )
 from .services import DatasetProcessorService, SimpleDriveService
 
@@ -47,6 +49,8 @@ class DatasetViewSet(viewsets.ModelViewSet):
             return DatasetListSerializer
         elif self.action == 'create':
             return DatasetCreateSerializer
+        elif self.action in ('update', 'partial_update'):
+            return DatasetUpdateSerializer
         return DatasetSerializer
 
     def create(self, request, *args, **kwargs):
@@ -75,6 +79,10 @@ class DatasetViewSet(viewsets.ModelViewSet):
                     description=description,
                     source=source,
                     source_url=serializer.validated_data.get('source_url'),
+                    search_strategy=serializer.validated_data.get('search_strategy', ''),
+                    inclusion_criteria=serializer.validated_data.get('inclusion_criteria', ''),
+                    exclusion_criteria=serializer.validated_data.get('exclusion_criteria', ''),
+                    database_sources=serializer.validated_data.get('database_sources', ''),
                     created_by=request.user,
                     status='processing'
                 )
@@ -303,6 +311,99 @@ class DatasetViewSet(viewsets.ModelViewSet):
             'all_extensions': all_extensions,
             'grand_total': grand_total,
             'pie_chart_data': pie_chart_data
+        })
+
+    @action(detail=True, methods=['patch'], url_path='update_metadata')
+    def update_metadata(self, request, pk=None):
+        """
+        Update PRISMA protocol and search strategy metadata for a dataset.
+
+        Accepts: name, description, search_strategy, inclusion_criteria,
+                 exclusion_criteria, database_sources
+        """
+        dataset = self.get_object()
+        serializer = DatasetUpdateSerializer(dataset, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(DatasetSerializer(dataset).data)
+
+    @action(detail=True, methods=['patch'], url_path=r'files/(?P<file_id>\d+)/update_bib')
+    def update_file_bib(self, request, pk=None, file_id=None):
+        """
+        Update bibliographic metadata and inclusion status for a single file.
+
+        Accepts: bib_title, bib_authors, bib_year, bib_journal, bib_doi,
+                 bib_abstract, bib_keywords, bib_source_db, bib_volume,
+                 bib_issue, bib_pages, inclusion_status, exclusion_reason
+        """
+        dataset = self.get_object()
+        try:
+            file = dataset.files.get(id=file_id)
+        except DatasetFile.DoesNotExist:
+            return Response(
+                {'error': 'Archivo no encontrado en este dataset'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = DatasetFileUpdateSerializer(file, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(DatasetFileSerializer(file).data)
+
+    @action(detail=True, methods=['post'], url_path='auto_detect_sources')
+    def auto_detect_sources(self, request, pk=None):
+        """
+        Auto-detect bib_source_db for all files in a dataset based on directory name.
+        Only updates files that don't already have a source_db set.
+        """
+        dataset = self.get_object()
+        updated = 0
+        for file in dataset.files.filter(bib_source_db__isnull=True):
+            detected = file.auto_detect_source_db()
+            if detected:
+                file.bib_source_db = detected
+                file.save(update_fields=['bib_source_db'])
+                updated += 1
+
+        return Response({
+            'message': f'{updated} archivo(s) actualizados con base de datos detectada automáticamente.',
+            'updated': updated,
+            'total': dataset.files.count(),
+        })
+
+    @action(detail=True, methods=['get'], url_path='prisma_report')
+    def prisma_report(self, request, pk=None):
+        """
+        Returns a PRISMA-style summary for the dataset.
+        """
+        dataset = self.get_object()
+        files = dataset.files.all()
+
+        by_source = {}
+        for f in files.exclude(bib_source_db__isnull=True).exclude(bib_source_db=''):
+            by_source[f.bib_source_db] = by_source.get(f.bib_source_db, 0) + 1
+
+        by_year = {}
+        for f in files.exclude(bib_year__isnull=True):
+            by_year[f.bib_year] = by_year.get(f.bib_year, 0) + 1
+
+        exclusion_reasons = list(
+            files.filter(inclusion_status='excluded')
+            .exclude(exclusion_reason__isnull=True)
+            .exclude(exclusion_reason='')
+            .values_list('exclusion_reason', flat=True)
+        )
+
+        return Response({
+            'dataset': {'id': dataset.id, 'name': dataset.name},
+            'search_strategy': dataset.search_strategy,
+            'inclusion_criteria': dataset.inclusion_criteria,
+            'exclusion_criteria': dataset.exclusion_criteria,
+            'database_sources': dataset.database_sources,
+            'prisma_counts': dataset.prisma_stats,
+            'by_source_db': by_source,
+            'by_year': dict(sorted(by_year.items())),
+            'exclusion_reasons': exclusion_reasons,
         })
 
     @action(detail=True, methods=['post'])
