@@ -95,13 +95,13 @@ class TestAnalyzeFactorsUseCase:
 
     # ── no documents ──────────────────────────────────────────────────────
 
-    @patch('apps.analysis.use_cases.analyze_factors.Document.objects.filter')
+    @patch('apps.analysis.use_cases.analyze_factors.DatasetFile.objects.filter')
     @patch('apps.analysis.use_cases.analyze_factors.Factor.objects.all')
     def test_no_documents_returns_error(self, mock_all, mock_filter, use_case):
         mock_all.return_value.values.return_value = _make_factors()
         qs = Mock()
         qs.exists.return_value = False
-        mock_filter.return_value = qs
+        mock_filter.return_value.exclude.return_value = qs
 
         result = use_case.execute(use_cache=False)
 
@@ -110,14 +110,12 @@ class TestAnalyzeFactorsUseCase:
 
     # ── success path ──────────────────────────────────────────────────────
 
-    @patch('apps.analysis.use_cases.analyze_factors.DocumentFactor.objects.filter')
-    @patch('apps.analysis.use_cases.analyze_factors.DocumentFactor.objects.bulk_create')
     @patch('apps.analysis.use_cases.analyze_factors.Factor.objects.filter')
-    @patch('apps.analysis.use_cases.analyze_factors.Document.objects.filter')
+    @patch('apps.analysis.use_cases.analyze_factors.DatasetFile.objects.filter')
     @patch('apps.analysis.use_cases.analyze_factors.Factor.objects.all')
     def test_execute_success(
         self, mock_all, mock_doc_filter, mock_factor_filter,
-        mock_bulk_create, mock_df_filter, use_case, mock_analyzer
+        use_case, mock_analyzer
     ):
         factors = _make_factors()
         mock_all.return_value.values.return_value = factors
@@ -127,15 +125,13 @@ class TestAnalyzeFactorsUseCase:
         doc_qs.exists.return_value = True
         doc_qs.count.return_value = len(docs)
         doc_qs.__iter__ = Mock(return_value=iter(docs))
-        mock_doc_filter.return_value = doc_qs
+        mock_doc_filter.return_value.exclude.return_value = doc_qs
 
         corpus_result = _make_corpus_result([d.id for d in docs])
         mock_analyzer.analyze_corpus.return_value = corpus_result
 
         # Factor.objects.filter().update() for statistics update
         mock_factor_filter.return_value.update.return_value = 1
-        # DocumentFactor.objects.filter().delete() for cleanup
-        mock_df_filter.return_value.delete.return_value = None
 
         result = use_case.execute(use_cache=False)
 
@@ -148,14 +144,12 @@ class TestAnalyzeFactorsUseCase:
 
     # ── document_ids filter ───────────────────────────────────────────────
 
-    @patch('apps.analysis.use_cases.analyze_factors.DocumentFactor.objects.filter')
-    @patch('apps.analysis.use_cases.analyze_factors.DocumentFactor.objects.bulk_create')
     @patch('apps.analysis.use_cases.analyze_factors.Factor.objects.filter')
-    @patch('apps.analysis.use_cases.analyze_factors.Document.objects.filter')
+    @patch('apps.analysis.use_cases.analyze_factors.DatasetFile.objects.filter')
     @patch('apps.analysis.use_cases.analyze_factors.Factor.objects.all')
     def test_document_ids_filter_applied(
         self, mock_all, mock_doc_filter, mock_factor_filter,
-        mock_bulk_create, mock_df_filter, use_case, mock_analyzer
+        use_case, mock_analyzer
     ):
         mock_all.return_value.values.return_value = _make_factors(1)
 
@@ -164,16 +158,18 @@ class TestAnalyzeFactorsUseCase:
         doc_qs.exists.return_value = True
         doc_qs.count.return_value = 2
         doc_qs.__iter__ = Mock(return_value=iter(docs))
-        mock_doc_filter.return_value = doc_qs
+        mock_doc_filter.return_value.exclude.return_value = doc_qs
 
         corpus_result = _make_corpus_result([1, 2])
         mock_analyzer.analyze_corpus.return_value = corpus_result
         mock_factor_filter.return_value.update.return_value = 1
-        mock_df_filter.return_value.delete.return_value = None
 
         use_case.execute(document_ids=[1, 2], use_cache=False)
 
-        mock_doc_filter.assert_called_once_with(id__in=[1, 2])
+        mock_doc_filter.assert_called_once_with(
+            id__in=[1, 2],
+            preprocessed_text__isnull=False
+        )
 
     # ── get_document_factors ──────────────────────────────────────────────
 

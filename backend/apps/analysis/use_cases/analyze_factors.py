@@ -9,6 +9,7 @@ from typing import Dict, List
 
 from apps.analysis.services.factor_analyzer_service import FactorAnalyzerService
 from apps.datasets.models import DatasetFile
+from apps.documents.models import Document
 from apps.analysis.models import Factor, DocumentFactor
 from apps.infrastructure.cache.triple_layer_cache import TripleLayerCacheService
 
