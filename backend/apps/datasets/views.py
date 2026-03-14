@@ -355,8 +355,8 @@ class DatasetViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='auto_detect_sources')
     def auto_detect_sources(self, request, pk=None):
         """
-        Auto-detect bib_source_db for all files in a dataset based on directory name.
-        Only updates files that don't already have a source_db set.
+        Auto-detect bib_source_db for all files based on directory name.
+        Also updates dataset.database_sources with the unique detected DBs.
         """
         dataset = self.get_object()
         updated = 0
@@ -367,10 +367,28 @@ class DatasetViewSet(viewsets.ModelViewSet):
                 file.save(update_fields=['bib_source_db'])
                 updated += 1
 
+        # Sync dataset.database_sources from all detected source DBs
+        all_dbs = (
+            dataset.files
+            .exclude(bib_source_db__isnull=True)
+            .exclude(bib_source_db='')
+            .values_list('bib_source_db', flat=True)
+            .distinct()
+        )
+        db_display = {v: k for k, v in dict(DatasetFile.SOURCE_DB_CHOICES).items()}
+        db_labels = [
+            dict(DatasetFile.SOURCE_DB_CHOICES).get(db, db)
+            for db in sorted(all_dbs)
+        ]
+        if db_labels:
+            dataset.database_sources = ', '.join(db_labels)
+            dataset.save(update_fields=['database_sources'])
+
         return Response({
             'message': f'{updated} archivo(s) actualizados con base de datos detectada automáticamente.',
             'updated': updated,
             'total': dataset.files.count(),
+            'database_sources': dataset.database_sources,
         })
 
     @action(detail=True, methods=['post'], url_path='auto_extract_metadata')

@@ -13,6 +13,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import datasetsService from '../services/datasetsService';
+import { SOURCE_DB_LABELS } from '../services/datasetsService';
 import type {
   Dataset, DatasetFile, DirectoryStats,
   FileBibUpdate, InclusionStatus, SourceDb,
@@ -713,24 +714,92 @@ export const DatasetView: React.FC = () => {
           )}
 
           {/* ── Tab: PRISMA ───────────────────────────────────────────────── */}
-          {activeTab === 'prisma' && (
+          {activeTab === 'prisma' && (() => {
+            // ── Compute derived values from files ──────────────────────────
+            const detectedDbs = Array.from(
+              new Set(dataset.files.map(f => f.bib_source_db).filter(Boolean))
+            ) as string[];
+            const dbLabels = detectedDbs.map(db => SOURCE_DB_LABELS[db as keyof typeof SOURCE_DB_LABELS] ?? db);
+
+            const years = dataset.files.map(f => f.bib_year).filter(Boolean) as number[];
+            const minYear = years.length ? Math.min(...years) : null;
+            const maxYear = years.length ? Math.max(...years) : null;
+            const pdfCount = dataset.files.filter(f =>
+              f.mime_type === 'application/pdf' || f.original_filename?.endsWith('.pdf')
+            ).length;
+
+            const autoSearchStrategy = detectedDbs.length > 0
+              ? `Se realizó una búsqueda bibliográfica en ${dbLabels.join(', ')}. Se identificaron ${dataset.total_files} documentos en total${pdfCount ? ` (${pdfCount} en formato PDF)` : ''}.${minYear && maxYear ? ` Los artículos recuperados abarcan el período ${minYear}–${maxYear}.` : ''}`
+              : null;
+
+            const autoDatabases = dbLabels.length > 0 ? dbLabels.join(', ') : null;
+
+            const fields = [
+              {
+                label: 'Estrategia de búsqueda',
+                value: dataset.search_strategy,
+                auto: autoSearchStrategy,
+                hint: 'Define la ecuación de búsqueda, bases de datos consultadas y fechas de la búsqueda.',
+              },
+              {
+                label: 'Bases de datos consultadas',
+                value: dataset.database_sources,
+                auto: autoDatabases,
+                hint: 'Sube archivos PDF organizados en carpetas por base de datos y usa "Detectar fuente" para poblar este campo.',
+              },
+              {
+                label: 'Criterios de inclusión',
+                value: dataset.inclusion_criteria,
+                auto: null,
+                hint: 'Ej: Artículos en inglés o español, publicados entre 2018-2024, sobre transformación digital en educación superior, con acceso al texto completo.',
+              },
+              {
+                label: 'Criterios de exclusión',
+                value: dataset.exclusion_criteria,
+                auto: null,
+                hint: 'Ej: Artículos duplicados, literatura gris, actas de conferencia sin revisión por pares, estudios no relacionados con el contexto universitario.',
+              },
+            ];
+
+            return (
             <div className="p-5 space-y-5">
               {/* Criteria */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[
-                  { label: 'Estrategia de búsqueda', value: dataset.search_strategy },
-                  { label: 'Bases de datos consultadas', value: dataset.database_sources },
-                  { label: 'Criterios de inclusión', value: dataset.inclusion_criteria },
-                  { label: 'Criterios de exclusión', value: dataset.exclusion_criteria },
-                ].map(item => (
+                {fields.map(item => (
                   <div key={item.label} className="p-4 bg-gray-50 rounded-xl">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{item.label}</p>
-                    <p className="text-sm text-gray-700 whitespace-pre-line">
-                      {item.value || <span className="text-gray-400 italic">No especificado</span>}
-                    </p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{item.label}</p>
+                      {!item.value && (item.auto || item.hint) && (
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">
+                          {item.auto ? 'auto' : 'sugerencia'}
+                        </span>
+                      )}
+                    </div>
+                    {item.value ? (
+                      <p className="text-sm text-gray-700 whitespace-pre-line">{item.value}</p>
+                    ) : item.auto ? (
+                      <p className="text-sm text-gray-700">{item.auto}</p>
+                    ) : (
+                      <p className="text-xs text-gray-400 italic leading-relaxed">{item.hint}</p>
+                    )}
                   </div>
                 ))}
               </div>
+              {/* Edit prompt */}
+              {fields.some(f => !f.value) && (
+                <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg text-xs text-blue-700">
+                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Los campos marcados como <strong className="mx-1">sugerencia</strong> son plantillas de referencia — define los criterios reales en
+                  <button
+                    onClick={() => navigate(`/admin/configuracion/datasets/${id}/editar`)}
+                    className="ml-1 underline font-medium hover:text-blue-900"
+                  >
+                    Editar dataset
+                  </button>.
+                </div>
+              )}
 
               {/* Exclusion reasons */}
               {dataset.files.some(f => f.inclusion_status === 'excluded' && f.exclusion_reason) && (
@@ -797,7 +866,8 @@ export const DatasetView: React.FC = () => {
                 );
               })()}
             </div>
-          )}
+            );
+          })()}
         </div>
       </div>
     </div>
