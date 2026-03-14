@@ -8,7 +8,7 @@ import logging
 from typing import Dict, List
 
 from apps.analysis.services.factor_analyzer_service import FactorAnalyzerService
-from apps.documents.models import Document
+from apps.datasets.models import DatasetFile
 from apps.analysis.models import Factor, DocumentFactor
 from apps.infrastructure.cache.triple_layer_cache import TripleLayerCacheService
 
@@ -96,29 +96,32 @@ class AnalyzeFactorsUseCase:
             # Load factors into analyzer
             self.analyzer_service.load_factors(factors)
 
-            # Get documents
+            # Get preprocessed files from DatasetFile
             if document_ids:
-                documents = Document.objects.filter(id__in=document_ids)
-            else:
-                documents = Document.objects.filter(
+                files = DatasetFile.objects.filter(
+                    id__in=document_ids,
                     preprocessed_text__isnull=False
-                )
+                ).exclude(preprocessed_text='')
+            else:
+                files = DatasetFile.objects.filter(
+                    preprocessed_text__isnull=False
+                ).exclude(preprocessed_text='')
 
-            if not documents.exists():
+            if not files.exists():
                 return {
                     'success': False,
-                    'error': 'No preprocessed documents found'
+                    'error': 'No preprocessed documents found. Please run Data Preparation first.'
                 }
 
-            logger.info(f"Processing {documents.count()} documents")
+            logger.info(f"Processing {files.count()} preprocessed files")
 
             # Prepare documents for analysis
             corpus_docs = [
                 {
-                    'id': doc.id,
-                    'text': doc.preprocessed_text
+                    'id': f.id,
+                    'text': f.preprocessed_text
                 }
-                for doc in documents
+                for f in files
             ]
 
             # Analyze corpus
