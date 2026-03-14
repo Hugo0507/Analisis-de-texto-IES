@@ -45,11 +45,11 @@ COPY requirements.txt .
 # 1. Herramientas básicas de compilación
 RUN pip install --upgrade pip setuptools wheel
 
-# 2. Pre-requisitos de hdbscan (cython, numpy, scipy, scikit-learn deben estar antes)
-RUN pip install --no-cache-dir cython numpy scipy scikit-learn
+# 2. Pre-requisitos de hdbscan con versiones fijas (debe ir antes que requirements.txt)
+RUN pip install --no-cache-dir cython==0.29.36 numpy scipy scikit-learn
 
-# 3. hdbscan por separado con todas sus dependencias ya resueltas
-RUN pip install --no-cache-dir hdbscan
+# 3. hdbscan aislado, sin interferencia del resto del requirements.txt
+RUN pip install --no-cache-dir hdbscan==0.8.33
 
 # 4. Resto de dependencias
 RUN pip install --no-cache-dir -r requirements.txt

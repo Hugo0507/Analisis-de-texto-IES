@@ -46,7 +46,7 @@ langdetect==1.0.9                    # Language detection
 # ============================================================
 # MACHINE LEARNING & DATA SCIENCE
 # ============================================================
-scikit-learn==1.3.2                  # Machine learning algorithms
+# scikit-learn instalado en Dockerfile antes de hdbscan (ver Dockerfile paso 2)
 pandas==2.1.4                        # Data manipulation
 numpy==1.26.2                        # Numerical computing
 scipy==1.11.4                        # Scientific computing
@@ -58,7 +58,7 @@ gensim==4.3.2                        # LDA, LSA topic modeling
 bertopic==0.16.0                     # BERTopic modeling
 sentence-transformers==2.2.2         # Sentence embeddings for BERTopic
 umap-learn==0.5.5                    # UMAP dimensionality reduction
-hdbscan==0.8.33                      # HDBSCAN clustering
+# hdbscan instalado en Dockerfile antes que requirements.txt (ver Dockerfile paso 3)
 
 # ============================================================
 # PDF PROCESSING
