@@ -20,13 +20,7 @@ import {
 import {
   Login,
   ForgotPassword,
-  Pipeline,
-  BagOfWords,
-  TfIdf,
-  TopicModeling,
   Factors,
-  Documents,
-  Statistics,
   Users,
   UserCreate,
   UserDetail,
@@ -85,18 +79,6 @@ function App() {
             <Route path="resumen" element={<GeneralDashboard />} />
           </Route>
 
-          {/* Public Dashboard Tools Routes - Analysis Tools (NO LOGIN REQUIRED) */}
-          <Route path="/dashboard/tools" element={<MainLayout />}>
-            <Route index element={<Pipeline />} />
-            <Route path="pipeline" element={<Pipeline />} />
-            <Route path="documents" element={<Documents />} />
-            <Route path="bow" element={<BagOfWords />} />
-            <Route path="tfidf" element={<TfIdf />} />
-            <Route path="topics" element={<TopicModeling />} />
-            <Route path="factors" element={<Factors />} />
-            <Route path="statistics" element={<Statistics />} />
-          </Route>
-
           {/* Protected Admin Configuration Routes - Users only (LOGIN REQUIRED) */}
           <Route element={<ProtectedRoute />}>
             <Route path="/admin/configuracion" element={<MainLayout />}>
@@ -142,6 +124,11 @@ function App() {
               <Route path="bertopic" element={<BERTopicList />} />
               <Route path="bertopic/nuevo" element={<BERTopicCreate />} />
               <Route path="bertopic/:id" element={<BERTopicView />} />
+            </Route>
+
+            {/* Protected Admin Analysis Routes (LOGIN REQUIRED) */}
+            <Route path="/admin/analisis" element={<MainLayout />}>
+              <Route path="analisis-de-factores" element={<Factors />} />
             </Route>
           </Route>
 
