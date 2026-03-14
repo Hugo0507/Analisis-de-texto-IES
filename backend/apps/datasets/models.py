@@ -110,13 +110,20 @@ class DatasetFile(models.Model):
     SOURCE_DB_CHOICES = [
         ('scopus', 'Scopus'),
         ('wos', 'Web of Science'),
+        ('sciencedirect', 'ScienceDirect / Elsevier'),
+        ('sage', 'SAGE Journals'),
+        ('taylor_francis', 'Taylor & Francis'),
+        ('springer', 'Springer / SpringerLink'),
+        ('wiley', 'Wiley Online Library'),
+        ('ieee', 'IEEE Xplore'),
+        ('acm', 'ACM Digital Library'),
         ('redalyc', 'Redalyc'),
+        ('scielo', 'SciELO'),
+        ('dialnet', 'Dialnet'),
         ('eric', 'ERIC'),
         ('pubmed', 'PubMed'),
         ('google_scholar', 'Google Scholar'),
         ('semantic_scholar', 'Semantic Scholar'),
-        ('scielo', 'SciELO'),
-        ('dialnet', 'Dialnet'),
         ('other', 'Otra'),
     ]
 
@@ -227,20 +234,58 @@ class DatasetFile(models.Model):
         Maps common folder names used when organizing downloads from academic databases.
         """
         DIRECTORY_TO_SOURCE = {
+            # Scopus
             'scopus': 'scopus',
+            # Web of Science
             'wos': 'wos',
             'webofscience': 'wos',
             'web of science': 'wos',
             'web_of_science': 'wos',
+            # ScienceDirect / Elsevier
+            'sciencedirect': 'sciencedirect',
+            'science direct': 'sciencedirect',
+            'science_direct': 'sciencedirect',
+            'elsevier': 'sciencedirect',
+            # SAGE
+            'sage': 'sage',
+            'sage journals': 'sage',
+            'sage_journals': 'sage',
+            # Taylor & Francis
+            'taylor': 'taylor_francis',
+            'taylor_francis': 'taylor_francis',
+            'taylor & francis': 'taylor_francis',
+            'taylor and francis': 'taylor_francis',
+            'taylorfrancis': 'taylor_francis',
+            'tandfonline': 'taylor_francis',
+            # Springer
+            'springer': 'springer',
+            'springerlink': 'springer',
+            'springer_link': 'springer',
+            # Wiley
+            'wiley': 'wiley',
+            'wiley online': 'wiley',
+            'wiley_online': 'wiley',
+            # IEEE
+            'ieee': 'ieee',
+            'ieeexplore': 'ieee',
+            'ieee_xplore': 'ieee',
+            # ACM
+            'acm': 'acm',
+            'acm digital': 'acm',
+            'acm_digital': 'acm',
+            # Redalyc / SciELO / Dialnet
             'redalyc': 'redalyc',
-            'eric': 'eric',
-            'pubmed': 'pubmed',
-            'google scholar': 'google_scholar',
-            'google_scholar': 'google_scholar',
-            'semantic scholar': 'semantic_scholar',
-            'semantic_scholar': 'semantic_scholar',
             'scielo': 'scielo',
             'dialnet': 'dialnet',
+            # ERIC / PubMed
+            'eric': 'eric',
+            'pubmed': 'pubmed',
+            # Google / Semantic Scholar
+            'google scholar': 'google_scholar',
+            'google_scholar': 'google_scholar',
+            'googlescholar': 'google_scholar',
+            'semantic scholar': 'semantic_scholar',
+            'semantic_scholar': 'semantic_scholar',
         }
         root_dir = ''
         if self.directory_path:
@@ -248,7 +293,20 @@ class DatasetFile(models.Model):
         elif self.directory_name:
             root_dir = self.directory_name.lower().strip()
 
-        return DIRECTORY_TO_SOURCE.get(root_dir)
+        if not root_dir:
+            return None
+
+        # Exact match first
+        if root_dir in DIRECTORY_TO_SOURCE:
+            return DIRECTORY_TO_SOURCE[root_dir]
+
+        # Partial match: check if any known key appears inside the folder name
+        for key, value in DIRECTORY_TO_SOURCE.items():
+            if key in root_dir:
+                return value
+
+        # If there IS a directory but no match, classify as 'other'
+        return 'other'
 
     @property
     def bib_authors_list(self):

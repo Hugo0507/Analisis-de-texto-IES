@@ -8,19 +8,28 @@ import apiClient from './api';
 
 export type InclusionStatus = 'pending' | 'included' | 'excluded';
 export type SourceDb =
-  | 'scopus' | 'wos' | 'redalyc' | 'eric' | 'pubmed'
-  | 'google_scholar' | 'semantic_scholar' | 'scielo' | 'dialnet' | 'other';
+  | 'scopus' | 'wos' | 'sciencedirect' | 'sage' | 'taylor_francis'
+  | 'springer' | 'wiley' | 'ieee' | 'acm'
+  | 'redalyc' | 'scielo' | 'dialnet' | 'eric' | 'pubmed'
+  | 'google_scholar' | 'semantic_scholar' | 'other';
 
 export const SOURCE_DB_LABELS: Record<SourceDb, string> = {
   scopus: 'Scopus',
   wos: 'Web of Science',
+  sciencedirect: 'ScienceDirect / Elsevier',
+  sage: 'SAGE Journals',
+  taylor_francis: 'Taylor & Francis',
+  springer: 'Springer / SpringerLink',
+  wiley: 'Wiley Online Library',
+  ieee: 'IEEE Xplore',
+  acm: 'ACM Digital Library',
   redalyc: 'Redalyc',
+  scielo: 'SciELO',
+  dialnet: 'Dialnet',
   eric: 'ERIC',
   pubmed: 'PubMed',
   google_scholar: 'Google Scholar',
   semantic_scholar: 'Semantic Scholar',
-  scielo: 'SciELO',
-  dialnet: 'Dialnet',
   other: 'Otra',
 };
 

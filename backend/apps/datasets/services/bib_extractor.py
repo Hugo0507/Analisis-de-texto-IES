@@ -20,8 +20,17 @@ logger = logging.getLogger(__name__)
 CROSSREF_BASE = "https://api.crossref.org/works"
 USER_AGENT = "AnalisisTransformacionDigital/1.0 (thesis-research-tool; mailto:research@thesis.edu)"
 
-# DOI pattern: starts with 10., at least 4 digits, slash, then non-whitespace
-DOI_PATTERN = re.compile(r'\b(10\.\d{4,}/[^\s"<>{}|\\^`\[\]]+)')
+# DOI bare pattern: 10.XXXX/rest-of-doi
+# Works on a cleaned single-line string (newlines already removed)
+DOI_PATTERN = re.compile(r'(?:doi\.org/|doi:|DOI:|DOI\s*:\s*)?(10\.\d{4,}/[^\s"<>{}|\\^`\[\]]+)')
+
+# Publisher-specific DOI URL prefixes to strip when found in PDF text
+KNOWN_DOI_PREFIXES = (
+    'https://doi.org/',
+    'http://doi.org/',
+    'https://dx.doi.org/',
+    'http://dx.doi.org/',
+)
 
 
 class BibExtractorService:
@@ -110,33 +119,68 @@ class BibExtractorService:
 
     def _extract_doi_from_text(self, file_path: str) -> Optional[str]:
         """
-        Extract DOI from the text of the first 3 pages of a PDF.
-        Tries pdfplumber first (better extraction), falls back to PyPDF2.
+        Extract DOI from the text of the first 5 pages of a PDF.
+
+        Strategy:
+        - Join lines to handle DOIs split across newlines (very common in
+          two-column academic PDFs from ScienceDirect, Sage, Taylor & Francis)
+        - Search for explicit DOI labels AND bare 10.XXXX/... patterns
+        - Tries pdfplumber first (better layout), falls back to PyPDF2
         """
-        # Try pdfplumber (generally better text extraction)
+        texts = []
+
+        # Try pdfplumber (generally better for multi-column PDFs)
         try:
             import pdfplumber
             with pdfplumber.open(file_path) as pdf:
-                for page in pdf.pages[:3]:
-                    text = page.extract_text() or ''
-                    match = DOI_PATTERN.search(text)
-                    if match:
-                        return match.group(1)
+                for page in pdf.pages[:5]:
+                    raw = page.extract_text() or ''
+                    texts.append(raw)
         except Exception as e:
-            logger.debug(f"pdfplumber DOI extraction failed: {e}")
+            logger.debug(f"pdfplumber text extraction failed: {e}")
 
-        # Fallback: PyPDF2
-        try:
-            import PyPDF2
-            with open(file_path, 'rb') as f:
-                reader = PyPDF2.PdfReader(f, strict=False)
-                for page in reader.pages[:3]:
-                    text = page.extract_text() or ''
-                    match = DOI_PATTERN.search(text)
-                    if match:
-                        return match.group(1)
-        except Exception as e:
-            logger.debug(f"PyPDF2 DOI extraction failed: {e}")
+        # Fallback or supplement with PyPDF2
+        if not any(texts):
+            try:
+                import PyPDF2
+                with open(file_path, 'rb') as f:
+                    reader = PyPDF2.PdfReader(f, strict=False)
+                    for page in reader.pages[:5]:
+                        raw = page.extract_text() or ''
+                        texts.append(raw)
+            except Exception as e:
+                logger.debug(f"PyPDF2 text extraction failed: {e}")
+
+        for raw_text in texts:
+            doi = self._search_doi_in_text(raw_text)
+            if doi:
+                return doi
+
+        return None
+
+    def _search_doi_in_text(self, text: str) -> Optional[str]:
+        """
+        Search for a DOI in a block of text.
+
+        Handles:
+        - DOIs split across lines (joins lines before searching)
+        - https://doi.org/10.XXX format
+        - doi: 10.XXX format
+        - Bare 10.XXX/... pattern
+        """
+        # Pass 1: search in the original text (fast path for non-split DOIs)
+        match = DOI_PATTERN.search(text)
+        if match:
+            doi = match.group(1)
+            return self._clean_doi(doi)
+
+        # Pass 2: collapse newlines (handles DOIs split across lines)
+        # Replace newline + optional spaces with a single space
+        collapsed = re.sub(r'\n\s*', ' ', text)
+        match = DOI_PATTERN.search(collapsed)
+        if match:
+            doi = match.group(1)
+            return self._clean_doi(doi)
 
         return None
 
