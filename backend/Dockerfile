@@ -17,9 +17,9 @@ ENV PYTHONUNBUFFERED=1 \
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
-    libmysqlclient-dev \
+    libmariadb-dev \
+    libmariadb-dev-compat \
     pkg-config \
-    default-libmysqlclient-dev \
     wget \
     curl \
     && rm -rf /var/lib/apt/lists/*
