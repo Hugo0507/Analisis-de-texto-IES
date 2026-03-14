@@ -46,6 +46,38 @@ class BibExtractorService:
         # Returns list of dicts, one per BibTeX entry
     """
 
+    # ─── Text files (.txt) ────────────────────────────────────────────────────
+
+    def extract_from_text_file(self, file_path: str, original_filename: str = '') -> dict:
+        """
+        Metadata extraction for plain-text (.txt) academic files.
+
+        Pipeline:
+          1. Title from filename  (guaranteed fallback)
+          2. CrossRef title search → authors, year, journal, DOI
+        """
+        fname = original_filename or Path(file_path).name
+        logger.info(f"[BibExtractor] Processing TXT: {fname}")
+
+        metadata = {}
+        title_from_name = self._title_from_filename(fname)
+        if title_from_name:
+            metadata['bib_title'] = title_from_name
+            logger.info(f"[BibExtractor] Title from filename: {title_from_name[:80]}")
+
+        search_title = metadata.get('bib_title', '')
+        if search_title:
+            try:
+                crossref = self._search_crossref_by_title(search_title)
+                if crossref:
+                    logger.info(f"[BibExtractor] CrossRef (title): {list(crossref.keys())}")
+                    crossref.pop('bib_title', None)  # keep our filename title
+                    metadata.update(crossref)
+            except Exception as e:
+                logger.warning(f"[BibExtractor] CrossRef search failed for {fname}: {e}")
+
+        return metadata
+
     # ─── PDF ──────────────────────────────────────────────────────────────────
 
     def extract_from_pdf(self, file_path: str, original_filename: str = '') -> dict:

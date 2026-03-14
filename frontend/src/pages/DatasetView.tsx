@@ -65,7 +65,6 @@ const SOURCE_DB_COLORS: Record<string, string> = {
 };
 
 
-type ActiveTab = 'files' | 'prisma';
 
 // ─── Bib Edit Modal ───────────────────────────────────────────────────────────
 
@@ -232,7 +231,6 @@ export const DatasetView: React.FC = () => {
   const [directoryStats, setDirectoryStats] = useState<DirectoryStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<ActiveTab>('files');
   const [editingFile, setEditingFile] = useState<DatasetFile | null>(null);
   const [isExtractingMeta, setIsExtractingMeta] = useState(false);
 
@@ -353,6 +351,22 @@ export const DatasetView: React.FC = () => {
   const extensionStats = getExtensionStats();
   const totalFiles = dataset.files.length;
 
+  // ── Búsqueda auto-calculada ───────────────────────────────────────────────
+  const detectedDbs = Array.from(
+    new Set(dataset.files.map(f => f.bib_source_db).filter(Boolean))
+  ) as string[];
+  const dbLabels = detectedDbs.map(db => SOURCE_DB_LABELS[db as keyof typeof SOURCE_DB_LABELS] ?? db);
+  const pubYears = dataset.files.map(f => f.bib_year).filter(Boolean) as number[];
+  const minYear = pubYears.length ? Math.min(...pubYears) : null;
+  const maxYear = pubYears.length ? Math.max(...pubYears) : null;
+  const pdfCount = dataset.files.filter(f =>
+    f.mime_type === 'application/pdf' || f.original_filename?.endsWith('.pdf')
+  ).length;
+  const autoSearchStrategy = detectedDbs.length > 0
+    ? `Se realizó una búsqueda bibliográfica en ${dbLabels.join(', ')}. Se identificaron ${dataset.total_files} documentos en total${pdfCount ? ` (${pdfCount} en formato PDF)` : ''}.${minYear && maxYear ? ` Los artículos recuperados abarcan el período ${minYear}–${maxYear}.` : ''}`
+    : null;
+  const autoDatabases = dbLabels.length > 0 ? dbLabels.join(', ') : null;
+
   return (
     <div className="min-h-screen w-full" style={{ backgroundColor: '#F4F7FE' }}>
 
@@ -461,11 +475,43 @@ export const DatasetView: React.FC = () => {
                 </div>
               ))}
             </div>
-            {dataset.search_strategy && (
-              <div className="mt-4 pt-3 border-t border-gray-100">
-                <p className="text-xs text-gray-500 mb-1">Estrategia de búsqueda</p>
-                <p className="text-xs text-gray-700 line-clamp-3">{dataset.search_strategy}</p>
+          </div>
+
+          {/* Estrategia de búsqueda */}
+          <div className="bg-white p-5 rounded-2xl" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-semibold text-gray-900">Estrategia de búsqueda</h2>
+              {!dataset.search_strategy && autoSearchStrategy && (
+                <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">auto</span>
+              )}
+            </div>
+            {dataset.search_strategy ? (
+              <p className="text-xs text-gray-700 leading-relaxed">{dataset.search_strategy}</p>
+            ) : autoSearchStrategy ? (
+              <p className="text-xs text-gray-700 leading-relaxed">{autoSearchStrategy}</p>
+            ) : (
+              <p className="text-xs text-gray-400 italic">No especificado</p>
+            )}
+          </div>
+
+          {/* Bases de datos consultadas */}
+          <div className="bg-white p-5 rounded-2xl" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-semibold text-gray-900">Bases de datos</h2>
+              {!dataset.database_sources && autoDatabases && (
+                <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">auto</span>
+              )}
+            </div>
+            {(dataset.database_sources || autoDatabases) ? (
+              <div className="flex flex-wrap gap-1.5 mt-1">
+                {(dataset.database_sources || autoDatabases)!.split(',').map(db => (
+                  <span key={db.trim()} className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
+                    {db.trim()}
+                  </span>
+                ))}
               </div>
+            ) : (
+              <p className="text-xs text-gray-400 italic">No especificado</p>
             )}
           </div>
         </div>
@@ -520,28 +566,13 @@ export const DatasetView: React.FC = () => {
           </div>
         )}
 
-        {/* ── Archivos / PRISMA Tabs ────────────────────────────────────────── */}
+        {/* ── Archivos ─────────────────────────────────────────────────────── */}
         <div className="bg-white rounded-2xl" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-          {/* Tab bar */}
-          <div className="flex items-center border-b border-gray-100 px-5">
-            {([
-              { key: 'files', label: `Archivos (${totalFiles})` },
-              { key: 'prisma', label: `Resumen PRISMA` },
-            ] as { key: ActiveTab; label: string }[]).map(tab => (
-              <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === tab.key
-                    ? 'border-emerald-500 text-emerald-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}>
-                {tab.label}
-              </button>
-            ))}
+          <div className="flex items-center border-b border-gray-100 px-5 py-3">
+            <h2 className="text-sm font-semibold text-gray-900">Archivos ({totalFiles})</h2>
           </div>
 
-          {/* ── Tab: Archivos ─────────────────────────────────────────────── */}
-          {activeTab === 'files' && (
-            <div className="p-5">
+          <div className="p-5">
               {/* Filters */}
               <div className="flex flex-wrap items-center gap-3 mb-4">
                 {/* Search */}
@@ -618,114 +649,8 @@ export const DatasetView: React.FC = () => {
                 </table>
               </div>
             </div>
-          )}
-
-          {/* ── Tab: PRISMA ───────────────────────────────────────────────── */}
-          {activeTab === 'prisma' && (() => {
-            // ── Compute derived values from files ──────────────────────────
-            const detectedDbs = Array.from(
-              new Set(dataset.files.map(f => f.bib_source_db).filter(Boolean))
-            ) as string[];
-            const dbLabels = detectedDbs.map(db => SOURCE_DB_LABELS[db as keyof typeof SOURCE_DB_LABELS] ?? db);
-
-            const years = dataset.files.map(f => f.bib_year).filter(Boolean) as number[];
-            const minYear = years.length ? Math.min(...years) : null;
-            const maxYear = years.length ? Math.max(...years) : null;
-            const pdfCount = dataset.files.filter(f =>
-              f.mime_type === 'application/pdf' || f.original_filename?.endsWith('.pdf')
-            ).length;
-
-            const autoSearchStrategy = detectedDbs.length > 0
-              ? `Se realizó una búsqueda bibliográfica en ${dbLabels.join(', ')}. Se identificaron ${dataset.total_files} documentos en total${pdfCount ? ` (${pdfCount} en formato PDF)` : ''}.${minYear && maxYear ? ` Los artículos recuperados abarcan el período ${minYear}–${maxYear}.` : ''}`
-              : null;
-
-            const autoDatabases = dbLabels.length > 0 ? dbLabels.join(', ') : null;
-
-            const infoFields = [
-              {
-                label: 'Estrategia de búsqueda',
-                value: dataset.search_strategy,
-                auto: autoSearchStrategy,
-              },
-              {
-                label: 'Bases de datos consultadas',
-                value: dataset.database_sources,
-                auto: autoDatabases,
-              },
-            ];
-
-            return (
-            <div className="p-5 space-y-5">
-              {/* Info cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {infoFields.map(item => (
-                  <div key={item.label} className="p-4 bg-gray-50 rounded-xl">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{item.label}</p>
-                      {!item.value && item.auto && (
-                        <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">auto</span>
-                      )}
-                    </div>
-                    {item.value ? (
-                      <p className="text-sm text-gray-700 whitespace-pre-line">{item.value}</p>
-                    ) : item.auto ? (
-                      <p className="text-sm text-gray-700">{item.auto}</p>
-                    ) : (
-                      <p className="text-xs text-gray-400 italic">No especificado</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* By year */}
-              {(() => {
-                const byYear: Record<number, { included: number; excluded: number; pending: number }> = {};
-                dataset.files.forEach(f => {
-                  if (!f.bib_year) return;
-                  if (!byYear[f.bib_year]) byYear[f.bib_year] = { included: 0, excluded: 0, pending: 0 };
-                  byYear[f.bib_year][f.inclusion_status]++;
-                });
-                const years = Object.keys(byYear).sort();
-                if (years.length === 0) return null;
-                return (
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-800 mb-3">Distribución por año de publicación</h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="border-b border-gray-200">
-                            <th className="px-3 py-2 text-left text-gray-600">Año</th>
-                            <th className="px-3 py-2 text-center text-emerald-600">Incluidos</th>
-                            <th className="px-3 py-2 text-center text-red-600">Excluidos</th>
-                            <th className="px-3 py-2 text-center text-yellow-600">Pendientes</th>
-                            <th className="px-3 py-2 text-center text-gray-600">Total</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {years.map(year => {
-                            const row = byYear[parseInt(year)];
-                            const total = row.included + row.excluded + row.pending;
-                            return (
-                              <tr key={year} className="hover:bg-gray-50">
-                                <td className="px-3 py-2 font-medium text-gray-800">{year}</td>
-                                <td className="px-3 py-2 text-center text-emerald-700">{row.included || '—'}</td>
-                                <td className="px-3 py-2 text-center text-red-700">{row.excluded || '—'}</td>
-                                <td className="px-3 py-2 text-center text-yellow-700">{row.pending || '—'}</td>
-                                <td className="px-3 py-2 text-center font-semibold text-gray-800">{total}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-            );
-          })()}
+          </div>
         </div>
       </div>
-    </div>
   );
 };

@@ -196,10 +196,20 @@ class DatasetProcessorService:
                 # Priority 1: match against parsed .bib/.ris entries (most accurate)
                 # (title not known yet, so we do PDF extraction first)
 
-                # Priority 2: extract from the PDF itself
+                # Priority 2: extract metadata from the file
                 if ext == '.pdf':
                     try:
                         bib_meta = self.bib_extractor.extract_from_pdf(
+                            str(saved_path), original_filename=original_name
+                        )
+                        logger.info(
+                            f"[Processor] {original_name}: extracted fields={list(bib_meta.keys())}"
+                        )
+                    except Exception as e:
+                        logger.warning(f"[Processor] Bib extraction failed for {original_name}: {e}")
+                elif ext == '.txt':
+                    try:
+                        bib_meta = self.bib_extractor.extract_from_text_file(
                             str(saved_path), original_filename=original_name
                         )
                         logger.info(

@@ -411,17 +411,17 @@ class DatasetViewSet(viewsets.ModelViewSet):
         dataset = self.get_object()
         force = request.query_params.get('force', '').lower() == 'true'
 
-        pdf_files = dataset.files.filter(
-            mime_type='application/pdf'
-        ) | dataset.files.filter(original_filename__iendswith='.pdf')
-
-        # De-duplicate
-        pdf_files = pdf_files.distinct()
+        from django.db.models import Q
+        target_files = dataset.files.filter(
+            Q(mime_type='application/pdf') |
+            Q(original_filename__iendswith='.pdf') |
+            Q(original_filename__iendswith='.txt')
+        ).distinct()
 
         if not force:
-            pdf_files = pdf_files.filter(bib_title__isnull=True)
+            target_files = target_files.filter(bib_title__isnull=True)
 
-        total = pdf_files.count()
+        total = target_files.count()
 
         if total == 0:
             return Response({
@@ -437,16 +437,24 @@ class DatasetViewSet(viewsets.ModelViewSet):
             'bib_volume', 'bib_issue', 'bib_pages',
         ]
         # Snapshot IDs now (queryset would be re-evaluated inside thread)
-        file_ids = list(pdf_files.values_list('id', flat=True))
+        file_ids = list(target_files.values_list('id', flat=True))
 
         def process_one(file_id):
             """Extract and save metadata for a single file. Returns (updated, failed)."""
             try:
+                from pathlib import Path as _Path
                 f = DatasetFile.objects.get(id=file_id)
-                meta = extractor.extract_from_pdf(
-                    f.file_path,
-                    original_filename=f.original_filename,
-                )
+                ext = _Path(f.original_filename or '').suffix.lower()
+                if ext == '.txt':
+                    meta = extractor.extract_from_text_file(
+                        f.file_path,
+                        original_filename=f.original_filename,
+                    )
+                else:
+                    meta = extractor.extract_from_pdf(
+                        f.file_path,
+                        original_filename=f.original_filename,
+                    )
 
                 update_fields = []
                 for field in BIB_FIELDS:
