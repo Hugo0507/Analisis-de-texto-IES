@@ -4,6 +4,8 @@ Views for Dataset management API.
 
 import logging
 import threading
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -416,51 +418,57 @@ class DatasetViewSet(viewsets.ModelViewSet):
             'bib_abstract', 'bib_keywords', 'bib_source_db',
             'bib_volume', 'bib_issue', 'bib_pages',
         ]
+        # Snapshot IDs now (queryset would be re-evaluated inside thread)
+        file_ids = list(pdf_files.values_list('id', flat=True))
+
+        def process_one(file_id):
+            """Extract and save metadata for a single file. Returns (updated, failed)."""
+            try:
+                f = DatasetFile.objects.get(id=file_id)
+                meta = extractor.extract_from_pdf(
+                    f.file_path,
+                    original_filename=f.original_filename,
+                )
+
+                update_fields = []
+                for field in BIB_FIELDS:
+                    value = meta.get(field)
+                    if value and (force or not getattr(f, field)):
+                        setattr(f, field, value)
+                        update_fields.append(field)
+
+                # Always auto-detect source if still missing
+                if not f.bib_source_db:
+                    detected = f.auto_detect_source_db()
+                    if detected:
+                        f.bib_source_db = detected
+                        if 'bib_source_db' not in update_fields:
+                            update_fields.append('bib_source_db')
+
+                if update_fields:
+                    f.save(update_fields=update_fields)
+                    return (1, 0)
+                return (0, 0)
+
+            except Exception as e:
+                logger.error(f"auto_extract_metadata failed for file {file_id}: {e}")
+                return (0, 1)
 
         def run_extraction():
             updated = 0
             failed = 0
-            for f in pdf_files:
-                try:
-                    meta = extractor.extract_from_pdf(
-                        f.file_path,
-                        original_filename=f.original_filename,
-                    )
-                    if not meta:
-                        # At minimum auto-detect source from directory
-                        if not f.bib_source_db:
-                            detected = f.auto_detect_source_db()
-                            if detected:
-                                f.bib_source_db = detected
-                                f.save(update_fields=['bib_source_db'])
-                        continue
-
-                    update_fields = []
-                    for field in BIB_FIELDS:
-                        value = meta.get(field)
-                        if value and (force or not getattr(f, field)):
-                            setattr(f, field, value)
-                            update_fields.append(field)
-
-                    # Always auto-detect source if still missing
-                    if not f.bib_source_db:
-                        detected = f.auto_detect_source_db()
-                        if detected:
-                            f.bib_source_db = detected
-                            if 'bib_source_db' not in update_fields:
-                                update_fields.append('bib_source_db')
-
-                    if update_fields:
-                        f.save(update_fields=update_fields)
-                        updated += 1
-
-                except Exception as e:
-                    logger.error(f"auto_extract_metadata failed for file {f.id}: {e}")
-                    failed += 1
+            # Use up to 8 concurrent workers for CrossRef API calls
+            # (CrossRef polite pool supports ~50 req/s, so 8 workers is safe)
+            with ThreadPoolExecutor(max_workers=8) as executor:
+                futures = {executor.submit(process_one, fid): fid for fid in file_ids}
+                for future in as_completed(futures):
+                    u, f_ = future.result()
+                    updated += u
+                    failed += f_
 
             logger.info(
                 f"auto_extract_metadata done for dataset {dataset.id}: "
-                f"updated={updated}, failed={failed}"
+                f"updated={updated}, failed={failed}, total={len(file_ids)}"
             )
 
         # Run in background thread so the request returns immediately

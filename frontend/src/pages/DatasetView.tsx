@@ -310,8 +310,10 @@ export const DatasetView: React.FC = () => {
     try {
       const result = await datasetsService.autoExtractMetadata(parseInt(id), force);
       showSuccess(`${result.message}`);
-      // Wait a few seconds then reload to show extracted data
-      setTimeout(() => loadDataset(), 4000);
+      // Reload progressively: 5s, 15s, 30s to catch results as they arrive
+      setTimeout(() => loadDataset(), 5000);
+      setTimeout(() => loadDataset(), 15000);
+      setTimeout(() => loadDataset(), 30000);
     } catch {
       showError('Error al iniciar la extracción de metadatos');
     } finally {
