@@ -31,6 +31,11 @@ export const DatasetCreate: React.FC = () => {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [showPrismaSection, setShowPrismaSection] = useState(false);
+  const [searchStrategy, setSearchStrategy] = useState('');
+  const [inclusionCriteria, setInclusionCriteria] = useState('');
+  const [exclusionCriteria, setExclusionCriteria] = useState('');
+  const [databaseSources, setDatabaseSources] = useState('');
 
   // Build file tree from webkitRelativePath
   interface FileNode {
@@ -233,6 +238,10 @@ export const DatasetCreate: React.FC = () => {
       const result = await datasetsService.createDatasetWithFiles({
         name: datasetName,
         description: datasetDescription,
+        search_strategy: searchStrategy,
+        inclusion_criteria: inclusionCriteria,
+        exclusion_criteria: exclusionCriteria,
+        database_sources: databaseSources,
         files: selectedFiles,
         onProgress: (progress) => {
           setUploadProgress(progress);
@@ -390,6 +399,85 @@ export const DatasetCreate: React.FC = () => {
                 disabled={isUploading}
               />
             </div>
+          </div>
+
+          {/* PRISMA Protocol — collapsible */}
+          <div className="mb-8 border border-gray-200 rounded-xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowPrismaSection(!showPrismaSection)}
+              className="w-full flex items-center justify-between px-5 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+            >
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <span className="text-sm font-semibold text-gray-800">Protocolo de Búsqueda (PRISMA)</span>
+                <span className="text-xs text-gray-500 font-normal">— Opcional, puedes completarlo después</span>
+              </div>
+              <svg
+                className={`w-4 h-4 text-gray-500 transition-transform ${showPrismaSection ? 'rotate-180' : ''}`}
+                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {showPrismaSection && (
+              <div className="p-5 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Bases de datos consultadas
+                  </label>
+                  <input
+                    type="text"
+                    value={databaseSources}
+                    onChange={(e) => setDatabaseSources(e.target.value)}
+                    placeholder="Ej: Scopus, Web of Science, Redalyc"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Separadas por coma</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Estrategia de búsqueda
+                  </label>
+                  <textarea
+                    value={searchStrategy}
+                    onChange={(e) => setSearchStrategy(e.target.value)}
+                    placeholder='Ej: ("transformación digital" OR "digital transformation") AND ("educación superior" OR "higher education")'
+                    rows={3}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Criterios de inclusión
+                    </label>
+                    <textarea
+                      value={inclusionCriteria}
+                      onChange={(e) => setInclusionCriteria(e.target.value)}
+                      placeholder={"Ej:\n- Artículos publicados 2015-2024\n- Idioma: español o inglés\n- Revisión por pares"}
+                      rows={4}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Criterios de exclusión
+                    </label>
+                    <textarea
+                      value={exclusionCriteria}
+                      onChange={(e) => setExclusionCriteria(e.target.value)}
+                      placeholder={"Ej:\n- Artículos sin acceso al texto completo\n- Actas de congresos\n- Estudios fuera del ámbito universitario"}
+                      rows={4}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Method Selector */}
