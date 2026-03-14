@@ -298,6 +298,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '', onClose }) => 
             })}
           </div>
 
+          {/* PIPELINE Section */}
+          <div className="mb-6">
+            <h2 className="text-emerald-400 font-bold text-sm uppercase tracking-wider px-3 mb-4">
+              PIPELINE
+            </h2>
+            <NavLink
+              to="/admin/pipeline"
+              onClick={handleNavClick}
+              className={({ isActive }) =>
+                `flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 mb-2 ${
+                  isActive
+                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`
+              }
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <span className="text-sm font-medium">Pipeline Completo</span>
+            </NavLink>
+          </div>
+
           {/* PREPROCESAMIENTO Section */}
           <div className="mb-6">
             <h2 className="text-emerald-400 font-bold text-sm uppercase tracking-wider px-3 mb-4">

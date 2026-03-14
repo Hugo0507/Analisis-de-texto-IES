@@ -20,6 +20,7 @@ import {
 import {
   Login,
   ForgotPassword,
+  Pipeline,
   Factors,
   Users,
   UserCreate,
@@ -90,6 +91,11 @@ function App() {
               <Route path="datasets/nuevo" element={<DatasetCreate />} />
               <Route path="datasets/:id" element={<DatasetView />} />
               <Route path="datasets/:id/editar" element={<DatasetEdit />} />
+            </Route>
+
+            {/* Pipeline Route */}
+            <Route path="/admin/pipeline" element={<MainLayout />}>
+              <Route index element={<Pipeline />} />
             </Route>
 
             {/* Protected Admin Preprocessing Routes (LOGIN REQUIRED) */}
