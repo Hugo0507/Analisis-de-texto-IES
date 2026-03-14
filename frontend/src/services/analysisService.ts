@@ -222,6 +222,11 @@ class AnalysisService {
     const response = await apiClient.get('/analysis/factors/statistics/');
     return response.data;
   }
+
+  async seedFactors(): Promise<any> {
+    const response = await apiClient.post('/analysis/factors/seed/');
+    return response.data;
+  }
 }
 
 const analysisService = new AnalysisService();
