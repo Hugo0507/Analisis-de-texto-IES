@@ -4,6 +4,7 @@ Base settings shared across all environments.
 """
 
 import os
+import sys
 from pathlib import Path
 from cryptography.fernet import Fernet
 
@@ -107,6 +108,14 @@ DATABASES = {
         }
     }
 }
+
+# Auto-switch to SQLite when running tests via `manage.py test`
+# (pytest uses config.settings.testing via pytest.ini, this covers manage.py test)
+if 'test' in sys.argv:
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': ':memory:',
+    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
