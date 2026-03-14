@@ -274,6 +274,7 @@ export const DatasetView: React.FC = () => {
   const [inclusionFilter, setInclusionFilter] = useState<InclusionStatus | 'all'>('all');
   const [editingFile, setEditingFile] = useState<DatasetFile | null>(null);
   const [isAutoDetecting, setIsAutoDetecting] = useState(false);
+  const [isExtractingMeta, setIsExtractingMeta] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -300,6 +301,21 @@ export const DatasetView: React.FC = () => {
       showError('Error al cargar dataset: ' + (error.response?.data?.error || error.message));
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleExtractMetadata = async (force = false) => {
+    if (!id) return;
+    setIsExtractingMeta(true);
+    try {
+      const result = await datasetsService.autoExtractMetadata(parseInt(id), force);
+      showSuccess(`${result.message}`);
+      // Wait a few seconds then reload to show extracted data
+      setTimeout(() => loadDataset(), 4000);
+    } catch {
+      showError('Error al iniciar la extracción de metadatos');
+    } finally {
+      setIsExtractingMeta(false);
     }
   };
 
@@ -417,17 +433,30 @@ export const DatasetView: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={() => handleExtractMetadata(false)}
+              disabled={isExtractingMeta}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+              title="Extrae título, autores, año, revista, abstract y más desde el PDF vía CrossRef API"
+            >
+              {isExtractingMeta ? <Spinner size="sm" /> : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.347.347A3.75 3.75 0 0114.25 18H9.75a3.75 3.75 0 01-2.65-6.344l-.347-.347z" />
+                </svg>
+              )}
+              Extraer metadatos bibliográficos
+            </button>
+            <button
               onClick={handleAutoDetect}
               disabled={isAutoDetecting}
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-              title="Auto-detecta la base de datos de origen desde el nombre del directorio"
+              title="Detecta la base de datos de origen desde el nombre del directorio"
             >
               {isAutoDetecting ? <Spinner size="sm" /> : (
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               )}
-              Auto-detectar fuentes
+              Detectar fuente
             </button>
             <button
               onClick={() => navigate(`/admin/configuracion/datasets/${id}/editar`)}
