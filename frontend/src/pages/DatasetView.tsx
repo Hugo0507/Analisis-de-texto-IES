@@ -1,50 +1,284 @@
 /**
- * DatasetView Page - Vista de Visualización/Analítica
+ * DatasetView Page
  *
- * Dashboard con métricas e información visual del dataset.
- * Muestra estructura de directorios, distribución de archivos, etc.
+ * Vista de un dataset con:
+ * - Información general y métricas
+ * - Resumen PRISMA (incluidos / excluidos / pendientes)
+ * - Distribución por directorio y extensión
+ * - Tabla de archivos con metadatos bibliográficos y estado PRISMA
+ * - Modal de edición de metadatos por archivo
+ * - Auto-detección de base de datos de origen
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import datasetsService from '../services/datasetsService';
-import type { Dataset, DirectoryStats } from '../services/datasetsService';
+import type {
+  Dataset, DatasetFile, DirectoryStats,
+  FileBibUpdate, InclusionStatus, SourceDb,
+} from '../services/datasetsService';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const SOURCE_DB_OPTIONS: { value: SourceDb | ''; label: string }[] = [
+  { value: '', label: '— Sin especificar —' },
+  { value: 'scopus', label: 'Scopus' },
+  { value: 'wos', label: 'Web of Science' },
+  { value: 'redalyc', label: 'Redalyc' },
+  { value: 'eric', label: 'ERIC' },
+  { value: 'pubmed', label: 'PubMed' },
+  { value: 'google_scholar', label: 'Google Scholar' },
+  { value: 'semantic_scholar', label: 'Semantic Scholar' },
+  { value: 'scielo', label: 'SciELO' },
+  { value: 'dialnet', label: 'Dialnet' },
+  { value: 'other', label: 'Otra' },
+];
+
+const SOURCE_DB_COLORS: Record<string, string> = {
+  scopus: 'bg-orange-100 text-orange-700',
+  wos: 'bg-blue-100 text-blue-700',
+  redalyc: 'bg-purple-100 text-purple-700',
+  eric: 'bg-teal-100 text-teal-700',
+  pubmed: 'bg-red-100 text-red-700',
+  google_scholar: 'bg-indigo-100 text-indigo-700',
+  semantic_scholar: 'bg-cyan-100 text-cyan-700',
+  scielo: 'bg-emerald-100 text-emerald-700',
+  dialnet: 'bg-yellow-100 text-yellow-700',
+  other: 'bg-gray-100 text-gray-700',
+};
+
+const INCLUSION_COLORS: Record<InclusionStatus, string> = {
+  included: 'bg-emerald-100 text-emerald-700',
+  excluded: 'bg-red-100 text-red-700',
+  pending: 'bg-yellow-100 text-yellow-700',
+};
+
+const INCLUSION_ICONS: Record<InclusionStatus, string> = {
+  included: '✓',
+  excluded: '✗',
+  pending: '⏳',
+};
+
+type ActiveTab = 'files' | 'prisma';
+
+// ─── Bib Edit Modal ───────────────────────────────────────────────────────────
+
+interface BibEditModalProps {
+  file: DatasetFile;
+  onSave: (fileId: number, data: FileBibUpdate) => Promise<void>;
+  onClose: () => void;
+}
+
+const BibEditModal: React.FC<BibEditModalProps> = ({ file, onSave, onClose }) => {
+  const [form, setForm] = useState<FileBibUpdate>({
+    bib_title: file.bib_title || '',
+    bib_authors: file.bib_authors || '',
+    bib_year: file.bib_year ?? undefined,
+    bib_journal: file.bib_journal || '',
+    bib_doi: file.bib_doi || '',
+    bib_abstract: file.bib_abstract || '',
+    bib_keywords: file.bib_keywords || '',
+    bib_source_db: file.bib_source_db || '',
+    bib_volume: file.bib_volume || '',
+    bib_issue: file.bib_issue || '',
+    bib_pages: file.bib_pages || '',
+    inclusion_status: file.inclusion_status,
+    exclusion_reason: file.exclusion_reason || '',
+  });
+  const [saving, setSaving] = useState(false);
+
+  const set = (field: keyof FileBibUpdate, value: string | number | undefined) =>
+    setForm(prev => ({ ...prev, [field]: value }));
+
+  const handleSave = async () => {
+    setSaving(true);
+    await onSave(file.id, form);
+    setSaving(false);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-gray-100">
+          <div>
+            <h3 className="text-base font-semibold text-gray-900">Metadatos Bibliográficos</h3>
+            <p className="text-xs text-gray-500 mt-0.5 truncate max-w-md">{file.original_filename}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
+          {/* Título */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Título</label>
+            <input type="text" value={form.bib_title} onChange={e => set('bib_title', e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              placeholder="Título del artículo" />
+          </div>
+
+          {/* Autores + Año */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Autores <span className="font-normal text-gray-400">(separados por ;)</span></label>
+              <input type="text" value={form.bib_authors} onChange={e => set('bib_authors', e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                placeholder="García, J.; López, M." />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Año</label>
+              <input type="number" value={form.bib_year ?? ''} onChange={e => set('bib_year', e.target.value ? parseInt(e.target.value) : undefined)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                placeholder="2024" min={1900} max={2100} />
+            </div>
+          </div>
+
+          {/* Revista + DOI */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Revista / Conferencia</label>
+              <input type="text" value={form.bib_journal} onChange={e => set('bib_journal', e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                placeholder="Journal of..." />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">DOI</label>
+              <input type="text" value={form.bib_doi} onChange={e => set('bib_doi', e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                placeholder="10.1234/..." />
+            </div>
+          </div>
+
+          {/* Volumen + Número + Páginas + Fuente */}
+          <div className="grid grid-cols-4 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Volumen</label>
+              <input type="text" value={form.bib_volume} onChange={e => set('bib_volume', e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" placeholder="12" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Número</label>
+              <input type="text" value={form.bib_issue} onChange={e => set('bib_issue', e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" placeholder="3" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Páginas</label>
+              <input type="text" value={form.bib_pages} onChange={e => set('bib_pages', e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" placeholder="45-67" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Base de datos</label>
+              <select value={form.bib_source_db} onChange={e => set('bib_source_db', e.target.value as SourceDb)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                {SOURCE_DB_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Keywords */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Palabras clave <span className="font-normal text-gray-400">(separadas por ;)</span></label>
+            <input type="text" value={form.bib_keywords} onChange={e => set('bib_keywords', e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              placeholder="transformación digital; educación superior; PLN" />
+          </div>
+
+          {/* Abstract */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Resumen</label>
+            <textarea value={form.bib_abstract} onChange={e => set('bib_abstract', e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              placeholder="Resumen del artículo..." />
+          </div>
+
+          {/* PRISMA */}
+          <div className="border-t border-gray-100 pt-4">
+            <p className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">Decisión de inclusión (PRISMA)</p>
+            <div className="flex gap-3 mb-3">
+              {(['included', 'pending', 'excluded'] as InclusionStatus[]).map(s => (
+                <button key={s} type="button"
+                  onClick={() => set('inclusion_status', s)}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
+                    form.inclusion_status === s
+                      ? s === 'included' ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                        : s === 'excluded' ? 'border-red-500 bg-red-50 text-red-700'
+                        : 'border-yellow-400 bg-yellow-50 text-yellow-700'
+                      : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                  }`}>
+                  {INCLUSION_ICONS[s]} {s === 'included' ? 'Incluir' : s === 'excluded' ? 'Excluir' : 'Pendiente'}
+                </button>
+              ))}
+            </div>
+            {form.inclusion_status === 'excluded' && (
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Motivo de exclusión <span className="text-red-500">*</span></label>
+                <textarea value={form.exclusion_reason} onChange={e => set('exclusion_reason', e.target.value)}
+                  rows={2}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  placeholder="Ej: No corresponde al ámbito de educación superior" />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-3 px-6 py-4 border-t border-gray-100">
+          <button onClick={onClose}
+            className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            Cancelar
+          </button>
+          <button onClick={handleSave} disabled={saving}
+            className="flex-1 px-4 py-2 text-sm font-medium text-white bg-emerald-500 rounded-lg hover:bg-emerald-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+            {saving ? <><Spinner size="sm" /> Guardando...</> : 'Guardar cambios'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export const DatasetView: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { showError } = useToast();
+  const { showSuccess, showError } = useToast();
+
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [directoryStats, setDirectoryStats] = useState<DirectoryStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('files');
+  const [inclusionFilter, setInclusionFilter] = useState<InclusionStatus | 'all'>('all');
+  const [editingFile, setEditingFile] = useState<DatasetFile | null>(null);
+  const [isAutoDetecting, setIsAutoDetecting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
     loadDataset();
   }, [id]);
 
-  // Polling effect for datasets that are processing
   useEffect(() => {
     if (!dataset || dataset.status !== 'processing') return;
-
-    const pollInterval = setInterval(() => {
-      loadDataset();
-    }, 5000); // Poll every 5 seconds
-
-    return () => clearInterval(pollInterval);
+    const poll = setInterval(loadDataset, 5000);
+    return () => clearInterval(poll);
   }, [dataset?.status]);
 
   const loadDataset = async () => {
     if (!id) return;
-
     setIsLoading(true);
     try {
       const [datasetData, dirStats] = await Promise.all([
         datasetsService.getDataset(parseInt(id)),
-        datasetsService.getDirectoryStats(parseInt(id))
+        datasetsService.getDirectoryStats(parseInt(id)),
       ]);
       setDataset(datasetData);
       setDirectoryStats(dirStats);
@@ -55,452 +289,470 @@ export const DatasetView: React.FC = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const badges = {
-      pending: 'bg-yellow-100 text-yellow-700',
-      processing: 'bg-blue-100 text-blue-700',
-      completed: 'bg-emerald-100 text-emerald-700',
-      error: 'bg-red-100 text-red-700',
-    };
-
-    const labels = {
-      pending: 'Pendiente',
-      processing: 'Procesando',
-      completed: 'Completado',
-      error: 'Error',
-    };
-
-    return (
-      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${badges[status as keyof typeof badges]}`}>
-        {labels[status as keyof typeof labels]}
-      </span>
-    );
+  const handleAutoDetect = async () => {
+    if (!id) return;
+    setIsAutoDetecting(true);
+    try {
+      const result = await datasetsService.autoDetectSources(parseInt(id));
+      showSuccess(result.message);
+      await loadDataset();
+    } catch {
+      showError('Error al auto-detectar fuentes');
+    } finally {
+      setIsAutoDetecting(false);
+    }
   };
 
-  const getFileExtensionStats = () => {
-    if (!dataset?.files) return {};
+  const handleSaveFileBib = useCallback(async (fileId: number, data: FileBibUpdate) => {
+    if (!id) return;
+    try {
+      const updated = await datasetsService.updateFileBib(parseInt(id), fileId, data);
+      setDataset(prev => prev ? {
+        ...prev,
+        files: prev.files.map(f => f.id === fileId ? updated : f),
+        prisma_stats: {
+          ...prev.prisma_stats,
+          included: prev.files.filter(f => (f.id === fileId ? updated : f).inclusion_status === 'included').length,
+          excluded: prev.files.filter(f => (f.id === fileId ? updated : f).inclusion_status === 'excluded').length,
+          pending: prev.files.filter(f => (f.id === fileId ? updated : f).inclusion_status === 'pending').length,
+        }
+      } : prev);
+      setEditingFile(null);
+      showSuccess('Metadatos actualizados');
+    } catch (error: any) {
+      showError('Error al guardar: ' + (error.response?.data?.exclusion_reason?.[0] || error.response?.data?.error || error.message));
+    }
+  }, [id]);
 
-    const stats: { [key: string]: number } = {};
-    dataset.files.forEach((file) => {
-      const ext = file.original_filename.split('.').pop()?.toLowerCase() || 'unknown';
-      stats[ext] = (stats[ext] || 0) + 1;
-    });
-
-    return stats;
-  };
-
-  const getMostCommonExtension = () => {
-    const stats = getFileExtensionStats();
-    if (Object.keys(stats).length === 0) return { ext: 'N/A', count: 0 };
-
-    const sortedEntries = Object.entries(stats).sort((a, b) => b[1] - a[1]);
-    return {
-      ext: sortedEntries[0][0].toUpperCase(),
-      count: sortedEntries[0][1]
-    };
-  };
+  // ── Helpers ────────────────────────────────────────────────────────────────
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+  const formatDate = (d: string) =>
+    new Date(d).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const getStatusBadge = (status: string) => {
+    const cfg = {
+      pending: ['bg-yellow-100 text-yellow-700', 'Pendiente'],
+      processing: ['bg-blue-100 text-blue-700', 'Procesando'],
+      completed: ['bg-emerald-100 text-emerald-700', 'Completado'],
+      error: ['bg-red-100 text-red-700', 'Error'],
+    }[status] ?? ['bg-gray-100 text-gray-600', status];
+    return <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${cfg[0]}`}>{cfg[1]}</span>;
+  };
+
+  const getExtensionStats = () => {
+    const stats: Record<string, number> = {};
+    dataset?.files.forEach(f => {
+      const ext = f.original_filename.split('.').pop()?.toLowerCase() || 'unknown';
+      stats[ext] = (stats[ext] || 0) + 1;
     });
+    return stats;
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
+  // ── Filtered files ─────────────────────────────────────────────────────────
 
-  if (!dataset) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <p className="text-gray-500">Dataset no encontrado</p>
-      </div>
-    );
-  }
+  const filteredFiles = (dataset?.files ?? []).filter(f => {
+    const matchSearch = !searchTerm ||
+      f.original_filename.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (f.bib_title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (f.bib_authors || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchInclusion = inclusionFilter === 'all' || f.inclusion_status === inclusionFilter;
+    return matchSearch && matchInclusion;
+  });
 
-  const extensionStats = getFileExtensionStats();
+  // ── Early returns ──────────────────────────────────────────────────────────
+
+  if (isLoading) return <div className="flex items-center justify-center h-96"><Spinner size="lg" /></div>;
+  if (!dataset) return <div className="flex items-center justify-center h-96"><p className="text-gray-500">Dataset no encontrado</p></div>;
+
+  const extensionStats = getExtensionStats();
   const totalFiles = dataset.files.length;
-
-  // Filter and paginate files
-  const filteredFiles = dataset.files.filter(file =>
-    file.original_filename.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const prisma = dataset.prisma_stats ?? { total: totalFiles, included: 0, excluded: 0, pending: totalFiles };
 
   return (
     <div className="min-h-screen w-full" style={{ backgroundColor: '#F4F7FE' }}>
-        {/* Fixed Header */}
-        <div className="sticky top-0 z-40 bg-white border-b border-gray-200" style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-          <div className="flex items-center justify-between px-8 py-4">
-          {/* Left: Back button + Title */}
+
+      {/* Edit Modal */}
+      {editingFile && (
+        <BibEditModal
+          file={editingFile}
+          onSave={handleSaveFileBib}
+          onClose={() => setEditingFile(null)}
+        />
+      )}
+
+      {/* Fixed Header */}
+      <div className="sticky top-0 z-40 bg-white border-b border-gray-200" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+        <div className="flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate('/admin/configuracion/datasets')}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Volver"
-            >
+            <button onClick={() => navigate('/admin/configuracion/datasets')}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <h1 className="text-xl font-semibold text-gray-900">{dataset.name}</h1>
-            <div className="ml-2">{getStatusBadge(dataset.status)}</div>
+            <h1 className="text-lg font-semibold text-gray-900">{dataset.name}</h1>
+            <div className="ml-1">{getStatusBadge(dataset.status)}</div>
           </div>
-
-          {/* Right: Edit button */}
-          <button
-            onClick={() => navigate(`/admin/configuracion/datasets/${id}/editar`)}
-            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors text-sm font-medium"
-          >
-            Editar Dataset
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleAutoDetect}
+              disabled={isAutoDetecting}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              title="Auto-detecta la base de datos de origen desde el nombre del directorio"
+            >
+              {isAutoDetecting ? <Spinner size="sm" /> : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              )}
+              Auto-detectar fuentes
+            </button>
+            <button
+              onClick={() => navigate(`/admin/configuracion/datasets/${id}/editar`)}
+              className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-colors">
+              Editar dataset
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="p-4 space-y-4 w-full max-w-full box-border">
+      <div className="p-4 space-y-4 w-full max-w-full">
+
         {/* Processing Banner */}
         {dataset.status === 'processing' && (
-          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <svg className="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-blue-800">
-                  Procesando archivos desde Google Drive
-                </h3>
-                <p className="text-sm text-blue-700 mt-1">
-                  Los archivos se están descargando y procesando en segundo plano. Esta página se actualizará automáticamente cada 5 segundos.
-                </p>
-              </div>
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg flex items-center gap-3">
+            <svg className="animate-spin h-5 w-5 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            <div>
+              <p className="text-sm font-medium text-blue-800">Procesando archivos en segundo plano</p>
+              <p className="text-xs text-blue-600">Esta página se actualiza automáticamente cada 5 segundos.</p>
             </div>
           </div>
         )}
 
-        {/* Dataset Info Card */}
-        <div className="bg-white p-4" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-          <h2 className="text-base font-semibold text-gray-900 mb-3">Información General</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Nombre</p>
-              <p className="text-base font-medium text-gray-900">{dataset.name}</p>
+        {/* ── Info + PRISMA ────────────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+          {/* Info */}
+          <div className="lg:col-span-2 bg-white p-5 rounded-2xl" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <h2 className="text-sm font-semibold text-gray-900 mb-3">Información General</h2>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div><p className="text-xs text-gray-500">Nombre</p><p className="font-medium text-gray-900">{dataset.name}</p></div>
+              <div><p className="text-xs text-gray-500">Origen</p><p className="font-medium text-gray-900">{dataset.source === 'drive' ? 'Google Drive' : 'Local'}</p></div>
+              <div><p className="text-xs text-gray-500">Archivos</p><p className="font-medium text-gray-900">{totalFiles}</p></div>
+              <div><p className="text-xs text-gray-500">Tamaño</p><p className="font-medium text-gray-900">{formatBytes(dataset.total_size_bytes)}</p></div>
+              {dataset.database_sources && (
+                <div className="col-span-2">
+                  <p className="text-xs text-gray-500">Bases de datos</p>
+                  <p className="font-medium text-gray-900">{dataset.database_sources}</p>
+                </div>
+              )}
+              {dataset.description && (
+                <div className="col-span-2">
+                  <p className="text-xs text-gray-500">Descripción</p>
+                  <p className="text-gray-700">{dataset.description}</p>
+                </div>
+              )}
+              <div><p className="text-xs text-gray-500">Creado por</p><p className="text-gray-700">{dataset.created_by_email}</p></div>
+              <div><p className="text-xs text-gray-500">Fecha</p><p className="text-gray-700">{formatDate(dataset.created_at)}</p></div>
             </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Origen</p>
-              <p className="text-base font-medium text-gray-900">
-                {dataset.source === 'drive' ? 'Google Drive' : 'Local'}
-              </p>
+          </div>
+
+          {/* PRISMA Stats */}
+          <div className="bg-white p-5 rounded-2xl" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <h2 className="text-sm font-semibold text-gray-900 mb-3">Protocolo PRISMA</h2>
+            <div className="space-y-3">
+              {[
+                { label: 'Total identificados', value: prisma.total, color: 'text-gray-900', bg: 'bg-gray-50' },
+                { label: 'Incluidos', value: prisma.included, color: 'text-emerald-700', bg: 'bg-emerald-50' },
+                { label: 'Excluidos', value: prisma.excluded, color: 'text-red-700', bg: 'bg-red-50' },
+                { label: 'Pendientes', value: prisma.pending, color: 'text-yellow-700', bg: 'bg-yellow-50' },
+              ].map(row => (
+                <div key={row.label} className={`flex items-center justify-between px-3 py-2 rounded-lg ${row.bg}`}>
+                  <span className="text-xs text-gray-600">{row.label}</span>
+                  <span className={`text-lg font-bold ${row.color}`}>{row.value}</span>
+                </div>
+              ))}
             </div>
-            {dataset.description && (
-              <div className="md:col-span-2">
-                <p className="text-sm text-gray-500 mb-1">Descripción</p>
-                <p className="text-base text-gray-900">{dataset.description}</p>
+            {dataset.search_strategy && (
+              <div className="mt-4 pt-3 border-t border-gray-100">
+                <p className="text-xs text-gray-500 mb-1">Estrategia de búsqueda</p>
+                <p className="text-xs text-gray-700 line-clamp-3">{dataset.search_strategy}</p>
               </div>
             )}
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Creado por</p>
-              <p className="text-base text-gray-900">{dataset.created_by_email}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Fecha de Creación</p>
-              <p className="text-base text-gray-900">{formatDate(dataset.created_at)}</p>
-            </div>
           </div>
         </div>
 
-        {/* Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Total Files */}
-          <div className="bg-white p-4" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Total Archivos</h3>
-              <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
-                <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{totalFiles}</p>
-            <p className="text-xs text-gray-500 mt-1">archivos en total</p>
-          </div>
-
-          {/* Total Size */}
-          <div className="bg-white p-4" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Tamaño Total</h3>
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
-                </svg>
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{formatBytes(dataset.total_size_bytes)}</p>
-            <p className="text-xs text-gray-500 mt-1">espacio utilizado</p>
-          </div>
-
-          {/* Most Common Extension */}
-          <div className="bg-white p-4" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Extensión Principal</h3>
-              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-gray-900">
-              {getMostCommonExtension().ext}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              {getMostCommonExtension().count}/{totalFiles} archivos
-            </p>
-          </div>
-        </div>
-
-        {/* Directory Distribution Section */}
+        {/* ── Distribuciones ───────────────────────────────────────────────── */}
         {directoryStats && directoryStats.pie_chart_data.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full max-w-full">
-            {/* Pie Chart */}
-            <div className="bg-white p-4 w-full max-w-full" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-              <h2 className="text-base font-semibold text-gray-900 mb-4">Distribución por Directorio</h2>
-              <div className="flex flex-col items-center">
-                {/* Simple List-based Pie Chart Alternative */}
-                <div className="w-full space-y-3">
-                  {directoryStats.pie_chart_data.map((item, index) => {
-                    const colors = [
-                      'bg-emerald-500',
-                      'bg-blue-500',
-                      'bg-purple-500',
-                      'bg-yellow-500',
-                      'bg-red-500',
-                      'bg-indigo-500',
-                      'bg-pink-500',
-                      'bg-teal-500',
-                    ];
-                    const color = colors[index % colors.length];
-
-                    return (
-                      <div key={item.name} className="flex items-center gap-4">
-                        <div className={`w-4 h-4 rounded-full ${color}`}></div>
-                        <div className="flex-1">
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="text-sm font-medium text-gray-700">{item.name}</span>
-                            <span className="text-sm text-gray-600">
-                              {item.value} archivos ({item.percentage.toFixed(1)}%)
-                            </span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div
-                              className={`${color} h-2 rounded-full transition-all duration-300`}
-                              style={{ width: `${item.percentage}%` }}
-                            ></div>
-                          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="bg-white p-5 rounded-2xl" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <h2 className="text-sm font-semibold text-gray-900 mb-4">Por Directorio</h2>
+              <div className="space-y-3">
+                {directoryStats.pie_chart_data.map((item, i) => {
+                  const colors = ['bg-emerald-500','bg-blue-500','bg-purple-500','bg-yellow-500','bg-red-500','bg-indigo-500','bg-pink-500','bg-teal-500'];
+                  return (
+                    <div key={item.name} className="flex items-center gap-3">
+                      <div className={`w-3 h-3 rounded-full flex-shrink-0 ${colors[i % colors.length]}`} />
+                      <div className="flex-1">
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="font-medium text-gray-700 truncate">{item.name}</span>
+                          <span className="text-gray-500 ml-2 flex-shrink-0">{item.value} ({item.percentage.toFixed(1)}%)</span>
+                        </div>
+                        <div className="w-full bg-gray-100 rounded-full h-1.5">
+                          <div className={`${colors[i % colors.length]} h-1.5 rounded-full`} style={{ width: `${item.percentage}%` }} />
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Distribution Table */}
-            <div className="bg-white p-4 w-full max-w-full box-border flex flex-col" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-              <h2 className="text-base font-semibold text-gray-900 mb-4">Tabla de Distribución</h2>
-              <div className="overflow-x-auto flex-1" style={{ overflowY: 'auto' }}>
-                <div style={{ minWidth: 'max-content' }}>
-                  <table className="text-xs w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="px-2 py-1 text-left text-xs font-semibold text-gray-700 uppercase sticky left-0 bg-white z-10 shadow-sm">
-                        Directorio
-                      </th>
-                      {directoryStats.all_extensions.map((ext) => (
-                        <th key={ext} className="px-2 py-1 text-center text-xs font-semibold text-gray-700 uppercase whitespace-nowrap bg-white">
-                          {ext}
-                        </th>
-                      ))}
-                      <th className="px-2 py-1 text-center text-xs font-semibold text-emerald-700 uppercase bg-emerald-50 sticky right-0 z-10 shadow-sm">
-                        Total
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {directoryStats.table_data.map((row) => (
-                      <tr key={row.directory} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="px-2 py-1 text-xs font-medium text-gray-900 sticky left-0 bg-white z-10">{row.directory}</td>
-                        {directoryStats.all_extensions.map((ext) => (
-                          <td key={ext} className="px-2 py-1 text-center text-xs text-gray-600 whitespace-nowrap">
-                            {row.extensions[ext] || 0}
-                          </td>
-                        ))}
-                        <td className="px-2 py-1 text-center text-xs font-semibold text-emerald-700 bg-emerald-50 sticky right-0 z-10">
-                          {row.total}
-                        </td>
-                      </tr>
-                    ))}
-                    {/* Totals Row */}
-                    <tr className="bg-emerald-50 font-semibold">
-                      <td className="px-2 py-1 text-xs text-emerald-700 sticky left-0 bg-emerald-50 z-10">TOTAL</td>
-                      {directoryStats.all_extensions.map((ext) => (
-                        <td key={ext} className="px-2 py-1 text-center text-xs text-emerald-700 whitespace-nowrap">
-                          {directoryStats.extension_totals[ext]}
-                        </td>
-                      ))}
-                      <td className="px-2 py-1 text-center text-xs text-emerald-700 bg-emerald-100 sticky right-0 z-10">
-                        {directoryStats.grand_total}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-                </div>
+            <div className="bg-white p-5 rounded-2xl overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <h2 className="text-sm font-semibold text-gray-900 mb-4">Por Extensión</h2>
+              <div className="space-y-2">
+                {Object.entries(extensionStats).sort((a,b) => b[1]-a[1]).map(([ext, count]) => {
+                  const pct = totalFiles > 0 ? (count / totalFiles) * 100 : 0;
+                  const extColors: Record<string,string> = { pdf:'bg-red-500', txt:'bg-gray-500', doc:'bg-blue-500', docx:'bg-blue-600' };
+                  const c = extColors[ext] || 'bg-emerald-500';
+                  return (
+                    <div key={ext}>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="font-medium text-gray-700 uppercase">.{ext}</span>
+                        <span className="text-gray-500">{count} ({pct.toFixed(1)}%)</span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-1.5">
+                        <div className={`${c} h-1.5 rounded-full`} style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
         )}
 
-        {/* Distribution by Extension */}
-        <div className="bg-white p-4 w-full max-w-full" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-          <h2 className="text-base font-semibold text-gray-900 mb-4">Distribución por Extensión</h2>
-          <div className="space-y-2">
-            {Object.entries(extensionStats).map(([ext, count]) => {
-              const percentage = totalFiles > 0 ? (count / totalFiles) * 100 : 0;
-              const colors: { [key: string]: string } = {
-                pdf: 'bg-red-500',
-                txt: 'bg-gray-500',
-                doc: 'bg-blue-500',
-                docx: 'bg-blue-600',
-              };
-              const barColor = colors[ext] || 'bg-emerald-500';
-
-              return (
-                <div key={ext}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700 uppercase">.{ext}</span>
-                    <span className="text-sm text-gray-600">
-                      {count} archivo{count !== 1 ? 's' : ''} ({percentage.toFixed(1)}%)
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <div
-                      className={`${barColor} h-2.5 rounded-full transition-all duration-300`}
-                      style={{ width: `${percentage}%` }}
-                    ></div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Files List */}
-        <div className="bg-white p-4 w-full max-w-full" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-900">Archivos del Dataset</h2>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500">
-                {filteredFiles.length} de {totalFiles} archivos
-              </span>
-            </div>
+        {/* ── Archivos / PRISMA Tabs ────────────────────────────────────────── */}
+        <div className="bg-white rounded-2xl" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+          {/* Tab bar */}
+          <div className="flex items-center border-b border-gray-100 px-5">
+            {([
+              { key: 'files', label: `Archivos (${totalFiles})` },
+              { key: 'prisma', label: `Resumen PRISMA` },
+            ] as { key: ActiveTab; label: string }[]).map(tab => (
+              <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === tab.key
+                    ? 'border-emerald-500 text-emerald-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}>
+                {tab.label}
+              </button>
+            ))}
           </div>
 
-          {/* Search Bar */}
-          <div className="mb-4">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <input
-                type="text"
-                placeholder="Buscar archivos por nombre..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                >
-                  <svg className="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          {/* ── Tab: Archivos ─────────────────────────────────────────────── */}
+          {activeTab === 'files' && (
+            <div className="p-5">
+              {/* Filters */}
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                {/* Search */}
+                <div className="relative flex-1 min-w-48">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
-                </button>
-              )}
-            </div>
-          </div>
+                  <input type="text" placeholder="Buscar por nombre, título o autor..."
+                    value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" />
+                </div>
+                {/* Inclusion filter */}
+                <div className="flex gap-1">
+                  {([
+                    { value: 'all', label: 'Todos' },
+                    { value: 'included', label: '✓ Incluidos' },
+                    { value: 'excluded', label: '✗ Excluidos' },
+                    { value: 'pending', label: '⏳ Pendientes' },
+                  ] as { value: InclusionStatus | 'all'; label: string }[]).map(f => (
+                    <button key={f.value} onClick={() => setInclusionFilter(f.value)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        inclusionFilter === f.value
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}>
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+                <span className="text-xs text-gray-400">{filteredFiles.length} de {totalFiles}</span>
+              </div>
 
-          {/* Table with scroll */}
-          <div className="overflow-x-auto">
-            <div style={{ maxHeight: '500px', overflowY: 'auto' }} className="border border-gray-200 rounded-lg">
-              <table className="w-full">
-                <thead className="bg-gray-50 sticky top-0 z-10">
-                  <tr className="border-b border-gray-200">
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      #
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Archivo
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Tamaño
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-100">
-                  {filteredFiles.length > 0 ? (
-                    filteredFiles.map((file, index) => (
+              {/* Table */}
+              <div style={{ maxHeight: '520px', overflowY: 'auto' }} className="border border-gray-200 rounded-lg">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 sticky top-0 z-10">
+                    <tr className="border-b border-gray-200">
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">#</th>
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">Archivo / Título</th>
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">Autores</th>
+                      <th className="px-3 py-2.5 text-center text-xs font-semibold text-gray-600 uppercase">Año</th>
+                      <th className="px-3 py-2.5 text-center text-xs font-semibold text-gray-600 uppercase">Fuente</th>
+                      <th className="px-3 py-2.5 text-center text-xs font-semibold text-gray-600 uppercase">PRISMA</th>
+                      <th className="px-3 py-2.5 text-center text-xs font-semibold text-gray-600 uppercase">Editar</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {filteredFiles.length > 0 ? filteredFiles.map((file, idx) => (
                       <tr key={file.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3">
-                          <span className="text-sm text-gray-500">{index + 1}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <p className="text-sm font-medium text-gray-900">
-                            {file.original_filename}
+                        <td className="px-3 py-2.5 text-xs text-gray-400">{idx + 1}</td>
+                        <td className="px-3 py-2.5 max-w-xs">
+                          <p className="font-medium text-gray-900 truncate">
+                            {file.bib_title || file.original_filename}
                           </p>
+                          {file.bib_title && (
+                            <p className="text-xs text-gray-400 truncate mt-0.5">📄 {file.original_filename}</p>
+                          )}
                           {file.directory_path && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              📁 {file.directory_path}
-                            </p>
+                            <p className="text-xs text-gray-400 mt-0.5">📁 {file.directory_path}</p>
                           )}
                         </td>
-                        <td className="px-4 py-3">
-                          <span className="text-sm text-gray-600">{formatBytes(file.file_size_bytes)}</span>
+                        <td className="px-3 py-2.5 max-w-[160px]">
+                          <p className="text-xs text-gray-600 truncate">{file.bib_authors || '—'}</p>
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                          <span className="text-xs font-medium text-gray-700">{file.bib_year || '—'}</span>
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                          {file.bib_source_db ? (
+                            <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${SOURCE_DB_COLORS[file.bib_source_db] || 'bg-gray-100 text-gray-600'}`}>
+                              {file.bib_source_db_display || file.bib_source_db}
+                            </span>
+                          ) : <span className="text-gray-300 text-xs">—</span>}
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${INCLUSION_COLORS[file.inclusion_status]}`}>
+                            {INCLUSION_ICONS[file.inclusion_status]} {file.inclusion_status_display || file.inclusion_status}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                          <button onClick={() => setEditingFile(file)}
+                            className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                            title="Editar metadatos">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={3} className="px-4 py-8 text-center text-sm text-gray-500">
-                        No se encontraron archivos que coincidan con "{searchTerm}"
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    )) : (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-400">
+                          No hay archivos que coincidan con los filtros aplicados
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* ── Tab: PRISMA ───────────────────────────────────────────────── */}
+          {activeTab === 'prisma' && (
+            <div className="p-5 space-y-5">
+              {/* Criteria */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  { label: 'Estrategia de búsqueda', value: dataset.search_strategy },
+                  { label: 'Bases de datos consultadas', value: dataset.database_sources },
+                  { label: 'Criterios de inclusión', value: dataset.inclusion_criteria },
+                  { label: 'Criterios de exclusión', value: dataset.exclusion_criteria },
+                ].map(item => (
+                  <div key={item.label} className="p-4 bg-gray-50 rounded-xl">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{item.label}</p>
+                    <p className="text-sm text-gray-700 whitespace-pre-line">
+                      {item.value || <span className="text-gray-400 italic">No especificado</span>}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Exclusion reasons */}
+              {dataset.files.some(f => f.inclusion_status === 'excluded' && f.exclusion_reason) && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-800 mb-3">Motivos de exclusión registrados</h3>
+                  <div className="space-y-2">
+                    {dataset.files
+                      .filter(f => f.inclusion_status === 'excluded' && f.exclusion_reason)
+                      .map(f => (
+                        <div key={f.id} className="flex items-start gap-3 p-3 bg-red-50 rounded-lg">
+                          <span className="text-red-500 text-xs font-semibold flex-shrink-0 mt-0.5">✗</span>
+                          <div>
+                            <p className="text-xs font-medium text-gray-800 truncate">{f.bib_title || f.original_filename}</p>
+                            <p className="text-xs text-gray-600 mt-0.5">{f.exclusion_reason}</p>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* By year */}
+              {(() => {
+                const byYear: Record<number, { included: number; excluded: number; pending: number }> = {};
+                dataset.files.forEach(f => {
+                  if (!f.bib_year) return;
+                  if (!byYear[f.bib_year]) byYear[f.bib_year] = { included: 0, excluded: 0, pending: 0 };
+                  byYear[f.bib_year][f.inclusion_status]++;
+                });
+                const years = Object.keys(byYear).sort();
+                if (years.length === 0) return null;
+                return (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-800 mb-3">Distribución por año de publicación</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="border-b border-gray-200">
+                            <th className="px-3 py-2 text-left text-gray-600">Año</th>
+                            <th className="px-3 py-2 text-center text-emerald-600">Incluidos</th>
+                            <th className="px-3 py-2 text-center text-red-600">Excluidos</th>
+                            <th className="px-3 py-2 text-center text-yellow-600">Pendientes</th>
+                            <th className="px-3 py-2 text-center text-gray-600">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {years.map(year => {
+                            const row = byYear[parseInt(year)];
+                            const total = row.included + row.excluded + row.pending;
+                            return (
+                              <tr key={year} className="hover:bg-gray-50">
+                                <td className="px-3 py-2 font-medium text-gray-800">{year}</td>
+                                <td className="px-3 py-2 text-center text-emerald-700">{row.included || '—'}</td>
+                                <td className="px-3 py-2 text-center text-red-700">{row.excluded || '—'}</td>
+                                <td className="px-3 py-2 text-center text-yellow-700">{row.pending || '—'}</td>
+                                <td className="px-3 py-2 text-center font-semibold text-gray-800">{total}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
         </div>
       </div>
     </div>
