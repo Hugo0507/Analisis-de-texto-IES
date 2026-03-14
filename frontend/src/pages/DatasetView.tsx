@@ -16,7 +16,7 @@ import datasetsService from '../services/datasetsService';
 import { SOURCE_DB_LABELS } from '../services/datasetsService';
 import type {
   Dataset, DatasetFile, DirectoryStats,
-  FileBibUpdate, InclusionStatus, SourceDb,
+  FileBibUpdate, SourceDb,
 } from '../services/datasetsService';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
@@ -64,17 +64,6 @@ const SOURCE_DB_COLORS: Record<string, string> = {
   other: 'bg-gray-100 text-gray-700',
 };
 
-const INCLUSION_COLORS: Record<InclusionStatus, string> = {
-  included: 'bg-emerald-100 text-emerald-700',
-  excluded: 'bg-red-100 text-red-700',
-  pending: 'bg-yellow-100 text-yellow-700',
-};
-
-const INCLUSION_ICONS: Record<InclusionStatus, string> = {
-  included: '✓',
-  excluded: '✗',
-  pending: '⏳',
-};
 
 type ActiveTab = 'files' | 'prisma';
 
@@ -214,34 +203,6 @@ const BibEditModal: React.FC<BibEditModalProps> = ({ file, onSave, onClose }) =>
               placeholder="Resumen del artículo..." />
           </div>
 
-          {/* PRISMA */}
-          <div className="border-t border-gray-100 pt-4">
-            <p className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">Decisión de inclusión (PRISMA)</p>
-            <div className="flex gap-3 mb-3">
-              {(['included', 'pending', 'excluded'] as InclusionStatus[]).map(s => (
-                <button key={s} type="button"
-                  onClick={() => set('inclusion_status', s)}
-                  className={`flex-1 py-2 rounded-lg text-sm font-medium border-2 transition-all ${
-                    form.inclusion_status === s
-                      ? s === 'included' ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                        : s === 'excluded' ? 'border-red-500 bg-red-50 text-red-700'
-                        : 'border-yellow-400 bg-yellow-50 text-yellow-700'
-                      : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                  }`}>
-                  {INCLUSION_ICONS[s]} {s === 'included' ? 'Incluir' : s === 'excluded' ? 'Excluir' : 'Pendiente'}
-                </button>
-              ))}
-            </div>
-            {form.inclusion_status === 'excluded' && (
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Motivo de exclusión <span className="text-red-500">*</span></label>
-                <textarea value={form.exclusion_reason} onChange={e => set('exclusion_reason', e.target.value)}
-                  rows={2}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  placeholder="Ej: No corresponde al ámbito de educación superior" />
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Footer */}
@@ -272,7 +233,6 @@ export const DatasetView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<ActiveTab>('files');
-  const [inclusionFilter, setInclusionFilter] = useState<InclusionStatus | 'all'>('all');
   const [editingFile, setEditingFile] = useState<DatasetFile | null>(null);
   const [isExtractingMeta, setIsExtractingMeta] = useState(false);
 
@@ -382,8 +342,7 @@ export const DatasetView: React.FC = () => {
       f.original_filename.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (f.bib_title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (f.bib_authors || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchInclusion = inclusionFilter === 'all' || f.inclusion_status === inclusionFilter;
-    return matchSearch && matchInclusion;
+    return matchSearch;
   });
 
   // ── Early returns ──────────────────────────────────────────────────────────
@@ -393,7 +352,6 @@ export const DatasetView: React.FC = () => {
 
   const extensionStats = getExtensionStats();
   const totalFiles = dataset.files.length;
-  const prisma = dataset.prisma_stats ?? { total: totalFiles, included: 0, excluded: 0, pending: totalFiles };
 
   return (
     <div className="min-h-screen w-full" style={{ backgroundColor: '#F4F7FE' }}>
@@ -487,15 +445,15 @@ export const DatasetView: React.FC = () => {
             </div>
           </div>
 
-          {/* PRISMA Stats */}
+          {/* Corpus summary */}
           <div className="bg-white p-5 rounded-2xl" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-            <h2 className="text-sm font-semibold text-gray-900 mb-3">Protocolo PRISMA</h2>
+            <h2 className="text-sm font-semibold text-gray-900 mb-3">Corpus</h2>
             <div className="space-y-3">
               {[
-                { label: 'Total identificados', value: prisma.total, color: 'text-gray-900', bg: 'bg-gray-50' },
-                { label: 'Incluidos', value: prisma.included, color: 'text-emerald-700', bg: 'bg-emerald-50' },
-                { label: 'Excluidos', value: prisma.excluded, color: 'text-red-700', bg: 'bg-red-50' },
-                { label: 'Pendientes', value: prisma.pending, color: 'text-yellow-700', bg: 'bg-yellow-50' },
+                { label: 'Total documentos', value: totalFiles, color: 'text-gray-900', bg: 'bg-gray-50' },
+                { label: 'Con título extraído', value: dataset.files.filter(f => f.bib_title).length, color: 'text-emerald-700', bg: 'bg-emerald-50' },
+                { label: 'Con autores', value: dataset.files.filter(f => f.bib_authors).length, color: 'text-blue-700', bg: 'bg-blue-50' },
+                { label: 'Con DOI', value: dataset.files.filter(f => f.bib_doi).length, color: 'text-indigo-700', bg: 'bg-indigo-50' },
               ].map(row => (
                 <div key={row.label} className={`flex items-center justify-between px-3 py-2 rounded-lg ${row.bg}`}>
                   <span className="text-xs text-gray-600">{row.label}</span>
@@ -595,24 +553,6 @@ export const DatasetView: React.FC = () => {
                     value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
                     className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" />
                 </div>
-                {/* Inclusion filter */}
-                <div className="flex gap-1">
-                  {([
-                    { value: 'all', label: 'Todos' },
-                    { value: 'included', label: '✓ Incluidos' },
-                    { value: 'excluded', label: '✗ Excluidos' },
-                    { value: 'pending', label: '⏳ Pendientes' },
-                  ] as { value: InclusionStatus | 'all'; label: string }[]).map(f => (
-                    <button key={f.value} onClick={() => setInclusionFilter(f.value)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                        inclusionFilter === f.value
-                          ? 'bg-emerald-500 text-white'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}>
-                      {f.label}
-                    </button>
-                  ))}
-                </div>
                 <span className="text-xs text-gray-400">{filteredFiles.length} de {totalFiles}</span>
               </div>
 
@@ -626,7 +566,6 @@ export const DatasetView: React.FC = () => {
                       <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase">Autores</th>
                       <th className="px-3 py-2.5 text-center text-xs font-semibold text-gray-600 uppercase">Año</th>
                       <th className="px-3 py-2.5 text-center text-xs font-semibold text-gray-600 uppercase">Fuente</th>
-                      <th className="px-3 py-2.5 text-center text-xs font-semibold text-gray-600 uppercase">PRISMA</th>
                       <th className="px-3 py-2.5 text-center text-xs font-semibold text-gray-600 uppercase">Editar</th>
                     </tr>
                   </thead>
@@ -659,11 +598,6 @@ export const DatasetView: React.FC = () => {
                           ) : <span className="text-gray-300 text-xs">—</span>}
                         </td>
                         <td className="px-3 py-2.5 text-center">
-                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${INCLUSION_COLORS[file.inclusion_status]}`}>
-                            {INCLUSION_ICONS[file.inclusion_status]} {file.inclusion_status_display || file.inclusion_status}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2.5 text-center">
                           <button onClick={() => setEditingFile(file)}
                             className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
                             title="Editar metadatos">
@@ -675,7 +609,7 @@ export const DatasetView: React.FC = () => {
                       </tr>
                     )) : (
                       <tr>
-                        <td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-400">
+                        <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-400">
                           No hay archivos que coincidan con los filtros aplicados
                         </td>
                       </tr>
@@ -707,45 +641,29 @@ export const DatasetView: React.FC = () => {
 
             const autoDatabases = dbLabels.length > 0 ? dbLabels.join(', ') : null;
 
-            const fields = [
+            const infoFields = [
               {
                 label: 'Estrategia de búsqueda',
                 value: dataset.search_strategy,
                 auto: autoSearchStrategy,
-                hint: 'Define la ecuación de búsqueda, bases de datos consultadas y fechas de la búsqueda.',
               },
               {
                 label: 'Bases de datos consultadas',
                 value: dataset.database_sources,
                 auto: autoDatabases,
-                hint: 'Sube archivos PDF organizados en carpetas por base de datos y usa "Detectar fuente" para poblar este campo.',
-              },
-              {
-                label: 'Criterios de inclusión',
-                value: dataset.inclusion_criteria,
-                auto: null,
-                hint: 'Ej: Artículos en inglés o español, publicados entre 2018-2024, sobre transformación digital en educación superior, con acceso al texto completo.',
-              },
-              {
-                label: 'Criterios de exclusión',
-                value: dataset.exclusion_criteria,
-                auto: null,
-                hint: 'Ej: Artículos duplicados, literatura gris, actas de conferencia sin revisión por pares, estudios no relacionados con el contexto universitario.',
               },
             ];
 
             return (
             <div className="p-5 space-y-5">
-              {/* Criteria */}
+              {/* Info cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {fields.map(item => (
+                {infoFields.map(item => (
                   <div key={item.label} className="p-4 bg-gray-50 rounded-xl">
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{item.label}</p>
-                      {!item.value && (item.auto || item.hint) && (
-                        <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">
-                          {item.auto ? 'auto' : 'sugerencia'}
-                        </span>
+                      {!item.value && item.auto && (
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">auto</span>
                       )}
                     </div>
                     {item.value ? (
@@ -753,46 +671,11 @@ export const DatasetView: React.FC = () => {
                     ) : item.auto ? (
                       <p className="text-sm text-gray-700">{item.auto}</p>
                     ) : (
-                      <p className="text-xs text-gray-400 italic leading-relaxed">{item.hint}</p>
+                      <p className="text-xs text-gray-400 italic">No especificado</p>
                     )}
                   </div>
                 ))}
               </div>
-              {/* Edit prompt */}
-              {fields.some(f => !f.value) && (
-                <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg text-xs text-blue-700">
-                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Los campos marcados como <strong className="mx-1">sugerencia</strong> son plantillas de referencia — define los criterios reales en
-                  <button
-                    onClick={() => navigate(`/admin/configuracion/datasets/${id}/editar`)}
-                    className="ml-1 underline font-medium hover:text-blue-900"
-                  >
-                    Editar dataset
-                  </button>.
-                </div>
-              )}
-
-              {/* Exclusion reasons */}
-              {dataset.files.some(f => f.inclusion_status === 'excluded' && f.exclusion_reason) && (
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-800 mb-3">Motivos de exclusión registrados</h3>
-                  <div className="space-y-2">
-                    {dataset.files
-                      .filter(f => f.inclusion_status === 'excluded' && f.exclusion_reason)
-                      .map(f => (
-                        <div key={f.id} className="flex items-start gap-3 p-3 bg-red-50 rounded-lg">
-                          <span className="text-red-500 text-xs font-semibold flex-shrink-0 mt-0.5">✗</span>
-                          <div>
-                            <p className="text-xs font-medium text-gray-800 truncate">{f.bib_title || f.original_filename}</p>
-                            <p className="text-xs text-gray-600 mt-0.5">{f.exclusion_reason}</p>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
 
               {/* By year */}
               {(() => {
