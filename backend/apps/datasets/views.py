@@ -475,14 +475,28 @@ class DatasetViewSet(viewsets.ModelViewSet):
         def run_extraction():
             updated = 0
             failed = 0
-            # Use up to 8 concurrent workers for CrossRef API calls
-            # (CrossRef polite pool supports ~50 req/s, so 8 workers is safe)
             with ThreadPoolExecutor(max_workers=8) as executor:
                 futures = {executor.submit(process_one, fid): fid for fid in file_ids}
                 for future in as_completed(futures):
                     u, f_ = future.result()
                     updated += u
                     failed += f_
+
+            # Sync dataset.database_sources from all detected source DBs
+            all_dbs = (
+                dataset.files
+                .exclude(bib_source_db__isnull=True)
+                .exclude(bib_source_db='')
+                .values_list('bib_source_db', flat=True)
+                .distinct()
+            )
+            db_labels = [
+                dict(DatasetFile.SOURCE_DB_CHOICES).get(db, db)
+                for db in sorted(all_dbs)
+            ]
+            if db_labels:
+                dataset.database_sources = ', '.join(db_labels)
+                dataset.save(update_fields=['database_sources'])
 
             logger.info(
                 f"auto_extract_metadata done for dataset {dataset.id}: "
