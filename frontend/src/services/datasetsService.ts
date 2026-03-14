@@ -6,6 +6,37 @@
 
 import apiClient from './api';
 
+export type InclusionStatus = 'pending' | 'included' | 'excluded';
+export type SourceDb =
+  | 'scopus' | 'wos' | 'redalyc' | 'eric' | 'pubmed'
+  | 'google_scholar' | 'semantic_scholar' | 'scielo' | 'dialnet' | 'other';
+
+export const SOURCE_DB_LABELS: Record<SourceDb, string> = {
+  scopus: 'Scopus',
+  wos: 'Web of Science',
+  redalyc: 'Redalyc',
+  eric: 'ERIC',
+  pubmed: 'PubMed',
+  google_scholar: 'Google Scholar',
+  semantic_scholar: 'Semantic Scholar',
+  scielo: 'SciELO',
+  dialnet: 'Dialnet',
+  other: 'Otra',
+};
+
+export const INCLUSION_LABELS: Record<InclusionStatus, string> = {
+  pending: 'Pendiente',
+  included: 'Incluido',
+  excluded: 'Excluido',
+};
+
+export interface PrismaStats {
+  total: number;
+  included: number;
+  excluded: number;
+  pending: number;
+}
+
 export interface DatasetFile {
   id: number;
   filename: string;
@@ -14,12 +45,47 @@ export interface DatasetFile {
   mime_type: string;
   status: 'pending' | 'processing' | 'completed' | 'error';
   error_message?: string;
+  directory_path?: string;
+  directory_name?: string;
   language_code?: string;
   language_confidence?: number;
-  directory_path?: string;  // Full path: "Redalyc/subcarpeta"
-  directory_name?: string;  // Immediate parent folder name
+  // Bibliographic metadata
+  bib_title?: string;
+  bib_authors?: string;
+  bib_authors_list?: string[];
+  bib_year?: number;
+  bib_journal?: string;
+  bib_doi?: string;
+  bib_abstract?: string;
+  bib_keywords?: string;
+  bib_keywords_list?: string[];
+  bib_source_db?: SourceDb;
+  bib_source_db_display?: string;
+  bib_volume?: string;
+  bib_issue?: string;
+  bib_pages?: string;
+  // PRISMA
+  inclusion_status: InclusionStatus;
+  inclusion_status_display?: string;
+  exclusion_reason?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface FileBibUpdate {
+  bib_title?: string;
+  bib_authors?: string;
+  bib_year?: number | null;
+  bib_journal?: string;
+  bib_doi?: string;
+  bib_abstract?: string;
+  bib_keywords?: string;
+  bib_source_db?: SourceDb | '';
+  bib_volume?: string;
+  bib_issue?: string;
+  bib_pages?: string;
+  inclusion_status?: InclusionStatus;
+  exclusion_reason?: string;
 }
 
 export interface Dataset {
@@ -31,6 +97,12 @@ export interface Dataset {
   status: 'pending' | 'processing' | 'completed' | 'error';
   total_files: number;
   total_size_bytes: number;
+  // PRISMA
+  search_strategy?: string;
+  inclusion_criteria?: string;
+  exclusion_criteria?: string;
+  database_sources?: string;
+  prisma_stats: PrismaStats;
   created_by: number;
   created_by_email: string;
   files: DatasetFile[];
@@ -46,10 +118,24 @@ export interface DatasetListItem {
   status: 'pending' | 'processing' | 'completed' | 'error';
   total_files: number;
   total_size_bytes: number;
+  database_sources?: string;
+  prisma_stats: PrismaStats;
   created_by_email: string;
   file_count: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface PrismaReport {
+  dataset: { id: number; name: string };
+  search_strategy: string | null;
+  inclusion_criteria: string | null;
+  exclusion_criteria: string | null;
+  database_sources: string | null;
+  prisma_counts: PrismaStats;
+  by_source_db: Record<string, number>;
+  by_year: Record<number, number>;
+  exclusion_reasons: string[];
 }
 
 export interface DatasetStats {
@@ -115,6 +201,10 @@ class DatasetsService {
   async createDatasetWithFiles(data: {
     name: string;
     description?: string;
+    search_strategy?: string;
+    inclusion_criteria?: string;
+    exclusion_criteria?: string;
+    database_sources?: string;
     files: File[];
     onProgress?: (progress: { loaded: number; total: number; percentage: number }) => void;
   }): Promise<UploadResult> {
@@ -129,9 +219,11 @@ class DatasetsService {
     if (totalFiles <= BATCH_SIZE) {
       const formData = new FormData();
       formData.append('name', data.name);
-      if (data.description) {
-        formData.append('description', data.description);
-      }
+      if (data.description) formData.append('description', data.description);
+      if (data.search_strategy) formData.append('search_strategy', data.search_strategy);
+      if (data.inclusion_criteria) formData.append('inclusion_criteria', data.inclusion_criteria);
+      if (data.exclusion_criteria) formData.append('exclusion_criteria', data.exclusion_criteria);
+      if (data.database_sources) formData.append('database_sources', data.database_sources);
       formData.append('source', 'upload');
 
       // Add all files with their paths
@@ -166,9 +258,11 @@ class DatasetsService {
     const firstBatch = data.files.slice(0, BATCH_SIZE);
     const formData = new FormData();
     formData.append('name', data.name);
-    if (data.description) {
-      formData.append('description', data.description);
-    }
+    if (data.description) formData.append('description', data.description);
+    if (data.search_strategy) formData.append('search_strategy', data.search_strategy);
+    if (data.inclusion_criteria) formData.append('inclusion_criteria', data.inclusion_criteria);
+    if (data.exclusion_criteria) formData.append('exclusion_criteria', data.exclusion_criteria);
+    if (data.database_sources) formData.append('database_sources', data.database_sources);
     formData.append('source', 'upload');
 
     firstBatch.forEach((file) => {
@@ -366,6 +460,48 @@ class DatasetsService {
    */
   async getDirectoryStats(datasetId: number): Promise<DirectoryStats> {
     const response = await apiClient.get(`/datasets/${datasetId}/directory_stats/`);
+    return response.data;
+  }
+
+  /**
+   * Update dataset PRISMA metadata
+   */
+  async updateDatasetMetadata(id: number, data: {
+    name?: string;
+    description?: string;
+    search_strategy?: string;
+    inclusion_criteria?: string;
+    exclusion_criteria?: string;
+    database_sources?: string;
+  }): Promise<Dataset> {
+    const response = await apiClient.patch(`/datasets/${id}/update_metadata/`, data);
+    return response.data;
+  }
+
+  /**
+   * Update bibliographic metadata and inclusion status for a single file
+   */
+  async updateFileBib(datasetId: number, fileId: number, data: FileBibUpdate): Promise<DatasetFile> {
+    const response = await apiClient.patch(
+      `/datasets/${datasetId}/files/${fileId}/update_bib/`,
+      data
+    );
+    return response.data;
+  }
+
+  /**
+   * Auto-detect bib_source_db from directory name for all files in dataset
+   */
+  async autoDetectSources(datasetId: number): Promise<{ message: string; updated: number; total: number }> {
+    const response = await apiClient.post(`/datasets/${datasetId}/auto_detect_sources/`);
+    return response.data;
+  }
+
+  /**
+   * Get PRISMA report for a dataset
+   */
+  async getPrismaReport(datasetId: number): Promise<PrismaReport> {
+    const response = await apiClient.get(`/datasets/${datasetId}/prisma_report/`);
     return response.data;
   }
 
