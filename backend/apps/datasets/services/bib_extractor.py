@@ -48,30 +48,61 @@ class BibExtractorService:
 
     # ─── PDF ──────────────────────────────────────────────────────────────────
 
-    def extract_from_pdf(self, file_path: str) -> dict:
+    def extract_from_pdf(self, file_path: str, original_filename: str = '') -> dict:
         """
         Main entry point for PDF metadata extraction.
 
-        Pipeline:
-          1. Read embedded PDF metadata (fast, offline)
-          2. If no DOI yet, extract from page text via regex
-          3. If DOI found, query CrossRef API for authoritative metadata
+        Pipeline (stops at first successful DOI → CrossRef enrichment):
+          1. Embedded PDF metadata (title/author/keywords if present)
+          2. DOI from filename  (Sage, Taylor & Francis name files as 10.XXXX_xxx.pdf)
+          3. DOI from PDF text  (pdfplumber → PyPDF2 → pdfminer, first 5 pages)
+          4. CrossRef lookup by DOI  (complete authoritative metadata)
+          5. CrossRef search by title (fallback when DOI not found)
         """
+        fname = original_filename or Path(file_path).name
+        logger.info(f"[BibExtractor] Processing: {fname}")
+
         metadata = {}
 
         # Step 1: embedded PDF info dictionary
         embedded = self._extract_pdf_info(file_path)
         metadata.update(embedded)
+        if embedded:
+            logger.info(f"[BibExtractor] Embedded metadata: {list(embedded.keys())}")
 
-        # Step 2: DOI from page text if not already found
-        doi = metadata.get('bib_doi') or self._extract_doi_from_text(file_path)
+        # Step 2: DOI from filename (common for Sage, T&F exports)
+        doi = metadata.get('bib_doi')
+        if not doi:
+            doi = self._extract_doi_from_filename(fname)
+            if doi:
+                logger.info(f"[BibExtractor] DOI from filename: {doi}")
+
+        # Step 3: DOI from PDF text content
+        if not doi:
+            doi = self._extract_doi_from_text(file_path)
+            if doi:
+                logger.info(f"[BibExtractor] DOI from text: {doi}")
+            else:
+                logger.info(f"[BibExtractor] No DOI found in text for {fname}")
+
+        # Step 4: CrossRef lookup by DOI
         if doi:
             doi = self._clean_doi(doi)
             metadata['bib_doi'] = doi
-
-            # Step 3: CrossRef enrichment (authoritative, overrides embedded meta)
             crossref = self._fetch_crossref(doi)
             if crossref:
+                logger.info(f"[BibExtractor] CrossRef enriched: {list(crossref.keys())}")
+                metadata.update(crossref)
+                return metadata
+            else:
+                logger.info(f"[BibExtractor] CrossRef returned nothing for DOI {doi}")
+
+        # Step 5: CrossRef search by title (fallback — uses filename words or embedded title)
+        search_title = metadata.get('bib_title') or self._title_from_filename(fname)
+        if search_title and len(search_title) > 15:
+            crossref = self._search_crossref_by_title(search_title)
+            if crossref:
+                logger.info(f"[BibExtractor] CrossRef title-search enriched: {list(crossref.keys())}")
                 metadata.update(crossref)
 
         return metadata
@@ -98,7 +129,6 @@ class BibExtractorService:
 
                 raw_keywords = info.get('/Keywords') or info.get('keywords', '')
                 if raw_keywords and isinstance(raw_keywords, str):
-                    # Normalize separators to semicolon
                     kws = re.split(r'[,;]\s*', raw_keywords.strip())
                     metadata['bib_keywords'] = '; '.join(k.strip() for k in kws if k.strip())
 
@@ -114,47 +144,85 @@ class BibExtractorService:
                 return metadata
 
         except Exception as e:
-            logger.debug(f"PDF info extraction failed for {file_path}: {e}")
+            logger.warning(f"[BibExtractor] PDF info extraction failed: {e}")
             return {}
+
+    def _extract_doi_from_filename(self, filename: str) -> Optional[str]:
+        """
+        Extract DOI encoded in the filename.
+
+        Many databases export PDFs with DOI-based names:
+        - Sage:           10.1177_20569043231234567.pdf
+        - Taylor&Francis: 10.1080_09650790.2021.1879987.pdf
+        - General:        10.XXXX_suffix.pdf  → DOI = 10.XXXX/suffix
+        """
+        stem = Path(filename).stem
+        # Pattern: starts with 10.DIGITS_ → treat first _ as /
+        match = re.match(r'^(10\.\d{4,})_(.+)$', stem)
+        if match:
+            doi = f"{match.group(1)}/{match.group(2)}"
+            return self._clean_doi(doi)
+        return None
+
+    def _title_from_filename(self, filename: str) -> str:
+        """
+        Extract a rough title from a filename for CrossRef text search.
+        Removes common noise patterns, underscores become spaces.
+        """
+        stem = Path(filename).stem
+        # Skip if it looks like a DOI or ID
+        if re.match(r'^10\.\d{4,}', stem):
+            return ''
+        if re.match(r'^[a-z0-9\-]{20,}$', stem):
+            return ''
+        # Clean up common suffixes and separators
+        cleaned = re.sub(r'[-_]+', ' ', stem)
+        cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+        return cleaned if len(cleaned) > 10 else ''
 
     def _extract_doi_from_text(self, file_path: str) -> Optional[str]:
         """
         Extract DOI from the text of the first 5 pages of a PDF.
 
-        Strategy:
-        - Join lines to handle DOIs split across newlines (very common in
-          two-column academic PDFs from ScienceDirect, Sage, Taylor & Francis)
-        - Search for explicit DOI labels AND bare 10.XXXX/... patterns
-        - Tries pdfplumber first (better layout), falls back to PyPDF2
+        Tries three extractors in order: pdfplumber → PyPDF2 → pdfminer.six.
+        Collapses newlines before searching to handle DOIs split across lines
+        (very common in two-column PDFs from ScienceDirect, Sage, Taylor & Francis).
         """
-        texts = []
-
-        # Try pdfplumber (generally better for multi-column PDFs)
+        # ── pdfplumber (best for multi-column layouts) ─────────────────────
         try:
             import pdfplumber
             with pdfplumber.open(file_path) as pdf:
-                for page in pdf.pages[:5]:
+                pages = pdf.pages[:5]
+                for page in pages:
                     raw = page.extract_text() or ''
-                    texts.append(raw)
+                    doi = self._search_doi_in_text(raw)
+                    if doi:
+                        return doi
         except Exception as e:
-            logger.debug(f"pdfplumber text extraction failed: {e}")
+            logger.warning(f"[BibExtractor] pdfplumber failed: {e}")
 
-        # Fallback or supplement with PyPDF2
-        if not any(texts):
-            try:
-                import PyPDF2
-                with open(file_path, 'rb') as f:
-                    reader = PyPDF2.PdfReader(f, strict=False)
-                    for page in reader.pages[:5]:
-                        raw = page.extract_text() or ''
-                        texts.append(raw)
-            except Exception as e:
-                logger.debug(f"PyPDF2 text extraction failed: {e}")
+        # ── PyPDF2 ─────────────────────────────────────────────────────────
+        try:
+            import PyPDF2
+            with open(file_path, 'rb') as f:
+                reader = PyPDF2.PdfReader(f, strict=False)
+                for page in reader.pages[:5]:
+                    raw = page.extract_text() or ''
+                    doi = self._search_doi_in_text(raw)
+                    if doi:
+                        return doi
+        except Exception as e:
+            logger.warning(f"[BibExtractor] PyPDF2 failed: {e}")
 
-        for raw_text in texts:
-            doi = self._search_doi_in_text(raw_text)
+        # ── pdfminer.six (handles some PDFs the others can't) ──────────────
+        try:
+            from pdfminer.high_level import extract_text as pdfminer_extract
+            full_text = pdfminer_extract(file_path, maxpages=5) or ''
+            doi = self._search_doi_in_text(full_text)
             if doi:
                 return doi
+        except Exception as e:
+            logger.warning(f"[BibExtractor] pdfminer failed: {e}")
 
         return None
 
@@ -192,30 +260,57 @@ class BibExtractorService:
 
     def _fetch_crossref(self, doi: str) -> dict:
         """
-        Query CrossRef REST API for complete bibliographic metadata.
-
-        Returns dict with bib_* fields, or empty dict on failure.
-        CrossRef is free, no API key required (polite pool via User-Agent).
+        Query CrossRef REST API for complete bibliographic metadata by DOI.
+        Free, no API key required.
         """
         try:
             url = f"{CROSSREF_BASE}/{doi}"
+            response = requests.get(url, timeout=15, headers={'User-Agent': USER_AGENT})
+            if response.status_code != 200:
+                logger.warning(f"[BibExtractor] CrossRef HTTP {response.status_code} for DOI {doi}")
+                return {}
+            message = response.json().get('message', {})
+            return self._parse_crossref_message(message)
+        except requests.Timeout:
+            logger.warning(f"[BibExtractor] CrossRef timeout for DOI {doi}")
+            return {}
+        except Exception as e:
+            logger.warning(f"[BibExtractor] CrossRef DOI lookup failed: {e}")
+            return {}
+
+    def _search_crossref_by_title(self, title: str) -> dict:
+        """
+        Search CrossRef by title when no DOI is available.
+
+        Uses the bibliographic query API — returns the top-ranked result.
+        Only used as a last resort; result may not always be the correct paper.
+        """
+        try:
+            params = {
+                'query.bibliographic': title,
+                'rows': 1,
+                'filter': 'type:journal-article',
+                'select': 'title,author,issued,container-title,DOI,abstract,volume,issue,page,subject',
+            }
             response = requests.get(
-                url,
-                timeout=10,
+                f"{CROSSREF_BASE}",
+                params=params,
+                timeout=15,
                 headers={'User-Agent': USER_AGENT},
             )
             if response.status_code != 200:
-                logger.debug(f"CrossRef returned {response.status_code} for DOI {doi}")
+                return {}
+            items = response.json().get('message', {}).get('items', [])
+            if not items:
                 return {}
 
-            message = response.json().get('message', {})
-            return self._parse_crossref_message(message)
-
-        except requests.Timeout:
-            logger.debug(f"CrossRef timeout for DOI {doi}")
-            return {}
+            result = self._parse_crossref_message(items[0])
+            # Store the DOI found via search
+            if items[0].get('DOI'):
+                result['bib_doi'] = items[0]['DOI']
+            return result
         except Exception as e:
-            logger.debug(f"CrossRef lookup failed for DOI {doi}: {e}")
+            logger.warning(f"[BibExtractor] CrossRef title search failed: {e}")
             return {}
 
     def _parse_crossref_message(self, data: dict) -> dict:

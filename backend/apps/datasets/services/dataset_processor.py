@@ -199,14 +199,14 @@ class DatasetProcessorService:
                 # Priority 2: extract from the PDF itself
                 if ext == '.pdf':
                     try:
-                        bib_meta = self.bib_extractor.extract_from_pdf(str(saved_path))
+                        bib_meta = self.bib_extractor.extract_from_pdf(
+                            str(saved_path), original_filename=original_name
+                        )
                         logger.info(
-                            f"Auto-extracted bib metadata for {original_name}: "
-                            f"title={bool(bib_meta.get('bib_title'))}, "
-                            f"doi={bib_meta.get('bib_doi', 'none')}"
+                            f"[Processor] {original_name}: extracted fields={list(bib_meta.keys())}"
                         )
                     except Exception as e:
-                        logger.warning(f"Bib extraction failed for {original_name}: {e}")
+                        logger.warning(f"[Processor] Bib extraction failed for {original_name}: {e}")
 
                 # Priority 1 (deferred): if a .bib/.ris was uploaded, try to match by title
                 if bib_entries:
