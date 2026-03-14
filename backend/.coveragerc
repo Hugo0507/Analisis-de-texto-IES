@@ -1,0 +1,15 @@
+[run]
+source =
+    apps/documents/services
+    apps.analysis.use_cases.generate_bow
+    apps.analysis.use_cases.calculate_tfidf
+    apps.pipeline.use_cases.execute_pipeline
+    apps.users.views
+    apps.users.serializers
+
+[report]
+omit =
+    */migrations/*
+    */tests/*
+    */venv/*
+    */__init__.py
