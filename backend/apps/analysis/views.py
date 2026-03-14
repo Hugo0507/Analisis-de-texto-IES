@@ -4,7 +4,6 @@ Views for Analysis app.
 Exposes Use Cases as REST API endpoints for NLP/ML analysis.
 """
 
-from django.core.management import call_command
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -411,11 +410,226 @@ class FactorAnalysisViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['post'], url_path='seed')
     def seed(self, request):
         """
-        Load the initial factors fixture into the database.
+        Create the 16 initial digital transformation factors in the database.
 
         POST /api/analysis/factors/seed/
-        Idempotent: skips factors that already exist.
+        Idempotent: returns existing count if factors already exist.
         """
+        INITIAL_FACTORS = [
+            {
+                'name': 'Tecnologias Emergentes', 'category': 'tecnologico',
+                'keywords': [
+                    'inteligencia artificial', 'machine learning', 'deep learning',
+                    'blockchain', 'internet de las cosas', 'IoT', 'cloud computing',
+                    'big data', 'analytics', 'realidad virtual', 'realidad aumentada',
+                    '5G', 'automatizacion', 'robotica', 'computacion cuantica',
+                    'artificial intelligence', 'neural network', 'deep neural',
+                    'distributed ledger', 'internet of things', 'edge computing',
+                    'cloud services', 'data analytics', 'virtual reality',
+                    'augmented reality', 'automation', 'robotics', 'quantum computing',
+                    'emerging technology', 'disruptive technology',
+                ],
+            },
+            {
+                'name': 'Infraestructura Digital', 'category': 'tecnologico',
+                'keywords': [
+                    'servidores', 'data center', 'redes', 'conectividad', 'banda ancha',
+                    'wifi', 'fibra optica', 'hardware', 'software', 'sistemas',
+                    'plataformas', 'aplicaciones', 'dispositivos', 'equipos', 'tecnologia',
+                    'servers', 'network', 'connectivity', 'broadband', 'fiber optic',
+                    'systems', 'platforms', 'applications', 'devices', 'infrastructure',
+                    'digital infrastructure', 'information technology', 'IT infrastructure',
+                ],
+            },
+            {
+                'name': 'Cultura Organizacional', 'category': 'organizacional',
+                'keywords': [
+                    'cambio organizacional', 'transformacion cultural', 'innovacion',
+                    'mentalidad digital', 'agilidad', 'colaboracion', 'trabajo en equipo',
+                    'liderazgo', 'vision compartida', 'valores', 'compromiso',
+                    'resistencia al cambio', 'adaptacion', 'flexibilidad',
+                    'organizational change', 'cultural transformation', 'innovation',
+                    'digital mindset', 'agility', 'collaboration', 'teamwork',
+                    'leadership', 'shared vision', 'values', 'commitment',
+                    'resistance to change', 'adaptation', 'flexibility',
+                    'organizational culture', 'change management',
+                ],
+            },
+            {
+                'name': 'Procesos y Gestion', 'category': 'organizacional',
+                'keywords': [
+                    'procesos', 'gestion', 'administracion', 'planificacion',
+                    'organizacion', 'coordinacion', 'control', 'evaluacion',
+                    'mejora continua', 'optimizacion', 'eficiencia', 'productividad',
+                    'calidad', 'estandarizacion', 'automatizacion de procesos',
+                    'process management', 'business process', 'administration',
+                    'planning', 'coordination', 'evaluation', 'continuous improvement',
+                    'optimization', 'efficiency', 'productivity', 'quality',
+                    'standardization', 'process automation', 'governance', 'workflow',
+                ],
+            },
+            {
+                'name': 'Competencias Digitales', 'category': 'humano',
+                'keywords': [
+                    'habilidades digitales', 'competencias tecnologicas',
+                    'alfabetizacion digital', 'capacitacion', 'formacion',
+                    'entrenamiento', 'desarrollo profesional', 'aprendizaje continuo',
+                    'talento digital', 'conocimiento tecnico', 'destrezas',
+                    'certificaciones', 'cursos online', 'e-learning',
+                    'digital skills', 'digital competencies', 'digital literacy',
+                    'training', 'professional development', 'continuous learning',
+                    'digital talent', 'technical knowledge', 'skills',
+                    'certifications', 'online courses', 'workforce development',
+                    'upskilling', 'reskilling',
+                ],
+            },
+            {
+                'name': 'Actitudes y Comportamientos', 'category': 'humano',
+                'keywords': [
+                    'actitud digital', 'disposicion al cambio', 'motivacion',
+                    'participacion', 'compromiso', 'engagement', 'adaptabilidad',
+                    'creatividad', 'pensamiento critico', 'resolucion de problemas',
+                    'iniciativa', 'proactividad', 'autonomia', 'responsabilidad',
+                    'digital attitude', 'openness to change', 'motivation',
+                    'participation', 'adaptability', 'creativity', 'critical thinking',
+                    'problem solving', 'initiative', 'proactivity', 'autonomy',
+                    'responsibility', 'behavior', 'attitude', 'mindset',
+                ],
+            },
+            {
+                'name': 'Estrategia Digital', 'category': 'estrategico',
+                'keywords': [
+                    'estrategia', 'vision digital', 'objetivos estrategicos',
+                    'metas', 'plan digital', 'roadmap', 'hoja de ruta',
+                    'planificacion estrategica', 'alineacion', 'transformacion digital',
+                    'digitalizacion', 'innovacion estrategica', 'ventaja competitiva',
+                    'diferenciacion', 'digital strategy', 'digital vision',
+                    'strategic objectives', 'goals', 'digital plan', 'strategic planning',
+                    'alignment', 'digital transformation', 'digitalization',
+                    'strategic innovation', 'competitive advantage', 'differentiation',
+                    'strategic management', 'digital agenda',
+                ],
+            },
+            {
+                'name': 'Toma de Decisiones Basada en Datos', 'category': 'estrategico',
+                'keywords': [
+                    'datos', 'informacion', 'analisis de datos', 'data analytics',
+                    'metricas', 'indicadores', 'KPIs', 'dashboards', 'reportes',
+                    'inteligencia de negocios', 'business intelligence', 'evidencia',
+                    'toma de decisiones', 'decision making', 'data-driven',
+                    'data', 'information', 'data analysis', 'analytics',
+                    'metrics', 'indicators', 'reports', 'evidence-based',
+                    'data-driven decision', 'predictive analytics', 'big data analytics',
+                ],
+            },
+            {
+                'name': 'Inversion y Presupuesto', 'category': 'financiero',
+                'keywords': [
+                    'inversion', 'presupuesto', 'financiamiento', 'recursos financieros',
+                    'costos', 'gastos', 'ROI', 'retorno de inversion',
+                    'recursos economicos', 'fondos', 'capital', 'asignacion de recursos',
+                    'gasto tecnologico', 'financiacion',
+                    'investment', 'budget', 'funding', 'financial resources',
+                    'costs', 'expenditure', 'return on investment', 'economic resources',
+                    'funds', 'resource allocation', 'technology spending', 'financing',
+                    'financial investment', 'IT budget',
+                ],
+            },
+            {
+                'name': 'Sostenibilidad Financiera', 'category': 'financiero',
+                'keywords': [
+                    'sostenibilidad', 'viabilidad financiera', 'rentabilidad',
+                    'eficiencia economica', 'optimizacion de costos', 'ahorro',
+                    'reduccion de gastos', 'beneficios economicos', 'valor economico',
+                    'modelo de negocio', 'monetizacion', 'ingresos', 'costo-beneficio',
+                    'sustainability', 'financial viability', 'profitability',
+                    'economic efficiency', 'cost optimization', 'savings',
+                    'cost reduction', 'economic benefits', 'economic value',
+                    'business model', 'monetization', 'revenue', 'cost-benefit',
+                    'financial sustainability', 'long-term investment',
+                ],
+            },
+            {
+                'name': 'Metodologias Pedagogicas', 'category': 'pedagogico',
+                'keywords': [
+                    'pedagogia', 'metodologia', 'ensenanza', 'aprendizaje', 'didactica',
+                    'estrategias pedagogicas', 'metodos de ensenanza', 'aula invertida',
+                    'aprendizaje activo', 'aprendizaje colaborativo',
+                    'educacion personalizada', 'tutoria', 'evaluacion', 'retroalimentacion',
+                    'pedagogy', 'methodology', 'teaching', 'learning', 'didactics',
+                    'pedagogical strategies', 'teaching methods', 'flipped classroom',
+                    'active learning', 'collaborative learning', 'personalized education',
+                    'tutoring', 'assessment', 'feedback', 'blended learning',
+                    'instructional design', 'curriculum',
+                ],
+            },
+            {
+                'name': 'Recursos Educativos Digitales', 'category': 'pedagogico',
+                'keywords': [
+                    'recursos digitales', 'contenidos digitales', 'materiales educativos',
+                    'plataformas educativas', 'LMS', 'aulas virtuales', 'MOOC',
+                    'videos educativos', 'simulaciones', 'gamificacion',
+                    'recursos interactivos', 'repositorios', 'bibliotecas digitales', 'OER',
+                    'digital resources', 'digital content', 'educational materials',
+                    'educational platforms', 'virtual classrooms',
+                    'educational videos', 'simulations', 'gamification',
+                    'interactive resources', 'repositories', 'digital libraries',
+                    'open educational resources', 'e-learning platform',
+                ],
+            },
+            {
+                'name': 'Infraestructura Tecnologica', 'category': 'infraestructura',
+                'keywords': [
+                    'infraestructura', 'instalaciones', 'laboratorios', 'aulas',
+                    'espacios', 'equipamiento', 'mobiliario', 'red de datos',
+                    'cableado', 'electricidad', 'climatizacion', 'accesibilidad',
+                    'mantenimiento', 'modernizacion',
+                    'technological infrastructure', 'facilities', 'laboratories',
+                    'classrooms', 'spaces', 'equipment', 'data network',
+                    'cabling', 'electricity', 'accessibility', 'modernization',
+                    'campus infrastructure', 'smart campus',
+                ],
+            },
+            {
+                'name': 'Soporte Tecnico', 'category': 'infraestructura',
+                'keywords': [
+                    'soporte', 'asistencia tecnica', 'helpdesk', 'mesa de ayuda',
+                    'mantenimiento', 'reparacion', 'actualizaciones', 'backup',
+                    'respaldo', 'recuperacion', 'monitoreo', 'supervision',
+                    'troubleshooting', 'resolucion de problemas',
+                    'technical support', 'maintenance', 'repair', 'updates',
+                    'recovery', 'monitoring', 'supervision', 'problem resolution',
+                    'IT support', 'user support', 'technical assistance',
+                ],
+            },
+            {
+                'name': 'Ciberseguridad', 'category': 'seguridad',
+                'keywords': [
+                    'seguridad', 'ciberseguridad', 'proteccion', 'encriptacion',
+                    'cifrado', 'antivirus', 'firewall', 'autenticacion',
+                    'autorizacion', 'control de acceso', 'permisos',
+                    'vulnerabilidades', 'amenazas', 'ataques', 'hackers',
+                    'security', 'cybersecurity', 'protection', 'encryption',
+                    'authentication', 'authorization', 'access control', 'permissions',
+                    'vulnerabilities', 'threats', 'cyberattacks', 'information security',
+                    'data security', 'cyber threats',
+                ],
+            },
+            {
+                'name': 'Privacidad y Proteccion de Datos', 'category': 'seguridad',
+                'keywords': [
+                    'privacidad', 'proteccion de datos', 'GDPR', 'datos personales',
+                    'confidencialidad', 'anonimizacion', 'consentimiento',
+                    'politicas de privacidad', 'cumplimiento', 'regulacion',
+                    'normativa', 'ley de datos', 'derechos digitales', 'transparencia',
+                    'privacy', 'data protection', 'personal data', 'confidentiality',
+                    'anonymization', 'consent', 'privacy policy', 'compliance',
+                    'regulation', 'data law', 'digital rights', 'transparency',
+                    'data governance', 'FERPA',
+                ],
+            },
+        ]
+
         try:
             if Factor.objects.exists():
                 return Response(
@@ -423,7 +637,10 @@ class FactorAnalysisViewSet(viewsets.ViewSet):
                     status=status.HTTP_200_OK,
                 )
 
-            call_command('loaddata', 'initial_factors', verbosity=0)
+            Factor.objects.bulk_create([
+                Factor(name=f['name'], category=f['category'], keywords=f['keywords'])
+                for f in INITIAL_FACTORS
+            ])
             count = Factor.objects.count()
             return Response(
                 {'success': True, 'message': f'{count} factores cargados correctamente.', 'count': count},
