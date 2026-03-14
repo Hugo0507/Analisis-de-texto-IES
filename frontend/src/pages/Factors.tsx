@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronUp,
+  Download,
 } from 'lucide-react';
 import analysisService from '../services/analysisService';
 import type { FactorAnalysisResponse } from '../services/analysisService';
@@ -126,6 +127,8 @@ export const Factors: React.FC = () => {
   const [analysisResult, setAnalysisResult] = useState<FactorAnalysisResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
+  const [noFactorsInDb, setNoFactorsInDb] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
   // Determine if analysis has been run by checking if any factor has relevance_score > 0
@@ -137,9 +140,16 @@ export const Factors: React.FC = () => {
   const loadStats = useCallback(async () => {
     try {
       const data = await analysisService.getFactorStatistics();
-      if (data.success) setStats(data);
-    } catch {
-      // No analysis yet — not an error
+      if (data.success) {
+        setStats(data);
+        setNoFactorsInDb(false);
+      }
+    } catch (err: any) {
+      const msg: string = err.response?.data?.error ?? err.message ?? '';
+      if (msg.toLowerCase().includes('no factors found') || msg.toLowerCase().includes('seed factors')) {
+        setNoFactorsInDb(true);
+      }
+      // No analysis yet — not an error otherwise
     } finally {
       setIsLoading(false);
     }
@@ -150,6 +160,19 @@ export const Factors: React.FC = () => {
   }, [loadStats]);
 
   // ── Run analysis ──────────────────────────────────────────────────────────
+
+  const seedFactors = async () => {
+    setIsSeeding(true);
+    try {
+      await analysisService.seedFactors();
+      showSuccess('Catálogo de factores inicializado correctamente');
+      await loadStats();
+    } catch (err: any) {
+      showError('No se pudo inicializar el catálogo de factores. Contacte al administrador del sistema.');
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   const runAnalysis = async () => {
     setIsRunning(true);
@@ -163,10 +186,22 @@ export const Factors: React.FC = () => {
         await loadStats();
         showSuccess('Análisis de factores completado');
       } else {
-        showError((result as any).error ?? 'Error en el análisis');
+        const rawError: string = (result as any).error ?? '';
+        if (rawError.toLowerCase().includes('no factors found') || rawError.toLowerCase().includes('seed factors')) {
+          setNoFactorsInDb(true);
+          showError('El catálogo de factores no está inicializado. Usa el botón "Inicializar catálogo" para cargarlo.');
+        } else {
+          showError(rawError || 'Error en el análisis');
+        }
       }
     } catch (err: any) {
-      showError('Error al ejecutar el análisis: ' + (err.response?.data?.error ?? err.message));
+      const rawError: string = err.response?.data?.error ?? err.message ?? '';
+      if (rawError.toLowerCase().includes('no factors found') || rawError.toLowerCase().includes('seed factors')) {
+        setNoFactorsInDb(true);
+        showError('El catálogo de factores no está inicializado. Usa el botón "Inicializar catálogo" para cargarlo.');
+      } else {
+        showError('Error al ejecutar el análisis: ' + rawError);
+      }
     } finally {
       setIsRunning(false);
     }
@@ -199,62 +234,120 @@ export const Factors: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F4F7FE' }}>
         <Spinner />
       </div>
     );
   }
 
-  // ── Empty state ───────────────────────────────────────────────────────────
+  // ── No factors in DB state ────────────────────────────────────────────────
+
+  if (noFactorsInDb) {
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-40 bg-white border-b border-gray-200" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+          <div className="flex items-center justify-between px-8 py-4">
+            <div className="flex items-center gap-3">
+              <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              <h1 className="text-xl font-semibold text-gray-900">Análisis de Factores</h1>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-8">
+          <div className="bg-white p-10 text-center" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+            <div className="text-6xl mb-4">📋</div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Catálogo de factores no inicializado
+            </h3>
+            <p className="text-sm text-gray-600 mb-2 max-w-md mx-auto">
+              El sistema no encontró factores de transformación digital en la base de datos.
+              Es necesario cargar el catálogo antes de ejecutar el análisis.
+            </p>
+            <p className="text-xs text-gray-400 mb-8 max-w-md mx-auto">
+              Este proceso carga los 16 factores en 8 categorías (tecnológico, organizacional,
+              humano, estratégico, financiero, pedagógico, infraestructura y seguridad).
+            </p>
+            <button
+              onClick={seedFactors}
+              disabled={isSeeding}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full transition-colors font-medium shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSeeding ? (
+                <><Spinner />Inicializando...</>
+              ) : (
+                <><Download className="w-4 h-4" />Inicializar catálogo de factores</>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Empty state (factors exist but no analysis run yet) ───────────────────
 
   if (!hasResults && !analysisResult) {
     return (
-      <div className="max-w-2xl mx-auto px-6 py-16 text-center">
-        <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
-          <BarChart2 className="w-10 h-10 text-blue-500" />
-        </div>
-        <h1 className="text-2xl font-bold text-slate-800 mb-3">Análisis de Factores de TD</h1>
-        <p className="text-slate-500 mb-2">
-          Identifica y cuantifica los 16 factores de transformación digital en el corpus.
-        </p>
-        <p className="text-slate-400 text-sm mb-8">
-          El análisis requiere que existan documentos preprocesados con texto en inglés.
-          Asegúrate de haber ejecutado la preparación de datos antes de continuar.
-        </p>
-
-        {stats && (
-          <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 mb-8 text-left">
-            <p className="text-sm font-medium text-slate-600 mb-2">Factores disponibles en base de datos</p>
-            <div className="flex flex-wrap gap-2">
-              {stats.factors?.map((f: any) => {
-                const meta = categoryMeta(f.category);
-                return (
-                  <span key={f.factor_id} className={`text-xs px-2 py-1 rounded-full border ${meta.bg} ${meta.color}`}>
-                    {f.factor_name}
-                  </span>
-                );
-              })}
+      <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-40 bg-white border-b border-gray-200" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+          <div className="flex items-center justify-between px-8 py-4">
+            <div className="flex items-center gap-3">
+              <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              <h1 className="text-xl font-semibold text-gray-900">Análisis de Factores</h1>
             </div>
           </div>
-        )}
+        </div>
 
-        <button
-          onClick={runAnalysis}
-          disabled={isRunning}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {isRunning ? (
-            <>
-              <Spinner />
-              Analizando corpus...
-            </>
-          ) : (
-            <>
-              <Play className="w-4 h-4" />
-              Ejecutar análisis de factores
-            </>
-          )}
-        </button>
+        <div className="p-8">
+          <div className="bg-white p-10 text-center" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+            <div className="text-6xl mb-4">📊</div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Análisis de Factores de Transformación Digital
+            </h3>
+            <p className="text-sm text-gray-600 mb-2 max-w-md mx-auto">
+              Identifica y cuantifica los 16 factores de transformación digital en el corpus.
+            </p>
+            <p className="text-xs text-gray-400 mb-6 max-w-md mx-auto">
+              El análisis requiere documentos preprocesados con texto en inglés.
+              Asegúrate de haber ejecutado la preparación de datos antes de continuar.
+            </p>
+
+            {stats && (
+              <div className="mb-8 text-left max-w-xl mx-auto" style={{ backgroundColor: '#F4F7FE', borderRadius: '12px', padding: '16px' }}>
+                <p className="text-sm font-medium text-gray-600 mb-3">Factores disponibles en base de datos</p>
+                <div className="flex flex-wrap gap-2">
+                  {stats.factors?.map((f: any) => {
+                    const meta = categoryMeta(f.category);
+                    return (
+                      <span key={f.factor_id} className={`text-xs px-2 py-1 rounded-full border ${meta.bg} ${meta.color}`}>
+                        {f.factor_name}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={runAnalysis}
+              disabled={isRunning}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full transition-colors font-medium shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isRunning ? (
+                <><Spinner />Analizando corpus...</>
+              ) : (
+                <><Play className="w-4 h-4" />Ejecutar análisis de factores</>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -283,25 +376,39 @@ export const Factors: React.FC = () => {
   // ── Results view ──────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6 px-1">
+    <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
 
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Factores de Transformación Digital</h1>
-          <p className="text-slate-500 text-sm mt-1">
-            Análisis de los 16 factores en 8 categorías sobre el corpus en inglés
-          </p>
+      {/* ── Sticky Header ── */}
+      <div className="sticky top-0 z-40 bg-white border-b border-gray-200" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+        <div className="flex items-center justify-between px-8 py-4">
+          <div className="flex items-center gap-3">
+            <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <h1 className="text-xl font-semibold text-gray-900">Análisis de Factores</h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={refreshAnalysis}
+              disabled={isRunning}
+              className="p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Re-ejecutar análisis"
+            >
+              <RefreshCw className="w-5 h-5 text-gray-700" />
+            </button>
+            <button
+              onClick={runAnalysis}
+              disabled={isRunning}
+              className="p-3 bg-emerald-500 hover:bg-emerald-600 rounded-full transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Ejecutar análisis"
+            >
+              {isRunning ? <Spinner /> : <Play className="w-5 h-5 text-white" />}
+            </button>
+          </div>
         </div>
-        <button
-          onClick={refreshAnalysis}
-          disabled={isRunning}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
-        >
-          {isRunning ? <Spinner /> : <RefreshCw className="w-4 h-4" />}
-          {isRunning ? 'Analizando...' : 'Re-ejecutar'}
-        </button>
       </div>
+
+      <div className="p-8 space-y-6">
 
       {/* ── Metric cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -335,7 +442,7 @@ export const Factors: React.FC = () => {
 
       {/* ── Consolidated ranking ── */}
       {consolidated.length > 0 && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
           <h2 className="text-base font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <BarChart2 className="w-5 h-5 text-blue-500" />
             Ranking consolidado de factores
@@ -363,7 +470,7 @@ export const Factors: React.FC = () => {
 
       {/* ── Relevance ranking (when no consolidated data) ── */}
       {consolidated.length === 0 && factors.length > 0 && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
           <h2 className="text-base font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <BarChart2 className="w-5 h-5 text-blue-500" />
             Factores por relevancia
@@ -448,7 +555,7 @@ export const Factors: React.FC = () => {
 
       {/* ── Co-occurrence ── */}
       {coOccurrence.length > 0 && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
           <h2 className="text-base font-semibold text-slate-800 mb-4">
             Co-ocurrencia de factores
             <span className="ml-2 text-xs font-normal text-slate-400">(top 20 pares)</span>
@@ -546,6 +653,7 @@ export const Factors: React.FC = () => {
         )}
       </div>
 
+      </div>
     </div>
   );
 };

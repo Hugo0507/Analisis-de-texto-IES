@@ -4,6 +4,7 @@ Views for Analysis app.
 Exposes Use Cases as REST API endpoints for NLP/ML analysis.
 """
 
+from django.core.management import call_command
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -12,6 +13,7 @@ from .use_cases.generate_bow import GenerateBowUseCase
 from .use_cases.calculate_tfidf import CalculateTfidfUseCase
 from .use_cases.train_topic_models import TrainTopicModelsUseCase
 from .use_cases.analyze_factors import AnalyzeFactorsUseCase
+from .models import Factor
 
 
 class BowViewSet(viewsets.ViewSet):
@@ -405,3 +407,30 @@ class FactorAnalysisViewSet(viewsets.ViewSet):
             return Response(result, status=status.HTTP_200_OK)
         else:
             return Response(result, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=False, methods=['post'], url_path='seed')
+    def seed(self, request):
+        """
+        Load the initial factors fixture into the database.
+
+        POST /api/analysis/factors/seed/
+        Idempotent: skips factors that already exist.
+        """
+        try:
+            if Factor.objects.exists():
+                return Response(
+                    {'success': True, 'message': 'Los factores ya estaban cargados.', 'count': Factor.objects.count()},
+                    status=status.HTTP_200_OK,
+                )
+
+            call_command('loaddata', 'initial_factors', verbosity=0)
+            count = Factor.objects.count()
+            return Response(
+                {'success': True, 'message': f'{count} factores cargados correctamente.', 'count': count},
+                status=status.HTTP_201_CREATED,
+            )
+        except Exception as exc:
+            return Response(
+                {'success': False, 'error': str(exc)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
