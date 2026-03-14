@@ -77,6 +77,7 @@ google-auth-oauthlib==1.2.0          # Google OAuth2
 # ============================================================
 # UTILITIES
 # ============================================================
+requests==2.31.0                     # HTTP client (CrossRef API for bib metadata)
 python-dotenv==1.0.0                 # Environment variables
 Pillow==10.1.0                       # Image processing
 python-dateutil==2.8.2               # Date utilities
