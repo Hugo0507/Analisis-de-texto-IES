@@ -49,33 +49,10 @@ jobs:
         run: pylint apps/ config/ --rcfile=.pylintrc || true
 
   backend-tests:
-    name: Backend - Tests (pytest)
+    name: Backend - Tests (pytest + SQLite in-memory)
     runs-on: ubuntu-latest
     continue-on-error: true
-
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: test_db
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
-
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd="redis-cli ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
+    # No services needed: testing.py uses SQLite :memory: — no MySQL or Redis required
 
     steps:
       - name: Checkout code
@@ -99,12 +76,8 @@ jobs:
         working-directory: ./backend
         env:
           DJANGO_SETTINGS_MODULE: config.settings.testing
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_NAME: test_db
-          DB_USER: root
-          DB_PASSWORD: root
-          REDIS_URL: redis://localhost:6379/0
+          # DATABASE_URL is intentionally absent — testing.py overrides to SQLite :memory:
+          # No DB_* or REDIS_URL needed; InMemoryChannelLayer is used for WebSockets
         run: |
           pytest --cov=apps --cov-report=xml --cov-report=term-missing --verbose
 
