@@ -130,9 +130,6 @@ class AnalyzeFactorsUseCase:
                 normalize_by_length=normalize_by_length
             )
 
-            # Save document factors to database
-            self._save_document_factors(corpus_result['document_results'])
-
             # Update global factor statistics
             self._update_factor_statistics(corpus_result['global_statistics'])
 
@@ -156,7 +153,7 @@ class AnalyzeFactorsUseCase:
             )
 
             result = {
-                'document_count': documents.count(),
+                'document_count': files.count(),
                 'factor_count': len(factors),
                 'global_statistics': corpus_result['global_statistics'],
                 'category_statistics': category_stats,
