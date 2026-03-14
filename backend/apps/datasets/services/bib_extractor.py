@@ -97,12 +97,23 @@ class BibExtractorService:
             else:
                 logger.info(f"[BibExtractor] CrossRef returned nothing for DOI {doi}")
 
-        # Step 5: CrossRef search by title (fallback — uses filename words or embedded title)
-        search_title = metadata.get('bib_title') or self._title_from_filename(fname)
-        if search_title and len(search_title) > 15:
+        # Step 5: guarantee title from filename (no API needed)
+        # This runs BEFORE CrossRef title search so even if the API fails
+        # the title field is always populated for descriptive filenames.
+        if not metadata.get('bib_title'):
+            title_from_name = self._title_from_filename(fname)
+            if title_from_name:
+                metadata['bib_title'] = title_from_name
+                logger.info(f"[BibExtractor] Title from filename: {title_from_name[:60]}")
+
+        # Step 6: CrossRef search by title to fill in authors, year, journal, etc.
+        search_title = metadata.get('bib_title', '')
+        if search_title and len(search_title) > 15 and not metadata.get('bib_authors'):
             crossref = self._search_crossref_by_title(search_title)
             if crossref:
                 logger.info(f"[BibExtractor] CrossRef title-search enriched: {list(crossref.keys())}")
+                # Don't overwrite the title we just set from the filename
+                crossref.pop('bib_title', None)
                 metadata.update(crossref)
 
         return metadata
@@ -166,18 +177,40 @@ class BibExtractorService:
 
     def _title_from_filename(self, filename: str) -> str:
         """
-        Extract a rough title from a filename for CrossRef text search.
-        Removes common noise patterns, underscores become spaces.
+        Extract a human-readable title from a PDF filename.
+
+        Many researchers save PDFs with the paper title as the filename:
+          "Digital transformation in higher education.pdf"
+          "Smith 2023 - Industry 4.0 skills review.pdf"
+
+        Rules:
+        - Skip filenames that look like DOIs (10.XXXX_...)
+        - Skip filenames that look like internal database IDs
+          (all lowercase letters, digits and dashes, no spaces)
+        - Replace underscores/dashes with spaces
+        - Remove trailing hash suffixes added during storage (_a3f8b2c1)
         """
         stem = Path(filename).stem
-        # Skip if it looks like a DOI or ID
+
+        # Skip DOI-pattern filenames (handled by _extract_doi_from_filename)
         if re.match(r'^10\.\d{4,}', stem):
             return ''
+
+        # Skip opaque IDs like "1-s2.0-S0360131523000702-main" or "abc123def456"
         if re.match(r'^[a-z0-9\-]{20,}$', stem):
             return ''
-        # Clean up common suffixes and separators
-        cleaned = re.sub(r'[-_]+', ' ', stem)
+
+        # Remove trailing hash suffix added by _save_file: "_a3f8b2c1" (8 hex chars)
+        cleaned = re.sub(r'_[0-9a-f]{8}$', '', stem)
+
+        # Replace underscores and dashes used as word separators with spaces
+        # but only when surrounded by word chars (not within numbers like "4.0")
+        cleaned = re.sub(r'(?<=\w)[_-](?=\w)', ' ', cleaned)
+
+        # Collapse multiple spaces
         cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+
+        # Must be a plausible title length
         return cleaned if len(cleaned) > 10 else ''
 
     def _extract_doi_from_text(self, file_path: str) -> Optional[str]:
