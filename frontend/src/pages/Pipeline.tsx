@@ -178,12 +178,12 @@ const StageResultPanel: React.FC<{ stageName: string; data: Record<string, unkno
     const models = (data.models ?? {}) as Record<string, Record<string, unknown>>;
     return (
       <div className="mt-3 space-y-3">
-        {data.best_model && (
+        {data.best_model != null ? (
           <div className="flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>Mejor modelo: <strong>{String(data.best_model).toUpperCase()}</strong></span>
           </div>
-        )}
+        ) : null}
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
