@@ -6,6 +6,7 @@ Calculates TF-IDF matrix from preprocessed documents.
 
 import logging
 from typing import Dict, List
+from django.db import transaction
 
 from apps.analysis.services.tfidf_service import TfidfService
 from apps.datasets.models import DatasetFile
@@ -140,8 +141,9 @@ class CalculateTfidfUseCase:
 
             # Persist to database (skipped gracefully when DB is unavailable)
             try:
-                vocabulary_mapping = self._save_vocabulary(feature_names, idf_scores)
-                self._save_tfidf_matrix(tfidf_result['matrix'], doc_ids, vocabulary_mapping)
+                with transaction.atomic():
+                    vocabulary_mapping = self._save_vocabulary(feature_names, idf_scores)
+                    self._save_tfidf_matrix(tfidf_result['matrix'], doc_ids, vocabulary_mapping)
             except Exception as db_err:
                 logger.warning(f"Database persistence skipped: {db_err}")
 
