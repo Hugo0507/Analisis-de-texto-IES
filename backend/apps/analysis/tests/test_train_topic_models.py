@@ -86,7 +86,7 @@ class TestTrainTopicModelsUseCase:
     def test_no_documents_returns_error(self, mock_filter, use_case):
         qs = Mock()
         qs.exists.return_value = False
-        mock_filter.return_value = qs
+        mock_filter.return_value.exclude.return_value = qs
 
         result = use_case.execute(model_type='lda', use_cache=False)
 
@@ -102,7 +102,7 @@ class TestTrainTopicModelsUseCase:
         qs.exists.return_value = True
         qs.count.return_value = len(docs)
         qs.__iter__ = Mock(return_value=iter(docs))
-        mock_filter.return_value = qs
+        mock_filter.return_value.exclude.return_value = qs
 
         result = use_case.execute(model_type='bert', use_cache=False)
 
@@ -118,7 +118,7 @@ class TestTrainTopicModelsUseCase:
     def test_execute_lda_success(
         self, MockTfidf, mock_doc_filter, mock_create, mock_topic_filter, use_case
     ):
-        _patch_tfidf_and_docs(MockTfidf, mock_doc_filter)
+        _patch_tfidf_and_docs(MockTfidf, mock_doc_filter, use_exclude=True)
         mock_topic_filter.return_value.delete.return_value = None
 
         result = use_case.execute(model_type='lda', n_topics=5, use_cache=False)
@@ -137,7 +137,7 @@ class TestTrainTopicModelsUseCase:
     def test_execute_nmf_success(
         self, MockTfidf, mock_doc_filter, mock_create, mock_topic_filter, use_case
     ):
-        _patch_tfidf_and_docs(MockTfidf, mock_doc_filter)
+        _patch_tfidf_and_docs(MockTfidf, mock_doc_filter, use_exclude=True)
         mock_topic_filter.return_value.delete.return_value = None
 
         result = use_case.execute(model_type='nmf', n_topics=5, use_cache=False)
@@ -154,7 +154,7 @@ class TestTrainTopicModelsUseCase:
     def test_execute_lsa_success(
         self, MockTfidf, mock_doc_filter, mock_create, mock_topic_filter, use_case
     ):
-        _patch_tfidf_and_docs(MockTfidf, mock_doc_filter)
+        _patch_tfidf_and_docs(MockTfidf, mock_doc_filter, use_exclude=True)
         mock_topic_filter.return_value.delete.return_value = None
 
         result = use_case.execute(model_type='lsa', n_topics=5, use_cache=False)
@@ -175,7 +175,7 @@ class TestTrainTopicModelsUseCase:
         qs.exists.return_value = True
         qs.count.return_value = len(docs)
         qs.__iter__ = Mock(return_value=iter(docs))
-        mock_doc_filter.return_value = qs
+        mock_doc_filter.return_value.exclude.return_value = qs
         mock_topic_filter.return_value.delete.return_value = None
 
         result = use_case.execute(model_type='plsa', n_topics=5, use_cache=False)
@@ -196,12 +196,12 @@ class TestTrainTopicModelsUseCase:
         qs.exists.return_value = True
         qs.count.return_value = 2
         qs.__iter__ = Mock(return_value=iter(docs))
-        mock_doc_filter.return_value = qs
+        mock_doc_filter.return_value.exclude.return_value = qs
         mock_topic_filter.return_value.delete.return_value = None
 
         use_case.execute(model_type='plsa', document_ids=[1, 2], use_cache=False)
 
-        mock_doc_filter.assert_called_once_with(id__in=[1, 2])
+        mock_doc_filter.assert_called_once_with(id__in=[1, 2], preprocessed_text__isnull=False)
 
     # ── result is cached after training ──────────────────────────────────
 
@@ -217,7 +217,7 @@ class TestTrainTopicModelsUseCase:
         qs.exists.return_value = True
         qs.count.return_value = 2
         qs.__iter__ = Mock(return_value=iter(docs))
-        mock_doc_filter.return_value = qs
+        mock_doc_filter.return_value.exclude.return_value = qs
         mock_topic_filter.return_value.delete.return_value = None
 
         use_case.execute(model_type='plsa', use_cache=True)
@@ -261,7 +261,7 @@ class TestTrainTopicModelsUseCase:
 
     @patch('apps.analysis.use_cases.train_topic_models.DatasetFile.objects.filter')
     def test_exception_returns_error(self, mock_filter, use_case):
-        mock_filter.side_effect = RuntimeError('DB error')
+        mock_filter.side_effect = RuntimeError('DB error')  # exception before .exclude()
 
         result = use_case.execute(model_type='lda', use_cache=False)
 
@@ -271,7 +271,7 @@ class TestTrainTopicModelsUseCase:
 
 # ── Helper (module-level) ───────────────────────────────────────────────────
 
-def _patch_tfidf_and_docs(MockTfidf, mock_doc_filter):
+def _patch_tfidf_and_docs(MockTfidf, mock_doc_filter, use_exclude=False):
     """Wire up TfidfService mock and a valid document queryset."""
     tfidf_instance = Mock()
     tfidf_instance.fit_transform.return_value = {'matrix': Mock()}
@@ -283,4 +283,7 @@ def _patch_tfidf_and_docs(MockTfidf, mock_doc_filter):
     qs.exists.return_value = True
     qs.count.return_value = len(docs)
     qs.__iter__ = Mock(return_value=iter(docs))
-    mock_doc_filter.return_value = qs
+    if use_exclude:
+        mock_doc_filter.return_value.exclude.return_value = qs
+    else:
+        mock_doc_filter.return_value = qs

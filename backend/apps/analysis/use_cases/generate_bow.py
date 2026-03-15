@@ -7,6 +7,7 @@ Generates BoW matrix from preprocessed documents.
 import logging
 from typing import Dict, List, Optional
 import json
+from django.db import transaction
 
 from apps.analysis.services.bow_service import BowService
 from apps.datasets.models import DatasetFile
@@ -132,8 +133,9 @@ class GenerateBowUseCase:
 
             # Persist to database (skipped gracefully when DB is unavailable)
             try:
-                vocabulary_mapping = self._save_vocabulary(feature_names)
-                self._save_bow_matrix(bow_result['matrix'], doc_ids, vocabulary_mapping)
+                with transaction.atomic():
+                    vocabulary_mapping = self._save_vocabulary(feature_names)
+                    self._save_bow_matrix(bow_result['matrix'], doc_ids, vocabulary_mapping)
             except Exception as db_err:
                 logger.warning(f"Database persistence skipped: {db_err}")
 
