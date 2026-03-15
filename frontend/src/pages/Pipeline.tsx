@@ -19,8 +19,8 @@ import { useToast } from '../contexts/ToastContext';
 // ── Stage metadata ─────────────────────────────────────────────────────────
 
 const STAGE_META: Record<string, { label: string; group: string; defaults: string[] }> = {
-  language_detection: { label: 'Detección de idioma', group: 'Preprocesamiento', defaults: ['Detección automática por documento', 'Soporte: EN, ES, FR, PT'] },
-  txt_conversion:     { label: 'Conversión a TXT', group: 'Preprocesamiento', defaults: ['Descarga desde Google Drive', 'Soporta: PDF, DOCX, TXT'] },
+  language_detection: { label: 'Verificar documentos', group: 'Preprocesamiento', defaults: ['Confirma documentos disponibles en BD', 'Extracción manejada por Conjunto de Datos'] },
+  txt_conversion:     { label: 'Verificar texto extraído', group: 'Preprocesamiento', defaults: ['Confirma texto preprocesado en BD', 'Extracción manejada por Preparación de Datos'] },
   preprocessing:      { label: 'Preprocesamiento de texto', group: 'Preprocesamiento', defaults: ['Eliminar stopwords: sí', 'Eliminar puntuación: sí', 'Eliminar números: sí', 'Stemming: no', 'Longitud mínima: 3', 'Longitud máxima: 30'] },
   bow_generation:     { label: 'Bolsa de Palabras (BoW)', group: 'Vectorización', defaults: ['Vocabulario máximo: 5,000 términos', 'Frecuencia mínima: 2 docs', 'Frecuencia máxima: 85%', 'N-gramas: (1,1)'] },
   tfidf_calculation:  { label: 'Matriz TF-IDF', group: 'Vectorización', defaults: ['Vocabulario máximo: 5,000 términos', 'Normalización: L2', 'IDF activado: sí'] },

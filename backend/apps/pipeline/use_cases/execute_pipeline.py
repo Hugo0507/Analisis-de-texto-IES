@@ -286,12 +286,24 @@ class ExecutePipelineUseCase:
     # --- Stage handler methods ---
 
     def _run_language_detection(self, document_ids, **kwargs):
-        return self.detect_language_uc.execute_batch(document_ids=document_ids)
+        # Language detection is handled by the Dataset module (Conjunto de Datos).
+        # Here we just verify documents exist in the DB.
+        from apps.datasets.models import DatasetFile
+        qs = DatasetFile.objects.all() if not document_ids else DatasetFile.objects.filter(id__in=document_ids)
+        count = qs.count()
+        return {'success': True, 'message': f'{count} documentos disponibles en base de datos'}
 
     def _run_txt_conversion(self, document_ids, **kwargs):
-        return self.convert_documents_uc.execute_batch(
-            document_ids=document_ids, download_from_drive=True
-        )
+        # Text extraction is handled by the Dataset module (Conjunto de Datos).
+        # Here we verify preprocessed text exists.
+        from apps.datasets.models import DatasetFile
+        qs = DatasetFile.objects.filter(preprocessed_text__isnull=False).exclude(preprocessed_text='')
+        if document_ids:
+            qs = qs.filter(id__in=document_ids)
+        count = qs.count()
+        if count == 0:
+            return {'success': False, 'error': 'No hay documentos con texto extraído. Ejecuta primero una Preparación de Datos.'}
+        return {'success': True, 'message': f'{count} documentos con texto disponible'}
 
     def _run_preprocessing(self, document_ids, **kwargs):
         return self.preprocess_text_uc.execute_batch(
