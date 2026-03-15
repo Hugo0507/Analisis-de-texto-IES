@@ -69,10 +69,12 @@ class PipelineViewSet(viewsets.ViewSet):
             skip_stages=skip_stages
         )
 
-        if result.get('success'):
+        # Return 200 whenever the pipeline actually ran (even with failed stages).
+        # Only return error codes for genuine server/config errors.
+        if 'execution_id' in result:
             return Response(result, status=status.HTTP_200_OK)
         else:
-            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+            return Response(result, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=False, methods=['get'], url_path='status/(?P<execution_id>[^/.]+)')
     def get_status(self, request, execution_id=None):
