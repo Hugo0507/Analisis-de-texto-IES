@@ -2,14 +2,14 @@
  * Pipeline Page
  *
  * Executes the complete NLP pipeline in a single click with default values.
- * Shows each stage with its configuration, status and duration.
- * Includes a full execution history table.
+ * Shows each stage with its configuration, status, duration and detailed results.
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Play, CheckCircle2, XCircle, Clock, SkipForward, Zap, Info,
-  RefreshCw, ChevronDown, ChevronUp,
+  RefreshCw, ChevronDown, ChevronUp, BookOpen, Hash, BarChart2,
+  Tag, Layers,
 } from 'lucide-react';
 import pipelineService from '../services/pipelineService';
 import type { ExecutePipelineResponse, PipelineStatusResponse } from '../services/pipelineService';
@@ -60,6 +60,206 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' });
 }
 
+function fmt(n: unknown): string {
+  if (n == null) return '—';
+  if (typeof n === 'number') return n % 1 === 0 ? n.toLocaleString('es-CO') : n.toFixed(4);
+  return String(n);
+}
+
+// ── Stage result panels ─────────────────────────────────────────────────────
+
+const ResultBadge: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <div className="flex flex-col gap-0.5 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 min-w-[90px]">
+    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-medium">{label}</span>
+    <span className="text-sm font-semibold text-slate-700">{value}</span>
+  </div>
+);
+
+const TermPills: React.FC<{ terms: Array<{ term: string; tfidf_score?: number; frequency?: number }> }> = ({ terms }) => (
+  <div className="flex flex-wrap gap-1.5 mt-2">
+    {terms.slice(0, 20).map((t, i) => (
+      <span key={i} className="text-xs px-2 py-0.5 bg-violet-50 border border-violet-200 text-violet-700 rounded-full font-mono">
+        {t.term}
+        {(t.tfidf_score != null || t.frequency != null) && (
+          <span className="ml-1 text-violet-400">{fmt(t.tfidf_score ?? t.frequency)}</span>
+        )}
+      </span>
+    ))}
+  </div>
+);
+
+const TopicCard: React.FC<{ topic: Record<string, unknown>; idx: number }> = ({ topic, idx }) => {
+  const words = (topic.words ?? topic.top_words ?? []) as Array<[string, number] | string>;
+  const wordList = words.slice(0, 8).map(w => Array.isArray(w) ? w[0] : w);
+  return (
+    <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+      <p className="text-xs font-semibold text-amber-700 mb-1">Tópico {(topic.topic_number as number ?? idx) + 1}</p>
+      <div className="flex flex-wrap gap-1">
+        {wordList.map((w, i) => (
+          <span key={i} className="text-xs px-1.5 py-0.5 bg-white border border-amber-200 text-amber-800 rounded font-mono">{w}</span>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const StageResultPanel: React.FC<{ stageName: string; data: Record<string, unknown> }> = ({ stageName, data }) => {
+  if (!data || Object.keys(data).length === 0) return null;
+
+  // Message-only stages (language_detection, txt_conversion, preprocessing)
+  if (data.message) {
+    return (
+      <div className="mt-3 flex items-start gap-2 text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+        <Info className="w-4 h-4 shrink-0 mt-0.5 text-slate-400" />
+        <span>{String(data.message)}</span>
+      </div>
+    );
+  }
+
+  // Preprocessing result
+  if (stageName === 'preprocessing') {
+    return (
+      <div className="mt-3 flex flex-wrap gap-2">
+        {data.preprocessed != null && <ResultBadge label="Preprocesados" value={fmt(data.preprocessed)} />}
+        {data.total != null && <ResultBadge label="Total" value={fmt(data.total)} />}
+        {data.failed != null && <ResultBadge label="Fallidos" value={fmt(data.failed)} />}
+      </div>
+    );
+  }
+
+  // BoW / TF-IDF
+  if (stageName === 'bow_generation' || stageName === 'tfidf_calculation') {
+    const terms = (data.top_terms ?? []) as Array<{ term: string; tfidf_score?: number; frequency?: number }>;
+    return (
+      <div className="mt-3 space-y-3">
+        <div className="flex flex-wrap gap-2">
+          <ResultBadge label="Vocabulario" value={fmt(data.vocabulary_size)} />
+          <ResultBadge label="Documentos" value={fmt(data.document_count)} />
+          {data.avg_tfidf_score != null && <ResultBadge label="TF-IDF promedio" value={fmt(data.avg_tfidf_score)} />}
+          {data.sparsity != null && <ResultBadge label="Dispersión" value={`${(Number(data.sparsity) * 100).toFixed(1)}%`} />}
+        </div>
+        {terms.length > 0 && (
+          <>
+            <p className="text-xs font-medium text-slate-500 flex items-center gap-1"><Hash className="w-3 h-3" />Top términos</p>
+            <TermPills terms={terms} />
+          </>
+        )}
+      </div>
+    );
+  }
+
+  // Topic models (lda, nmf, lsa, plsa)
+  if (['lda_training', 'nmf_training', 'lsa_training', 'plsa_training'].includes(stageName)) {
+    const topics = (data.topics ?? []) as Array<Record<string, unknown>>;
+    return (
+      <div className="mt-3 space-y-3">
+        <div className="flex flex-wrap gap-2">
+          <ResultBadge label="Modelo" value={String(data.model_type ?? '').toUpperCase()} />
+          <ResultBadge label="Tópicos" value={fmt(data.n_topics)} />
+          {data.coherence != null && <ResultBadge label="Coherencia" value={fmt(data.coherence)} />}
+          {data.perplexity != null && <ResultBadge label="Perplejidad" value={fmt(data.perplexity)} />}
+          {data.reconstruction_error != null && <ResultBadge label="Error reconstrucción" value={fmt(data.reconstruction_error)} />}
+          {data.explained_variance != null && <ResultBadge label="Varianza explicada" value={fmt(data.explained_variance)} />}
+        </div>
+        {topics.length > 0 && (
+          <>
+            <p className="text-xs font-medium text-slate-500 flex items-center gap-1"><Layers className="w-3 h-3" />Primeros tópicos</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {topics.slice(0, 6).map((t, i) => <TopicCard key={i} topic={t} idx={i} />)}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  // Topic comparison
+  if (stageName === 'topic_comparison') {
+    const models = (data.models ?? {}) as Record<string, Record<string, unknown>>;
+    return (
+      <div className="mt-3 space-y-3">
+        {data.best_model && (
+          <div className="flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>Mejor modelo: <strong>{String(data.best_model).toUpperCase()}</strong></span>
+          </div>
+        )}
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-slate-200">
+                <th className="px-3 py-2 text-left text-slate-500 font-semibold">Modelo</th>
+                <th className="px-3 py-2 text-right text-slate-500 font-semibold">Coherencia</th>
+                <th className="px-3 py-2 text-right text-slate-500 font-semibold">Perplejidad</th>
+                <th className="px-3 py-2 text-right text-slate-500 font-semibold">Error recons.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(models).map(([name, m]) => (
+                <tr key={name} className={`border-b border-slate-100 ${name === data.best_model ? 'bg-emerald-50' : ''}`}>
+                  <td className="px-3 py-2 font-semibold text-slate-700">{name.toUpperCase()}</td>
+                  <td className="px-3 py-2 text-right font-mono text-slate-600">{fmt(m.coherence)}</td>
+                  <td className="px-3 py-2 text-right font-mono text-slate-600">{fmt(m.perplexity)}</td>
+                  <td className="px-3 py-2 text-right font-mono text-slate-600">{fmt(m.reconstruction_error)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  // Factor analysis
+  if (stageName === 'factor_analysis') {
+    const factors = (data.factors ?? data.factor_ranking ?? []) as Array<Record<string, unknown>>;
+    const byCategory = (data.by_category ?? data.category_breakdown ?? {}) as Record<string, unknown>;
+    return (
+      <div className="mt-3 space-y-3">
+        <div className="flex flex-wrap gap-2">
+          {data.document_count != null && <ResultBadge label="Documentos" value={fmt(data.document_count)} />}
+          {data.total_mentions != null && <ResultBadge label="Menciones" value={fmt(data.total_mentions)} />}
+          {(data.factor_count ?? factors.length) > 0 && <ResultBadge label="Factores" value={fmt(data.factor_count ?? factors.length)} />}
+        </div>
+        {factors.length > 0 && (
+          <>
+            <p className="text-xs font-medium text-slate-500 flex items-center gap-1"><Tag className="w-3 h-3" />Top factores</p>
+            <div className="space-y-1">
+              {factors.slice(0, 8).map((f, i) => (
+                <div key={i} className="flex items-center gap-2 text-xs">
+                  <span className="w-4 text-right text-slate-400 font-mono shrink-0">{i + 1}</span>
+                  <div className="flex-1 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className="h-full bg-emerald-400 rounded-full"
+                      style={{ width: `${Math.min(100, (Number(f.normalized_score ?? f.mention_count ?? 0) / (Number(factors[0]?.normalized_score ?? factors[0]?.mention_count ?? 1) || 1)) * 100)}%` }}
+                    />
+                  </div>
+                  <span className="text-slate-700 font-medium min-w-[100px]">{String(f.name ?? f.factor_name ?? '')}</span>
+                  <span className="font-mono text-slate-400">{fmt(f.normalized_score ?? f.mention_count)}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        {Object.keys(byCategory).length > 0 && (
+          <>
+            <p className="text-xs font-medium text-slate-500 flex items-center gap-1 mt-2"><BarChart2 className="w-3 h-3" />Por categoría</p>
+            <div className="flex flex-wrap gap-1.5">
+              {Object.entries(byCategory).map(([cat, val]) => (
+                <span key={cat} className="text-xs px-2 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-full">
+                  {cat}: {typeof val === 'object' && val !== null ? fmt((val as Record<string, unknown>).total_mentions ?? (val as Record<string, unknown>).mention_count) : fmt(val)}
+                </span>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  return null;
+};
+
 // ── Stage row ──────────────────────────────────────────────────────────────
 
 type StageStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
@@ -70,11 +270,12 @@ interface StageRowProps {
   duration?: number;
   cached?: boolean;
   error?: string | null;
+  resultData?: Record<string, unknown>;
   expanded: boolean;
   onToggle: () => void;
 }
 
-const StageRow: React.FC<StageRowProps> = ({ stageName, status, duration, cached, error, expanded, onToggle }) => {
+const StageRow: React.FC<StageRowProps> = ({ stageName, status, duration, cached, error, resultData, expanded, onToggle }) => {
   const meta = STAGE_META[stageName] ?? { label: stageName, group: 'Otro', defaults: [] };
   const groupColor = GROUP_COLORS[meta.group] ?? 'text-slate-600 bg-slate-50 border-slate-200';
 
@@ -87,6 +288,7 @@ const StageRow: React.FC<StageRowProps> = ({ stageName, status, duration, cached
   }[status];
 
   const rowBg = { pending: 'bg-white', running: 'bg-blue-50/60', completed: 'bg-white', failed: 'bg-red-50/40', skipped: 'bg-slate-50/60' }[status];
+  const hasResults = resultData && Object.keys(resultData).length > 0;
 
   return (
     <div className={`rounded-xl border border-slate-100 overflow-hidden transition-colors ${rowBg}`}>
@@ -97,6 +299,11 @@ const StageRow: React.FC<StageRowProps> = ({ stageName, status, duration, cached
             <span className={`text-sm font-medium ${status === 'skipped' ? 'text-slate-400' : 'text-slate-800'}`}>{meta.label}</span>
             <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${groupColor}`}>{meta.group}</span>
             {cached && <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-600 font-medium">caché</span>}
+            {hasResults && status === 'completed' && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-600 font-medium flex items-center gap-1">
+                <BookOpen className="w-3 h-3" />Ver resultados
+              </span>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
@@ -109,13 +316,17 @@ const StageRow: React.FC<StageRowProps> = ({ stageName, status, duration, cached
         </div>
       </button>
       {expanded && (
-        <div className="px-4 pb-3 pt-0 border-t border-slate-100 bg-white/70">
-          <div className="flex flex-wrap gap-2 mt-2">
+        <div className="px-4 pb-4 pt-0 border-t border-slate-100 bg-white/80">
+          {/* Config defaults */}
+          <div className="flex flex-wrap gap-2 mt-3">
             {meta.defaults.map((d, i) => (
               <span key={i} className="text-xs px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-600">{d}</span>
             ))}
           </div>
-          {error && <p className="mt-2 text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">Error: {error}</p>}
+          {/* Error */}
+          {error && <p className="mt-3 text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">Error: {error}</p>}
+          {/* Results */}
+          {hasResults && <StageResultPanel stageName={stageName} data={resultData!} />}
         </div>
       )}
     </div>
@@ -154,6 +365,7 @@ export const Pipeline: React.FC = () => {
     setIsRunning(true);
     setResult(null);
     setSelectedExecution(null);
+    setExpandedStages({});
     try {
       const data = await pipelineService.execute({ use_cache: false, skip_stages: [] });
       setResult(data);
@@ -183,7 +395,6 @@ export const Pipeline: React.FC = () => {
     ? Object.values(result.stages).reduce((sum, s: any) => sum + (s.duration_seconds ?? 0), 0)
     : null;
 
-  // Build stages display for a selected historical execution
   const historyStageStatus = (exec: PipelineStatusResponse, stageName: string): StageStatus => {
     const s = exec.stages.find(st => st.stage_name === stageName);
     if (!s) return 'pending';
@@ -192,7 +403,6 @@ export const Pipeline: React.FC = () => {
     if (s.status === 'skipped') return 'skipped';
     return 'pending';
   };
-
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
@@ -229,6 +439,7 @@ export const Pipeline: React.FC = () => {
           <span className="leading-relaxed">
             Ejecuta las <strong>14 etapas del flujo NLP</strong> de forma automática con los valores por defecto.
             Incluye preprocesamiento, vectorización (BoW + TF-IDF), modelado de tópicos (LDA · NMF · LSA · pLSA) y análisis de factores.
+            Haz clic en cada etapa para ver los resultados detallados.
           </span>
         </div>
 
@@ -251,13 +462,13 @@ export const Pipeline: React.FC = () => {
           </div>
         )}
 
-        {/* Pipeline stages — show when running or after a run */}
+        {/* Pipeline stages — current run */}
         {(isRunning || result) && (
           <div className="bg-white p-5 sm:p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
             <h2 className="text-base font-semibold text-slate-800 mb-1">
               {isRunning ? 'Ejecución en curso' : `Resultado — ${result?.execution_id?.slice(0, 8)}…`}
             </h2>
-            <p className="text-xs text-slate-400 mb-4">Haz clic en cada etapa para ver detalles.</p>
+            <p className="text-xs text-slate-400 mb-4">Haz clic en cada etapa para ver configuración y resultados detallados.</p>
             <div className="space-y-2">
               {STAGE_ORDER.map((stageName) => {
                 const stageResult = result?.stages[stageName];
@@ -269,6 +480,7 @@ export const Pipeline: React.FC = () => {
                     duration={stageResult?.duration_seconds}
                     cached={stageResult?.cached}
                     error={stageResult?.error}
+                    resultData={stageResult?.result_data as Record<string, unknown> | undefined}
                     expanded={expandedStages[stageName] ?? false}
                     onToggle={() => toggleStage(stageName)}
                   />
@@ -310,6 +522,7 @@ export const Pipeline: React.FC = () => {
                     duration={s?.duration_seconds ?? undefined}
                     cached={s?.cache_hit ?? undefined}
                     error={s?.error_message ?? undefined}
+                    resultData={s?.result_data}
                     expanded={expandedStages[`hist_${stageName}`] ?? false}
                     onToggle={() => toggleStage(`hist_${stageName}`)}
                   />
@@ -322,7 +535,7 @@ export const Pipeline: React.FC = () => {
         {/* History table */}
         <div className="bg-white p-5 sm:p-7" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
           <h2 className="text-base font-semibold text-slate-800 mb-1">Historial de ejecuciones</h2>
-          <p className="text-xs text-slate-400 mb-4">Haz clic en una fila para ver las etapas de esa ejecución.</p>
+          <p className="text-xs text-slate-400 mb-4">Haz clic en una fila para ver las etapas y resultados de esa ejecución.</p>
 
           {loadingHistory ? (
             <div className="flex justify-center py-8"><Spinner /></div>
@@ -412,7 +625,6 @@ export const Pipeline: React.FC = () => {
           )}
         </div>
 
-        {/* Empty state run button when no current result */}
         {!result && !isRunning && history.length > 0 && (
           <div className="text-center pb-4">
             <button
