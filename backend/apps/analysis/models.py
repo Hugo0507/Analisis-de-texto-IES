@@ -14,6 +14,7 @@ Contains models for:
 
 from django.db import models
 from apps.documents.models import Document
+from apps.datasets.models import DatasetFile
 
 
 class Vocabulary(models.Model):
@@ -45,7 +46,7 @@ class BowMatrix(models.Model):
     Relación documento-término con frecuencias.
     """
     document = models.ForeignKey(
-        Document,
+        DatasetFile,
         on_delete=models.CASCADE,
         related_name='bow_entries'
     )
@@ -74,7 +75,7 @@ class TfidfMatrix(models.Model):
     Relación documento-término con pesos TF-IDF.
     """
     document = models.ForeignKey(
-        Document,
+        DatasetFile,
         on_delete=models.CASCADE,
         related_name='tfidf_entries'
     )
