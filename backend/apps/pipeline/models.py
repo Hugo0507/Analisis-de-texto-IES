@@ -61,6 +61,11 @@ class PipelineExecution(models.Model):
         blank=True,
         help_text="Mensaje de error si status='failed'"
     )
+    result_data = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Resultado completo de la etapa (vocabulario, tópicos, factores, etc.)"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
