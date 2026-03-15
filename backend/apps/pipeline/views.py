@@ -74,7 +74,7 @@ class PipelineViewSet(viewsets.ViewSet):
         if 'execution_id' in result:
             return Response(result, status=status.HTTP_200_OK)
         else:
-            return Response(result, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get'], url_path='status/(?P<execution_id>[^/.]+)')
     def get_status(self, request, execution_id=None):

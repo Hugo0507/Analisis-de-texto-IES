@@ -32,7 +32,7 @@ class TestGenerateBowUseCase:
         """Create use case instance"""
         return GenerateBowUseCase()
 
-    @patch('apps.analysis.use_cases.generate_bow.Document.objects.filter')
+    @patch('apps.analysis.use_cases.generate_bow.DatasetFile.objects.filter')
     def test_generate_bow_basic(self, mock_filter, use_case, mock_documents):
         """Test basic BoW generation"""
         mock_filter.return_value.exclude.return_value = mock_documents
@@ -51,7 +51,7 @@ class TestGenerateBowUseCase:
         assert 'matrix_shape' in result
         assert 'sparsity' in result
 
-    @patch('apps.analysis.use_cases.generate_bow.Document.objects.filter')
+    @patch('apps.analysis.use_cases.generate_bow.DatasetFile.objects.filter')
     def test_generate_bow_no_documents(self, mock_filter, use_case):
         """Test BoW generation with no documents"""
         mock_filter.return_value.exclude.return_value = []
@@ -62,7 +62,7 @@ class TestGenerateBowUseCase:
         assert 'error' in result
         assert 'no documents' in result['error'].lower()
 
-    @patch('apps.analysis.use_cases.generate_bow.Document.objects.filter')
+    @patch('apps.analysis.use_cases.generate_bow.DatasetFile.objects.filter')
     def test_generate_bow_with_cache(self, mock_filter, use_case, mock_documents):
         """Test BoW generation with cache enabled"""
         mock_filter.return_value.exclude.return_value = mock_documents
@@ -73,7 +73,7 @@ class TestGenerateBowUseCase:
         # First execution shouldn't have cache
         # assert result.get('cached') is False
 
-    @patch('apps.analysis.use_cases.generate_bow.Document.objects.filter')
+    @patch('apps.analysis.use_cases.generate_bow.DatasetFile.objects.filter')
     def test_generate_bow_vocabulary_size(self, mock_filter, use_case, mock_documents):
         """Test that vocabulary size is correct"""
         mock_filter.return_value.exclude.return_value = mock_documents
@@ -113,7 +113,7 @@ class TestCalculateTfidfUseCase:
         """Create use case instance"""
         return CalculateTfidfUseCase()
 
-    @patch('apps.analysis.use_cases.calculate_tfidf.Document.objects.filter')
+    @patch('apps.analysis.use_cases.calculate_tfidf.DatasetFile.objects.filter')
     def test_calculate_tfidf_basic(self, mock_filter, use_case, mock_documents):
         """Test basic TF-IDF calculation"""
         mock_filter.return_value.exclude.return_value = mock_documents
@@ -132,7 +132,7 @@ class TestCalculateTfidfUseCase:
         assert 'matrix_shape' in result
         assert 'avg_tfidf_score' in result
 
-    @patch('apps.analysis.use_cases.calculate_tfidf.Document.objects.filter')
+    @patch('apps.analysis.use_cases.calculate_tfidf.DatasetFile.objects.filter')
     def test_calculate_tfidf_no_documents(self, mock_filter, use_case):
         """Test TF-IDF calculation with no documents"""
         mock_filter.return_value.exclude.return_value = []
@@ -142,7 +142,7 @@ class TestCalculateTfidfUseCase:
         assert result['success'] is False
         assert 'error' in result
 
-    @patch('apps.analysis.use_cases.calculate_tfidf.Document.objects.filter')
+    @patch('apps.analysis.use_cases.calculate_tfidf.DatasetFile.objects.filter')
     def test_calculate_tfidf_with_normalization(self, mock_filter, use_case, mock_documents):
         """Test TF-IDF with L2 normalization"""
         mock_filter.return_value.exclude.return_value = mock_documents
@@ -153,7 +153,7 @@ class TestCalculateTfidfUseCase:
         # Avg TF-IDF should be reasonable
         assert 0 <= result['avg_tfidf_score'] <= 1
 
-    @patch('apps.analysis.use_cases.calculate_tfidf.Document.objects.filter')
+    @patch('apps.analysis.use_cases.calculate_tfidf.DatasetFile.objects.filter')
     def test_calculate_tfidf_without_idf(self, mock_filter, use_case, mock_documents):
         """Test TF-IDF without IDF component (just TF)"""
         mock_filter.return_value.exclude.return_value = mock_documents
@@ -173,7 +173,12 @@ class TestAnalysisIntegration:
     @pytest.fixture
     def sample_documents(self, db):
         """Create sample documents in database"""
-        from apps.documents.models import Document
+        from apps.datasets.models import Dataset, DatasetFile
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
+        user = User.objects.create_user(username='test_integration', password='pass')
+        dataset = Dataset.objects.create(name='Test Dataset', source='upload', created_by=user)
 
         docs = []
         texts = [
@@ -185,12 +190,13 @@ class TestAnalysisIntegration:
         ]
 
         for i, text in enumerate(texts):
-            doc = Document.objects.create(
-                drive_file_id=f"test_file_{i}",
+            doc = DatasetFile.objects.create(
+                dataset=dataset,
                 filename=f"test_document_{i}.pdf",
-                language_code="es",
+                original_filename=f"test_document_{i}.pdf",
+                file_path=f"/tmp/test_{i}.pdf",
+                file_size_bytes=1024,
                 preprocessed_text=text,
-                status="completed"
             )
             docs.append(doc)
 
@@ -238,7 +244,7 @@ def test_bow_with_different_params(max_features, min_df, max_df):
         doc.preprocessed_text = f"word{i % 5} common_word test_{i % 3}"
         mock_docs.append(doc)
 
-    with patch('apps.analysis.use_cases.generate_bow.Document.objects.filter') as mock_filter:
+    with patch('apps.analysis.use_cases.generate_bow.DatasetFile.objects.filter') as mock_filter:
         mock_filter.return_value.exclude.return_value = mock_docs
 
         result = use_case.execute(
@@ -270,7 +276,7 @@ def test_tfidf_with_different_params(norm, use_idf, sublinear_tf):
         doc.preprocessed_text = f"term1 term2 term{i} specific{i}"
         mock_docs.append(doc)
 
-    with patch('apps.analysis.use_cases.calculate_tfidf.Document.objects.filter') as mock_filter:
+    with patch('apps.analysis.use_cases.calculate_tfidf.DatasetFile.objects.filter') as mock_filter:
         mock_filter.return_value.exclude.return_value = mock_docs
 
         result = use_case.execute(
