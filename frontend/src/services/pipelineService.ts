@@ -12,6 +12,13 @@ export interface ExecutePipelineRequest {
   skip_stages?: string[];
 }
 
+export interface PipelineStageResult {
+  success: boolean;
+  duration_seconds?: number;
+  cached?: boolean;
+  error?: string | null;
+}
+
 export interface ExecutePipelineResponse {
   success: boolean;
   execution_id: string;
@@ -21,7 +28,7 @@ export interface ExecutePipelineResponse {
   completed_stages: number;
   failed_stages: number;
   skipped_stages: number;
-  stages: Record<string, unknown>;
+  stages: Record<string, PipelineStageResult>;
   results: Record<string, unknown>;
 }
 
