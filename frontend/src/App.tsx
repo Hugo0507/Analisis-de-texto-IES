@@ -21,7 +21,6 @@ import {
   Login,
   ForgotPassword,
   Pipeline,
-  Factors,
   Users,
   UserCreate,
   UserDetail,
@@ -33,6 +32,9 @@ import {
   DataPreparationCreate,
   DataPreparationView,
 } from './pages';
+import { FactorsList } from './pages/FactorsList';
+import { FactorsCreate } from './pages/FactorsCreate';
+import { FactorsView } from './pages/FactorsView';
 import { BagOfWordsList } from './pages/BagOfWordsList';
 import { BagOfWordsCreate } from './pages/BagOfWordsCreate';
 import { BagOfWordsView } from './pages/BagOfWordsView';
@@ -134,7 +136,9 @@ function App() {
 
             {/* Protected Admin Analysis Routes (LOGIN REQUIRED) */}
             <Route path="/admin/analisis" element={<MainLayout />}>
-              <Route path="analisis-de-factores" element={<Factors />} />
+              <Route path="analisis-de-factores" element={<FactorsList />} />
+              <Route path="analisis-de-factores/nuevo" element={<FactorsCreate />} />
+              <Route path="analisis-de-factores/:id" element={<FactorsView />} />
             </Route>
           </Route>
 

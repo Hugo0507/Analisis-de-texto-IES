@@ -260,3 +260,45 @@ class DocumentFactor(models.Model):
 
     def __str__(self):
         return f"{self.document.filename} - {self.factor.name}: {self.mention_count} menciones"
+
+
+class FactorAnalysisRun(models.Model):
+    """
+    Registro de cada ejecución del análisis de factores.
+    Permite guardar múltiples análisis con distintos preprocesamientos.
+    """
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('running', 'Ejecutando'),
+        ('completed', 'Completado'),
+        ('error', 'Error'),
+    ]
+
+    name = models.CharField(max_length=255, verbose_name='Nombre')
+    data_preparation = models.ForeignKey(
+        'data_preparation.DataPreparation',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='factor_runs',
+        verbose_name='Preparación de datos'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name='Estado'
+    )
+    document_count = models.IntegerField(default=0)
+    factor_count = models.IntegerField(default=0)
+    results = models.JSONField(null=True, blank=True, help_text='Resultados completos del análisis')
+    error_message = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'factor_analysis_runs'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.name} ({self.get_status_display()})"

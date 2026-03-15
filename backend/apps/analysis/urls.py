@@ -29,13 +29,15 @@ Factor Analysis Endpoints:
 
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import BowViewSet, TfidfViewSet, TopicModelingViewSet, FactorAnalysisViewSet
+from .views import BowViewSet, TfidfViewSet, TopicModelingViewSet, FactorAnalysisViewSet, FactorCRUDViewSet, FactorRunViewSet
 
 router = DefaultRouter()
 router.register(r'bow', BowViewSet, basename='bow')
 router.register(r'tfidf', TfidfViewSet, basename='tfidf')
 router.register(r'topics', TopicModelingViewSet, basename='topics')
 router.register(r'factors', FactorAnalysisViewSet, basename='factors')
+router.register(r'factors-catalog', FactorCRUDViewSet, basename='factors-catalog')
+router.register(r'factor-runs', FactorRunViewSet, basename='factor-runs')
 
 urlpatterns = [
     path('', include(router.urls)),

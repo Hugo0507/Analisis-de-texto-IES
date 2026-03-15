@@ -84,6 +84,31 @@ export interface CompareModelsResponse {
   best_model: string;
 }
 
+// ===== Factor Catalog =====
+export interface FactorCatalogItem {
+  id: number;
+  name: string;
+  category: string;
+  keywords: string[];
+  keyword_count: number;
+  global_frequency: number;
+  relevance_score: number | null;
+}
+
+export interface FactorRunListItem {
+  id: number;
+  name: string;
+  status: 'pending' | 'running' | 'completed' | 'error';
+  data_preparation_id: number | null;
+  data_preparation_name: string | null;
+  dataset_name: string | null;
+  document_count: number;
+  factor_count: number;
+  error_message: string | null;
+  created_at: string;
+  completed_at: string | null;
+}
+
 // ===== Factor Analysis =====
 export interface AnalyzeFactorsRequest {
   document_ids?: number[] | null;
@@ -209,7 +234,7 @@ class AnalysisService {
     return response.data;
   }
 
-  // ===== Factor Analysis =====
+  // ===== Factor Analysis (legacy) =====
   async analyzeFactors(data: AnalyzeFactorsRequest): Promise<FactorAnalysisResponse> {
     const response = await apiClient.post('/analysis/factors/analyze/', data);
     return response.data;
@@ -229,6 +254,48 @@ class AnalysisService {
 
   async seedFactors(): Promise<any> {
     const response = await apiClient.post('/analysis/factors/seed/');
+    return response.data;
+  }
+
+  // ===== Factor Catalog CRUD =====
+  async listFactors(): Promise<{ success: boolean; factors: FactorCatalogItem[]; total: number }> {
+    const response = await apiClient.get('/analysis/factors-catalog/');
+    return response.data;
+  }
+
+  async createFactor(data: { name: string; category: string; keywords: string[] }): Promise<any> {
+    const response = await apiClient.post('/analysis/factors-catalog/', data);
+    return response.data;
+  }
+
+  async updateFactor(id: number, data: Partial<{ name: string; category: string; keywords: string[] }>): Promise<any> {
+    const response = await apiClient.patch(`/analysis/factors-catalog/${id}/`, data);
+    return response.data;
+  }
+
+  async deleteFactor(id: number): Promise<any> {
+    const response = await apiClient.delete(`/analysis/factors-catalog/${id}/`);
+    return response.data;
+  }
+
+  // ===== Factor Analysis Runs =====
+  async listFactorRuns(): Promise<{ success: boolean; runs: FactorRunListItem[]; total: number }> {
+    const response = await apiClient.get('/analysis/factor-runs/');
+    return response.data;
+  }
+
+  async createFactorRun(data: { name: string; data_preparation_id?: number | null }): Promise<any> {
+    const response = await apiClient.post('/analysis/factor-runs/', data);
+    return response.data;
+  }
+
+  async getFactorRun(id: number): Promise<any> {
+    const response = await apiClient.get(`/analysis/factor-runs/${id}/`);
+    return response.data;
+  }
+
+  async deleteFactorRun(id: number): Promise<any> {
+    const response = await apiClient.delete(`/analysis/factor-runs/${id}/`);
     return response.data;
   }
 }

@@ -8,11 +8,16 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+import logging
+from django.utils import timezone
+
 from .use_cases.generate_bow import GenerateBowUseCase
 from .use_cases.calculate_tfidf import CalculateTfidfUseCase
 from .use_cases.train_topic_models import TrainTopicModelsUseCase
 from .use_cases.analyze_factors import AnalyzeFactorsUseCase
-from .models import Factor
+from .models import Factor, FactorAnalysisRun
+
+logger = logging.getLogger(__name__)
 
 
 class BowViewSet(viewsets.ViewSet):
@@ -651,3 +656,224 @@ class FactorAnalysisViewSet(viewsets.ViewSet):
                 {'success': False, 'error': str(exc)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class FactorCRUDViewSet(viewsets.ViewSet):
+    """
+    CRUD for Factor model.
+
+    Endpoints:
+    - GET  /api/analysis/factors-catalog/         list
+    - POST /api/analysis/factors-catalog/         create
+    - GET  /api/analysis/factors-catalog/{id}/    retrieve
+    - PATCH /api/analysis/factors-catalog/{id}/   update
+    - DELETE /api/analysis/factors-catalog/{id}/  destroy
+    """
+
+    def list(self, request):
+        """List all factors with their keywords."""
+        factors = Factor.objects.all().order_by('category', 'name')
+        data = [
+            {
+                'id': f.id,
+                'name': f.name,
+                'category': f.category,
+                'keywords': f.keywords or [],
+                'keyword_count': len(f.keywords) if f.keywords else 0,
+                'global_frequency': f.global_frequency,
+                'relevance_score': f.relevance_score,
+            }
+            for f in factors
+        ]
+        return Response({'success': True, 'factors': data, 'total': len(data)})
+
+    def create(self, request):
+        """Create a new factor."""
+        name = request.data.get('name', '').strip()
+        category = request.data.get('category', '').strip()
+        keywords = request.data.get('keywords', [])
+
+        if not name:
+            return Response({'success': False, 'error': 'El nombre es obligatorio.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not category:
+            return Response({'success': False, 'error': 'La categoría es obligatoria.'}, status=status.HTTP_400_BAD_REQUEST)
+        valid_cats = [c[0] for c in Factor.CATEGORY_CHOICES]
+        if category not in valid_cats:
+            return Response({'success': False, 'error': f'Categoría inválida. Opciones: {valid_cats}'}, status=status.HTTP_400_BAD_REQUEST)
+        if not isinstance(keywords, list):
+            return Response({'success': False, 'error': 'keywords debe ser una lista.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        factor = Factor.objects.create(name=name, category=category, keywords=keywords)
+        return Response({
+            'success': True,
+            'factor': {
+                'id': factor.id,
+                'name': factor.name,
+                'category': factor.category,
+                'keywords': factor.keywords,
+            }
+        }, status=status.HTTP_201_CREATED)
+
+    def retrieve(self, request, pk=None):
+        """Get a single factor."""
+        try:
+            f = Factor.objects.get(pk=pk)
+            return Response({
+                'success': True,
+                'factor': {
+                    'id': f.id,
+                    'name': f.name,
+                    'category': f.category,
+                    'keywords': f.keywords or [],
+                }
+            })
+        except Factor.DoesNotExist:
+            return Response({'success': False, 'error': 'Factor no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+    def partial_update(self, request, pk=None):
+        """Update a factor (PATCH)."""
+        try:
+            f = Factor.objects.get(pk=pk)
+        except Factor.DoesNotExist:
+            return Response({'success': False, 'error': 'Factor no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if 'name' in request.data:
+            f.name = request.data['name'].strip()
+        if 'category' in request.data:
+            cat = request.data['category']
+            valid_cats = [c[0] for c in Factor.CATEGORY_CHOICES]
+            if cat not in valid_cats:
+                return Response({'success': False, 'error': f'Categoría inválida.'}, status=status.HTTP_400_BAD_REQUEST)
+            f.category = cat
+        if 'keywords' in request.data:
+            kw = request.data['keywords']
+            if not isinstance(kw, list):
+                return Response({'success': False, 'error': 'keywords debe ser una lista.'}, status=status.HTTP_400_BAD_REQUEST)
+            f.keywords = kw
+        f.save()
+        return Response({'success': True, 'factor': {'id': f.id, 'name': f.name, 'category': f.category, 'keywords': f.keywords}})
+
+    def destroy(self, request, pk=None):
+        """Delete a factor."""
+        try:
+            f = Factor.objects.get(pk=pk)
+            f.delete()
+            return Response({'success': True}, status=status.HTTP_204_NO_CONTENT)
+        except Factor.DoesNotExist:
+            return Response({'success': False, 'error': 'Factor no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class FactorRunViewSet(viewsets.ViewSet):
+    """
+    CRUD for FactorAnalysisRun.
+
+    Endpoints:
+    - GET  /api/analysis/factor-runs/          list
+    - POST /api/analysis/factor-runs/          create + execute
+    - GET  /api/analysis/factor-runs/{id}/     retrieve
+    - DELETE /api/analysis/factor-runs/{id}/   destroy
+    """
+
+    def _serialize_run(self, run):
+        return {
+            'id': run.id,
+            'name': run.name,
+            'status': run.status,
+            'data_preparation_id': run.data_preparation_id,
+            'data_preparation_name': run.data_preparation.name if run.data_preparation else None,
+            'dataset_name': run.data_preparation.dataset.name if run.data_preparation and run.data_preparation.dataset else None,
+            'document_count': run.document_count,
+            'factor_count': run.factor_count,
+            'error_message': run.error_message,
+            'created_at': run.created_at.isoformat() if run.created_at else None,
+            'completed_at': run.completed_at.isoformat() if run.completed_at else None,
+        }
+
+    def list(self, request):
+        """List all factor analysis runs."""
+        runs = FactorAnalysisRun.objects.select_related('data_preparation__dataset').all()
+        return Response({'success': True, 'runs': [self._serialize_run(r) for r in runs], 'total': runs.count()})
+
+    def create(self, request):
+        """Create a new factor analysis run and execute it."""
+        from apps.data_preparation.models import DataPreparation
+
+        name = request.data.get('name', '').strip()
+        data_preparation_id = request.data.get('data_preparation_id')
+
+        if not name:
+            return Response({'success': False, 'error': 'El nombre es obligatorio.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        data_prep = None
+        if data_preparation_id:
+            try:
+                data_prep = DataPreparation.objects.get(pk=data_preparation_id)
+            except DataPreparation.DoesNotExist:
+                return Response({'success': False, 'error': 'Preparación de datos no encontrada.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        run = FactorAnalysisRun.objects.create(
+            name=name,
+            data_preparation=data_prep,
+            status='running',
+        )
+
+        try:
+            use_case = AnalyzeFactorsUseCase()
+
+            # Get document IDs from data preparation if provided
+            document_ids = None
+            if data_prep and data_prep.processed_file_ids:
+                document_ids = data_prep.processed_file_ids
+
+            result = use_case.execute(
+                document_ids=document_ids,
+                normalize_by_length=True,
+                use_cache=False,
+            )
+
+            if result.get('success'):
+                run.status = 'completed'
+                run.document_count = result.get('document_count', 0)
+                run.factor_count = result.get('factor_count', 0)
+                run.results = {k: v for k, v in result.items() if k not in ('success', 'cached', 'cache_source')}
+                run.completed_at = timezone.now()
+                run.save()
+                return Response({
+                    'success': True,
+                    'run': self._serialize_run(run),
+                    **run.results,
+                }, status=status.HTTP_201_CREATED)
+            else:
+                run.status = 'error'
+                run.error_message = result.get('error', 'Error desconocido')
+                run.save()
+                return Response({'success': False, 'error': run.error_message}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as exc:
+            logger.exception(f"Error executing factor run: {exc}")
+            run.status = 'error'
+            run.error_message = str(exc)
+            run.save()
+            return Response({'success': False, 'error': str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def retrieve(self, request, pk=None):
+        """Get a factor analysis run with its results."""
+        try:
+            run = FactorAnalysisRun.objects.select_related('data_preparation__dataset').get(pk=pk)
+        except FactorAnalysisRun.DoesNotExist:
+            return Response({'success': False, 'error': 'Análisis no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+        data = self._serialize_run(run)
+        if run.results:
+            data.update(run.results)
+        data['success'] = True
+        return Response(data)
+
+    def destroy(self, request, pk=None):
+        """Delete a factor analysis run."""
+        try:
+            run = FactorAnalysisRun.objects.get(pk=pk)
+            run.delete()
+            return Response({'success': True}, status=status.HTTP_204_NO_CONTENT)
+        except FactorAnalysisRun.DoesNotExist:
+            return Response({'success': False, 'error': 'Análisis no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
