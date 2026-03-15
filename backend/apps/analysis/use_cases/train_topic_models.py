@@ -246,10 +246,14 @@ class TrainTopicModelsUseCase:
 
         # Create topic entries
         for topic_data in topics:
+            words = topic_data.get('words') or topic_data.get('top_words', [])
+            # words can be list of strings or list of (word, score) tuples
+            if words and isinstance(words[0], (list, tuple)):
+                words = [w for w, _ in words]
             Topic.objects.create(
                 model_type=model_type,
-                topic_number=topic_data['topic_id'],
-                top_words=topic_data['top_words'],
+                topic_number=topic_data.get('topic_number', topic_data.get('topic_id', 0)),
+                top_words=words,
                 coherence_score=topic_data.get('coherence_score', 0.0)
             )
 
