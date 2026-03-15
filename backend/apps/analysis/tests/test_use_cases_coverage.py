@@ -21,7 +21,7 @@ class TestGenerateBowUseCaseExtended:
             docs.append(doc)
         return docs
 
-    @patch('apps.analysis.use_cases.generate_bow.Document.objects.filter')
+    @patch('apps.analysis.use_cases.generate_bow.DatasetFile.objects.filter')
     def test_execute_with_document_ids(self, mock_filter, mock_documents_large):
         from apps.analysis.use_cases.generate_bow import GenerateBowUseCase
         mock_filter.return_value = mock_documents_large
@@ -29,7 +29,7 @@ class TestGenerateBowUseCaseExtended:
         result = use_case.execute(document_ids=[1, 2, 3], use_cache=False)
         assert 'success' in result
 
-    @patch('apps.analysis.use_cases.generate_bow.Document.objects.filter')
+    @patch('apps.analysis.use_cases.generate_bow.DatasetFile.objects.filter')
     def test_execute_no_documents_with_ids(self, mock_filter):
         from apps.analysis.use_cases.generate_bow import GenerateBowUseCase
         mock_filter.return_value = []
@@ -37,7 +37,7 @@ class TestGenerateBowUseCaseExtended:
         result = use_case.execute(document_ids=[999], use_cache=False)
         assert result['success'] is False
 
-    @patch('apps.analysis.use_cases.generate_bow.Document.objects.filter')
+    @patch('apps.analysis.use_cases.generate_bow.DatasetFile.objects.filter')
     def test_execute_with_ngram_range(self, mock_filter, mock_documents_large):
         from apps.analysis.use_cases.generate_bow import GenerateBowUseCase
         mock_filter.return_value.exclude.return_value = mock_documents_large
@@ -45,7 +45,7 @@ class TestGenerateBowUseCaseExtended:
         result = use_case.execute(ngram_range=(1, 2), use_cache=False)
         assert result['success'] is True
 
-    @patch('apps.analysis.use_cases.generate_bow.Document.objects.filter')
+    @patch('apps.analysis.use_cases.generate_bow.DatasetFile.objects.filter')
     def test_execute_top_terms_present(self, mock_filter, mock_documents_large):
         from apps.analysis.use_cases.generate_bow import GenerateBowUseCase
         mock_filter.return_value.exclude.return_value = mock_documents_large
@@ -55,7 +55,7 @@ class TestGenerateBowUseCaseExtended:
         assert 'top_terms' in result
         assert 'config' in result
 
-    @patch('apps.analysis.use_cases.generate_bow.Document.objects.filter')
+    @patch('apps.analysis.use_cases.generate_bow.DatasetFile.objects.filter')
     def test_execute_config_returned(self, mock_filter, mock_documents_large):
         from apps.analysis.use_cases.generate_bow import GenerateBowUseCase
         mock_filter.return_value.exclude.return_value = mock_documents_large
@@ -87,7 +87,7 @@ class TestCalculateTfidfUseCaseExtended:
             docs.append(doc)
         return docs
 
-    @patch('apps.analysis.use_cases.calculate_tfidf.Document.objects.filter')
+    @patch('apps.analysis.use_cases.calculate_tfidf.DatasetFile.objects.filter')
     def test_execute_returns_top_terms(self, mock_filter, mock_documents_large):
         from apps.analysis.use_cases.calculate_tfidf import CalculateTfidfUseCase
         mock_filter.return_value.exclude.return_value = mock_documents_large
@@ -97,7 +97,7 @@ class TestCalculateTfidfUseCaseExtended:
         assert 'top_terms' in result
         assert 'config' in result
 
-    @patch('apps.analysis.use_cases.calculate_tfidf.Document.objects.filter')
+    @patch('apps.analysis.use_cases.calculate_tfidf.DatasetFile.objects.filter')
     def test_execute_with_sublinear_tf(self, mock_filter, mock_documents_large):
         from apps.analysis.use_cases.calculate_tfidf import CalculateTfidfUseCase
         mock_filter.return_value.exclude.return_value = mock_documents_large
@@ -105,7 +105,7 @@ class TestCalculateTfidfUseCaseExtended:
         result = use_case.execute(sublinear_tf=True, use_cache=False)
         assert result['success'] is True
 
-    @patch('apps.analysis.use_cases.calculate_tfidf.Document.objects.filter')
+    @patch('apps.analysis.use_cases.calculate_tfidf.DatasetFile.objects.filter')
     def test_execute_config_in_result(self, mock_filter, mock_documents_large):
         from apps.analysis.use_cases.calculate_tfidf import CalculateTfidfUseCase
         mock_filter.return_value.exclude.return_value = mock_documents_large
@@ -114,7 +114,7 @@ class TestCalculateTfidfUseCaseExtended:
         assert result['config']['max_features'] == 300
         assert result['config']['norm'] == 'l1'
 
-    @patch('apps.analysis.use_cases.calculate_tfidf.Document.objects.filter')
+    @patch('apps.analysis.use_cases.calculate_tfidf.DatasetFile.objects.filter')
     def test_execute_with_document_ids_no_docs(self, mock_filter):
         from apps.analysis.use_cases.calculate_tfidf import CalculateTfidfUseCase
         mock_filter.return_value = []
@@ -122,7 +122,7 @@ class TestCalculateTfidfUseCaseExtended:
         result = use_case.execute(document_ids=[999], use_cache=False)
         assert result['success'] is False
 
-    @patch('apps.analysis.use_cases.calculate_tfidf.Document.objects.filter')
+    @patch('apps.analysis.use_cases.calculate_tfidf.DatasetFile.objects.filter')
     def test_avg_tfidf_score_bounded(self, mock_filter, mock_documents_large):
         from apps.analysis.use_cases.calculate_tfidf import CalculateTfidfUseCase
         mock_filter.return_value.exclude.return_value = mock_documents_large

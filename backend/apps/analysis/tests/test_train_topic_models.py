@@ -82,7 +82,7 @@ class TestTrainTopicModelsUseCase:
 
     # ── no documents ──────────────────────────────────────────────────────
 
-    @patch('apps.analysis.use_cases.train_topic_models.Document.objects.filter')
+    @patch('apps.analysis.use_cases.train_topic_models.DatasetFile.objects.filter')
     def test_no_documents_returns_error(self, mock_filter, use_case):
         qs = Mock()
         qs.exists.return_value = False
@@ -95,7 +95,7 @@ class TestTrainTopicModelsUseCase:
 
     # ── unknown model type ────────────────────────────────────────────────
 
-    @patch('apps.analysis.use_cases.train_topic_models.Document.objects.filter')
+    @patch('apps.analysis.use_cases.train_topic_models.DatasetFile.objects.filter')
     def test_unknown_model_type_returns_error(self, mock_filter, use_case):
         docs = _make_docs()
         qs = Mock()
@@ -113,7 +113,7 @@ class TestTrainTopicModelsUseCase:
 
     @patch('apps.analysis.use_cases.train_topic_models.Topic.objects.filter')
     @patch('apps.analysis.use_cases.train_topic_models.Topic.objects.create')
-    @patch('apps.analysis.use_cases.train_topic_models.Document.objects.filter')
+    @patch('apps.analysis.use_cases.train_topic_models.DatasetFile.objects.filter')
     @patch('apps.analysis.services.tfidf_service.TfidfService')
     def test_execute_lda_success(
         self, MockTfidf, mock_doc_filter, mock_create, mock_topic_filter, use_case
@@ -132,7 +132,7 @@ class TestTrainTopicModelsUseCase:
 
     @patch('apps.analysis.use_cases.train_topic_models.Topic.objects.filter')
     @patch('apps.analysis.use_cases.train_topic_models.Topic.objects.create')
-    @patch('apps.analysis.use_cases.train_topic_models.Document.objects.filter')
+    @patch('apps.analysis.use_cases.train_topic_models.DatasetFile.objects.filter')
     @patch('apps.analysis.services.tfidf_service.TfidfService')
     def test_execute_nmf_success(
         self, MockTfidf, mock_doc_filter, mock_create, mock_topic_filter, use_case
@@ -149,7 +149,7 @@ class TestTrainTopicModelsUseCase:
 
     @patch('apps.analysis.use_cases.train_topic_models.Topic.objects.filter')
     @patch('apps.analysis.use_cases.train_topic_models.Topic.objects.create')
-    @patch('apps.analysis.use_cases.train_topic_models.Document.objects.filter')
+    @patch('apps.analysis.use_cases.train_topic_models.DatasetFile.objects.filter')
     @patch('apps.analysis.services.tfidf_service.TfidfService')
     def test_execute_lsa_success(
         self, MockTfidf, mock_doc_filter, mock_create, mock_topic_filter, use_case
@@ -166,7 +166,7 @@ class TestTrainTopicModelsUseCase:
 
     @patch('apps.analysis.use_cases.train_topic_models.Topic.objects.filter')
     @patch('apps.analysis.use_cases.train_topic_models.Topic.objects.create')
-    @patch('apps.analysis.use_cases.train_topic_models.Document.objects.filter')
+    @patch('apps.analysis.use_cases.train_topic_models.DatasetFile.objects.filter')
     def test_execute_plsa_success(
         self, mock_doc_filter, mock_create, mock_topic_filter, use_case
     ):
@@ -187,7 +187,7 @@ class TestTrainTopicModelsUseCase:
 
     @patch('apps.analysis.use_cases.train_topic_models.Topic.objects.filter')
     @patch('apps.analysis.use_cases.train_topic_models.Topic.objects.create')
-    @patch('apps.analysis.use_cases.train_topic_models.Document.objects.filter')
+    @patch('apps.analysis.use_cases.train_topic_models.DatasetFile.objects.filter')
     def test_document_ids_filter_applied(
         self, mock_doc_filter, mock_create, mock_topic_filter, use_case
     ):
@@ -207,7 +207,7 @@ class TestTrainTopicModelsUseCase:
 
     @patch('apps.analysis.use_cases.train_topic_models.Topic.objects.filter')
     @patch('apps.analysis.use_cases.train_topic_models.Topic.objects.create')
-    @patch('apps.analysis.use_cases.train_topic_models.Document.objects.filter')
+    @patch('apps.analysis.use_cases.train_topic_models.DatasetFile.objects.filter')
     def test_result_saved_to_cache(
         self, mock_doc_filter, mock_create, mock_topic_filter,
         use_case, mock_cache_service
@@ -259,7 +259,7 @@ class TestTrainTopicModelsUseCase:
 
     # ── exception handling ────────────────────────────────────────────────
 
-    @patch('apps.analysis.use_cases.train_topic_models.Document.objects.filter')
+    @patch('apps.analysis.use_cases.train_topic_models.DatasetFile.objects.filter')
     def test_exception_returns_error(self, mock_filter, use_case):
         mock_filter.side_effect = RuntimeError('DB error')
 
