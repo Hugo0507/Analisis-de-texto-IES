@@ -8,7 +8,7 @@ import logging
 from typing import Dict, List
 
 from apps.analysis.services.tfidf_service import TfidfService
-from apps.documents.models import Document
+from apps.datasets.models import DatasetFile
 from apps.analysis.models import Vocabulary, TfidfMatrix
 from apps.infrastructure.cache.triple_layer_cache import TripleLayerCacheService
 
@@ -97,21 +97,24 @@ class CalculateTfidfUseCase:
                 }
 
         try:
-            # Get documents
+            # Get preprocessed files from DatasetFile
             if document_ids:
-                documents = Document.objects.filter(id__in=document_ids)
+                documents = DatasetFile.objects.filter(
+                    id__in=document_ids,
+                    preprocessed_text__isnull=False
+                ).exclude(preprocessed_text='')
             else:
-                documents = Document.objects.filter(
+                documents = DatasetFile.objects.filter(
                     preprocessed_text__isnull=False
                 ).exclude(preprocessed_text='')
 
-            if not documents:
+            if not documents.exists():
                 return {
                     'success': False,
                     'error': 'No documents found for TF-IDF calculation'
                 }
 
-            doc_count = len(documents)
+            doc_count = documents.count()
             logger.info(f"Processing {doc_count} documents")
 
             # Prepare texts

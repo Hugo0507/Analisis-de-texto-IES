@@ -8,7 +8,7 @@ import logging
 from typing import Dict, List
 
 from apps.analysis.services.topic_modeling_service import TopicModelingService
-from apps.documents.models import Document
+from apps.datasets.models import DatasetFile
 from apps.analysis.models import Topic, DocumentTopic
 from apps.infrastructure.cache.triple_layer_cache import TripleLayerCacheService
 
@@ -87,13 +87,16 @@ class TrainTopicModelsUseCase:
                 }
 
         try:
-            # Get documents
+            # Get preprocessed files from DatasetFile
             if document_ids:
-                documents = Document.objects.filter(id__in=document_ids)
-            else:
-                documents = Document.objects.filter(
+                documents = DatasetFile.objects.filter(
+                    id__in=document_ids,
                     preprocessed_text__isnull=False
-                )
+                ).exclude(preprocessed_text='')
+            else:
+                documents = DatasetFile.objects.filter(
+                    preprocessed_text__isnull=False
+                ).exclude(preprocessed_text='')
 
             if not documents.exists():
                 return {
