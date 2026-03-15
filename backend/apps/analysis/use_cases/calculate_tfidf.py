@@ -283,7 +283,7 @@ class CalculateTfidfUseCase:
 
         try:
             # Get document
-            document = Document.objects.get(id=document_id)
+            document = DatasetFile.objects.get(id=document_id)
 
             # Get TF-IDF entries
             tfidf_entries = TfidfMatrix.objects.filter(
@@ -313,7 +313,7 @@ class CalculateTfidfUseCase:
                 'total_terms': TfidfMatrix.objects.filter(document_id=document_id).count()
             }
 
-        except Document.DoesNotExist:
+        except DatasetFile.DoesNotExist:
             logger.error(f"Document {document_id} not found")
             return {
                 'success': False,

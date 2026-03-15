@@ -268,7 +268,7 @@ class GenerateBowUseCase:
 
         try:
             # Get document
-            document = Document.objects.get(id=document_id)
+            document = DatasetFile.objects.get(id=document_id)
 
             # Get BoW entries
             bow_entries = BowMatrix.objects.filter(
@@ -298,7 +298,7 @@ class GenerateBowUseCase:
                 'total_terms': BowMatrix.objects.filter(document_id=document_id).count()
             }
 
-        except Document.DoesNotExist:
+        except DatasetFile.DoesNotExist:
             logger.error(f"Document {document_id} not found")
             return {
                 'success': False,
