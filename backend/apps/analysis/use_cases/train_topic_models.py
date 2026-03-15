@@ -298,6 +298,6 @@ class TrainTopicModelsUseCase:
             'models': results,
             'best_model': max(
                 results.items(),
-                key=lambda x: x[1].get('coherence', 0.0)
+                key=lambda x: x[1].get('coherence') or 0.0
             )[0] if results else None
         }
