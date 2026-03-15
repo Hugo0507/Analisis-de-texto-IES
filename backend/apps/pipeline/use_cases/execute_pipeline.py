@@ -24,6 +24,24 @@ from apps.analysis.use_cases.analyze_factors import AnalyzeFactorsUseCase
 logger = logging.getLogger(__name__)
 
 
+def _serialize_result(result: dict) -> dict:
+    """Extraer campos relevantes del resultado de una etapa para persistir."""
+    if not result or not isinstance(result, dict):
+        return {}
+    exclude = {'success', 'cached', 'cache_source', 'error'}
+    serializable = {}
+    for k, v in result.items():
+        if k in exclude:
+            continue
+        try:
+            import json
+            json.dumps(v)
+            serializable[k] = v
+        except (TypeError, ValueError):
+            serializable[k] = str(v)
+    return serializable
+
+
 class ExecutePipelineUseCase:
     """
     Use case para ejecutar el pipeline completo de análisis.
@@ -231,6 +249,7 @@ class ExecutePipelineUseCase:
             stage_record.duration_seconds = int(stage_duration)
             stage_record.cache_hit = result.get('cached', False)
             stage_record.error_message = result.get('error', None)
+            stage_record.result_data = _serialize_result(result)
             stage_record.save()
 
             # Enviar update: etapa completada o fallida
@@ -249,7 +268,7 @@ class ExecutePipelineUseCase:
                 'success': result.get('success', False),
                 'cached': result.get('cached', False),
                 'duration_seconds': stage_duration,
-                'data': result,
+                'result_data': _serialize_result(result),
                 'error': result.get('error', None)
             }
 
@@ -389,7 +408,8 @@ class ExecutePipelineUseCase:
                     'completed_at': stage.completed_at.isoformat() if stage.completed_at else None,
                     'duration_seconds': stage.duration_seconds,
                     'cache_hit': stage.cache_hit,
-                    'error_message': stage.error_message
+                    'error_message': stage.error_message,
+                    'result_data': stage.result_data or {}
                 }
                 for stage in stages
             ]

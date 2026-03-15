@@ -17,6 +17,7 @@ export interface PipelineStageResult {
   duration_seconds?: number;
   cached?: boolean;
   error?: string | null;
+  result_data?: Record<string, unknown>;
 }
 
 export interface ExecutePipelineResponse {
@@ -52,6 +53,7 @@ export interface PipelineStatusResponse {
     duration_seconds?: number;
     cache_hit?: boolean;
     error_message?: string;
+    result_data?: Record<string, unknown>;
   }>;
 }
 
