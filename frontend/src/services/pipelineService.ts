@@ -66,7 +66,7 @@ class PipelineService {
    * Execute complete pipeline
    */
   async execute(data: ExecutePipelineRequest): Promise<ExecutePipelineResponse> {
-    const response = await apiClient.post('/pipeline/execute/', data);
+    const response = await apiClient.post('/pipeline/execute/', data, { timeout: 300000 });
     return response.data;
   }
 
