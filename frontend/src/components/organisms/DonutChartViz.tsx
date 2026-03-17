@@ -100,7 +100,7 @@ export const DonutChartViz: React.FC<DonutChartVizProps> = ({
     const isActive = highlightedIds.length === 0 || highlightedIds.includes(d.id);
     return {
       ...d,
-      color: isActive ? originalColor : '#334155',
+      color: isActive ? originalColor : '#CBD5E1',
     };
   });
 
@@ -119,7 +119,7 @@ export const DonutChartViz: React.FC<DonutChartVizProps> = ({
         enableArcLinkLabels={enableArcLinkLabels}
         arcLinkLabel="label"
         arcLinkLabelsSkipAngle={10}
-        arcLinkLabelsTextColor="#94a3b8"
+        arcLinkLabelsTextColor="#64748b"
         arcLinkLabelsThickness={2}
         arcLinkLabelsColor={{ from: 'color' }}
         arcLabelsTextColor="#ffffff"
@@ -129,7 +129,7 @@ export const DonutChartViz: React.FC<DonutChartVizProps> = ({
         theme={{
           text: {
             fontSize: 12,
-            fill: '#94a3b8',
+            fill: '#475569',
           },
           tooltip: {
             container: {
@@ -138,7 +138,7 @@ export const DonutChartViz: React.FC<DonutChartVizProps> = ({
               fontSize: 12,
               borderRadius: '8px',
               border: '1px solid #334155',
-              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.15)',
             },
           },
         }}
@@ -152,7 +152,7 @@ export const DonutChartViz: React.FC<DonutChartVizProps> = ({
             itemsSpacing: 8,
             itemWidth: 60,
             itemHeight: 18,
-            itemTextColor: '#94a3b8',
+            itemTextColor: '#475569',
             itemDirection: 'left-to-right',
             itemOpacity: 1,
             symbolSize: 12,
@@ -161,7 +161,7 @@ export const DonutChartViz: React.FC<DonutChartVizProps> = ({
               {
                 on: 'hover',
                 style: {
-                  itemTextColor: '#ffffff',
+                  itemTextColor: '#1e293b',
                 },
               },
             ],
@@ -174,12 +174,12 @@ export const DonutChartViz: React.FC<DonutChartVizProps> = ({
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center">
             {centerValue !== undefined && (
-              <p className="text-2xl font-bold text-white">
+              <p className="text-2xl font-bold text-gray-900">
                 {typeof centerValue === 'number' ? centerValue.toLocaleString() : centerValue}
               </p>
             )}
             {centerLabel && (
-              <p className="text-xs text-slate-400 mt-1">{centerLabel}</p>
+              <p className="text-xs text-gray-500 mt-1">{centerLabel}</p>
             )}
           </div>
         </div>
@@ -195,10 +195,10 @@ export const DonutChartViz: React.FC<DonutChartVizProps> = ({
               clearCrossFilter(chartId);
             }
           }}
-          className="absolute top-2 right-2 p-1.5 rounded-full bg-slate-700/50 hover:bg-slate-600/50 transition-colors"
+          className="absolute top-2 right-2 p-1.5 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
           title="Limpiar filtro"
         >
-          <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>

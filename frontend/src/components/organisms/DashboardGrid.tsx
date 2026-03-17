@@ -75,10 +75,10 @@ export const MetricCardDark: React.FC<MetricCardDarkProps> = ({
     <div
       className={`
         relative overflow-hidden rounded-2xl
-        bg-slate-800/40 backdrop-blur-xl
-        border border-slate-700/50
+        bg-white
+        border border-gray-200
         p-5 transition-all duration-300
-        hover:border-slate-600/60 hover:shadow-lg
+        hover:border-gray-300 hover:shadow-md
         ${className}
       `}
     >
@@ -93,19 +93,19 @@ export const MetricCardDark: React.FC<MetricCardDarkProps> = ({
 
       <div className="relative flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium text-slate-400">{title}</p>
-          <p className="mt-2 text-3xl font-bold text-white tracking-tight">
+          <p className="text-sm font-medium text-gray-500">{title}</p>
+          <p className="mt-2 text-3xl font-bold text-gray-900 tracking-tight">
             {typeof value === 'number' ? value.toLocaleString() : value}
           </p>
           {subtitle && (
-            <p className="mt-1 text-xs text-slate-500">{subtitle}</p>
+            <p className="mt-1 text-xs text-gray-400">{subtitle}</p>
           )}
           {trend && (
             <div className="flex items-center gap-1 mt-2">
               <span
                 className={`
                   inline-flex items-center text-xs font-medium
-                  ${trend.isPositive ? 'text-emerald-400' : 'text-rose-400'}
+                  ${trend.isPositive ? 'text-emerald-600' : 'text-rose-600'}
                 `}
               >
                 <svg
@@ -123,7 +123,7 @@ export const MetricCardDark: React.FC<MetricCardDarkProps> = ({
                 </svg>
                 {Math.abs(trend.value)}%
               </span>
-              <span className="text-xs text-slate-500">vs anterior</span>
+              <span className="text-xs text-gray-400">vs anterior</span>
             </div>
           )}
         </div>
