@@ -1,7 +1,7 @@
 /**
- * ChartCard - Glassmorphism card for dashboard visualizations
+ * ChartCard - Card for dashboard visualizations
  *
- * Dark theme with neon accent colors. Supports cross-filtering interactions.
+ * Light WCAG-compliant theme with accent colors. Supports cross-filtering interactions.
  */
 
 import React from 'react';
@@ -23,46 +23,46 @@ export interface ChartCardProps {
 
 const accentColorClasses = {
   emerald: {
-    gradient: 'from-emerald-500/20 to-emerald-600/5',
-    border: 'border-emerald-500/30',
-    glow: 'shadow-emerald-500/10',
-    text: 'text-emerald-400',
-    ring: 'ring-emerald-500/30',
+    gradient: 'from-emerald-50 to-white',
+    border: 'border-emerald-300',
+    glow: 'shadow-emerald-100',
+    text: 'text-emerald-700',
+    ring: 'ring-emerald-300/60',
   },
   cyan: {
-    gradient: 'from-cyan-500/20 to-cyan-600/5',
-    border: 'border-cyan-500/30',
-    glow: 'shadow-cyan-500/10',
-    text: 'text-cyan-400',
-    ring: 'ring-cyan-500/30',
+    gradient: 'from-cyan-50 to-white',
+    border: 'border-cyan-300',
+    glow: 'shadow-cyan-100',
+    text: 'text-cyan-700',
+    ring: 'ring-cyan-300/60',
   },
   purple: {
-    gradient: 'from-purple-500/20 to-purple-600/5',
-    border: 'border-purple-500/30',
-    glow: 'shadow-purple-500/10',
-    text: 'text-purple-400',
-    ring: 'ring-purple-500/30',
+    gradient: 'from-purple-50 to-white',
+    border: 'border-purple-300',
+    glow: 'shadow-purple-100',
+    text: 'text-purple-700',
+    ring: 'ring-purple-300/60',
   },
   amber: {
-    gradient: 'from-amber-500/20 to-amber-600/5',
-    border: 'border-amber-500/30',
-    glow: 'shadow-amber-500/10',
-    text: 'text-amber-400',
-    ring: 'ring-amber-500/30',
+    gradient: 'from-amber-50 to-white',
+    border: 'border-amber-300',
+    glow: 'shadow-amber-100',
+    text: 'text-amber-700',
+    ring: 'ring-amber-300/60',
   },
   rose: {
-    gradient: 'from-rose-500/20 to-rose-600/5',
-    border: 'border-rose-500/30',
-    glow: 'shadow-rose-500/10',
-    text: 'text-rose-400',
-    ring: 'ring-rose-500/30',
+    gradient: 'from-rose-50 to-white',
+    border: 'border-rose-300',
+    glow: 'shadow-rose-100',
+    text: 'text-rose-700',
+    ring: 'ring-rose-300/60',
   },
   blue: {
-    gradient: 'from-blue-500/20 to-blue-600/5',
-    border: 'border-blue-500/30',
-    glow: 'shadow-blue-500/10',
-    text: 'text-blue-400',
-    ring: 'ring-blue-500/30',
+    gradient: 'from-blue-50 to-white',
+    border: 'border-blue-300',
+    glow: 'shadow-blue-100',
+    text: 'text-blue-700',
+    ring: 'ring-blue-300/60',
   },
 };
 
@@ -93,12 +93,12 @@ export const ChartCard: React.FC<ChartCardProps> = ({
     <div
       className={`
         relative overflow-hidden rounded-2xl
-        bg-slate-800/40 backdrop-blur-xl
-        border ${isActive ? colors.border : 'border-slate-700/50'}
-        shadow-xl ${isActive ? colors.glow : 'shadow-black/20'}
+        bg-white
+        border ${isActive ? colors.border : 'border-gray-200'}
+        shadow-sm ${isActive ? colors.glow : 'shadow-gray-100'}
         ${isActive ? `ring-1 ${colors.ring}` : ''}
         transition-all duration-300
-        hover:border-slate-600/60
+        hover:border-gray-300 hover:shadow-md
         ${sizeClasses[size]}
         ${className}
       `}
@@ -116,14 +116,14 @@ export const ChartCard: React.FC<ChartCardProps> = ({
       <div className="relative flex items-start justify-between p-4 pb-2">
         <div className="flex items-start gap-3">
           {icon && (
-            <div className={`p-2 rounded-lg bg-slate-800/50 ${colors.text}`}>
+            <div className={`p-2 rounded-lg bg-gray-100 ${colors.text}`}>
               {icon}
             </div>
           )}
           <div>
-            <h3 className="text-sm font-semibold text-white">{title}</h3>
+            <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
             {subtitle && (
-              <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
             )}
           </div>
         </div>
@@ -133,11 +133,11 @@ export const ChartCard: React.FC<ChartCardProps> = ({
           {onRefreshClick && (
             <button
               onClick={onRefreshClick}
-              className="p-1.5 rounded-lg hover:bg-slate-700/50 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
               title="Actualizar"
             >
               <svg
-                className={`w-4 h-4 text-slate-400 hover:text-slate-300 ${isLoading ? 'animate-spin' : ''}`}
+                className={`w-4 h-4 text-gray-400 hover:text-gray-600 ${isLoading ? 'animate-spin' : ''}`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -154,11 +154,11 @@ export const ChartCard: React.FC<ChartCardProps> = ({
           {onExpandClick && (
             <button
               onClick={onExpandClick}
-              className="p-1.5 rounded-lg hover:bg-slate-700/50 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
               title="Expandir"
             >
               <svg
-                className="w-4 h-4 text-slate-400 hover:text-slate-300"
+                className="w-4 h-4 text-gray-400 hover:text-gray-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -188,7 +188,7 @@ export const ChartCard: React.FC<ChartCardProps> = ({
 
       {/* Footer */}
       {footer && (
-        <div className="relative px-4 py-3 border-t border-slate-700/30">
+        <div className="relative px-4 py-3 border-t border-gray-100">
           {footer}
         </div>
       )}

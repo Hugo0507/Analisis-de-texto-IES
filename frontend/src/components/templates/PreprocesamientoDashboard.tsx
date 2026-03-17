@@ -272,13 +272,13 @@ export const PreprocesamientoDashboard: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-slate-800/50 flex items-center justify-center">
-            <svg className="w-10 h-10 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+            <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-white mb-2">Selecciona un Dataset</h3>
-          <p className="text-slate-400 text-sm max-w-md">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Selecciona un Dataset</h3>
+          <p className="text-gray-500 text-sm max-w-md">
             Usa el selector de Dataset en el panel lateral izquierdo para visualizar los datos de preprocesamiento.
           </p>
         </div>
@@ -291,7 +291,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
-          <p className="text-slate-400 text-sm">Cargando datos del dataset...</p>
+          <p className="text-gray-500 text-sm">Cargando datos del dataset...</p>
         </div>
       </div>
     );
@@ -306,7 +306,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <p className="text-slate-300 mb-4">{error}</p>
+          <p className="text-gray-700 mb-4">{error}</p>
           <button
             onClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
             className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-lg hover:from-emerald-600 hover:to-cyan-600 transition-all"
@@ -372,8 +372,8 @@ export const PreprocesamientoDashboard: React.FC = () => {
       {/* Page Title */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Preprocesamiento</h2>
-          <p className="text-slate-400 text-sm mt-1">
+          <h2 className="text-2xl font-bold text-gray-900">Preprocesamiento</h2>
+          <p className="text-gray-500 text-sm mt-1">
             {dataset ? `Dataset: ${dataset.name}` : 'Métricas y análisis de la fase de preparación de datos'}
           </p>
         </div>
@@ -381,11 +381,11 @@ export const PreprocesamientoDashboard: React.FC = () => {
         {/* Preparation Selector */}
         {data?.preparations && data.preparations.length > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-400">Preparación:</span>
+            <span className="text-sm text-gray-600">Preparación:</span>
             <select
               value={filters.selectedPreparationId || ''}
               onChange={(e) => setSelectedPreparation(e.target.value ? Number(e.target.value) : null)}
-              className="bg-slate-800/50 border border-slate-600/50 rounded-lg px-3 py-1.5 text-sm text-white focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50"
+              className="bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-900 focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-400"
             >
               <option value="">Más reciente</option>
               {data.preparations.map((prep) => (
@@ -400,16 +400,16 @@ export const PreprocesamientoDashboard: React.FC = () => {
 
       {/* Cross-filter active indicator */}
       {crossFilter && (
-        <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
+        <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-200">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            <span className="text-sm text-amber-300">
-              Filtrado activo: <span className="font-medium text-amber-200">{crossFilterLabel}</span>
+            <span className="text-sm text-amber-700">
+              Filtrado activo: <span className="font-medium text-amber-800">{crossFilterLabel}</span>
             </span>
           </div>
           <button
             onClick={clearFilter}
-            className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-amber-300 bg-amber-500/20 rounded-lg hover:bg-amber-500/30 transition-colors"
+            className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-amber-700 bg-amber-100 rounded-lg hover:bg-amber-200 transition-colors"
           >
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -519,7 +519,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
                 onClearFilter={clearFilter}
               />
             ) : (
-              <div className="flex items-center justify-center h-full text-slate-500">
+              <div className="flex items-center justify-center h-full text-gray-400">
                 No hay datos de directorios
               </div>
             )}
@@ -554,7 +554,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
                 onClearFilter={clearFilter}
               />
             ) : (
-              <div className="flex items-center justify-center h-full text-slate-500">
+              <div className="flex items-center justify-center h-full text-gray-400">
                 No hay datos de extensiones
               </div>
             )}
@@ -589,7 +589,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
                 onClearFilter={clearFilter}
               />
             ) : (
-              <div className="flex items-center justify-center h-full text-slate-500 text-sm text-center px-4">
+              <div className="flex items-center justify-center h-full text-gray-400 text-sm text-center px-4">
                 {data?.selectedPreparation
                   ? 'No hay datos de idiomas detectados'
                   : 'Ejecuta una preparación para detectar idiomas'}
@@ -613,24 +613,24 @@ export const PreprocesamientoDashboard: React.FC = () => {
           }
         >
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-2">
-            <div className="text-center p-3 rounded-lg bg-slate-800/30">
-              <p className="text-2xl font-bold text-emerald-400">{data.selectedPreparation.files_processed}</p>
-              <p className="text-xs text-slate-400">Archivos Procesados</p>
+            <div className="text-center p-3 rounded-lg bg-emerald-50">
+              <p className="text-2xl font-bold text-emerald-700">{data.selectedPreparation.files_processed}</p>
+              <p className="text-xs text-gray-500">Archivos Procesados</p>
             </div>
-            <div className="text-center p-3 rounded-lg bg-slate-800/30">
-              <p className="text-2xl font-bold text-rose-400">{data.selectedPreparation.files_omitted}</p>
-              <p className="text-xs text-slate-400">Omitidos</p>
+            <div className="text-center p-3 rounded-lg bg-rose-50">
+              <p className="text-2xl font-bold text-rose-700">{data.selectedPreparation.files_omitted}</p>
+              <p className="text-xs text-gray-500">Omitidos</p>
             </div>
-            <div className="text-center p-3 rounded-lg bg-slate-800/30">
-              <p className="text-2xl font-bold text-amber-400">{data.selectedPreparation.duplicates_removed}</p>
-              <p className="text-xs text-slate-400">Duplicados</p>
+            <div className="text-center p-3 rounded-lg bg-amber-50">
+              <p className="text-2xl font-bold text-amber-700">{data.selectedPreparation.duplicates_removed}</p>
+              <p className="text-xs text-gray-500">Duplicados</p>
             </div>
-            <div className="text-center p-3 rounded-lg bg-slate-800/30">
-              <p className="text-2xl font-bold text-cyan-400">
+            <div className="text-center p-3 rounded-lg bg-cyan-50">
+              <p className="text-2xl font-bold text-cyan-700">
                 {data.selectedPreparation.status === 'completed' ? '100%' :
                  data.selectedPreparation.status === 'processing' ? '...' : '0%'}
               </p>
-              <p className="text-xs text-slate-400">Progreso</p>
+              <p className="text-xs text-gray-500">Progreso</p>
             </div>
           </div>
         </ChartCard>
@@ -638,18 +638,18 @@ export const PreprocesamientoDashboard: React.FC = () => {
 
       {/* No Preparations Warning */}
       {data && data.preparations.length === 0 && (
-        <div className="p-6 rounded-xl bg-amber-500/10 border border-amber-500/30">
+        <div className="p-6 rounded-xl bg-amber-50 border border-amber-200">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-              <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
             <div>
-              <h3 className="text-lg font-medium text-amber-400">Sin Preparaciones</h3>
-              <p className="text-sm text-slate-300 mt-1">
+              <h3 className="text-lg font-medium text-amber-700">Sin Preparaciones</h3>
+              <p className="text-sm text-gray-600 mt-1">
                 Este dataset no tiene preparaciones de datos. Ve a la sección de{' '}
-                <a href="/admin/preparacion" className="text-amber-400 hover:underline">
+                <a href="/admin/preparacion" className="text-amber-700 hover:underline font-medium">
                   Administración &gt; Preparación de Datos
                 </a>{' '}
                 para crear una preparación y poder visualizar idiomas detectados.
