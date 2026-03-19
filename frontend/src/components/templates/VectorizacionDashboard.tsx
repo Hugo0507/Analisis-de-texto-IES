@@ -12,7 +12,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ResponsiveHeatMap } from '@nivo/heatmap';
 import { ResponsiveNetwork } from '@nivo/network';
-import { DashboardGrid, MetricCardDark } from '../organisms';
+import { DashboardGrid } from '../organisms';
 import { ChartCard } from '../molecules';
 import dashboardService from '../../services/dashboardService';
 import type { VectorizationDashboardData } from '../../services/dashboardService';
@@ -693,7 +693,7 @@ const ExportModal: React.FC<ExportModalProps> = ({ data, onClose }) => {
   );
 };
 
-// ─── SimpleWordCloud ──────────────────────────────────────────────────────────
+// ─── SimpleWordCloud (SVG — compatible con descarga PNG) ─────────────────────
 
 interface WordCloudProps {
   data: Array<{ text: string; value: number }>;
@@ -702,29 +702,60 @@ interface WordCloudProps {
   selectedWord?: string | null;
 }
 
+const CLOUD_W = 660;
+const CLOUD_H = 310;
+const CLOUD_COLORS = ['#22d3ee','#34d399','#c084fc','#60a5fa','#fbbf24','#fb7185','#2dd4bf','#a78bfa','#4ade80','#f472b6','#38bdf8','#a3e635'];
+
 const SimpleWordCloud: React.FC<WordCloudProps> = ({ data, maxWords = 60, onWordClick, selectedWord }) => {
-  if (!data || data.length === 0) return null;
-  const maxValue = Math.max(...data.map(d => d.value));
-  const minValue = Math.min(...data.map(d => d.value));
-  const range = maxValue - minValue || 1;
-  const getFontSize = (v: number) => 12 + ((v - minValue) / range) * 26;
-  const colors = ['text-cyan-400','text-emerald-400','text-purple-400','text-blue-400','text-amber-400','text-rose-400','text-teal-400','text-violet-400'];
+  const layout = useMemo(() => {
+    if (!data || data.length === 0) return [];
+    const words  = data.slice(0, maxWords);
+    const maxVal = Math.max(...words.map(d => d.value));
+    const minVal = Math.min(...words.map(d => d.value));
+    const range  = maxVal - minVal || 1;
+    const fs = (v: number) => Math.round(11 + ((v - minVal) / range) * 30);
+    type Box = { x1: number; y1: number; x2: number; y2: number };
+    const placed: Box[] = [];
+    const hits = (x1: number, y1: number, x2: number, y2: number) =>
+      placed.some(p => x1 < p.x2 + 5 && x2 > p.x1 - 5 && y1 < p.y2 + 3 && y2 > p.y1 - 3);
+    return words.map((word, idx) => {
+      const size = fs(word.value);
+      const ww = word.text.length * size * 0.57;
+      const wh = size * 1.25;
+      let fx = CLOUD_W / 2 - ww / 2, fy = CLOUD_H / 2 - wh / 2;
+      for (let s = 0; s < 700; s++) {
+        const x = CLOUD_W / 2 + s * 1.05 * Math.cos(s * 0.48) - ww / 2;
+        const y = CLOUD_H / 2 + s * 0.62 * Math.sin(s * 0.48) - wh / 2;
+        if (x < 4 || x + ww > CLOUD_W - 4 || y < 4 || y + wh > CLOUD_H - 4) continue;
+        if (!hits(x, y, x + ww, y + wh)) { fx = x; fy = y; break; }
+      }
+      placed.push({ x1: fx, y1: fy, x2: fx + ww, y2: fy + wh });
+      const n = (word.value - minVal) / range;
+      return { word, fx, fy, size, color: CLOUD_COLORS[idx % CLOUD_COLORS.length], n };
+    });
+  }, [data, maxWords]);
+
+  if (layout.length === 0) return null;
   return (
-    <div className="flex flex-wrap justify-center items-center gap-x-3 gap-y-2 p-4">
-      {data.slice(0, maxWords).map((word, i) => {
+    <svg viewBox={`0 0 ${CLOUD_W} ${CLOUD_H}`} className="w-full" style={{ minHeight: '260px' }}>
+      {layout.map(({ word, fx, fy, size, color, n }) => {
         const isSelected = selectedWord === word.text;
-        const n = (word.value - minValue) / range;
         return (
-          <button key={word.text} onClick={() => onWordClick?.(word)}
-            className={`${colors[i % colors.length]} transition-all duration-150 cursor-pointer leading-tight hover:scale-110 hover:opacity-100 hover:drop-shadow-[0_0_6px_currentColor] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:rounded ${isSelected ? 'scale-110 drop-shadow-[0_0_8px_currentColor] ring-2 ring-current ring-offset-1 ring-offset-slate-900 rounded px-1' : ''}`}
-            style={{ fontSize: `${getFontSize(word.value)}px`, opacity: isSelected ? 1 : 0.45 + n * 0.55, fontWeight: n > 0.6 ? 700 : n > 0.3 ? 600 : 400 }}
-            title={`${word.text}: ${word.value.toLocaleString()} apariciones`}
+          <text key={word.text} x={fx} y={fy + size} fontSize={size}
+            fontFamily="ui-sans-serif, system-ui, sans-serif"
+            fontWeight={n > 0.6 ? 700 : n > 0.3 ? 600 : 400}
+            fill={color}
+            fillOpacity={isSelected ? 1 : 0.45 + n * 0.55}
+            stroke={isSelected ? color : 'none'} strokeWidth={isSelected ? 0.6 : 0}
+            style={{ cursor: 'pointer' }}
+            onClick={() => onWordClick?.(word)}
           >
+            <title>{word.text}: {word.value.toLocaleString()} apariciones</title>
             {word.text}
-          </button>
+          </text>
         );
       })}
-    </div>
+    </svg>
   );
 };
 
@@ -783,68 +814,76 @@ const VocabularyTable: React.FC<VocabularyTableProps> = ({
   const handleSort    = (f: typeof sortField) => { if (sortField === f) setSortAsc(a => !a); else { setSortField(f); setSortAsc(true); } };
   const SortIndicator = ({ f }: { f: typeof sortField }) => sortField === f ? (sortAsc ? <SortAscIcon /> : <SortDescIcon />) : <span className="w-3 h-3 inline-block" />;
 
+  const dataSource = Object.keys(vocabulary).length > 0 ? 'completo' : 'top términos';
+
   return (
     <div className="flex flex-col gap-3">
       {/* Search + count */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <p className="text-xs text-slate-400">
-          {filtered.length.toLocaleString()} términos
-          {search && ` para "${search}"`}
-          {' · '}vocabulario completo
+        <p className="text-xs text-gray-500">
+          <span className="font-semibold text-gray-700">{filtered.length.toLocaleString()}</span> términos
+          {search && <span className="text-blue-600"> · búsqueda: "{search}"</span>}
+          <span className="ml-1.5 px-1.5 py-0.5 rounded bg-gray-100 text-gray-400 text-xs">vocabulario {dataSource}</span>
         </p>
         <input
           type="text" value={search} placeholder="Buscar término…"
           onChange={e => { setSearch(e.target.value); setPage(1); }}
-          className="bg-slate-800/50 border border-slate-600/50 rounded-lg px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 w-52"
+          className="bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 w-52 shadow-sm"
         />
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-lg border border-slate-700/50">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+        <table className="w-full text-sm bg-white">
           <thead>
-            <tr className="border-b border-slate-700/50 bg-slate-800/40">
+            <tr className="border-b border-gray-200 bg-gray-50">
               {[
-                { f: 'rank' as const, label: '#', w: 'w-12' },
-                { f: 'term' as const, label: 'Término', w: '' },
+                { f: 'rank' as const, label: '#',          w: 'w-12' },
+                { f: 'term' as const, label: 'Término',    w: '' },
                 { f: 'freq' as const, label: 'Frecuencia', w: 'w-28' },
                 ...(hasIdf   ? [{ f: 'idf'   as const, label: 'IDF',    w: 'w-24' }] : []),
                 ...(hasTfidf ? [{ f: 'tfidf' as const, label: 'TF-IDF', w: 'w-24' }] : []),
               ].map(col => (
                 <th key={col.f} onClick={() => handleSort(col.f)}
-                  className={`${col.w} px-3 py-2 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider cursor-pointer hover:text-slate-200 select-none`}
+                  className={`${col.w} px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-800 hover:bg-gray-100 select-none transition-colors`}
                 >
                   <span className="flex items-center gap-1">{col.label}<SortIndicator f={col.f} /></span>
                 </th>
               ))}
-              <th className="w-16 px-3 py-2 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Bar</th>
+              <th className="w-20 px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Peso</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-700/30">
+          <tbody className="divide-y divide-gray-100">
             {paginated.map(row => {
               const isSelected = selectedTerm === row.term;
               const maxFreq = allTerms[0]?.freq || 1;
               const pct = (row.freq / maxFreq) * 100;
+              const freqDisplay = Number.isInteger(row.freq) ? row.freq.toLocaleString() : row.freq.toFixed(4);
               return (
                 <tr key={row.term}
                   onClick={() => onTermClick?.(row.term, row.freq)}
-                  className={`cursor-pointer transition-colors ${isSelected ? 'bg-cyan-500/10' : 'hover:bg-slate-700/20'}`}
+                  className={`cursor-pointer transition-colors ${isSelected ? 'bg-blue-50 border-l-2 border-l-blue-500' : 'hover:bg-gray-50'}`}
                 >
-                  <td className="px-3 py-2 text-slate-500 text-xs">{row.rank}</td>
+                  <td className="px-3 py-2 text-gray-400 text-xs font-mono">{row.rank}</td>
                   <td className="px-3 py-2">
-                    <span className={`font-medium ${isSelected ? 'text-cyan-400' : 'text-slate-200'}`}>{row.term}</span>
+                    <span className={`font-semibold text-sm ${isSelected ? 'text-blue-700' : 'text-gray-800'}`}>{row.term}</span>
                   </td>
-                  <td className="px-3 py-2 text-cyan-400 font-mono text-xs">{row.freq.toLocaleString()}</td>
-                  {hasIdf   && <td className="px-3 py-2 text-blue-400 font-mono text-xs">{row.idf   != null ? row.idf.toFixed(3)   : '—'}</td>}
-                  {hasTfidf && <td className="px-3 py-2 text-purple-400 font-mono text-xs">{row.tfidf != null ? row.tfidf.toFixed(4) : '—'}</td>}
                   <td className="px-3 py-2">
-                    <div className="h-1.5 w-16 bg-slate-700/50 rounded-full overflow-hidden">
-                      <div className="h-1.5 bg-cyan-500 rounded-full" style={{ width: `${pct}%` }} />
+                    <span className="text-blue-600 font-mono text-xs font-semibold">{freqDisplay}</span>
+                  </td>
+                  {hasIdf   && <td className="px-3 py-2 text-violet-600 font-mono text-xs">{row.idf   != null ? row.idf.toFixed(3)   : <span className="text-gray-300">—</span>}</td>}
+                  {hasTfidf && <td className="px-3 py-2 text-emerald-600 font-mono text-xs">{row.tfidf != null ? row.tfidf.toFixed(4) : <span className="text-gray-300">—</span>}</td>}
+                  <td className="px-3 py-2">
+                    <div className="h-2 w-16 bg-gray-100 rounded-full overflow-hidden">
+                      <div className={`h-2 rounded-full transition-all ${isSelected ? 'bg-blue-500' : 'bg-cyan-400'}`} style={{ width: `${pct}%` }} />
                     </div>
                   </td>
                 </tr>
               );
             })}
+            {paginated.length === 0 && (
+              <tr><td colSpan={5 + (hasIdf ? 1 : 0) + (hasTfidf ? 1 : 0)} className="text-center py-8 text-gray-400 text-sm">Sin resultados para "{search}"</td></tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -852,13 +891,13 @@ const VocabularyTable: React.FC<VocabularyTableProps> = ({
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <p className="text-xs text-slate-500">
-            {Math.min((page - 1) * VOCAB_PER_PAGE + 1, filtered.length)}–{Math.min(page * VOCAB_PER_PAGE, filtered.length)} de {filtered.length.toLocaleString()}
+          <p className="text-xs text-gray-400">
+            {Math.min((page - 1) * VOCAB_PER_PAGE + 1, filtered.length)}–{Math.min(page * VOCAB_PER_PAGE, filtered.length)} de {filtered.length.toLocaleString()} términos
           </p>
           <div className="flex gap-1">
             {['«','‹'].map((ch, i) => (
               <button key={ch} onClick={() => setPage(i === 0 ? 1 : p => p - 1)} disabled={page === 1}
-                className="px-2 py-1 text-xs rounded border border-slate-700/50 text-slate-400 hover:bg-slate-700/30 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="px-2.5 py-1 text-xs rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >{ch}</button>
             ))}
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -866,13 +905,13 @@ const VocabularyTable: React.FC<VocabularyTableProps> = ({
               const p = start + i;
               return p <= totalPages ? (
                 <button key={p} onClick={() => setPage(p)}
-                  className={`px-2 py-1 text-xs rounded border transition-colors ${p === page ? 'bg-cyan-500 border-cyan-500 text-white' : 'border-slate-700/50 text-slate-400 hover:bg-slate-700/30'}`}
+                  className={`px-2.5 py-1 text-xs rounded-lg border transition-colors ${p === page ? 'bg-blue-600 border-blue-600 text-white font-semibold' : 'border-gray-200 text-gray-500 hover:bg-gray-100'}`}
                 >{p}</button>
               ) : null;
             })}
             {['›','»'].map((ch, i) => (
               <button key={ch} onClick={() => setPage(i === 0 ? p => p + 1 : totalPages)} disabled={page === totalPages}
-                className="px-2 py-1 text-xs rounded border border-slate-700/50 text-slate-400 hover:bg-slate-700/30 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="px-2.5 py-1 text-xs rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >{ch}</button>
             ))}
           </div>
@@ -882,7 +921,7 @@ const VocabularyTable: React.FC<VocabularyTableProps> = ({
   );
 };
 
-// ─── HorizontalBarChart ──────────────────────────────────────────────────────
+// ─── HorizontalBarChart (SVG — compatible con descarga PNG) ──────────────────
 
 interface HorizontalBarChartProps {
   data: Array<{ id: string; label: string; value: number }>;
@@ -892,36 +931,55 @@ interface HorizontalBarChartProps {
   selectedId?: string | null;
 }
 
+const getBarFill = (colorClass: string): string => {
+  if (colorClass.includes('purple') || colorClass.includes('violet')) return '#8b5cf6';
+  if (colorClass.includes('emerald') || colorClass.includes('green'))  return '#10b981';
+  if (colorClass.includes('amber')   || colorClass.includes('yellow')) return '#f59e0b';
+  if (colorClass.includes('rose')    || colorClass.includes('red'))    return '#f43f5e';
+  if (colorClass.includes('blue')    && !colorClass.includes('cyan'))  return '#3b82f6';
+  return '#06b6d4'; // default cyan
+};
+
 const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
   data, maxBars = 15, colorClass = 'bg-cyan-500', onItemClick, selectedId,
 }) => {
   if (!data || data.length === 0) return null;
-  const maxValue = Math.max(...data.map(d => d.value));
+  const items    = data.slice(0, maxBars);
+  const maxValue = Math.max(...items.map(d => d.value));
+  const BAR_H = 22, GAP = 7, LABEL_W = 132, VAL_W = 68, SVG_W = 520;
+  const BAR_AREA = SVG_W - LABEL_W - VAL_W - 12;
+  const SVG_H    = items.length * (BAR_H + GAP) + 8;
+  const barColor = getBarFill(colorClass);
+  const selColor = '#f59e0b';
+
   return (
-    <div className="space-y-1.5">
-      {data.slice(0, maxBars).map(item => {
-        const isSelected = selectedId === item.id;
-        const pct = (item.value / maxValue) * 100;
+    <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="w-full" style={{ height: `${SVG_H}px`, minHeight: '80px' }}>
+      {items.map((item, i) => {
+        const y   = 4 + i * (BAR_H + GAP);
+        const isSel = selectedId === item.id;
+        const bw  = Math.max(2, ((item.value / maxValue) * BAR_AREA));
+        const fill = isSel ? selColor : barColor;
+        const lbl  = item.label.length > 17 ? item.label.slice(0, 17) + '…' : item.label;
+        const val  = typeof item.value === 'number' && item.value < 1
+          ? item.value.toFixed(3) : item.value.toLocaleString();
         return (
-          <button key={item.id} onClick={() => onItemClick?.(item)}
-            className={`w-full flex items-center gap-3 px-2 py-1.5 rounded-lg transition-all text-left group ${onItemClick ? 'cursor-pointer hover:bg-slate-700/30' : 'cursor-default'} ${isSelected ? 'bg-slate-700/50 ring-1 ring-cyan-500/40' : ''}`}
-          >
-            <div className="w-28 flex-shrink-0 text-right">
-              <span className={`text-xs truncate block transition-colors ${isSelected ? 'text-white font-medium' : 'text-slate-300 group-hover:text-slate-100'}`} title={item.label}>{item.label}</span>
-            </div>
-            <div className="flex-1 h-5 bg-slate-800/50 rounded-full overflow-hidden">
-              <div className={`h-full ${colorClass} rounded-full transition-all duration-500 ${isSelected ? 'brightness-110' : ''}`} style={{ width: `${pct}%` }} />
-            </div>
-            <div className="w-16 flex-shrink-0 text-right">
-              <span className={`text-xs transition-colors ${isSelected ? 'text-white font-semibold' : 'text-slate-400 group-hover:text-slate-300'}`}>
-                {typeof item.value === 'number' && item.value < 1 ? item.value.toFixed(3) : item.value.toLocaleString()}
-              </span>
-            </div>
-            {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 flex-shrink-0" />}
-          </button>
+          <g key={item.id} onClick={() => onItemClick?.(item)} style={{ cursor: onItemClick ? 'pointer' : 'default' }}>
+            {isSel && <rect x={0} y={y - 2} width={SVG_W} height={BAR_H + 4} rx={5} fill={selColor} fillOpacity={0.08} />}
+            <text x={LABEL_W - 7} y={y + BAR_H / 2 + 4} textAnchor="end" fontSize={11}
+              fill={isSel ? '#ffffff' : '#cbd5e1'} fontFamily="ui-sans-serif, system-ui, sans-serif">
+              {lbl}
+            </text>
+            <rect x={LABEL_W} y={y + 3} width={BAR_AREA} height={BAR_H - 6} rx={4} fill="#1e293b" />
+            <rect x={LABEL_W} y={y + 3} width={bw}       height={BAR_H - 6} rx={4} fill={fill} />
+            <text x={LABEL_W + BAR_AREA + 8} y={y + BAR_H / 2 + 4} fontSize={11}
+              fill={isSel ? '#ffffff' : '#94a3b8'} fontFamily="ui-sans-serif, system-ui, sans-serif">
+              {val}
+            </text>
+            {isSel && <circle cx={SVG_W - 5} cy={y + BAR_H / 2} r={3.5} fill="#22d3ee" />}
+          </g>
         );
       })}
-    </div>
+    </svg>
   );
 };
 
@@ -1145,11 +1203,33 @@ const CooccurrenceGraph: React.FC<{
   nodes: Array<{ id: string; size: number; color: string }>;
   links: Array<{ source: string; target: string; distance: number; thickness: number }>;
   onNodeClick?: (nodeId: string) => void;
-}> = ({ nodes, links, onNodeClick }) => {
+  availableConfigs?: string[];
+}> = ({ nodes, links, onNodeClick, availableConfigs = [] }) => {
   if (nodes.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[350px] text-slate-500 text-sm">
-        Se necesitan n-gramas (bigramas) para generar el grafo de co-ocurrencia
+      <div className="flex flex-col items-center justify-center h-[320px] gap-4 p-6">
+        <div className="w-14 h-14 rounded-full bg-slate-800/50 flex items-center justify-center">
+          <svg className="w-7 h-7 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <div className="text-center max-w-sm">
+          <p className="text-slate-300 font-medium mb-1">Sin bigramas disponibles</p>
+          <p className="text-slate-500 text-sm leading-relaxed">
+            El grafo de co-ocurrencia requiere un análisis de N-gramas con <strong className="text-slate-300">bigramas</strong> (rango [2,2] o [1,2]).
+          </p>
+          {availableConfigs.length > 0 && (
+            <div className="mt-3 p-3 rounded-lg bg-slate-800/40 border border-slate-700/40 text-left">
+              <p className="text-xs text-slate-400 mb-1.5">Configuraciones actuales:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {availableConfigs.map(c => (
+                  <span key={c} className="px-2 py-0.5 rounded-md bg-slate-700/60 text-slate-300 text-xs font-mono">{c}</span>
+                ))}
+              </div>
+              <p className="text-xs text-slate-500 mt-2">→ Para habilitar el grafo, crea un nuevo análisis de N-gramas incluyendo la configuración <span className="font-mono text-slate-400">[2,2]</span>.</p>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -1342,27 +1422,34 @@ export const VectorizacionDashboard: React.FC = () => {
     return rows;
   }, [data]);
 
-  // ── Co-occurrence graph: from bigrams ──
+  // ── Co-occurrence graph: from bigrams (any config that has multi-word terms) ──
   const cooccurrenceData = useMemo(() => {
-    const bigramConfig = ngramConfigs.find(c => c.key === '2_2') || ngramConfigs.find(c => c.label === 'Bigramas');
-    if (!bigramConfig || bigramConfig.terms.length === 0) return { nodes: [], links: [] };
-    const maxVal   = Math.max(...bigramConfig.terms.slice(0, 35).map(t => t.value)) || 1;
-    const nodeSet  = new Map<string, number>();
+    const availableConfigs = ngramConfigs.map(c => c.key);
+    // 1. Prefer explicit bigram config [2,2]
+    let bigramTerms = (ngramConfigs.find(c => c.key === '2_2') || ngramConfigs.find(c => c.label === 'Bigramas'))?.terms || [];
+    // 2. Fallback: gather all multi-word terms from any config (handles [1,2] mixed configs)
+    if (bigramTerms.length === 0) {
+      bigramTerms = ngramConfigs.flatMap(c => c.terms.filter(t => t.id.trim().includes(' ')));
+    }
+    if (bigramTerms.length === 0) return { nodes: [], links: [], availableConfigs };
+    const top       = bigramTerms.slice(0, 35);
+    const maxVal    = Math.max(...top.map(t => t.value)) || 1;
+    const nodeSet   = new Map<string, number>();
     const links: Array<{ source: string; target: string; distance: number; thickness: number }> = [];
-    bigramConfig.terms.slice(0, 35).forEach(bg => {
+    top.forEach(bg => {
       const parts = bg.id.trim().split(/\s+/);
       if (parts.length < 2) return;
-      const [a, b] = parts;
+      const [a, b] = [parts[0], parts[parts.length - 1]];
       nodeSet.set(a, (nodeSet.get(a) || 0) + bg.value);
       nodeSet.set(b, (nodeSet.get(b) || 0) + bg.value);
       links.push({ source: a, target: b, distance: 80 + (1 - bg.value / maxVal) * 60, thickness: 1 + (bg.value / maxVal) * 3 });
     });
     const maxNode = Math.max(...nodeSet.values()) || 1;
-    const COLORS = ['#06b6d4','#8b5cf6','#10b981','#f59e0b','#ec4899','#3b82f6'];
-    const nodes = Array.from(nodeSet.entries()).map(([id, freq], i) => ({
+    const COLORS  = ['#06b6d4','#8b5cf6','#10b981','#f59e0b','#ec4899','#3b82f6','#2dd4bf','#f472b6'];
+    const nodes   = Array.from(nodeSet.entries()).map(([id, freq], i) => ({
       id, size: 10 + (freq / maxNode) * 18, color: COLORS[i % COLORS.length],
     }));
-    return { nodes, links };
+    return { nodes, links, availableConfigs };
   }, [ngramConfigs]);
 
   // ── Comparar: shared terms ranked in BoW and TF-IDF ──
@@ -1516,33 +1603,90 @@ export const VectorizacionDashboard: React.FC = () => {
         )}
       </div>
 
-      {/* ── KPI Row ── */}
-      <DashboardGrid columns={4} gap="md">
-        <MetricCardDark title="Análisis BoW" value={data?.bowAnalyses?.length || 0}
-          subtitle={data?.selectedBow ? data.selectedBow.name : 'Bag of Words'}
-          icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>}
-          accentColor="cyan"
-        />
-        <MetricCardDark title="Análisis N-gramas" value={data?.ngramAnalyses?.length || 0}
-          subtitle={ngramConfigs.length > 0 ? `${ngramConfigs.length} configuracion${ngramConfigs.length !== 1 ? 'es' : ''}` : 'Secuencias de tokens'}
-          icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>}
-          accentColor="purple"
-        />
-        <MetricCardDark title="Análisis TF-IDF" value={data?.tfidfAnalyses?.length || 0}
-          subtitle={scatterData.length > 0 ? `${scatterData.length} términos en scatter` : 'Ponderación de términos'}
-          icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>}
-          accentColor="blue"
-        />
-        <MetricCardDark
-          title="Vocabulario"
-          value={Object.keys(fullVocabulary).length > 0
-            ? Object.keys(fullVocabulary).length.toLocaleString()
-            : data?.selectedBow?.vocabulary_size?.toLocaleString() || '—'}
-          subtitle={Object.keys(fullVocabulary).length > 0 ? 'términos únicos (completo)' : data?.selectedBow ? `min_df=${data.selectedBow.min_df}` : 'Términos únicos'}
-          icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" /></svg>}
-          accentColor="emerald"
-        />
-      </DashboardGrid>
+      {/* ── Analytics KPI Bar ── */}
+      {(() => {
+        const bow   = data?.selectedBow;
+        const tfidf = data?.selectedTfidf;
+        const ngram = data?.selectedNgram;
+        const ttr   = bow && bow.total_term_occurrences > 0
+          ? ((bow.vocabulary_size / bow.total_term_occurrences) * 100).toFixed(2) + '%' : '—';
+        const density   = bow ? ((1 - bow.matrix_sparsity) * 100).toFixed(1) + '%' : '—';
+        const avgIdf    = tfidf?.idf_vector?.avg_idf != null ? tfidf.idf_vector.avg_idf.toFixed(3) : '—';
+        const tokPerDoc = bow?.avg_terms_per_document != null ? bow.avg_terms_per_document.toFixed(1) : '—';
+        const ngramVocab = ngram
+          ? Object.values(ngram.results || {}).reduce((s, r) => s + (r.vocabulary_size || 0), 0).toLocaleString()
+          : '—';
+        const ngramConfs = ngram ? Object.keys(ngram.results || {}).length : 0;
+        const vocabSize  = bow ? (bow.vocabulary_size || 0).toLocaleString() : '—';
+
+        const kpis = [
+          {
+            label: 'Vocabulario Único', value: vocabSize, unit: 'tipos de palabras',
+            sub: bow ? `min_df ${bow.min_df} · ${bow.document_count} docs` : 'sin BoW',
+            accent: 'border-cyan-300 bg-cyan-50', val: 'text-cyan-800', bar: 'bg-cyan-500',
+            icon: 'M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129',
+            tip: 'Número de palabras únicas (types) detectadas por CountVectorizer. Influenciado por min_df y max_features.',
+          },
+          {
+            label: 'Riqueza Léxica (TTR)', value: ttr, unit: 'type-token ratio',
+            sub: bow ? `${bow.total_term_occurrences.toLocaleString()} tokens totales` : 'sin BoW',
+            accent: 'border-emerald-300 bg-emerald-50', val: 'text-emerald-800', bar: 'bg-emerald-500',
+            icon: 'M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z',
+            tip: 'TTR = términos_únicos / total_ocurrencias × 100. Alto = corpus diverso; bajo = corpus repetitivo. Útil para medir la riqueza lingüística del corpus.',
+          },
+          {
+            label: 'Densidad de Matriz', value: density, unit: 'densidad doc-término',
+            sub: bow ? `sparsidad ${(bow.matrix_sparsity * 100).toFixed(1)}%` : 'sin BoW',
+            accent: 'border-blue-300 bg-blue-50', val: 'text-blue-800', bar: 'bg-blue-500',
+            icon: 'M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z',
+            tip: 'Densidad = 1 − sparsidad de la matriz documento-término. Alto = documentos comparten vocabulario. Bajo = vocabularios muy distintos por documento.',
+          },
+          {
+            label: 'Especificidad IDF', value: avgIdf, unit: 'IDF promedio',
+            sub: tfidf ? `smooth_idf: ${tfidf.smooth_idf ? 'sí' : 'no'} · sublinear: ${tfidf.sublinear_tf ? 'sí' : 'no'}` : 'sin TF-IDF',
+            accent: 'border-violet-300 bg-violet-50', val: 'text-violet-800', bar: 'bg-violet-500',
+            icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
+            tip: 'IDF promedio del corpus (log(N/df) por término). Alto = corpus con términos raros y específicos. Bajo = vocabulario muy común entre documentos.',
+          },
+          {
+            label: 'Tokens por Documento', value: tokPerDoc, unit: 'términos únicos/doc',
+            sub: bow ? `matriz ${bow.matrix_shape?.rows ?? '?'}×${bow.matrix_shape?.cols ?? '?'}` : 'sin BoW',
+            accent: 'border-amber-300 bg-amber-50', val: 'text-amber-800', bar: 'bg-amber-500',
+            icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+            tip: 'Media de términos únicos por documento en la matriz BoW. Indica la extensión promedio del vocabulario activo en cada documento del corpus.',
+          },
+          {
+            label: 'Cobertura N-gramas', value: ngramVocab, unit: 'n-gramas únicos',
+            sub: ngram ? `${ngramConfs} config${ngramConfs !== 1 ? 's' : ''} · ${ngram.document_count} docs` : 'sin análisis',
+            accent: 'border-rose-300 bg-rose-50', val: 'text-rose-800', bar: 'bg-rose-500',
+            icon: 'M13 10V3L4 14h7v7l9-11h-7z',
+            tip: 'Total de n-gramas únicos sumando todas las configuraciones (unigramas, bigramas, trigramas…). Mide la riqueza de secuencias de tokens capturadas.',
+          },
+        ];
+
+        return (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            {kpis.map(kpi => (
+              <div key={kpi.label} title={kpi.tip}
+                className={`relative rounded-xl border ${kpi.accent} p-3.5 flex flex-col gap-1.5 overflow-hidden cursor-help`}
+              >
+                <div className="flex items-start justify-between gap-1">
+                  <span className="text-xs font-medium text-gray-500 leading-tight">{kpi.label}</span>
+                  <svg className="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={kpi.icon} />
+                  </svg>
+                </div>
+                <div className={`text-xl font-bold ${kpi.val} leading-none tracking-tight`}>{kpi.value}</div>
+                <div>
+                  <div className="text-xs text-gray-400">{kpi.unit}</div>
+                  <div className="text-xs text-gray-400 truncate mt-0.5">{kpi.sub}</div>
+                </div>
+                <div className={`absolute bottom-0 left-0 right-0 h-0.5 ${kpi.bar} opacity-70`} />
+              </div>
+            ))}
+          </div>
+        );
+      })()}
 
       {/* ── Selected term indicator ── */}
       {selectedTerm && (
@@ -1596,7 +1740,7 @@ export const VectorizacionDashboard: React.FC = () => {
           accentColor="cyan"
           size="lg"
           icon={vocabView === 'cloud' ? <CloudIcon /> : <TableIcon />}
-          downloadable
+          downloadable={vocabView === 'cloud'}
           onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
           isLoading={isLoading}
           headerExtra={
@@ -1891,6 +2035,7 @@ export const VectorizacionDashboard: React.FC = () => {
           <CooccurrenceGraph
             nodes={cooccurrenceData.nodes}
             links={cooccurrenceData.links}
+            availableConfigs={cooccurrenceData.availableConfigs}
             onNodeClick={termText => {
               const bow = data?.selectedBow?.top_terms?.find(t => t.term === termText);
               const term = buildTerm(termText, 'ngram', bow?.score, bow?.rank);
