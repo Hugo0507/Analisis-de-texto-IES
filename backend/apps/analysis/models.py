@@ -13,7 +13,6 @@ Contains models for:
 """
 
 from django.db import models
-from apps.documents.models import Document
 from apps.datasets.models import DatasetFile
 
 
@@ -167,7 +166,7 @@ class DocumentTopic(models.Model):
     Almacena la probabilidad de que un documento pertenezca a un tema.
     """
     document = models.ForeignKey(
-        Document,
+        DatasetFile,
         on_delete=models.CASCADE,
         related_name='topic_assignments'
     )
@@ -235,7 +234,7 @@ class DocumentFactor(models.Model):
     Almacena cuántas menciones de cada factor aparecen en cada documento.
     """
     document = models.ForeignKey(
-        Document,
+        DatasetFile,
         on_delete=models.CASCADE,
         related_name='factor_mentions'
     )
