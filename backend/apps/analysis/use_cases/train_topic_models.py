@@ -5,7 +5,7 @@ Trains topic modeling algorithms (LDA, NMF, LSA, pLSA) on documents.
 """
 
 import logging
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from apps.analysis.services.topic_modeling_service import TopicModelingService
 from apps.datasets.models import DatasetFile
@@ -47,7 +47,7 @@ class TrainTopicModelsUseCase:
         n_topics: int = 10,
         document_ids: List[int] = None,
         use_cache: bool = True
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Train topic model.
 
@@ -155,7 +155,7 @@ class TrainTopicModelsUseCase:
                 'error': str(e)
             }
 
-    def _train_lda(self, texts: List[str], doc_ids: List[int]) -> Dict[str, any]:
+    def _train_lda(self, texts: List[str], doc_ids: List[int]) -> Dict[str, Any]:
         """Train LDA model."""
         # Create TF-IDF matrix first
         from apps.analysis.services.tfidf_service import TfidfService
@@ -179,7 +179,7 @@ class TrainTopicModelsUseCase:
             'coherence': lda_result.get('coherence')
         }
 
-    def _train_nmf(self, texts: List[str], doc_ids: List[int]) -> Dict[str, any]:
+    def _train_nmf(self, texts: List[str], doc_ids: List[int]) -> Dict[str, Any]:
         """Train NMF model."""
         from apps.analysis.services.tfidf_service import TfidfService
         tfidf_service = TfidfService()
@@ -200,7 +200,7 @@ class TrainTopicModelsUseCase:
             'coherence': nmf_result.get('coherence')
         }
 
-    def _train_lsa(self, texts: List[str], doc_ids: List[int]) -> Dict[str, any]:
+    def _train_lsa(self, texts: List[str], doc_ids: List[int]) -> Dict[str, Any]:
         """Train LSA model."""
         from apps.analysis.services.tfidf_service import TfidfService
         tfidf_service = TfidfService()
@@ -221,7 +221,7 @@ class TrainTopicModelsUseCase:
             'coherence': lsa_result.get('coherence')
         }
 
-    def _train_plsa(self, texts: List[str], doc_ids: List[int]) -> Dict[str, any]:
+    def _train_plsa(self, texts: List[str], doc_ids: List[int]) -> Dict[str, Any]:
         """Train pLSA model."""
         # Tokenize texts
         tokenized_texts = [text.split() for text in texts]
@@ -261,7 +261,7 @@ class TrainTopicModelsUseCase:
         self,
         document_ids: List[int] = None,
         n_topics: int = 10
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Compare all topic models.
 
