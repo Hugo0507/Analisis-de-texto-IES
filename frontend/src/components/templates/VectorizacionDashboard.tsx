@@ -15,7 +15,6 @@ import { ChartCard } from '../molecules';
 import dashboardService from '../../services/dashboardService';
 import type { VectorizationDashboardData } from '../../services/dashboardService';
 import { useFilter } from '../../contexts/FilterContext';
-import type { TopTerm } from '../../services/bagOfWordsService';
 import type { BagOfWords } from '../../services/bagOfWordsService';
 import type { NgramAnalysis } from '../../services/ngramAnalysisService';
 import type { TfIdfAnalysis } from '../../services/tfidfAnalysisService';
