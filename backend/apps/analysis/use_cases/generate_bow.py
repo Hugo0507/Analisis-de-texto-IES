@@ -5,7 +5,7 @@ Generates BoW matrix from preprocessed documents.
 """
 
 import logging
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 import json
 from django.db import transaction
 
@@ -51,7 +51,7 @@ class GenerateBowUseCase:
         max_df: float = 1.0,
         ngram_range: tuple = (1, 1),
         use_cache: bool = True
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Generate BoW matrix for documents.
 
@@ -196,15 +196,16 @@ class GenerateBowUseCase:
         """
         logger.info(f"Saving {len(feature_names)} vocabulary terms")
 
-        vocabulary_mapping = {}
+        # Bulk insert new terms (ignore conflicts for existing ones)
+        Vocabulary.objects.bulk_create(
+            [Vocabulary(term=term, global_frequency=0) for term in feature_names],
+            ignore_conflicts=True,
+            batch_size=1000
+        )
 
-        for term in feature_names:
-            # Create or get vocabulary entry
-            vocab, created = Vocabulary.objects.get_or_create(
-                term=term,
-                defaults={'global_frequency': 0}
-            )
-            vocabulary_mapping[term] = vocab.id
+        # Single query to get all IDs
+        vocab_qs = Vocabulary.objects.filter(term__in=feature_names).values('id', 'term')
+        vocabulary_mapping = {row['term']: row['id'] for row in vocab_qs}
 
         return vocabulary_mapping
 
@@ -255,7 +256,7 @@ class GenerateBowUseCase:
         self,
         document_id: int,
         top_n: int = 50
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Get BoW representation for a single document.
 
@@ -314,7 +315,7 @@ class GenerateBowUseCase:
                 'error': str(e)
             }
 
-    def get_vocabulary_stats(self) -> Dict[str, any]:
+    def get_vocabulary_stats(self) -> Dict[str, Any]:
         """
         Get vocabulary statistics.
 

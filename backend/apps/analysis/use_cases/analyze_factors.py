@@ -5,11 +5,10 @@ Analyzes digital transformation factors in documents.
 """
 
 import logging
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from apps.analysis.services.factor_analyzer_service import FactorAnalyzerService
 from apps.datasets.models import DatasetFile
-from apps.documents.models import Document
 from apps.analysis.models import Factor, DocumentFactor
 from apps.infrastructure.cache.triple_layer_cache import TripleLayerCacheService
 
@@ -47,7 +46,7 @@ class AnalyzeFactorsUseCase:
         document_ids: List[int] = None,
         normalize_by_length: bool = True,
         use_cache: bool = True
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Analyze factors for documents.
 
@@ -238,7 +237,7 @@ class AnalyzeFactorsUseCase:
         self,
         document_id: int,
         top_n: int = 16
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Get factor analysis for a single document.
 
@@ -253,7 +252,7 @@ class AnalyzeFactorsUseCase:
 
         try:
             # Get document
-            document = Document.objects.get(id=document_id)
+            document = DatasetFile.objects.get(id=document_id)
 
             # Get document factors
             doc_factors = DocumentFactor.objects.filter(
@@ -286,7 +285,7 @@ class AnalyzeFactorsUseCase:
                 'total_factors': DocumentFactor.objects.filter(document_id=document_id).count()
             }
 
-        except Document.DoesNotExist:
+        except DatasetFile.DoesNotExist:
             logger.error(f"Document {document_id} not found")
             return {
                 'success': False,
@@ -300,7 +299,7 @@ class AnalyzeFactorsUseCase:
                 'error': str(e)
             }
 
-    def get_factor_statistics(self) -> Dict[str, any]:
+    def get_factor_statistics(self) -> Dict[str, Any]:
         """
         Get global factor statistics.
 

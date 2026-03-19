@@ -5,7 +5,7 @@ Calculates TF-IDF matrix from preprocessed documents.
 """
 
 import logging
-from typing import Dict, List
+from typing import Any, Dict, List
 from django.db import transaction
 
 from apps.analysis.services.tfidf_service import TfidfService
@@ -52,7 +52,7 @@ class CalculateTfidfUseCase:
         use_idf: bool = True,
         sublinear_tf: bool = False,
         use_cache: bool = True
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Calculate TF-IDF matrix for documents.
 
@@ -270,7 +270,7 @@ class CalculateTfidfUseCase:
         self,
         document_id: int,
         top_n: int = 50
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Get TF-IDF representation for a single document.
 
@@ -333,7 +333,7 @@ class CalculateTfidfUseCase:
         self,
         doc_id1: int,
         doc_id2: int
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Calculate cosine similarity between two documents.
 
