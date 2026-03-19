@@ -4,7 +4,7 @@
  * Light WCAG-compliant theme with accent colors. Supports cross-filtering interactions.
  */
 
-import React from 'react';
+import React, { useRef, useCallback, useState } from 'react';
 
 export interface ChartCardProps {
   title: string;
@@ -20,6 +20,8 @@ export interface ChartCardProps {
   footer?: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   headerExtra?: React.ReactNode;
+  downloadable?: boolean;
+  downloadTitle?: string;
 }
 
 const accentColorClasses = {
@@ -88,13 +90,58 @@ export const ChartCard: React.FC<ChartCardProps> = ({
   footer,
   size = 'md',
   headerExtra,
+  downloadable = false,
+  downloadTitle,
 }) => {
   const colors = accentColorClasses[accentColor];
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [dlState, setDlState] = useState<'idle' | 'loading' | 'error'>('idle');
+
+  const handleDownload = useCallback(async () => {
+    const el = contentRef.current;
+    if (!el) return;
+    const svg = el.querySelector('svg');
+    if (!svg) { setDlState('error'); setTimeout(() => setDlState('idle'), 2000); return; }
+    setDlState('loading');
+    try {
+      const rect = svg.getBoundingClientRect();
+      const w = Math.max(rect.width, 400);
+      const h = Math.max(rect.height, 200);
+      const clone = svg.cloneNode(true) as SVGElement;
+      clone.setAttribute('width', String(w));
+      clone.setAttribute('height', String(h));
+      const svgStr = new XMLSerializer().serializeToString(clone);
+      const svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+      const svgUrl = URL.createObjectURL(svgBlob);
+      const fname = `${(downloadTitle || title).replace(/[^a-z0-9áéíóúñ]/gi, '_').toLowerCase()}`;
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = w * dpr; canvas.height = h * dpr;
+        const ctx = canvas.getContext('2d');
+        if (ctx) { ctx.scale(dpr, dpr); ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h); ctx.drawImage(img, 0, 0, w, h); }
+        URL.revokeObjectURL(svgUrl);
+        canvas.toBlob(blob => {
+          if (!blob) return;
+          const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${fname}.png`; a.click();
+          setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+          setDlState('idle');
+        }, 'image/png');
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(svgUrl);
+        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([svgStr], { type: 'image/svg+xml' })); a.download = `${fname}.svg`; a.click();
+        setDlState('idle');
+      };
+      img.src = svgUrl;
+    } catch { setDlState('error'); setTimeout(() => setDlState('idle'), 2000); }
+  }, [title, downloadTitle]);
 
   return (
     <div
       className={`
-        relative overflow-hidden rounded-2xl
+        group relative overflow-hidden rounded-2xl
         bg-white
         border ${isActive ? colors.border : 'border-gray-200'}
         shadow-sm ${isActive ? colors.glow : 'shadow-gray-100'}
@@ -133,6 +180,28 @@ export const ChartCard: React.FC<ChartCardProps> = ({
         {/* Action buttons */}
         <div className="flex items-center gap-1">
           {headerExtra && <div className="flex items-center mr-1">{headerExtra}</div>}
+          {downloadable && (
+            <button
+              onClick={handleDownload}
+              title={dlState === 'loading' ? 'Descargando…' : dlState === 'error' ? 'Sin gráfico exportable' : 'Descargar imagen'}
+              className="p-1.5 rounded-lg hover:bg-gray-100 transition-all opacity-0 group-hover:opacity-100 duration-200"
+            >
+              {dlState === 'loading' ? (
+                <svg className="w-4 h-4 text-gray-400 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              ) : dlState === 'error' ? (
+                <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              )}
+            </button>
+          )}
           {onRefreshClick && (
             <button
               onClick={onRefreshClick}
@@ -179,7 +248,7 @@ export const ChartCard: React.FC<ChartCardProps> = ({
       </div>
 
       {/* Content */}
-      <div className="relative flex-1 p-4 pt-2">
+      <div ref={contentRef} className="relative flex-1 p-4 pt-2">
         {isLoading ? (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className={`w-8 h-8 border-2 border-t-transparent rounded-full animate-spin ${colors.border}`} />
