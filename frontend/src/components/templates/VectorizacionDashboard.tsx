@@ -10,6 +10,8 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { ResponsiveHeatMap } from '@nivo/heatmap';
+import { ResponsiveNetwork } from '@nivo/network';
 import { DashboardGrid, MetricCardDark } from '../organisms';
 import { ChartCard } from '../molecules';
 import dashboardService from '../../services/dashboardService';
@@ -37,6 +39,20 @@ interface ScatterPoint {
   tf: number;
   idf: number;
   tfidf: number;
+}
+
+interface HeatmapDataRow {
+  id: string;
+  data: Array<{ x: string; y: number | null }>;
+}
+
+interface ComparacionItem {
+  term: string;
+  bowFreq: number;
+  bowRank: number;
+  tfidfScore: number;
+  tfidfRank: number;
+  rankDiff: number;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -294,6 +310,58 @@ ${ngramBlocks}
   downloadFile(py, 'vectorizacion_completo.py', 'text/x-python');
 };
 
+/** Jupyter notebook (.ipynb) with code cells for Pandas analysis */
+const exportJupyterNotebook = (data: VectorizationDashboardData) => {
+  const now = new Date().toISOString().split('T')[0];
+  const bow = data.selectedBow;
+  const tfidf = data.selectedTfidf;
+  const ngram = data.selectedNgram;
+  const cell = (source: string[], type: 'code' | 'markdown' = 'code') =>
+    type === 'code'
+      ? { cell_type: 'code', execution_count: null, metadata: {}, outputs: [], source }
+      : { cell_type: 'markdown', metadata: {}, source };
+
+  const bowVocab = JSON.stringify(Object.fromEntries(Object.entries(bow?.vocabulary || {}).slice(0, 3000)), null, 2);
+  const idfVals  = JSON.stringify(Object.fromEntries(Object.entries(tfidf?.idf_vector?.idf_values || {}).slice(0, 3000)), null, 2);
+
+  const ngramCells = Object.entries(ngram?.results || {}).slice(0, 3).map(([key, result]) => {
+    const label = getNgramLabel(result.ngram_range || [1, 1]);
+    const terms = JSON.stringify((result.top_terms || []).slice(0, 100).map(t => ({ ngrama: t.term, frecuencia: t.score })));
+    const safeKey = key.replace(/-/g, '_');
+    return cell([
+      `# ${label}\n`,
+      `ngrams_${safeKey} = ${terms}\n`,
+      `df_ng = pd.DataFrame(ngrams_${safeKey})\n`,
+      `df_ng.head(20).plot.barh(x="ngrama", y="frecuencia", figsize=(12,5), title="Top 20 ${label}", color="#8b5cf6", legend=False)\n`,
+      `plt.tight_layout(); plt.show()`,
+    ]);
+  });
+
+  const notebook = {
+    nbformat: 4, nbformat_minor: 5,
+    metadata: {
+      kernelspec: { display_name: 'Python 3', language: 'python', name: 'python3' },
+      language_info: { name: 'python', version: '3.8.0' },
+    },
+    cells: [
+      cell([`# Análisis de Vectorización — IES\n`, `**Generado:** ${now}  \n`, `**BoW:** ${bow?.name || 'N/A'}  \n`, `**TF-IDF:** ${tfidf?.name || 'N/A'}  \n`, `**N-gramas:** ${ngram?.name || 'N/A'}`], 'markdown'),
+      cell(['## 1. Dependencias'], 'markdown'),
+      cell(['# !pip install pandas matplotlib seaborn scikit-learn\n', 'import pandas as pd\n', 'import matplotlib.pyplot as plt\n', 'import seaborn as sns\n', 'print("✅ Librerías cargadas")']),
+      cell(['## 2. Bolsa de Palabras'], 'markdown'),
+      cell([`bow_vocabulary = ${bowVocab}\n`, `\n`, `df_bow = pd.DataFrame([{"termino": k, "frecuencia": v} for k, v in sorted(bow_vocabulary.items(), key=lambda x: -x[1])])\n`, `df_bow["rank"] = range(1, len(df_bow)+1)\n`, `print(f"Vocabulario: {len(df_bow)} términos")\n`, `df_bow.head(20)`]),
+      cell([`df_bow.head(20).plot.barh(x="termino", y="frecuencia", figsize=(12,5), title="Top 20 Términos — BoW", color="#06b6d4", legend=False)\n`, `plt.tight_layout(); plt.show()`]),
+      cell(['## 3. TF-IDF'], 'markdown'),
+      cell([`tfidf_idf_values = ${idfVals}\n`, `\n`, `df_idf = pd.DataFrame([{"termino": k, "idf": v} for k, v in tfidf_idf_values.items()]).sort_values("idf")\n`, `print(f"IDF: {len(df_idf)} términos")\n`, `df_idf.head(10)`]),
+      cell([`df_combined = df_bow.merge(df_idf, on="termino", how="inner")\n`, `df_combined["tfidf_score"] = df_combined["frecuencia"] * df_combined["idf"]\n`, `df_combined = df_combined.sort_values("tfidf_score", ascending=False)\n`, `\n`, `# Scatter TF vs IDF\n`, `fig, ax = plt.subplots(figsize=(10,7))\n`, `sc = ax.scatter(df_combined["frecuencia"].head(100), df_combined["idf"].head(100), c=df_combined["tfidf_score"].head(100), cmap="viridis", s=60, alpha=0.7)\n`, `plt.colorbar(sc, label="TF-IDF Score")\n`, `for _, r in df_combined.head(10).iterrows():\n`, `    ax.annotate(r["termino"], (r["frecuencia"], r["idf"]), fontsize=8)\n`, `ax.set_xlabel("TF"); ax.set_ylabel("IDF"); ax.set_title("Scatter TF vs IDF")\n`, `plt.tight_layout(); plt.show()`]),
+      cell(['## 4. N-gramas'], 'markdown'),
+      ...ngramCells,
+      cell(['## 5. Heatmap términos × métricas'], 'markdown'),
+      cell([`top = df_combined.head(20)\n`, `hm = top.set_index("termino")[["frecuencia","idf","tfidf_score"]]\n`, `hm_norm = (hm - hm.min()) / (hm.max() - hm.min())\n`, `\n`, `fig, ax = plt.subplots(figsize=(14,4))\n`, `sns.heatmap(hm_norm.T, annot=True, fmt=".2f", cmap="Blues", ax=ax, linewidths=0.5)\n`, `ax.set_title("Heatmap: Top 20 términos × Métricas (normalizado)")\n`, `plt.tight_layout(); plt.show()`]),
+    ],
+  };
+  downloadFile(JSON.stringify(notebook, null, 2), `vectorizacion_${now}.ipynb`, 'application/json');
+};
+
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
 const DownloadIcon = () => (
@@ -502,7 +570,7 @@ const WordDetailPanel: React.FC<WordDetailPanelProps> = ({
 
 // ─── ExportModal ──────────────────────────────────────────────────────────────
 
-type ExportOption = 'bow_csv' | 'tfidf_csv' | 'ngram_csv' | 'all_json' | 'python_dict';
+type ExportOption = 'bow_csv' | 'tfidf_csv' | 'ngram_csv' | 'all_json' | 'python_dict' | 'jupyter_notebook';
 
 interface ExportModalProps {
   data: VectorizationDashboardData;
@@ -514,7 +582,8 @@ const EXPORT_OPTIONS: Array<{ id: ExportOption; label: string; desc: string; ico
   { id: 'tfidf_csv',  label: 'TF-IDF completo (.csv)',             desc: 'Todos los términos: TF, IDF y score TF-IDF',                    icon: '📈', color: 'blue'   },
   { id: 'ngram_csv',  label: 'N-gramas completos (.csv)',          desc: 'Todas las configuraciones: bigramas, trigramas, etc.',           icon: '🔗', color: 'purple' },
   { id: 'all_json',   label: 'Exportación completa (.json)',       desc: 'Todos los análisis con vocabulario completo + metadatos',        icon: '📦', color: 'amber'  },
-  { id: 'python_dict',label: 'Diccionario Python (.py)',           desc: 'Listo para Pandas, scikit-learn o spaCy — con uso sugerido',    icon: '🐍', color: 'emerald'},
+  { id: 'python_dict',     label: 'Diccionario Python (.py)',       desc: 'Listo para Pandas, scikit-learn o spaCy — con uso sugerido',           icon: '🐍', color: 'emerald'},
+  { id: 'jupyter_notebook', label: 'Jupyter Notebook (.ipynb)',    desc: 'Análisis completo con visualizaciones listas para ejecutar en Jupyter', icon: '📓', color: 'amber' },
 ];
 
 const exportColorMap: Record<string, string> = {
@@ -542,7 +611,8 @@ const ExportModal: React.FC<ExportModalProps> = ({ data, onClose }) => {
       if (selected.has('tfidf_csv')  && data.selectedTfidf) exportTfidfCompleteCsv(data.selectedTfidf, tfidfName);
       if (selected.has('ngram_csv')  && data.selectedNgram) exportNgramCompleteCsv(data.selectedNgram, ngramName);
       if (selected.has('all_json'))    exportJsonComplete(data);
-      if (selected.has('python_dict')) exportPythonDictComplete(data);
+      if (selected.has('python_dict'))     exportPythonDictComplete(data);
+      if (selected.has('jupyter_notebook')) exportJupyterNotebook(data);
     } finally {
       setExporting(false);
       onClose();
@@ -1020,6 +1090,156 @@ const TfIdfScatter: React.FC<TfIdfScatterProps> = ({ data, onPointClick, selecte
   );
 };
 
+// ─── TermHeatmap ──────────────────────────────────────────────────────────────
+
+const TermHeatmap: React.FC<{
+  data: HeatmapDataRow[];
+  onTermClick?: (term: string) => void;
+}> = ({ data, onTermClick }) => {
+  if (!data || data.length === 0 || data[0]?.data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[220px] text-slate-500 text-sm">
+        Se necesitan análisis BoW y TF-IDF para generar el heatmap
+      </div>
+    );
+  }
+  const termCount = data[0]?.data.length || 0;
+  const h = Math.max(180, data.length * 52 + 90);
+  return (
+    <div style={{ height: `${h}px` }}>
+      <ResponsiveHeatMap
+        data={data as any}
+        margin={{ top: 40, right: 30, bottom: 70, left: 90 }}
+        valueFormat=">-.1f"
+        axisTop={{
+          tickSize: 5, tickPadding: 5, tickRotation: -40,
+          legend: `Top ${termCount} términos`, legendOffset: -36,
+        } as any}
+        axisLeft={{ tickSize: 5, tickPadding: 5, tickRotation: 0 } as any}
+        colors={{ type: 'sequential', scheme: 'blues' } as any}
+        emptyColor="#1e293b"
+        borderRadius={3}
+        borderWidth={1}
+        borderColor={{ from: 'color', modifiers: [['darker', 0.5]] } as any}
+        enableLabels={false}
+        legends={[{
+          anchor: 'bottom', translateX: 0, translateY: 60,
+          length: 220, thickness: 8, direction: 'row',
+          tickPosition: 'after', tickSize: 3, tickSpacing: 4, tickOverlap: false,
+          title: 'Score normalizado →', titleAlign: 'start', titleOffset: 4,
+        }] as any}
+        theme={{
+          text: { fill: '#94a3b8', fontSize: 11 },
+          axis: { ticks: { text: { fill: '#64748b' } } },
+          tooltip: { container: { background: '#1e293b', color: '#f8fafc', fontSize: 12, borderRadius: '8px', border: '1px solid #334155' } },
+        }}
+        onClick={(cell: any) => onTermClick?.(String(cell.data?.x ?? cell.id))}
+      />
+    </div>
+  );
+};
+
+// ─── CooccurrenceGraph ────────────────────────────────────────────────────────
+
+const CooccurrenceGraph: React.FC<{
+  nodes: Array<{ id: string; size: number; color: string }>;
+  links: Array<{ source: string; target: string; distance: number; thickness: number }>;
+  onNodeClick?: (nodeId: string) => void;
+}> = ({ nodes, links, onNodeClick }) => {
+  if (nodes.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[350px] text-slate-500 text-sm">
+        Se necesitan n-gramas (bigramas) para generar el grafo de co-ocurrencia
+      </div>
+    );
+  }
+  return (
+    <div style={{ height: '400px' }}>
+      <ResponsiveNetwork
+        data={{ nodes, links } as any}
+        margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
+        linkDistance={(e: any) => e.distance}
+        centeringStrength={0.3}
+        repulsivity={8}
+        nodeSize={(n: any) => n.size}
+        activeNodeSize={(n: any) => n.size * 1.4}
+        nodeColor={(n: any) => n.color}
+        nodeBorderWidth={1}
+        nodeBorderColor={{ from: 'color', modifiers: [['darker', 0.8]] } as any}
+        linkThickness={(l: any) => l.thickness}
+        motionConfig="gentle"
+        onClick={(node: any) => onNodeClick?.(node.id)}
+        theme={{
+          tooltip: { container: { background: '#1e293b', color: '#f8fafc', fontSize: 12, borderRadius: '8px', border: '1px solid #334155' } },
+        }}
+      />
+    </div>
+  );
+};
+
+// ─── ComparacionView ──────────────────────────────────────────────────────────
+
+const ComparacionView: React.FC<{
+  items: ComparacionItem[];
+  onTermClick?: (term: string) => void;
+  selectedTerm?: string | null;
+}> = ({ items, onTermClick, selectedTerm }) => {
+  if (items.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[200px] text-slate-500 text-sm">
+        Se necesitan análisis BoW y TF-IDF con términos comunes para generar la comparación
+      </div>
+    );
+  }
+  const maxBow   = Math.max(...items.map(i => i.bowFreq));
+  const maxTfidf = Math.max(...items.map(i => i.tfidfScore));
+  return (
+    <div className="space-y-3">
+      <div className="flex gap-6 text-xs px-1">
+        <div className="flex items-center gap-1.5"><div className="w-3 h-2 rounded-sm bg-cyan-500" /><span className="text-slate-400">Frecuencia BoW</span></div>
+        <div className="flex items-center gap-1.5"><div className="w-3 h-2 rounded-sm bg-blue-500" /><span className="text-slate-400">Score TF-IDF</span></div>
+        <div className="ml-auto flex items-center gap-1.5"><span className="text-slate-500 text-xs">↑ BoW  |  ↑ TF-IDF</span></div>
+      </div>
+      <div className="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
+        {items.map(item => {
+          const bowPct   = (item.bowFreq / maxBow) * 100;
+          const tfidfPct = (item.tfidfScore / maxTfidf) * 100;
+          const isSelected = selectedTerm === item.term;
+          return (
+            <button key={item.term} onClick={() => onTermClick?.(item.term)}
+              className={`w-full px-3 py-2.5 rounded-xl text-left transition-all ${isSelected ? 'bg-slate-700/60 ring-1 ring-cyan-500/40' : 'hover:bg-slate-700/30'}`}
+            >
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className={`text-xs font-semibold ${isSelected ? 'text-white' : 'text-slate-200'}`}>{item.term}</span>
+                <span className="text-xs text-slate-600 ml-auto">BoW #{item.bowRank}</span>
+                {item.rankDiff > 5  && <span className="text-xs text-cyan-400">↑ más en BoW</span>}
+                {item.rankDiff < -5 && <span className="text-xs text-blue-400">↑ más en TF-IDF</span>}
+                <span className="text-xs text-slate-600">TF-IDF #{item.tfidfRank}</span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500 w-12 shrink-0">BoW</span>
+                  <div className="flex-1 h-2 bg-slate-800/50 rounded-full overflow-hidden">
+                    <div className="h-2 bg-cyan-500 rounded-full transition-all duration-500" style={{ width: `${bowPct}%` }} />
+                  </div>
+                  <span className="text-xs text-cyan-400 font-mono w-16 text-right">{item.bowFreq.toLocaleString()}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500 w-12 shrink-0">TF-IDF</span>
+                  <div className="flex-1 h-2 bg-slate-800/50 rounded-full overflow-hidden">
+                    <div className="h-2 bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${tfidfPct}%` }} />
+                  </div>
+                  <span className="text-xs text-blue-400 font-mono w-16 text-right">{item.tfidfScore.toFixed(4)}</span>
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export const VectorizacionDashboard: React.FC = () => {
@@ -1030,6 +1250,7 @@ export const VectorizacionDashboard: React.FC = () => {
   const [showExportModal, setShowExportModal] = useState(false);
   const [vocabView, setVocabView]     = useState<'cloud' | 'table'>('cloud');
   const [activeNgramConfig, setActiveNgramConfig] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<'analysis' | 'compare' | 'heatmap' | 'cooccurrence'>('analysis');
   const { filters, setSelectedBow, setSelectedNgram, setSelectedTfidf } = useFilter();
 
   useEffect(() => {
@@ -1041,6 +1262,7 @@ export const VectorizacionDashboard: React.FC = () => {
     setSelectedTerm(null);
     setVocabView('cloud');
     setActiveNgramConfig(null);
+    setActiveSection('analysis');
   }, [filters.selectedDatasetId]);
 
   const fetchData = async (datasetId: number) => {
@@ -1097,6 +1319,69 @@ export const VectorizacionDashboard: React.FC = () => {
     (data?.selectedTfidf?.tfidf_matrix?.top_terms || []).forEach(t => { m[t.term] = t.score; });
     return m;
   }, [data?.selectedTfidf]);
+
+  // ── Heatmap data: rows=metrics, cols=top terms ──
+  const heatmapData = useMemo<HeatmapDataRow[]>(() => {
+    if (!data?.selectedBow && !data?.selectedTfidf) return [];
+    const topTerms = (data?.tfidfTopTerms?.length ? data.tfidfTopTerms : data?.selectedBow?.top_terms || [])
+      .slice(0, 15).map(t => t.term);
+    if (topTerms.length === 0) return [];
+    const bowVocab = data?.selectedBow?.vocabulary || {};
+    const maxBow   = Math.max(...topTerms.map(t => bowVocab[t] || 0)) || 1;
+    const idfMap   = data?.selectedTfidf?.idf_vector?.idf_values || {};
+    const maxIdf   = Math.max(...topTerms.map(t => idfMap[t] || 0)) || 1;
+    const tfidfMap = new Map((data?.tfidfTopTerms || []).map(t => [t.term, t.score]));
+    const maxTfidf = Math.max(...topTerms.map(t => tfidfMap.get(t) || 0)) || 1;
+    const rows: HeatmapDataRow[] = [];
+    if (Object.keys(bowVocab).length > 0)
+      rows.push({ id: 'BoW Freq', data: topTerms.map(t => ({ x: t, y: Math.round(((bowVocab[t] || 0) / maxBow) * 100) })) });
+    if (Object.keys(idfMap).length > 0)
+      rows.push({ id: 'IDF', data: topTerms.map(t => ({ x: t, y: Math.round(((idfMap[t] || 0) / maxIdf) * 100) })) });
+    if (tfidfMap.size > 0)
+      rows.push({ id: 'TF-IDF', data: topTerms.map(t => ({ x: t, y: Math.round(((tfidfMap.get(t) || 0) / maxTfidf) * 100) })) });
+    return rows;
+  }, [data]);
+
+  // ── Co-occurrence graph: from bigrams ──
+  const cooccurrenceData = useMemo(() => {
+    const bigramConfig = ngramConfigs.find(c => c.key === '2_2') || ngramConfigs.find(c => c.label === 'Bigramas');
+    if (!bigramConfig || bigramConfig.terms.length === 0) return { nodes: [], links: [] };
+    const maxVal   = Math.max(...bigramConfig.terms.slice(0, 35).map(t => t.value)) || 1;
+    const nodeSet  = new Map<string, number>();
+    const links: Array<{ source: string; target: string; distance: number; thickness: number }> = [];
+    bigramConfig.terms.slice(0, 35).forEach(bg => {
+      const parts = bg.id.trim().split(/\s+/);
+      if (parts.length < 2) return;
+      const [a, b] = parts;
+      nodeSet.set(a, (nodeSet.get(a) || 0) + bg.value);
+      nodeSet.set(b, (nodeSet.get(b) || 0) + bg.value);
+      links.push({ source: a, target: b, distance: 80 + (1 - bg.value / maxVal) * 60, thickness: 1 + (bg.value / maxVal) * 3 });
+    });
+    const maxNode = Math.max(...nodeSet.values()) || 1;
+    const COLORS = ['#06b6d4','#8b5cf6','#10b981','#f59e0b','#ec4899','#3b82f6'];
+    const nodes = Array.from(nodeSet.entries()).map(([id, freq], i) => ({
+      id, size: 10 + (freq / maxNode) * 18, color: COLORS[i % COLORS.length],
+    }));
+    return { nodes, links };
+  }, [ngramConfigs]);
+
+  // ── Comparar: shared terms ranked in BoW and TF-IDF ──
+  const comparacionData = useMemo<ComparacionItem[]>(() => {
+    if (!data?.selectedBow || !data?.tfidfTopTerms?.length) return [];
+    const bowTerms  = data.selectedBow.top_terms || [];
+    const tfidfMap  = new Map((data.tfidfTopTerms || []).map(t => [t.term, t]));
+    return bowTerms
+      .filter(t => tfidfMap.has(t.term))
+      .slice(0, 30)
+      .map(t => ({
+        term: t.term,
+        bowFreq: t.score,
+        bowRank: t.rank,
+        tfidfScore: tfidfMap.get(t.term)!.score,
+        tfidfRank:  tfidfMap.get(t.term)!.rank,
+        rankDiff: t.rank - tfidfMap.get(t.term)!.rank,
+      }));
+  }, [data]);
 
   // ── Max scores ──
   const maxBowScore   = useMemo(() => Math.max(...(data?.selectedBow?.top_terms?.map(t => t.score) || [0])), [data]);
@@ -1275,6 +1560,32 @@ export const VectorizacionDashboard: React.FC = () => {
         </div>
       )}
 
+      {/* ── Section tabs ── */}
+      <div className="flex gap-1 p-1 bg-slate-800/40 border border-slate-700/50 rounded-xl w-fit">
+        {([
+          { key: 'analysis',     label: 'Análisis',       icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+          { key: 'compare',      label: 'Comparar',       icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4' },
+          { key: 'heatmap',      label: 'Heatmap',        icon: 'M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z' },
+          { key: 'cooccurrence', label: 'Co-ocurrencia',  icon: 'M13 10V3L4 14h7v7l9-11h-7z' },
+        ] as const).map(tab => (
+          <button key={tab.key} onClick={() => setActiveSection(tab.key)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+              activeSection === tab.key
+                ? 'bg-slate-700/80 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/30'
+            }`}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
+            </svg>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ═══════════════ ANÁLISIS section ═══════════════ */}
+      {activeSection === 'analysis' && <>
+
       {/* ── BoW: Nube de Palabras ↔ Tabla de Vocabulario ── */}
       {(data?.wordCloudData?.length || 0) > 0 || Object.keys(fullVocabulary).length > 0 ? (
         <ChartCard
@@ -1285,6 +1596,7 @@ export const VectorizacionDashboard: React.FC = () => {
           accentColor="cyan"
           size="lg"
           icon={vocabView === 'cloud' ? <CloudIcon /> : <TableIcon />}
+          downloadable
           onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
           isLoading={isLoading}
           headerExtra={
@@ -1329,6 +1641,7 @@ export const VectorizacionDashboard: React.FC = () => {
             : data?.selectedNgram ? data.selectedNgram.name : 'Secuencias más frecuentes'}
           accentColor="purple"
           size="lg"
+          downloadable
           icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>}
           onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
           isLoading={isLoading}
@@ -1374,6 +1687,7 @@ export const VectorizacionDashboard: React.FC = () => {
           subtitle={`Haz clic para analizar · ${data?.selectedTfidf ? data.selectedTfidf.name : 'Términos con mayor peso'}`}
           accentColor="blue"
           size="lg"
+          downloadable
           icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>}
           onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
           isLoading={isLoading}
@@ -1403,6 +1717,7 @@ export const VectorizacionDashboard: React.FC = () => {
           subtitle={`Cada punto es un término — posición: frecuencia (X) vs especificidad (Y) — tamaño: score TF-IDF · ${scatterData.length} términos`}
           accentColor="blue"
           size="lg"
+          downloadable
           icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>}
           onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
           isLoading={isLoading}
@@ -1501,6 +1816,89 @@ export const VectorizacionDashboard: React.FC = () => {
                 <p className="text-xs text-slate-400">{s.label}</p>
               </div>
             ))}
+          </div>
+        </ChartCard>
+      )}
+
+      </> /* end analysis section */}
+
+      {/* ═══════════════ COMPARAR section ═══════════════ */}
+      {activeSection === 'compare' && (
+        <DashboardGrid columns={1} gap="lg">
+          <ChartCard
+            title="Comparar BoW vs TF-IDF"
+            subtitle={`${comparacionData.length} términos en común — barras comparativas de frecuencia y relevancia`}
+            accentColor="cyan"
+            size="xl"
+            downloadable
+            icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>}
+            onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
+            isLoading={isLoading}
+          >
+            <ComparacionView
+              items={comparacionData}
+              onTermClick={termText => {
+                const bow = data?.selectedBow?.top_terms?.find(t => t.term === termText);
+                const term = buildTerm(termText, 'bow', bow?.score, bow?.rank);
+                setSelectedTerm(prev => prev?.text === termText ? null : term);
+              }}
+              selectedTerm={selectedTerm?.text ?? null}
+            />
+          </ChartCard>
+        </DashboardGrid>
+      )}
+
+      {/* ═══════════════ HEATMAP section ═══════════════ */}
+      {activeSection === 'heatmap' && (
+        <ChartCard
+          title="Heatmap Documento × Término"
+          subtitle={`Top ${heatmapData[0]?.data.length || 0} términos × métricas normalizadas (0–100) — haz clic en una celda para analizar el término`}
+          accentColor="blue"
+          size="xl"
+          downloadable
+          icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>}
+          onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
+          isLoading={isLoading}
+        >
+          <TermHeatmap
+            data={heatmapData}
+            onTermClick={termText => {
+              const bow = data?.selectedBow?.top_terms?.find(t => t.term === termText);
+              const term = buildTerm(termText, 'tfidf', bow?.score, bow?.rank);
+              setSelectedTerm(prev => prev?.text === termText ? null : term);
+            }}
+          />
+          <div className="mt-3 pt-3 border-t border-slate-700/40 grid grid-cols-3 gap-4 text-xs text-slate-400">
+            <div><span className="font-medium text-slate-300">BoW Freq</span><p className="mt-0.5">Frecuencia total del término en el corpus, normalizada.</p></div>
+            <div><span className="font-medium text-slate-300">IDF</span><p className="mt-0.5">Especificidad del término. Alto = aparece en pocos documentos.</p></div>
+            <div><span className="font-medium text-slate-300">TF-IDF</span><p className="mt-0.5">Score combinado. Alto = frecuente y específico a la vez.</p></div>
+          </div>
+        </ChartCard>
+      )}
+
+      {/* ═══════════════ CO-OCURRENCIA section ═══════════════ */}
+      {activeSection === 'cooccurrence' && (
+        <ChartCard
+          title="Grafo de Co-ocurrencia"
+          subtitle={`${cooccurrenceData.nodes.length} términos · ${cooccurrenceData.links.length} conexiones — construido desde bigramas · grosor = frecuencia`}
+          accentColor="purple"
+          size="xl"
+          downloadable
+          icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
+          onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
+          isLoading={isLoading}
+        >
+          <CooccurrenceGraph
+            nodes={cooccurrenceData.nodes}
+            links={cooccurrenceData.links}
+            onNodeClick={termText => {
+              const bow = data?.selectedBow?.top_terms?.find(t => t.term === termText);
+              const term = buildTerm(termText, 'ngram', bow?.score, bow?.rank);
+              setSelectedTerm(prev => prev?.text === termText ? null : term);
+            }}
+          />
+          <div className="mt-2 pt-3 border-t border-slate-700/40 text-xs text-slate-500 text-center">
+            Cada nodo es un término · cada arista conecta palabras que aparecen juntas en un bigrama · el grosor indica la frecuencia de co-ocurrencia
           </div>
         </ChartCard>
       )}
