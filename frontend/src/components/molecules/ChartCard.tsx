@@ -19,6 +19,7 @@ export interface ChartCardProps {
   onRefreshClick?: () => void;
   footer?: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  headerExtra?: React.ReactNode;
 }
 
 const accentColorClasses = {
@@ -86,6 +87,7 @@ export const ChartCard: React.FC<ChartCardProps> = ({
   onRefreshClick,
   footer,
   size = 'md',
+  headerExtra,
 }) => {
   const colors = accentColorClasses[accentColor];
 
@@ -130,6 +132,7 @@ export const ChartCard: React.FC<ChartCardProps> = ({
 
         {/* Action buttons */}
         <div className="flex items-center gap-1">
+          {headerExtra && <div className="flex items-center mr-1">{headerExtra}</div>}
           {onRefreshClick && (
             <button
               onClick={onRefreshClick}
