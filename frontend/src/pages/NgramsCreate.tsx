@@ -48,10 +48,10 @@ export const NgramsCreate: React.FC = () => {
   const [customMin, setCustomMin] = useState<number>(1);
   const [customMax, setCustomMax] = useState<number>(1);
 
-  // Parámetros comunes (por defecto)
-  const [maxFeatures] = useState(100000);
-  const [minDf] = useState(1);
-  const [maxDf] = useState(1.0);
+  // Parámetros del vectorizador
+  const [maxFeatures, setMaxFeatures] = useState(100000);
+  const [minDf, setMinDf] = useState(1);
+  const [maxDf, setMaxDf] = useState(1.0);
 
   useEffect(() => {
     loadPreparations();
@@ -411,6 +411,77 @@ export const NgramsCreate: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              {/* Configuración del Vectorizador */}
+              <div className="mb-8">
+                <h2 className="text-lg font-semibold text-gray-900 mb-2">Configuración del Vectorizador</h2>
+                <p className="text-sm text-gray-600 mb-4">
+                  Controla cómo se construye el vocabulario de n-gramas. Se aplica a todas las configuraciones seleccionadas.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* max_features */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Máximo de características
+                    </label>
+                    <input
+                      type="number"
+                      min={100}
+                      step={1000}
+                      value={maxFeatures}
+                      onChange={(e) => setMaxFeatures(Number(e.target.value))}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Número máximo de n-gramas distintos en el vocabulario. Valores entre 10 000 y 50 000 son habituales para bigramas.
+                    </p>
+                  </div>
+
+                  {/* min_df */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Frecuencia mínima de documento <span className="text-gray-400">(min_df)</span>
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={minDf}
+                      onChange={(e) => setMinDf(Number(e.target.value))}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      El n-grama debe aparecer en al menos este número de documentos. Usar 2–5 elimina bigramas que solo aparecen una vez.
+                    </p>
+                  </div>
+
+                  {/* max_df */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Frecuencia máxima de documento <span className="text-gray-400">(max_df)</span>
+                    </label>
+                    <input
+                      type="number"
+                      min={0.01}
+                      max={1.0}
+                      step={0.05}
+                      value={maxDf}
+                      onChange={(e) => setMaxDf(Number(e.target.value))}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Proporción máxima del corpus. Un n-grama que aparece en más del 90 % de los documentos aporta poco (ej: 0.90).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                  <p className="text-xs text-emerald-800">
+                    <span className="font-semibold">Configuración recomendada para bigramas (2,2):</span>{' '}
+                    max_features = 20 000 · min_df = 2 · max_df = 0.90. Esto descarta bigramas hapax y los que son tan frecuentes que no discriminan.
+                  </p>
+                </div>
+              </div>
             </form>
           )}
         </div>
