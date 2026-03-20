@@ -103,22 +103,46 @@ export const ModeladoDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { filters, setSelectedNer, setSelectedTopicModel, setSelectedBertopic } = useFilter();
 
-  // Fetch data when selected dataset changes
+  // Fetch data when selected dataset or any analysis selection changes
   useEffect(() => {
     if (filters.selectedDatasetId) {
-      fetchData(filters.selectedDatasetId);
+      fetchData(
+        filters.selectedDatasetId,
+        filters.selectedNerId,
+        filters.selectedTopicModelId,
+        filters.selectedBertopicId,
+      );
     } else {
       setData(null);
       setIsLoading(false);
     }
-  }, [filters.selectedDatasetId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.selectedDatasetId, filters.selectedNerId, filters.selectedTopicModelId, filters.selectedBertopicId]);
 
-  const fetchData = async (datasetId: number) => {
+  const fetchData = async (
+    datasetId: number,
+    nerId?: number | null,
+    topicId?: number | null,
+    bertopicId?: number | null,
+  ) => {
     try {
       setIsLoading(true);
       setError(null);
-      const result = await dashboardService.getModelingData(datasetId);
+      const result = await dashboardService.getModelingData(datasetId, nerId, topicId, bertopicId);
       setData(result);
+      // Auto-select first completed analysis alphabetically if no ID explicitly chosen
+      if (!nerId) {
+        const first = result.nerAnalyses.find(a => a.status === 'completed');
+        if (first) setSelectedNer(first.id);
+      }
+      if (!topicId) {
+        const first = result.topicModelingAnalyses.find(a => a.status === 'completed');
+        if (first) setSelectedTopicModel(first.id);
+      }
+      if (!bertopicId) {
+        const first = result.bertopicAnalyses.find(a => a.status === 'completed');
+        if (first) setSelectedBertopic(first.id);
+      }
     } catch (err) {
       setError('Error al cargar los datos de modelado');
       console.error('Modeling dashboard fetch error:', err);
@@ -234,6 +258,58 @@ export const ModeladoDashboard: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {/* Analysis Selector Bar */}
+      {(
+        (data?.nerAnalyses?.length ?? 0) > 1 ||
+        (data?.topicModelingAnalyses?.length ?? 0) > 1 ||
+        (data?.bertopicAnalyses?.length ?? 0) > 1
+      ) && (
+        <div className="flex flex-wrap gap-4 p-4 rounded-xl bg-slate-800/40 border border-slate-700/50">
+          {(data?.nerAnalyses?.length ?? 0) > 1 && (
+            <div className="flex items-center gap-2 min-w-[200px] flex-1">
+              <span className="text-xs text-slate-400 whitespace-nowrap font-medium">NER:</span>
+              <select
+                value={filters.selectedNerId ?? data?.selectedNer?.id ?? ''}
+                onChange={e => setSelectedNer(Number(e.target.value))}
+                className="flex-1 bg-slate-900/70 border border-slate-600/50 text-slate-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/50 cursor-pointer"
+              >
+                {data?.nerAnalyses.map(a => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {(data?.topicModelingAnalyses?.length ?? 0) > 1 && (
+            <div className="flex items-center gap-2 min-w-[200px] flex-1">
+              <span className="text-xs text-slate-400 whitespace-nowrap font-medium">Topic Model:</span>
+              <select
+                value={filters.selectedTopicModelId ?? data?.selectedTopicModeling?.id ?? ''}
+                onChange={e => setSelectedTopicModel(Number(e.target.value))}
+                className="flex-1 bg-slate-900/70 border border-slate-600/50 text-slate-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/50 cursor-pointer"
+              >
+                {data?.topicModelingAnalyses.map(a => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {(data?.bertopicAnalyses?.length ?? 0) > 1 && (
+            <div className="flex items-center gap-2 min-w-[200px] flex-1">
+              <span className="text-xs text-slate-400 whitespace-nowrap font-medium">BERTopic:</span>
+              <select
+                value={filters.selectedBertopicId ?? data?.selectedBertopic?.id ?? ''}
+                onChange={e => setSelectedBertopic(Number(e.target.value))}
+                className="flex-1 bg-slate-900/70 border border-slate-600/50 text-slate-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500/50 cursor-pointer"
+              >
+                {data?.bertopicAnalyses.map(a => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* KPI Metrics Row */}
       <DashboardGrid columns={4} gap="md">
