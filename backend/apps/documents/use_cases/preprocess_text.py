@@ -22,14 +22,43 @@ class PreprocessTextUseCase:
     - Document model (save preprocessed text)
     """
 
+    LANGUAGE_MAP = {
+        'en': 'english',
+        'english': 'english',
+        'es': 'spanish',
+        'spanish': 'spanish',
+    }
+
     def __init__(self, preprocessor: TextPreprocessorService = None):
         """
         Initialize use case.
 
         Args:
-            preprocessor: Text preprocessor service instance
+            preprocessor: Text preprocessor service instance (optional,
+                se crea automáticamente según el idioma de cada documento)
         """
-        self.preprocessor = preprocessor or TextPreprocessorService('spanish')
+        self.preprocessor = preprocessor
+        self._preprocessor_cache: Dict[str, TextPreprocessorService] = {}
+
+    def _get_preprocessor_for_language(self, language_code: str = None) -> TextPreprocessorService:
+        """
+        Obtiene el preprocessor correcto según el idioma del documento.
+
+        Args:
+            language_code: Código de idioma del documento ('en', 'es', etc.)
+
+        Returns:
+            TextPreprocessorService configurado para el idioma correspondiente
+        """
+        if self.preprocessor is not None:
+            return self.preprocessor
+
+        language = self.LANGUAGE_MAP.get(language_code, 'spanish')
+
+        if language not in self._preprocessor_cache:
+            self._preprocessor_cache[language] = TextPreprocessorService(language)
+
+        return self._preprocessor_cache[language]
 
     def execute(
         self,
@@ -75,8 +104,13 @@ class PreprocessTextUseCase:
                     'document_id': document_id
                 }
 
+            # Seleccionar preprocessor según idioma del documento
+            preprocessor = self._get_preprocessor_for_language(
+                document.language_code
+            )
+
             # Preprocess text
-            preprocess_result = self.preprocessor.preprocess(
+            preprocess_result = preprocessor.preprocess(
                 document.txt_content,
                 lowercase=True,
                 remove_stopwords=remove_stopwords,
@@ -94,7 +128,8 @@ class PreprocessTextUseCase:
 
             logger.info(
                 f"Preprocessed document {document_id} "
-                f"({preprocess_result['token_count']} tokens)"
+                f"(lang={document.language_code}, "
+                f"{preprocess_result['token_count']} tokens)"
             )
 
             return {
@@ -181,8 +216,13 @@ class PreprocessTextUseCase:
 
         for document in documents:
             try:
+                # Seleccionar preprocessor según idioma del documento
+                preprocessor = self._get_preprocessor_for_language(
+                    document.language_code
+                )
+
                 # Preprocess text
-                preprocess_result = self.preprocessor.preprocess(
+                preprocess_result = preprocessor.preprocess(
                     document.txt_content,
                     lowercase=True,
                     remove_stopwords=remove_stopwords,
@@ -256,8 +296,11 @@ class PreprocessTextUseCase:
                 }
 
             # Get statistics
+            preprocessor = self._get_preprocessor_for_language(
+                document.language_code
+            )
             tokens = document.preprocessed_text.split()
-            stats = self.preprocessor.get_statistics(document.preprocessed_text)
+            stats = preprocessor.get_statistics(document.preprocessed_text)
 
             return {
                 'success': True,
