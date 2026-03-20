@@ -159,6 +159,9 @@ class DatasetFile(models.Model):
     language_code = models.CharField(max_length=5, blank=True, null=True)
     language_confidence = models.FloatField(blank=True, null=True)
 
+    # Contenido binario del archivo original (persiste en DB para descarga sin depender del disco)
+    file_content = models.BinaryField(null=True, blank=True, editable=False)
+
     # Contenido extraído
     txt_content = models.TextField(blank=True, null=True, help_text='Extracted text content')
     preprocessed_text = models.TextField(blank=True, null=True, help_text='Preprocessed text')
