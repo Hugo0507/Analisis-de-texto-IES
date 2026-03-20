@@ -172,9 +172,15 @@ class PublicDataPreparationViewSet(viewsets.ReadOnlyModelViewSet):
 
     permission_classes = [AllowAny]
     pagination_class = PublicAPIPagination
-    queryset = DataPreparation.objects.filter(
-        status='completed'
-    ).select_related('dataset', 'created_by').order_by('-created_at')
+
+    def get_queryset(self):
+        qs = DataPreparation.objects.filter(
+            status='completed'
+        ).select_related('dataset', 'created_by').order_by('-created_at')
+        dataset_id = self.request.query_params.get('dataset_id')
+        if dataset_id:
+            qs = qs.filter(dataset_id=dataset_id)
+        return qs
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -191,13 +197,19 @@ class PublicBagOfWordsViewSet(viewsets.ReadOnlyModelViewSet):
 
     permission_classes = [AllowAny]
     pagination_class = PublicAPIPagination
-    queryset = BagOfWords.objects.filter(
-        status='completed'
-    ).select_related(
-        'data_preparation',
-        'data_preparation__dataset',
-        'created_by'
-    ).order_by('-created_at')
+
+    def get_queryset(self):
+        qs = BagOfWords.objects.filter(
+            status='completed'
+        ).select_related(
+            'data_preparation',
+            'data_preparation__dataset',
+            'created_by'
+        ).order_by('-created_at')
+        dataset_id = self.request.query_params.get('dataset_id')
+        if dataset_id:
+            qs = qs.filter(data_preparation__dataset_id=dataset_id)
+        return qs
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -255,13 +267,19 @@ class PublicNgramAnalysisViewSet(viewsets.ReadOnlyModelViewSet):
 
     permission_classes = [AllowAny]
     pagination_class = PublicAPIPagination
-    queryset = NgramAnalysis.objects.filter(
-        status='completed'
-    ).select_related(
-        'data_preparation',
-        'data_preparation__dataset',
-        'created_by'
-    ).order_by('-created_at')
+
+    def get_queryset(self):
+        qs = NgramAnalysis.objects.filter(
+            status='completed'
+        ).select_related(
+            'data_preparation',
+            'data_preparation__dataset',
+            'created_by'
+        ).order_by('-created_at')
+        dataset_id = self.request.query_params.get('dataset_id')
+        if dataset_id:
+            qs = qs.filter(data_preparation__dataset_id=dataset_id)
+        return qs
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -288,14 +306,20 @@ class PublicTfIdfAnalysisViewSet(viewsets.ReadOnlyModelViewSet):
 
     permission_classes = [AllowAny]
     pagination_class = PublicAPIPagination
-    queryset = TfIdfAnalysis.objects.filter(
-        status='completed'
-    ).select_related(
-        'data_preparation',
-        'bag_of_words',
-        'ngram_analysis',
-        'created_by'
-    ).order_by('-created_at')
+
+    def get_queryset(self):
+        qs = TfIdfAnalysis.objects.filter(
+            status='completed'
+        ).select_related(
+            'data_preparation',
+            'bag_of_words',
+            'ngram_analysis',
+            'created_by'
+        ).order_by('-created_at')
+        dataset_id = self.request.query_params.get('dataset_id')
+        if dataset_id:
+            qs = qs.filter(data_preparation__dataset_id=dataset_id)
+        return qs
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -322,14 +346,24 @@ class PublicNerAnalysisViewSet(viewsets.ReadOnlyModelViewSet):
 
     permission_classes = [AllowAny]
     pagination_class = PublicAPIPagination
-    queryset = NerAnalysis.objects.filter(
-        status='completed'
-    ).select_related(
-        'data_preparation',
-        'data_preparation__dataset',
-        'dataset',
-        'created_by'
-    ).order_by('-created_at')
+
+    def get_queryset(self):
+        qs = NerAnalysis.objects.filter(
+            status='completed'
+        ).select_related(
+            'data_preparation',
+            'data_preparation__dataset',
+            'dataset',
+            'created_by'
+        ).order_by('-created_at')
+        dataset_id = self.request.query_params.get('dataset_id')
+        if dataset_id:
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(dataset_id=dataset_id) |
+                Q(data_preparation__dataset_id=dataset_id)
+            )
+        return qs
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -346,9 +380,24 @@ class PublicTopicModelingViewSet(viewsets.ReadOnlyModelViewSet):
 
     permission_classes = [AllowAny]
     pagination_class = PublicAPIPagination
-    queryset = TopicModeling.objects.filter(
-        status='completed'
-    ).select_related('created_by').order_by('-created_at')
+
+    def get_queryset(self):
+        qs = TopicModeling.objects.filter(
+            status='completed'
+        ).select_related(
+            'data_preparation',
+            'data_preparation__dataset',
+            'dataset',
+            'created_by'
+        ).order_by('-created_at')
+        dataset_id = self.request.query_params.get('dataset_id')
+        if dataset_id:
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(dataset_id=dataset_id) |
+                Q(data_preparation__dataset_id=dataset_id)
+            )
+        return qs
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -365,9 +414,24 @@ class PublicBERTopicViewSet(viewsets.ReadOnlyModelViewSet):
 
     permission_classes = [AllowAny]
     pagination_class = PublicAPIPagination
-    queryset = BERTopicAnalysis.objects.filter(
-        status='completed'
-    ).select_related('created_by').order_by('-created_at')
+
+    def get_queryset(self):
+        qs = BERTopicAnalysis.objects.filter(
+            status='completed'
+        ).select_related(
+            'data_preparation',
+            'data_preparation__dataset',
+            'dataset',
+            'created_by'
+        ).order_by('-created_at')
+        dataset_id = self.request.query_params.get('dataset_id')
+        if dataset_id:
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(dataset_id=dataset_id) |
+                Q(data_preparation__dataset_id=dataset_id)
+            )
+        return qs
 
     def get_serializer_class(self):
         if self.action == 'list':

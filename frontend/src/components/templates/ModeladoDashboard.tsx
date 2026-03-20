@@ -103,22 +103,46 @@ export const ModeladoDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { filters, setSelectedNer, setSelectedTopicModel, setSelectedBertopic } = useFilter();
 
-  // Fetch data when selected dataset changes
+  // Fetch data when selected dataset or any analysis selection changes
   useEffect(() => {
     if (filters.selectedDatasetId) {
-      fetchData(filters.selectedDatasetId);
+      fetchData(
+        filters.selectedDatasetId,
+        filters.selectedNerId,
+        filters.selectedTopicModelId,
+        filters.selectedBertopicId,
+      );
     } else {
       setData(null);
       setIsLoading(false);
     }
-  }, [filters.selectedDatasetId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.selectedDatasetId, filters.selectedNerId, filters.selectedTopicModelId, filters.selectedBertopicId]);
 
-  const fetchData = async (datasetId: number) => {
+  const fetchData = async (
+    datasetId: number,
+    nerId?: number | null,
+    topicId?: number | null,
+    bertopicId?: number | null,
+  ) => {
     try {
       setIsLoading(true);
       setError(null);
-      const result = await dashboardService.getModelingData(datasetId);
+      const result = await dashboardService.getModelingData(datasetId, nerId, topicId, bertopicId);
       setData(result);
+      // Auto-select first completed analysis alphabetically if no ID explicitly chosen
+      if (!nerId) {
+        const first = result.nerAnalyses.find(a => a.status === 'completed');
+        if (first) setSelectedNer(first.id);
+      }
+      if (!topicId) {
+        const first = result.topicModelingAnalyses.find(a => a.status === 'completed');
+        if (first) setSelectedTopicModel(first.id);
+      }
+      if (!bertopicId) {
+        const first = result.bertopicAnalyses.find(a => a.status === 'completed');
+        if (first) setSelectedBertopic(first.id);
+      }
     } catch (err) {
       setError('Error al cargar los datos de modelado');
       console.error('Modeling dashboard fetch error:', err);
@@ -168,7 +192,12 @@ export const ModeladoDashboard: React.FC = () => {
           </div>
           <p className="text-slate-300 mb-4">{error}</p>
           <button
-            onClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
+            onClick={() => filters.selectedDatasetId && fetchData(
+              filters.selectedDatasetId,
+              filters.selectedNerId,
+              filters.selectedTopicModelId,
+              filters.selectedBertopicId,
+            )}
             className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all"
           >
             Reintentar
@@ -235,6 +264,58 @@ export const ModeladoDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Analysis Selector Bar */}
+      {(
+        (data?.nerAnalyses?.length ?? 0) > 1 ||
+        (data?.topicModelingAnalyses?.length ?? 0) > 1 ||
+        (data?.bertopicAnalyses?.length ?? 0) > 1
+      ) && (
+        <div className="flex flex-wrap gap-4 p-4 rounded-xl bg-slate-800/40 border border-slate-700/50">
+          {(data?.nerAnalyses?.length ?? 0) > 1 && (
+            <div className="flex items-center gap-2 min-w-[200px] flex-1">
+              <span className="text-xs text-slate-400 whitespace-nowrap font-medium">NER:</span>
+              <select
+                value={filters.selectedNerId ?? data?.selectedNer?.id ?? ''}
+                onChange={e => setSelectedNer(Number(e.target.value))}
+                className="flex-1 bg-slate-900/70 border border-slate-600/50 text-slate-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/50 cursor-pointer"
+              >
+                {data?.nerAnalyses.map(a => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {(data?.topicModelingAnalyses?.length ?? 0) > 1 && (
+            <div className="flex items-center gap-2 min-w-[200px] flex-1">
+              <span className="text-xs text-slate-400 whitespace-nowrap font-medium">Topic Model:</span>
+              <select
+                value={filters.selectedTopicModelId ?? data?.selectedTopicModeling?.id ?? ''}
+                onChange={e => setSelectedTopicModel(Number(e.target.value))}
+                className="flex-1 bg-slate-900/70 border border-slate-600/50 text-slate-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/50 cursor-pointer"
+              >
+                {data?.topicModelingAnalyses.map(a => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {(data?.bertopicAnalyses?.length ?? 0) > 1 && (
+            <div className="flex items-center gap-2 min-w-[200px] flex-1">
+              <span className="text-xs text-slate-400 whitespace-nowrap font-medium">BERTopic:</span>
+              <select
+                value={filters.selectedBertopicId ?? data?.selectedBertopic?.id ?? ''}
+                onChange={e => setSelectedBertopic(Number(e.target.value))}
+                className="flex-1 bg-slate-900/70 border border-slate-600/50 text-slate-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500/50 cursor-pointer"
+              >
+                {data?.bertopicAnalyses.map(a => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* KPI Metrics Row */}
       <DashboardGrid columns={4} gap="md">
         <MetricCardDark
@@ -300,7 +381,7 @@ export const ModeladoDashboard: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
               </svg>
             }
-            onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
+            onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId, filters.selectedNerId, filters.selectedTopicModelId, filters.selectedBertopicId)}
             isLoading={isLoading}
           >
             <div className="h-[280px]">

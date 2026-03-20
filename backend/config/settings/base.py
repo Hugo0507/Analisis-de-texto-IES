@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'apps.pipeline',
     'apps.infrastructure',
     'apps.public_api',
+    'apps.workspace',
 ]
 
 # Try to import simplejwt - if available, add to INSTALLED_APPS

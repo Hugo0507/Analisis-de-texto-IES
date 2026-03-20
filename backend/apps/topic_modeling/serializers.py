@@ -19,6 +19,7 @@ class TopicModelingListSerializer(serializers.ModelSerializer):
     algorithm_category = serializers.CharField(read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     created_by_username = serializers.CharField(source='created_by.username', read_only=True)
+    has_artifact = serializers.SerializerMethodField()
 
     class Meta:
         model = TopicModeling
@@ -27,8 +28,11 @@ class TopicModelingListSerializer(serializers.ModelSerializer):
             'algorithm_category', 'num_topics', 'num_words',
             'source_type', 'source_name', 'status', 'status_display',
             'progress_percentage', 'documents_processed', 'coherence_score',
-            'created_by_username', 'created_at'
+            'has_artifact', 'created_by_username', 'created_at'
         ]
+
+    def get_has_artifact(self, obj):
+        return bool(obj.model_artifact and obj.vectorizer_artifact)
 
 
 class TopicModelingDetailSerializer(serializers.ModelSerializer):

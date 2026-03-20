@@ -43,10 +43,10 @@ const analysisNavItems: NavItem[] = [
     description: 'Modelos NLP',
   },
   {
-    path: '/dashboard/ia',
-    label: 'IA',
-    icon: '🤖',
-    description: 'Análisis IA',
+    path: '/dashboard/laboratorio',
+    label: 'Laboratorio',
+    icon: '🧪',
+    description: 'Inferencia sobre nuevos docs',
   },
   {
     path: '/dashboard/resumen',

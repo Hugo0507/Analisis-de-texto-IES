@@ -13,8 +13,9 @@ import type {
 } from './bagOfWordsService';
 
 class PublicBagOfWordsService {
-  async getBagOfWords(): Promise<BagOfWordsListItem[]> {
-    const response = await publicApiClient.get('/bag-of-words/');
+  async getBagOfWords(datasetId?: number): Promise<BagOfWordsListItem[]> {
+    const params = datasetId ? { dataset_id: datasetId } : {};
+    const response = await publicApiClient.get('/bag-of-words/', { params });
     return response.data.results || response.data;
   }
 

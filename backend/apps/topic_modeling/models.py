@@ -262,6 +262,22 @@ class TopicModeling(models.Model):
         verbose_name='Fin de Procesamiento'
     )
 
+    # Artefactos de modelo (serializados para inferencia)
+    model_artifact = models.FileField(
+        upload_to='artifacts/topic/',
+        null=True,
+        blank=True,
+        verbose_name='Artefacto del modelo',
+        help_text="Modelo de tópicos serializado (joblib) para inferencia sobre nuevos documentos"
+    )
+    vectorizer_artifact = models.FileField(
+        upload_to='artifacts/topic/',
+        null=True,
+        blank=True,
+        verbose_name='Artefacto del vectorizador',
+        help_text="Vectorizador serializado (joblib) compatible con el modelo de tópicos"
+    )
+
     class Meta:
         db_table = 'topic_modeling'
         verbose_name = 'Topic Modeling'

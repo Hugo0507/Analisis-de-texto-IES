@@ -8,8 +8,9 @@ import publicApiClient from './publicApi';
 import type { TfIdfAnalysisListItem, TfIdfAnalysis } from './tfidfAnalysisService';
 
 class PublicTfIdfAnalysisService {
-  async getTfIdfAnalyses(): Promise<TfIdfAnalysisListItem[]> {
-    const response = await publicApiClient.get('/tfidf-analysis/');
+  async getTfIdfAnalyses(datasetId?: number): Promise<TfIdfAnalysisListItem[]> {
+    const params = datasetId ? { dataset_id: datasetId } : {};
+    const response = await publicApiClient.get('/tfidf-analysis/', { params });
     return response.data.results || response.data;
   }
 

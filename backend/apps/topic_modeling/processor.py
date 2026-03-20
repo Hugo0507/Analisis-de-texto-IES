@@ -4,10 +4,13 @@ Topic Modeling Processor
 Procesamiento de Topic Modeling con LSA, NMF, PLSA y LDA.
 """
 
+import io
 import logging
 import threading
 import numpy as np
 from typing import List, Dict, Any, Tuple
+import joblib
+from django.core.files.base import ContentFile
 from django.utils import timezone
 from collections import Counter
 
@@ -122,6 +125,27 @@ def process_topic_modeling(tm_id: int):
         # ETAPA 7: Guardar resultados (90%)
         logger.info(f"[TM {tm_id}] Guardando resultados...")
         save_results(tm, topics, doc_topic_matrix, document_ids, coherence_score)
+
+        # Serializar vectorizador y modelo para inferencia futura
+        logger.info(f"[TM {tm_id}] Serializando artefactos del modelo...")
+        try:
+            # Vectorizador
+            buf_vec = io.BytesIO()
+            joblib.dump(vectorizer, buf_vec)
+            buf_vec.seek(0)
+            vec_filename = f"tm_{tm_id}_vectorizer.pkl"
+            tm.vectorizer_artifact.save(vec_filename, ContentFile(buf_vec.read()), save=False)
+
+            # Modelo
+            buf_model = io.BytesIO()
+            joblib.dump(model, buf_model)
+            buf_model.seek(0)
+            model_filename = f"tm_{tm_id}_model.pkl"
+            tm.model_artifact.save(model_filename, ContentFile(buf_model.read()), save=False)
+
+            logger.info(f"[TM {tm_id}] ✅ Artefactos serializados: {vec_filename}, {model_filename}")
+        except Exception as artifact_error:
+            logger.warning(f"[TM {tm_id}] ⚠️ No se pudo serializar artefactos: {artifact_error}")
 
         # COMPLETADO
         tm.status = TopicModeling.STATUS_COMPLETED

@@ -8,8 +8,9 @@ import publicApiClient from './publicApi';
 import type { NgramAnalysisListItem, NgramAnalysis } from './ngramAnalysisService';
 
 class PublicNgramAnalysisService {
-  async getNgramAnalyses(): Promise<NgramAnalysisListItem[]> {
-    const response = await publicApiClient.get('/ngram-analysis/');
+  async getNgramAnalyses(datasetId?: number): Promise<NgramAnalysisListItem[]> {
+    const params = datasetId ? { dataset_id: datasetId } : {};
+    const response = await publicApiClient.get('/ngram-analysis/', { params });
     return response.data.results || response.data;
   }
 
