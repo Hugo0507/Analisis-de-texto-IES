@@ -36,6 +36,9 @@ if 'proxy.spaces.internal.huggingface.tech' not in ALLOWED_HOSTS:
 # Log ALLOWED_HOSTS for debugging
 print(f"✅ ALLOWED_HOSTS configured: {ALLOWED_HOSTS}")
 
+# API-only backend — no local static source directory needed
+STATICFILES_DIRS = []
+
 if not ALLOWED_HOSTS:
     raise ValueError("DJANGO_ALLOWED_HOSTS environment variable must be set in production")
 
