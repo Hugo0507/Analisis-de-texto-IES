@@ -230,7 +230,10 @@ class DataPreparationProcessor:
                 self._lemmatize(file_data, text, predominant_lang)
 
             if self.preparation.enable_special_chars_removal:
-                file_data['cleaned_text'] = re.sub(r'[^a-zA-Z0-9\s]', '', text)
+                # Eliminar todo excepto letras y espacios.
+                # El patrón anterior [^a-zA-Z0-9\s] conservaba dígitos,
+                # permitiendo que años y números entren al vocabulario BoW/TF-IDF.
+                file_data['cleaned_text'] = re.sub(r'[^a-zA-Z\s]', '', text)
 
     def _lemmatize(self, file_data: Dict, text: str, lang: str):
         """Apply spaCy lemmatization to a single file."""
