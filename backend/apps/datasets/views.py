@@ -8,7 +8,7 @@ import os
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from django.http import FileResponse, Http404
+from django.http import FileResponse, HttpResponse, Http404
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -578,23 +578,30 @@ class DatasetViewSet(viewsets.ModelViewSet):
         except DatasetFile.DoesNotExist:
             raise Http404
 
+        download_name = dataset_file.original_filename or dataset_file.filename
+        content_type = dataset_file.mime_type or 'application/octet-stream'
+
+        # Serve from DB (primary — survives Space restarts)
+        if dataset_file.file_content:
+            response = HttpResponse(bytes(dataset_file.file_content), content_type=content_type)
+            response['Content-Disposition'] = f'attachment; filename="{download_name}"'
+            return response
+
+        # Fallback: serve from disk if content not yet stored in DB
         file_path = dataset_file.file_path
-        if not file_path or not os.path.exists(file_path):
-            return Response(
-                {'error': 'File not found on server'},
-                status=status.HTTP_404_NOT_FOUND,
+        if file_path and not file_path.startswith('drive://') and os.path.exists(file_path):
+            guessed_type, _ = mimetypes.guess_type(file_path)
+            return FileResponse(
+                open(file_path, 'rb'),
+                content_type=guessed_type or content_type,
+                as_attachment=True,
+                filename=download_name,
             )
 
-        content_type, _ = mimetypes.guess_type(file_path)
-        content_type = content_type or 'application/octet-stream'
-
-        response = FileResponse(
-            open(file_path, 'rb'),
-            content_type=content_type,
-            as_attachment=True,
-            filename=dataset_file.original_filename or dataset_file.filename,
+        return Response(
+            {'error': 'File content not available. Re-upload the file to make it downloadable.'},
+            status=status.HTTP_404_NOT_FOUND,
         )
-        return response
 
     @action(detail=True, methods=['post'])
     def add_files(self, request, pk=None):

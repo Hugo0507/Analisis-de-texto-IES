@@ -169,15 +169,19 @@ class DatasetProcessorService:
                 # Extract directory information from the provided path
                 directory_info = self._extract_directory_info(file_path_str)
 
-                # Save file to disk
+                # Read content BEFORE _save_file consumes the file pointer
+                file_bytes = uploaded_file.read()
+                uploaded_file.seek(0)
+
+                # Save file to disk (best-effort; content is persisted in DB below)
                 saved_path = self._save_file(dataset, uploaded_file, directory_info['directory_path'])
-                file_size = uploaded_file.size
+                file_size = uploaded_file.size or len(file_bytes)
                 total_size += file_size
 
                 ext = Path(file_path_str).suffix.lower()
                 original_name = os.path.basename(file_path_str)
 
-                # Create DatasetFile record
+                # Create DatasetFile record — file_content stored in DB for persistent downloads
                 dataset_file = DatasetFile.objects.create(
                     dataset=dataset,
                     filename=os.path.basename(saved_path),
@@ -187,6 +191,7 @@ class DatasetProcessorService:
                     mime_type=uploaded_file.content_type or self._guess_mime_type(file_path_str),
                     directory_path=directory_info['directory_path'],
                     directory_name=directory_info['directory_name'],
+                    file_content=file_bytes,
                     status='completed',
                 )
 

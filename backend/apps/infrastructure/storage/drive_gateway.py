@@ -358,6 +358,26 @@ class DriveGateway:
             logger.exception(f"Error downloading file: {e}")
             return False
 
+    def download_file_as_bytes(self, file_id: str) -> Optional[bytes]:
+        """
+        Download a Drive file and return its content as bytes (in-memory).
+
+        Returns None on failure.
+        """
+        if not self.service:
+            raise ValueError("Not authenticated. Call authenticate() first.")
+        try:
+            request = self.service.files().get_media(fileId=file_id)
+            buffer = io.BytesIO()
+            downloader = MediaIoBaseDownload(buffer, request)
+            done = False
+            while not done:
+                _, done = downloader.next_chunk()
+            return buffer.getvalue()
+        except HttpError as e:
+            logger.exception(f"Error downloading file {file_id} as bytes: {e}")
+            return None
+
     def upload_file(
         self,
         file_path: str,
