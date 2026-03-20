@@ -49,12 +49,6 @@ const analysisNavItems: NavItem[] = [
     description: 'Inferencia sobre nuevos docs',
   },
   {
-    path: '/dashboard/ia',
-    label: 'IA',
-    icon: '🤖',
-    description: 'Análisis IA',
-  },
-  {
     path: '/dashboard/resumen',
     label: 'Resumen',
     icon: '📈',
