@@ -22,7 +22,8 @@ import {
   Info,
 } from 'lucide-react';
 import analysisService from '../services/analysisService';
-import type { FactorAnalysisResponse } from '../services/analysisService';
+import type { FactorAnalysisResponse, CooccurrenceGraphResponse } from '../services/analysisService';
+import { FactorCooccurrenceGraph } from '../components/organisms/FactorCooccurrenceGraph';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
 
@@ -138,6 +139,7 @@ export const Factors: React.FC = () => {
 
   const [stats, setStats] = useState<any | null>(null);
   const [analysisResult, setAnalysisResult] = useState<FactorAnalysisResponse | null>(null);
+  const [graphData, setGraphData] = useState<CooccurrenceGraphResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
@@ -167,9 +169,19 @@ export const Factors: React.FC = () => {
     }
   }, []);
 
+  const loadGraph = useCallback(async () => {
+    try {
+      const data = await analysisService.getCooccurrenceGraph();
+      setGraphData(data);
+    } catch {
+      // El grafo es opcional; si falla no bloquea la página
+    }
+  }, []);
+
   useEffect(() => {
     loadStats();
-  }, [loadStats]);
+    loadGraph();
+  }, [loadStats, loadGraph]);
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
@@ -240,6 +252,18 @@ export const Factors: React.FC = () => {
     }
   };
 
+  const handleExportCsv = async () => {
+    setIsExporting(true);
+    try {
+      await analysisService.exportFactorsCSV();
+      showSuccess('CSV exportado correctamente');
+    } catch {
+      showError('No se pudo exportar el CSV. Verifica que el análisis esté completado.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const toggleCategory = (cat: string) => {
     setExpandedCategories(prev => ({ ...prev, [cat]: !prev[cat] }));
   };
@@ -266,10 +290,20 @@ export const Factors: React.FC = () => {
         {showActions && (
           <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-4">
             <button
+              onClick={handleExportCsv}
+              disabled={isExporting}
+              className="p-2 sm:p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Exportar CSV"
+              aria-label="Exportar factores como CSV"
+            >
+              {isExporting ? <Spinner /> : <Download className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />}
+            </button>
+            <button
               onClick={refreshAnalysis}
               disabled={isRunning}
               className="p-2 sm:p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title="Re-ejecutar análisis"
+              aria-label="Re-ejecutar análisis de factores"
             >
               <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
             </button>
@@ -576,7 +610,13 @@ export const Factors: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Co-occurrence ── */}
+        {/* ── Co-occurrence Graph ── */}
+        <FactorCooccurrenceGraph
+          nodes={graphData?.nodes ?? []}
+          edges={graphData?.edges ?? []}
+        />
+
+        {/* ── Co-occurrence Table ── */}
         {coOccurrence.length > 0 && (
           <div className="bg-white p-5 sm:p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
             <h2 className="text-base font-semibold text-slate-800 mb-1">

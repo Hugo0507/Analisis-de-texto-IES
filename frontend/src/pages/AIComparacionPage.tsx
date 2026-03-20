@@ -12,8 +12,6 @@ import {
   CheckCircle2,
   XCircle,
   Info,
-  Building2,
-  Tag,
   TrendingUp,
   AlertTriangle,
 } from 'lucide-react';

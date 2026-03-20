@@ -84,6 +84,27 @@ export interface CompareModelsResponse {
   best_model: string;
 }
 
+// ===== Cooccurrence Graph =====
+export interface CooccurrenceGraphNode {
+  id: string;
+  label: string;
+  category: string;
+  frequency: number;
+  size: number;
+}
+
+export interface CooccurrenceGraphEdge {
+  source: string;
+  target: string;
+  weight: number;
+  strength: number;
+}
+
+export interface CooccurrenceGraphResponse {
+  nodes: CooccurrenceGraphNode[];
+  edges: CooccurrenceGraphEdge[];
+}
+
 // ===== Factor Catalog =====
 export interface FactorCatalogItem {
   id: number;
@@ -249,6 +270,11 @@ class AnalysisService {
 
   async getFactorStatistics(): Promise<any> {
     const response = await apiClient.get('/analysis/factors/statistics/');
+    return response.data;
+  }
+
+  async getCooccurrenceGraph(): Promise<CooccurrenceGraphResponse> {
+    const response = await apiClient.get('/analysis/factors/cooccurrence-graph/');
     return response.data;
   }
 
