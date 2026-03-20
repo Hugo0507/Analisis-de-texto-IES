@@ -9,8 +9,9 @@ import type { DataPreparationListItem, DataPreparation } from './dataPreparation
 import { LANGUAGE_NAMES } from './dataPreparationService';
 
 class PublicDataPreparationService {
-  async getPreparations(): Promise<DataPreparationListItem[]> {
-    const response = await publicApiClient.get('/data-preparation/');
+  async getPreparations(datasetId?: number): Promise<DataPreparationListItem[]> {
+    const params = datasetId ? { dataset_id: datasetId } : {};
+    const response = await publicApiClient.get('/data-preparation/', { params });
     return response.data.results || response.data;
   }
 
