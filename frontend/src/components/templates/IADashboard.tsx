@@ -68,14 +68,12 @@ const Skeleton: React.FC<{ className?: string }> = ({ className = '' }) => (
 export const IADashboard: React.FC = () => {
   const [data, setData] = useState<AIComparisonSummaryPublic | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
         setIsLoading(true);
-        setError(null);
         const result = await publicAIAnalysisService.getPublicSummary();
         if (!cancelled) setData(result);
       } catch {

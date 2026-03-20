@@ -30,3 +30,6 @@ export type { DashboardGridProps, MetricCardDarkProps } from './DashboardGrid';
 
 export { DonutChartViz } from './DonutChartViz';
 export type { DonutChartVizProps, DonutChartData } from './DonutChartViz';
+
+export { FactorCooccurrenceGraph } from './FactorCooccurrenceGraph';
+export type { GraphNode, GraphEdge, FactorCooccurrenceGraphProps } from './FactorCooccurrenceGraph';

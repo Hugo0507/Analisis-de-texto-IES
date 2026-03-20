@@ -168,7 +168,7 @@ export const AIClaudePage: React.FC = () => {
   const loadDatasets = useCallback(async () => {
     try {
       const data = await datasetsService.getDatasets();
-      setDatasets(data.results ?? data);
+      setDatasets(data);
     } catch {
       // silencioso
     }
