@@ -8,8 +8,9 @@ import publicApiClient from './publicApi';
 import type { BERTopicListItem, BERTopicAnalysis } from './bertopicService';
 
 class PublicBertopicService {
-  async getBERTopicAnalyses(): Promise<BERTopicListItem[]> {
-    const response = await publicApiClient.get('/bertopic/');
+  async getBERTopicAnalyses(datasetId?: number): Promise<BERTopicListItem[]> {
+    const params = datasetId ? { dataset_id: datasetId } : {};
+    const response = await publicApiClient.get('/bertopic/', { params });
     return response.data.results || response.data;
   }
 

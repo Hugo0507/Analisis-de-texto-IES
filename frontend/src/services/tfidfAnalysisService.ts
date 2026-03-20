@@ -118,6 +118,7 @@ export interface TfIdfAnalysisListItem {
   status_label: string;
   progress_percentage: number;
   current_stage_label: string | null;
+  has_artifact: boolean;
   created_at: string;
 }
 

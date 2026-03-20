@@ -162,10 +162,7 @@ class DashboardService {
       ]);
 
       // Fetch preparations for this dataset
-      const allPreparations = await publicDataPreparationService.getPreparations();
-      const preparations = allPreparations.filter(
-        p => p.dataset_name === dataset.name
-      );
+      const preparations = await publicDataPreparationService.getPreparations(datasetId);
 
       // Get the first completed preparation details if available
       let selectedPreparation: DataPreparation | null = null;
@@ -247,38 +244,49 @@ class DashboardService {
   // VECTORIZATION DATA
   // ==========================================================
 
-  async getVectorizationData(_datasetId: number): Promise<VectorizationDashboardData> {
+  async getVectorizationData(
+    datasetId: number,
+    bowId?: number | null,
+    ngramId?: number | null,
+    tfidfId?: number | null,
+  ): Promise<VectorizationDashboardData> {
     try {
-      // Fetch all analyses
+      // Fetch analyses filtered by dataset
       const [allBow, allNgram, allTfidf] = await Promise.all([
-        publicBagOfWordsService.getBagOfWords(),
-        publicNgramAnalysisService.getNgramAnalyses(),
-        publicTfIdfAnalysisService.getTfIdfAnalyses(),
+        publicBagOfWordsService.getBagOfWords(datasetId),
+        publicNgramAnalysisService.getNgramAnalyses(datasetId),
+        publicTfIdfAnalysisService.getTfIdfAnalyses(datasetId),
       ]);
 
-      // Return all analyses (public API already filters to completed only)
-      const bowAnalyses = allBow;
-      const ngramAnalyses = allNgram;
-      const tfidfAnalyses = allTfidf;
+      // Sort alphabetically by name (default selection order)
+      const bowAnalyses = [...allBow].sort((a, b) => a.name.localeCompare(b.name));
+      const ngramAnalyses = [...allNgram].sort((a, b) => a.name.localeCompare(b.name));
+      const tfidfAnalyses = [...allTfidf].sort((a, b) => a.name.localeCompare(b.name));
 
-      // Get first completed analysis of each type
+      // Get selected analysis of each type (by explicit ID, or first completed alphabetically)
       let selectedBow: BagOfWords | null = null;
       let selectedNgram: NgramAnalysis | null = null;
       let selectedTfidf: TfIdfAnalysis | null = null;
 
-      const completedBow = bowAnalyses.find(b => b.status === 'completed');
-      if (completedBow) {
-        selectedBow = await publicBagOfWordsService.getBagOfWordsById(completedBow.id);
+      const targetBow = bowId
+        ? bowAnalyses.find(b => b.id === bowId)
+        : bowAnalyses.find(b => b.status === 'completed');
+      if (targetBow) {
+        selectedBow = await publicBagOfWordsService.getBagOfWordsById(targetBow.id);
       }
 
-      const completedNgram = ngramAnalyses.find(n => n.status === 'completed');
-      if (completedNgram) {
-        selectedNgram = await publicNgramAnalysisService.getNgramAnalysisById(completedNgram.id);
+      const targetNgram = ngramId
+        ? ngramAnalyses.find(n => n.id === ngramId)
+        : ngramAnalyses.find(n => n.status === 'completed');
+      if (targetNgram) {
+        selectedNgram = await publicNgramAnalysisService.getNgramAnalysisById(targetNgram.id);
       }
 
-      const completedTfidf = tfidfAnalyses.find(t => t.status === 'completed');
-      if (completedTfidf) {
-        selectedTfidf = await publicTfIdfAnalysisService.getTfIdfAnalysis(completedTfidf.id);
+      const targetTfidf = tfidfId
+        ? tfidfAnalyses.find(t => t.id === tfidfId)
+        : tfidfAnalyses.find(t => t.status === 'completed');
+      if (targetTfidf) {
+        selectedTfidf = await publicTfIdfAnalysisService.getTfIdfAnalysis(targetTfidf.id);
       }
 
       // Build word cloud data from BoW top terms
@@ -337,33 +345,49 @@ class DashboardService {
   // MODELING DATA
   // ==========================================================
 
-  async getModelingData(_datasetId: number): Promise<ModelingDashboardData> {
+  async getModelingData(
+    datasetId: number,
+    nerId?: number | null,
+    topicId?: number | null,
+    bertopicId?: number | null,
+  ): Promise<ModelingDashboardData> {
     try {
-      // Fetch all analyses
+      // Fetch analyses filtered by dataset
       const [allNer, allTopicModeling, allBertopic] = await Promise.all([
-        publicNerAnalysisService.getNerAnalyses(),
-        publicTopicModelingService.getTopicModelings(),
-        publicBertopicService.getBERTopicAnalyses(),
+        publicNerAnalysisService.getNerAnalyses(datasetId),
+        publicTopicModelingService.getTopicModelings(datasetId),
+        publicBertopicService.getBERTopicAnalyses(datasetId),
       ]);
 
-      // Get first completed analysis of each type
+      // Sort alphabetically by name (default selection order)
+      const nerAnalysesSorted = [...allNer].sort((a, b) => a.name.localeCompare(b.name));
+      const topicAnalysesSorted = [...allTopicModeling].sort((a, b) => a.name.localeCompare(b.name));
+      const bertopicAnalysesSorted = [...allBertopic].sort((a, b) => a.name.localeCompare(b.name));
+
+      // Get selected analysis of each type (by explicit ID, or first completed alphabetically)
       let selectedNer: NerAnalysis | null = null;
       let selectedTopicModeling: TopicModeling | null = null;
       let selectedBertopic: BERTopicAnalysis | null = null;
 
-      const completedNer = allNer.find(n => n.status === 'completed');
-      if (completedNer) {
-        selectedNer = await publicNerAnalysisService.getNerAnalysisById(completedNer.id);
+      const targetNer = nerId
+        ? nerAnalysesSorted.find(n => n.id === nerId)
+        : nerAnalysesSorted.find(n => n.status === 'completed');
+      if (targetNer) {
+        selectedNer = await publicNerAnalysisService.getNerAnalysisById(targetNer.id);
       }
 
-      const completedTopic = allTopicModeling.find(t => t.status === 'completed');
-      if (completedTopic) {
-        selectedTopicModeling = await publicTopicModelingService.getTopicModelingById(completedTopic.id);
+      const targetTopic = topicId
+        ? topicAnalysesSorted.find(t => t.id === topicId)
+        : topicAnalysesSorted.find(t => t.status === 'completed');
+      if (targetTopic) {
+        selectedTopicModeling = await publicTopicModelingService.getTopicModelingById(targetTopic.id);
       }
 
-      const completedBertopic = allBertopic.find(b => b.status === 'completed');
-      if (completedBertopic) {
-        selectedBertopic = await publicBertopicService.getBERTopicById(completedBertopic.id);
+      const targetBertopic = bertopicId
+        ? bertopicAnalysesSorted.find(b => b.id === bertopicId)
+        : bertopicAnalysesSorted.find(b => b.status === 'completed');
+      if (targetBertopic) {
+        selectedBertopic = await publicBertopicService.getBERTopicById(targetBertopic.id);
       }
 
       // Build entity distribution from NER
@@ -403,9 +427,9 @@ class DashboardService {
       })) || [];
 
       return {
-        nerAnalyses: allNer,
-        topicModelingAnalyses: allTopicModeling,
-        bertopicAnalyses: allBertopic,
+        nerAnalyses: nerAnalysesSorted,
+        topicModelingAnalyses: topicAnalysesSorted,
+        bertopicAnalyses: bertopicAnalysesSorted,
         selectedNer,
         selectedTopicModeling,
         selectedBertopic,
