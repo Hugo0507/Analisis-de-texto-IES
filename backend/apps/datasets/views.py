@@ -3,9 +3,12 @@ Views for Dataset management API.
 """
 
 import logging
+import mimetypes
+import os
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from django.http import FileResponse, Http404
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -556,6 +559,42 @@ class DatasetViewSet(viewsets.ModelViewSet):
             'by_year': dict(sorted(by_year.items())),
             'exclusion_reasons': exclusion_reasons,
         })
+
+    @action(
+        detail=True,
+        methods=['get'],
+        url_path=r'files/(?P<file_id>\d+)/download',
+        permission_classes=[IsAuthenticated],
+    )
+    def download_file(self, request, pk=None, file_id=None):
+        """
+        Download a single file from the dataset.
+
+        GET /api/datasets/{id}/files/{file_id}/download/
+        """
+        dataset = self.get_object()
+        try:
+            dataset_file = dataset.files.get(id=file_id)
+        except DatasetFile.DoesNotExist:
+            raise Http404
+
+        file_path = dataset_file.file_path
+        if not file_path or not os.path.exists(file_path):
+            return Response(
+                {'error': 'File not found on server'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        content_type, _ = mimetypes.guess_type(file_path)
+        content_type = content_type or 'application/octet-stream'
+
+        response = FileResponse(
+            open(file_path, 'rb'),
+            content_type=content_type,
+            as_attachment=True,
+            filename=dataset_file.original_filename or dataset_file.filename,
+        )
+        return response
 
     @action(detail=True, methods=['post'])
     def add_files(self, request, pk=None):

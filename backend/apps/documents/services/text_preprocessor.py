@@ -6,6 +6,7 @@ Uses NLTK for tokenization, stopword removal, and text normalization.
 
 import logging
 import re
+import unicodedata
 from typing import List, Dict, Set
 import nltk
 from nltk.tokenize import word_tokenize, sent_tokenize
@@ -43,17 +44,18 @@ class TextPreprocessorService:
 
     def _ensure_nltk_data(self):
         """Download required NLTK data if not present."""
-        required_data = [
-            'punkt',
-            'stopwords',
+        resources = [
+            ('punkt_tab', 'tokenizers/punkt_tab'),
+            ('punkt', 'tokenizers/punkt'),
+            ('stopwords', 'corpora/stopwords'),
         ]
 
-        for data_name in required_data:
+        for resource, path in resources:
             try:
-                nltk.data.find(f'tokenizers/{data_name}')
-            except LookupError:
-                logger.info(f"Downloading NLTK data: {data_name}")
-                nltk.download(data_name, quiet=True)
+                nltk.data.find(path)
+            except (LookupError, OSError):
+                logger.info(f"Downloading NLTK data: {resource}")
+                nltk.download(resource, quiet=True)
 
     def _load_stopwords(self):
         """Load stopwords for the specified language."""
@@ -69,6 +71,16 @@ class TextPreprocessorService:
                     'puede', 'pueden', 'debe', 'deben',
                     'mediante', 'traves', 'debe', 'ejemplo',
                     'forma', 'parte', 'etc', 'segun'
+                }
+                self.stopwords.update(custom_stopwords)
+
+            elif self.language == 'english':
+                custom_stopwords = {
+                    'study', 'paper', 'article', 'research', 'result', 'results',
+                    'using', 'used', 'use', 'also', 'however', 'therefore',
+                    'thus', 'et', 'al', 'fig', 'table', 'figure', 'university',
+                    'institutions', 'institution', 'higher', 'education',
+                    'doi', 'isbn', 'issn', 'pp', 'vol', 'no', 'eds', 'ed',
                 }
                 self.stopwords.update(custom_stopwords)
 
@@ -129,6 +141,12 @@ class TextPreprocessorService:
 
         original_length = len(text)
 
+        # 0. Normalización Unicode y limpieza de artefactos de PDF
+        text = re.sub(r'-\n', '', text)  # Reparar cortes de línea con guión
+        text = unicodedata.normalize('NFKC', text)  # Normalizar ligaduras y acentos
+        text = re.sub(r'[\f\r\t\x0b\x0c]', ' ', text)  # Eliminar caracteres de control
+        text = re.sub(r' {2,}', ' ', text)  # Colapsar espacios múltiples
+
         # 1. Lowercase
         if lowercase:
             text = text.lower()
@@ -139,9 +157,20 @@ class TextPreprocessorService:
         # 3. Remove email addresses
         text = re.sub(r'\S+@\S+', '', text)
 
+        # 3b. Remove PDF artifacts (headers, footers, page numbers, DOIs, font errors)
+        text = re.sub(
+            r'\bpage\s+\d+\b|\bpágina\s+\d+\b|\s-\s*\d+\s*-\s',
+            ' ', text, flags=re.IGNORECASE
+        )
+        text = re.sub(r'10\.\d{4,}/\S+', '', text)  # DOIs
+        text = re.sub(r'\(cid:\d+\)', '', text)  # cid:XX font encoding artifacts
+        text = re.sub(r'[\x00\xa0\u200b\u2028\u2029\xad]', ' ', text)  # invisible/control chars
+
         # 4. Remove numbers (if specified)
         if remove_numbers:
-            text = re.sub(r'\b\d+\b', '', text)
+            text = re.sub(r'\[\d+[\d,\s\-]*\]', '', text)  # [1], [1,2], [1-5]
+            text = re.sub(r'\b\d+(?:st|nd|rd|th)\b', '', text)  # ordinales
+            text = re.sub(r'\b\d[\d.,\-/]*\b', '', text)  # números generales
 
         # 5. Tokenize
         try:
@@ -150,11 +179,11 @@ class TextPreprocessorService:
             logger.warning(f"Tokenization failed, using split: {e}")
             tokens = text.split()
 
-        # 6. Remove punctuation (if specified)
+        # 6. Remove punctuation and alphanumeric noise (if specified)
         if remove_punctuation:
             tokens = [
                 token for token in tokens
-                if token.isalnum()
+                if token.isalpha()
             ]
 
         # 7. Remove stopwords (if specified)
