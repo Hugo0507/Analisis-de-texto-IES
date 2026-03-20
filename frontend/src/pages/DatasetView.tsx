@@ -10,7 +10,7 @@
  * - Auto-detección de base de datos de origen
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import datasetsService from '../services/datasetsService';
 import { SOURCE_DB_LABELS } from '../services/datasetsService';
@@ -234,33 +234,50 @@ export const DatasetView: React.FC = () => {
   const [editingFile, setEditingFile] = useState<DatasetFile | null>(null);
   const [isExtractingMeta, setIsExtractingMeta] = useState(false);
 
-  useEffect(() => {
-    if (!id) return;
-    loadDataset();
-  }, [id]);
+  // Track mount state and pending timeouts to avoid setState on unmounted component
+  const mountedRef = useRef(true);
+  const timeoutRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
-    if (!dataset || dataset.status !== 'processing') return;
-    const poll = setInterval(loadDataset, 5000);
-    return () => clearInterval(poll);
-  }, [dataset?.status]);
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      timeoutRefs.current.forEach(clearTimeout);
+    };
+  }, []);
 
-  const loadDataset = async () => {
-    if (!id) return;
+  const loadDataset = useCallback(async () => {
+    if (!id || !mountedRef.current) return;
     setIsLoading(true);
     try {
       const [datasetData, dirStats] = await Promise.all([
         datasetsService.getDataset(parseInt(id)),
         datasetsService.getDirectoryStats(parseInt(id)),
       ]);
+      if (!mountedRef.current) return;
       setDataset(datasetData);
       setDirectoryStats(dirStats);
     } catch (error: any) {
-      showError('Error al cargar dataset: ' + (error.response?.data?.error || error.message));
+      if (!mountedRef.current) return;
+      // 401 after failed token refresh = session ended, interceptor redirects — no toast needed
+      if (error.response?.status !== 401) {
+        showError('Error al cargar dataset: ' + (error.response?.data?.error || error.message));
+      }
     } finally {
-      setIsLoading(false);
+      if (mountedRef.current) setIsLoading(false);
     }
-  };
+  }, [id, showError]);
+
+  useEffect(() => {
+    if (!id) return;
+    loadDataset();
+  }, [id, loadDataset]);
+
+  useEffect(() => {
+    if (!dataset || dataset.status !== 'processing') return;
+    const poll = setInterval(loadDataset, 5000);
+    return () => clearInterval(poll);
+  }, [dataset?.status, loadDataset]);
 
   const handleExtractMetadata = async (force = false) => {
     if (!id) return;
@@ -269,13 +286,14 @@ export const DatasetView: React.FC = () => {
       const result = await datasetsService.autoExtractMetadata(parseInt(id), force);
       showSuccess(`${result.message}`);
       // Reload progressively: 5s, 15s, 30s to catch results as they arrive
-      setTimeout(() => loadDataset(), 5000);
-      setTimeout(() => loadDataset(), 15000);
-      setTimeout(() => loadDataset(), 30000);
+      const t1 = setTimeout(() => loadDataset(), 5000);
+      const t2 = setTimeout(() => loadDataset(), 15000);
+      const t3 = setTimeout(() => loadDataset(), 30000);
+      timeoutRefs.current.push(t1, t2, t3);
     } catch {
       showError('Error al iniciar la extracción de metadatos');
     } finally {
-      setIsExtractingMeta(false);
+      if (mountedRef.current) setIsExtractingMeta(false);
     }
   };
 
