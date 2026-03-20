@@ -35,10 +35,6 @@ import {
 import { FactorsList } from './pages/FactorsList';
 import { FactorsCreate } from './pages/FactorsCreate';
 import { FactorsView } from './pages/FactorsView';
-import { AIClaudePage } from './pages/AIClaudePage';
-import { AIGeminiPage } from './pages/AIGeminiPage';
-import { AIChatGPTPage } from './pages/AIChatGPTPage';
-import { AIComparacionPage } from './pages/AIComparacionPage';
 import { TopicComparison } from './pages/TopicComparison';
 import { BagOfWordsList } from './pages/BagOfWordsList';
 import { BagOfWordsCreate } from './pages/BagOfWordsCreate';
@@ -147,13 +143,6 @@ function App() {
               <Route path="topic-benchmark" element={<TopicComparison />} />
             </Route>
 
-            {/* Protected Admin IA Routes (LOGIN REQUIRED) */}
-            <Route path="/admin/ia" element={<MainLayout />}>
-              <Route path="claude" element={<AIClaudePage />} />
-              <Route path="gemini" element={<AIGeminiPage />} />
-              <Route path="chatgpt" element={<AIChatGPTPage />} />
-              <Route path="comparacion" element={<AIComparacionPage />} />
-            </Route>
           </Route>
 
           {/* Fallback - Redirect to home */}

@@ -111,9 +111,3 @@ pylint==3.0.3                        # Static code analyzer
 ipython==8.18.1                      # Interactive Python shell
 django-extensions==3.2.3             # Django shell_plus and more
 
-# ============================================================
-# AI / LLM INTEGRATIONS
-# ============================================================
-anthropic>=0.34.0                    # Anthropic Claude API
-openai>=1.40.0                       # OpenAI GPT API
-google-generativeai>=0.7.0           # Google Gemini API
