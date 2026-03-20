@@ -174,7 +174,7 @@ class TestAnalyzeFactorsUseCase:
     # ── get_document_factors ──────────────────────────────────────────────
 
     @patch('apps.analysis.use_cases.analyze_factors.DocumentFactor.objects.filter')
-    @patch('apps.analysis.use_cases.analyze_factors.Document.objects.get')
+    @patch('apps.analysis.use_cases.analyze_factors.DatasetFile.objects.get')
     def test_get_document_factors_success(self, mock_get, mock_df_filter, use_case):
         doc = Mock()
         doc.filename = 'test.pdf'
@@ -214,10 +214,10 @@ class TestAnalyzeFactorsUseCase:
         assert result['document_id'] == 1
         assert result['filename'] == 'test.pdf'
 
-    @patch('apps.analysis.use_cases.analyze_factors.Document.objects.get')
+    @patch('apps.analysis.use_cases.analyze_factors.DatasetFile.objects.get')
     def test_get_document_factors_not_found(self, mock_get, use_case):
-        from apps.documents.models import Document
-        mock_get.side_effect = Document.DoesNotExist
+        from apps.datasets.models import DatasetFile
+        mock_get.side_effect = DatasetFile.DoesNotExist
 
         result = use_case.get_document_factors(document_id=999)
 
