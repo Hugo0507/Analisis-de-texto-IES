@@ -192,7 +192,12 @@ export const ModeladoDashboard: React.FC = () => {
           </div>
           <p className="text-slate-300 mb-4">{error}</p>
           <button
-            onClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
+            onClick={() => filters.selectedDatasetId && fetchData(
+              filters.selectedDatasetId,
+              filters.selectedNerId,
+              filters.selectedTopicModelId,
+              filters.selectedBertopicId,
+            )}
             className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all"
           >
             Reintentar
@@ -376,7 +381,7 @@ export const ModeladoDashboard: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
               </svg>
             }
-            onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
+            onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId, filters.selectedNerId, filters.selectedTopicModelId, filters.selectedBertopicId)}
             isLoading={isLoading}
           >
             <div className="h-[280px]">

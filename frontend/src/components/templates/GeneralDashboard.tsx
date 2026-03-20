@@ -13,8 +13,8 @@ import publicBertopicService from '../../services/publicBertopicService';
 import publicDataPreparationService from '../../services/publicDataPreparationService';
 import { useFilter } from '../../contexts/FilterContext';
 import { LANGUAGE_NAMES } from '../../services/dataPreparationService';
-import type { TopicModeling } from '../../services/topicModelingService';
-import type { BERTopicAnalysis } from '../../services/bertopicService';
+import type { TopicModeling, TopicModelingListItem } from '../../services/topicModelingService';
+import type { BERTopicAnalysis, BERTopicListItem } from '../../services/bertopicService';
 
 // ─── Factor categories (OE3 framework) ───────────────────────────────────────
 
@@ -1253,7 +1253,9 @@ export const GeneralDashboard: React.FC = () => {
   const [topicModel, setTopicModel] = useState<TopicModeling | null>(null);
   const [bertopic, setBertopic] = useState<BERTopicAnalysis | null>(null);
   const [prepSummary, setPrepSummary] = useState<PrepSummary | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [topicList, setTopicList] = useState<TopicModelingListItem[]>([]);
+  const [bertopicList, setBertopicList] = useState<BERTopicListItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Interaction state
@@ -1263,13 +1265,15 @@ export const GeneralDashboard: React.FC = () => {
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
   const [clusterTabs, setClusterTabs] = useState<Record<number, ClusterTab>>({});
 
-  const { filters } = useFilter();
+  const { filters, setSelectedTopicModel, setSelectedBertopic } = useFilter();
 
   useEffect(() => {
     if (!filters.selectedDatasetId) {
       setTopicModel(null);
       setBertopic(null);
       setPrepSummary(null);
+      setTopicList([]);
+      setBertopicList([]);
       setIsLoading(false);
       setSelectedTopicId(null);
       return;
@@ -1280,20 +1284,38 @@ export const GeneralDashboard: React.FC = () => {
       setError(null);
       setSelectedTopicId(null);
       try {
-        const [topicList, bertopicList, prepList] = await Promise.all([
+        const [rawTopicList, rawBertopicList, prepList] = await Promise.all([
           publicTopicModelingService.getTopicModelings(filters.selectedDatasetId!),
           publicBertopicService.getBERTopicAnalyses(filters.selectedDatasetId!),
           publicDataPreparationService.getPreparations(filters.selectedDatasetId!),
         ]);
-        const ctm = topicList.find(t => t.status === 'completed');
-        const cbt = bertopicList.find(b => b.status === 'completed');
-        const latestPrep = prepList[0] ?? null;
+
+        // Sort alphabetically for consistent selection order
+        const sortedTopics  = [...rawTopicList].sort((a, b) => a.name.localeCompare(b.name));
+        const sortedBertopic = [...rawBertopicList].sort((a, b) => a.name.localeCompare(b.name));
+
+        // Resolve which analysis to show: explicit ID from context, or first completed alphabetically
+        const topicId   = filters.selectedTopicModelId;
+        const bertopicId = filters.selectedBertopicId;
+        const ctm = topicId
+          ? sortedTopics.find(t => t.id === topicId)
+          : sortedTopics.find(t => t.status === 'completed');
+        const cbt = bertopicId
+          ? sortedBertopic.find(b => b.id === bertopicId)
+          : sortedBertopic.find(b => b.status === 'completed');
+
+        // Use first completed preparation (sorted: most recently created from API is typically first)
+        const completedPrep = prepList.find(p => p.status === 'completed') ?? null;
+
         const [td, bd, prepDetail] = await Promise.all([
-          ctm ? publicTopicModelingService.getTopicModelingById(ctm.id) : Promise.resolve(null),
-          cbt ? publicBertopicService.getBERTopicById(cbt.id) : Promise.resolve(null),
-          latestPrep ? publicDataPreparationService.getPreparation(latestPrep.id) : Promise.resolve(null),
+          ctm  ? publicTopicModelingService.getTopicModelingById(ctm.id)  : Promise.resolve(null),
+          cbt  ? publicBertopicService.getBERTopicById(cbt.id)            : Promise.resolve(null),
+          completedPrep ? publicDataPreparationService.getPreparation(completedPrep.id) : Promise.resolve(null),
         ]);
+
         if (!cancelled) {
+          setTopicList(sortedTopics);
+          setBertopicList(sortedBertopic);
           setTopicModel(td);
           setBertopic(bd);
           setPrepSummary(prepDetail ? {
@@ -1303,6 +1325,10 @@ export const GeneralDashboard: React.FC = () => {
             predominant_language: prepDetail.predominant_language ?? '',
             predominant_language_percentage: prepDetail.predominant_language_percentage ?? 0,
           } : null);
+
+          // Auto-select first completed if no explicit ID was set
+          if (!topicId && ctm) setSelectedTopicModel(ctm.id);
+          if (!bertopicId && cbt) setSelectedBertopic(cbt.id);
         }
       } catch {
         if (!cancelled) setError('No se pudo cargar el landscape. Verifica la conexión con el backend.');
@@ -1312,7 +1338,8 @@ export const GeneralDashboard: React.FC = () => {
     }
     load();
     return () => { cancelled = true; };
-  }, [filters.selectedDatasetId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.selectedDatasetId, filters.selectedTopicModelId, filters.selectedBertopicId]);
 
   // Merge topics from LDA + BERTopic (prefer LDA)
   const enrichedTopics = useMemo((): EnrichedTopic[] => {
@@ -1384,6 +1411,20 @@ export const GeneralDashboard: React.FC = () => {
   }, []);
 
   // ── Render ──────────────────────────────────────────────────────────────────
+  if (!filters.selectedDatasetId) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-center">
+        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-slate-800/50 flex items-center justify-center">
+          <svg className="w-10 h-10 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-medium text-white mb-2">Selecciona un Dataset</h3>
+        <p className="text-slate-400 text-sm">Usa el selector en el panel lateral izquierdo.</p>
+      </div>
+    </div>
+  );
+
   if (isLoading) return <LoadingSkeleton />;
 
   if (error) return (
@@ -1462,6 +1503,40 @@ export const GeneralDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* ── Analysis Selector Bar ── */}
+      {(topicList.length > 1 || bertopicList.length > 1) && (
+        <div className="flex flex-wrap gap-4 p-4 rounded-xl bg-slate-800/40 border border-slate-700/50">
+          {topicList.length > 1 && (
+            <div className="flex items-center gap-2 min-w-[220px] flex-1">
+              <span className="text-xs text-slate-400 whitespace-nowrap font-medium">Topic Model:</span>
+              <select
+                value={filters.selectedTopicModelId ?? topicModel?.id ?? ''}
+                onChange={e => setSelectedTopicModel(Number(e.target.value))}
+                className="flex-1 bg-slate-900/70 border border-slate-600/50 text-slate-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/50 cursor-pointer"
+              >
+                {topicList.map(a => (
+                  <option key={a.id} value={a.id}>{a.name} ({a.algorithm_display})</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {bertopicList.length > 1 && (
+            <div className="flex items-center gap-2 min-w-[220px] flex-1">
+              <span className="text-xs text-slate-400 whitespace-nowrap font-medium">BERTopic:</span>
+              <select
+                value={filters.selectedBertopicId ?? bertopic?.id ?? ''}
+                onChange={e => setSelectedBertopic(Number(e.target.value))}
+                className="flex-1 bg-slate-900/70 border border-slate-600/50 text-slate-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500/50 cursor-pointer"
+              >
+                {bertopicList.map(a => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Metrics Strip ── */}
       <MetricsStrip
