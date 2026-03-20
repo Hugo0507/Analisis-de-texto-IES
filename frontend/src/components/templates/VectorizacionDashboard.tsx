@@ -1705,26 +1705,64 @@ export const VectorizacionDashboard: React.FC = () => {
       )}
 
       {/* ── Section tabs ── */}
-      <div className="flex gap-1 p-1 bg-slate-800/40 border border-slate-700/50 rounded-xl w-fit">
+      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Secciones de análisis">
         {([
-          { key: 'analysis',     label: 'Análisis',       icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
-          { key: 'compare',      label: 'Comparar',       icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4' },
-          { key: 'heatmap',      label: 'Heatmap',        icon: 'M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z' },
-          { key: 'cooccurrence', label: 'Co-ocurrencia',  icon: 'M13 10V3L4 14h7v7l9-11h-7z' },
-        ] as const).map(tab => (
-          <button key={tab.key} onClick={() => setActiveSection(tab.key)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-              activeSection === tab.key
-                ? 'bg-slate-700/80 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/30'
-            }`}
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
-            </svg>
-            {tab.label}
-          </button>
-        ))}
+          {
+            key: 'analysis',
+            label: 'Análisis',
+            icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
+            activeClass: 'bg-cyan-500/20 text-cyan-100 border-cyan-500/60 shadow-[0_0_14px_rgba(6,182,212,0.2)]',
+            inactiveClass: 'text-slate-400 border-slate-700/50 hover:text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-500/30',
+            dotActive: 'bg-cyan-400',
+            dotInactive: 'bg-slate-600',
+          },
+          {
+            key: 'compare',
+            label: 'Comparar',
+            icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4',
+            activeClass: 'bg-blue-500/20 text-blue-100 border-blue-500/60 shadow-[0_0_14px_rgba(59,130,246,0.2)]',
+            inactiveClass: 'text-slate-400 border-slate-700/50 hover:text-blue-300 hover:bg-blue-500/10 hover:border-blue-500/30',
+            dotActive: 'bg-blue-400',
+            dotInactive: 'bg-slate-600',
+          },
+          {
+            key: 'heatmap',
+            label: 'Heatmap',
+            icon: 'M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z',
+            activeClass: 'bg-violet-500/20 text-violet-100 border-violet-500/60 shadow-[0_0_14px_rgba(139,92,246,0.2)]',
+            inactiveClass: 'text-slate-400 border-slate-700/50 hover:text-violet-300 hover:bg-violet-500/10 hover:border-violet-500/30',
+            dotActive: 'bg-violet-400',
+            dotInactive: 'bg-slate-600',
+          },
+          {
+            key: 'cooccurrence',
+            label: 'Co-ocurrencia',
+            icon: 'M13 10V3L4 14h7v7l9-11h-7z',
+            activeClass: 'bg-emerald-500/20 text-emerald-100 border-emerald-500/60 shadow-[0_0_14px_rgba(16,185,129,0.2)]',
+            inactiveClass: 'text-slate-400 border-slate-700/50 hover:text-emerald-300 hover:bg-emerald-500/10 hover:border-emerald-500/30',
+            dotActive: 'bg-emerald-400',
+            dotInactive: 'bg-slate-600',
+          },
+        ] as const).map(tab => {
+          const isActive = activeSection === tab.key;
+          return (
+            <button
+              key={tab.key}
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setActiveSection(tab.key)}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${
+                isActive ? tab.activeClass : tab.inactiveClass
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full shrink-0 transition-colors ${isActive ? tab.dotActive : tab.dotInactive}`} />
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
+              </svg>
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* ═══════════════ ANÁLISIS section ═══════════════ */}
