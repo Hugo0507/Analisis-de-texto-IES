@@ -139,6 +139,19 @@ EXTRA_STOPWORDS = {
 }
 
 
+# Siglas técnicas que NLTK eliminaría como stopwords pero son relevantes en este dominio.
+# Se preservan explícitamente después de combinar todas las fuentes de stopwords.
+PRESERVE_TERMS = {
+    "it",   # Information Technology
+    "ai",   # Artificial Intelligence
+    "ar",   # Augmented Reality
+    "dt",   # Digital Transformation
+    "ml",   # Machine Learning
+    "vr",   # Virtual Reality
+    "ux",   # User Experience
+}
+
+
 def get_combined_stopwords(custom_stopwords=None, language='en'):
     """
     Combinar stopwords por defecto con stopwords personalizadas.
@@ -175,5 +188,8 @@ def get_combined_stopwords(custom_stopwords=None, language='en'):
     # Agregar stopwords personalizadas del usuario
     if custom_stopwords:
         combined.update([sw.lower() for sw in custom_stopwords])
+
+    # Preservar siglas técnicas clave aunque NLTK las haya incluido como stopwords
+    combined -= PRESERVE_TERMS
 
     return combined
