@@ -4,11 +4,15 @@ Views for Pipeline app.
 Exposes Pipeline Use Cases as REST API endpoints.
 """
 
+import logging
+
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .use_cases.execute_pipeline import ExecutePipelineUseCase
+
+logger = logging.getLogger(__name__)
 
 
 class PipelineViewSet(viewsets.ViewSet):
@@ -57,17 +61,31 @@ class PipelineViewSet(viewsets.ViewSet):
                 }
             }
         """
-        use_case = ExecutePipelineUseCase()
+        try:
+            use_case = ExecutePipelineUseCase()
+        except Exception as e:
+            logger.exception('Failed to initialize ExecutePipelineUseCase')
+            return Response(
+                {'success': False, 'error': f'Pipeline initialization error: {e}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
         document_ids = request.data.get('document_ids', None)
         use_cache = request.data.get('use_cache', True)
         skip_stages = request.data.get('skip_stages', None)
 
-        result = use_case.execute(
-            document_ids=document_ids,
-            use_cache=use_cache,
-            skip_stages=skip_stages
-        )
+        try:
+            result = use_case.execute(
+                document_ids=document_ids,
+                use_cache=use_cache,
+                skip_stages=skip_stages
+            )
+        except Exception as e:
+            logger.exception('Unhandled exception during pipeline execution')
+            return Response(
+                {'success': False, 'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
         # Return 200 whenever the pipeline actually ran (even with failed stages).
         # Only return error codes for genuine server/config errors.
