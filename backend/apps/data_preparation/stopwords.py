@@ -43,6 +43,14 @@ EXTRA_STOPWORDS = {
     "despite", "regarding", "concerning", "considering",
     "por", "tanto", "embargo", "además", "asimismo",
     "mediante", "través", "respecto", "relación",
+    # Adjetivos/adverbios genéricos de escritura académica sin valor semántico
+    "according", "main", "key", "current", "various", "several",
+    "due", "given", "based", "different", "important", "significant",
+    "particular", "specific", "general", "certain", "common",
+    "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+    "years", "days", "weeks", "months",
+    # Fragmentos de PDF/OCR (palabras que no son palabras reales)
+    "tion", "ing", "ment", "ness", "ity",
 
     # Términos de referencias y citas
     "ref", "refs", "reference", "references", "cit", "cited",
