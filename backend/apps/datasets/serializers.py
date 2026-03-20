@@ -17,6 +17,10 @@ class DatasetFileSerializer(serializers.ModelSerializer):
     inclusion_status_display = serializers.CharField(
         source='get_inclusion_status_display', read_only=True
     )
+    download_url = serializers.SerializerMethodField()
+
+    def get_download_url(self, obj):
+        return f'/api/datasets/{obj.dataset_id}/files/{obj.id}/download/'
 
     class Meta:
         model = DatasetFile
@@ -28,6 +32,8 @@ class DatasetFileSerializer(serializers.ModelSerializer):
             'mime_type',
             'status',
             'error_message',
+            # Download
+            'download_url',
             # Directory
             'directory_path',
             'directory_name',
