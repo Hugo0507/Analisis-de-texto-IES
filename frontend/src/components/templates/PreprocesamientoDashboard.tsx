@@ -18,6 +18,7 @@ import type { PreprocessingDashboardData } from '../../services/dashboardService
 import { useFilter } from '../../contexts/FilterContext';
 import { LANGUAGE_NAMES } from '../../services/dataPreparationService';
 import type { DatasetFile } from '../../services/datasetsService';
+import apiClient from '../../services/api';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const getLanguageName = (code: string): string =>
@@ -368,10 +369,21 @@ export const PreprocesamientoDashboard: React.FC = () => {
     else { setSortField(field); setSortAsc(true); }
   };
 
-  const handleDownload = (file: DatasetFile) => {
-    const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:8000/api/v1';
-    const url = `${apiBase}/public/datasets/${data?.dataset?.id}/files/${file.id}/download/`;
-    window.open(url, '_blank', 'noopener,noreferrer');
+  const handleDownload = async (file: DatasetFile) => {
+    const url = file.download_url ?? `/datasets/${data?.dataset?.id}/files/${file.id}/download/`;
+    try {
+      const response = await apiClient.get(url, { responseType: 'blob' });
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = file.original_filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('Error al descargar el archivo:', err);
+    }
   };
 
   const handleDelete = (file: DatasetFile) => setDeleteTarget(file);

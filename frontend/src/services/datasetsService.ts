@@ -77,6 +77,7 @@ export interface DatasetFile {
   inclusion_status: InclusionStatus;
   inclusion_status_display?: string;
   exclusion_reason?: string;
+  download_url?: string;
   created_at: string;
   updated_at: string;
 }
