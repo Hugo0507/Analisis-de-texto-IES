@@ -357,15 +357,34 @@ class CalculateTfidfUseCase:
                     'error': 'TF-IDF matrix not calculated for one or both documents'
                 }
 
-            # Calculate cosine similarity
-            # (simplified version - actual implementation would use scipy)
-            # This is a placeholder for the actual calculation
+            # Build sparse vectors from TF-IDF entries
+            import numpy as np
+            from scipy.sparse import csr_matrix
+            from sklearn.metrics.pairwise import cosine_similarity
+
+            # Get all term IDs that appear in either document
+            term_ids_1 = {e.term_id: e.score for e in tfidf1.values('term_id', 'score').iterator()}
+            term_ids_2 = {e.term_id: e.score for e in tfidf2.values('term_id', 'score').iterator()}
+            all_term_ids = sorted(set(term_ids_1) | set(term_ids_2))
+
+            if not all_term_ids:
+                return {
+                    'success': True,
+                    'doc_id1': doc_id1,
+                    'doc_id2': doc_id2,
+                    'similarity_score': 0.0
+                }
+
+            vec1 = np.array([term_ids_1.get(tid, 0.0) for tid in all_term_ids])
+            vec2 = np.array([term_ids_2.get(tid, 0.0) for tid in all_term_ids])
+
+            similarity = float(cosine_similarity([vec1], [vec2])[0][0])
 
             return {
                 'success': True,
                 'doc_id1': doc_id1,
                 'doc_id2': doc_id2,
-                'similarity_score': 0.0  # Placeholder
+                'similarity_score': round(similarity, 6)
             }
 
         except Exception as e:
