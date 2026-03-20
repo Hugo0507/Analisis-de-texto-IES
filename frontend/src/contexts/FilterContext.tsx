@@ -43,6 +43,7 @@ export interface FilterContextType {
   filters: FilterState;
   datasets: DatasetListItem[];
   isLoadingDatasets: boolean;
+  backendUnavailable: boolean;
 
   // Master filter setter
   setSelectedDataset: (datasetId: number | null) => void;
@@ -114,6 +115,7 @@ export const FilterProvider: React.FC<FilterProviderProps> = ({ children }) => {
   const [filters, setFilters] = useState<FilterState>(initialFilterState);
   const [datasets, setDatasets] = useState<DatasetListItem[]>([]);
   const [isLoadingDatasets, setIsLoadingDatasets] = useState(true);
+  const [backendUnavailable, setBackendUnavailable] = useState(false);
 
   // Load datasets on mount
   useEffect(() => {
@@ -123,6 +125,7 @@ export const FilterProvider: React.FC<FilterProviderProps> = ({ children }) => {
   const loadDatasets = async () => {
     try {
       setIsLoadingDatasets(true);
+      setBackendUnavailable(false);
       const data = await publicDatasetsService.getDatasets();
       setDatasets(data);
 
@@ -137,6 +140,7 @@ export const FilterProvider: React.FC<FilterProviderProps> = ({ children }) => {
       }
     } catch (error) {
       console.error('Error loading datasets:', error);
+      setBackendUnavailable(true);
     } finally {
       setIsLoadingDatasets(false);
     }
@@ -301,6 +305,7 @@ export const FilterProvider: React.FC<FilterProviderProps> = ({ children }) => {
     filters,
     datasets,
     isLoadingDatasets,
+    backendUnavailable,
     setSelectedDataset,
     setSelectedPreparation,
     setSelectedDirectory,
