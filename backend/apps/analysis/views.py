@@ -745,7 +745,6 @@ class FactorAnalysisViewSet(viewsets.ViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-
     @action(detail=False, methods=['get'], url_path='cooccurrence-graph')
     def cooccurrence_graph(self, request):
         """
