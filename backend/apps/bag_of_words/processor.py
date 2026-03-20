@@ -5,11 +5,14 @@ Procesamiento en background de análisis BoW usando threading.
 """
 
 import logging
+import os
 import threading
 from datetime import datetime
 from typing import List, Dict, Any
+import joblib
 import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
+from django.core.files.base import ContentFile
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
@@ -114,6 +117,19 @@ def process_bag_of_words(bow_id: int):
         # Estadísticas adicionales
         bow.avg_terms_per_document = float(stats['avg_terms_per_doc'])
         bow.total_term_occurrences = int(stats['total_occurrences'])
+
+        # ETAPA 4b: Serializar vectorizador para inferencia futura
+        logger.info(f"[BoW {bow_id}] Serializando vectorizador...")
+        try:
+            import io
+            buffer = io.BytesIO()
+            joblib.dump(vectorizer, buffer)
+            buffer.seek(0)
+            artifact_filename = f"bow_{bow_id}_vectorizer.pkl"
+            bow.model_artifact.save(artifact_filename, ContentFile(buffer.read()), save=False)
+            logger.info(f"[BoW {bow_id}] ✅ Vectorizador serializado: {artifact_filename}")
+        except Exception as artifact_error:
+            logger.warning(f"[BoW {bow_id}] ⚠️ No se pudo serializar el vectorizador: {artifact_error}")
 
         # COMPLETADO
         bow.status = BagOfWords.STATUS_COMPLETED

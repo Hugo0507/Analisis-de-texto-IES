@@ -32,6 +32,7 @@ class BagOfWordsListSerializer(serializers.ModelSerializer):
     )
 
     current_stage_label = serializers.SerializerMethodField()
+    has_artifact = serializers.SerializerMethodField()
 
     class Meta:
         model = BagOfWords
@@ -47,8 +48,12 @@ class BagOfWordsListSerializer(serializers.ModelSerializer):
             'current_stage_label',
             'vocabulary_size',
             'document_count',
+            'has_artifact',
             'created_at',
         ]
+
+    def get_has_artifact(self, obj):
+        return bool(obj.model_artifact)
 
     def get_current_stage_label(self, obj):
         """Obtener etiqueta de la etapa actual."""

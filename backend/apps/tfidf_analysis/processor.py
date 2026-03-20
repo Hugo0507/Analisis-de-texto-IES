@@ -5,12 +5,15 @@ Procesador para análisis TF-IDF con múltiples fuentes de origen.
 Calcula 3 matrices separadas: TF, IDF y TF-IDF.
 """
 
+import io
 import logging
 import threading
 from datetime import datetime
 from typing import Dict, List, Any, Tuple
+import joblib
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from django.core.files.base import ContentFile
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
@@ -101,7 +104,7 @@ def process_tfidf_analysis(tfidf_id: int):
         tfidf_analysis.save()
 
         logger.info(f"[TfIdf {tfidf_id}] Calculando matriz TF-IDF...")
-        tfidf_matrix_data = calculate_tfidf_matrix(
+        tfidf_matrix_data, tfidf_vectorizer = calculate_tfidf_matrix(
             texts,
             tfidf_analysis.max_features,
             tfidf_analysis.min_df,
@@ -117,6 +120,18 @@ def process_tfidf_analysis(tfidf_id: int):
         tfidf_analysis.save()
 
         logger.info(f"[TfIdf {tfidf_id}] ✅ Matriz TF-IDF calculada")
+
+        # Serializar vectorizador TF-IDF para inferencia futura
+        logger.info(f"[TfIdf {tfidf_id}] Serializando vectorizador TF-IDF...")
+        try:
+            buffer = io.BytesIO()
+            joblib.dump(tfidf_vectorizer, buffer)
+            buffer.seek(0)
+            artifact_filename = f"tfidf_{tfidf_id}_vectorizer.pkl"
+            tfidf_analysis.vectorizer_artifact.save(artifact_filename, ContentFile(buffer.read()), save=False)
+            logger.info(f"[TfIdf {tfidf_id}] ✅ Vectorizador TF-IDF serializado: {artifact_filename}")
+        except Exception as artifact_error:
+            logger.warning(f"[TfIdf {tfidf_id}] ⚠️ No se pudo serializar el vectorizador: {artifact_error}")
 
         # Finalizar
         tfidf_analysis.current_stage = TfIdfAnalysis.STAGE_COMPLETED
@@ -405,9 +420,12 @@ def calculate_tfidf_matrix(
     use_idf: bool,
     smooth_idf: bool,
     sublinear_tf: bool
-) -> Dict[str, Any]:
+) -> Tuple[Dict[str, Any], TfidfVectorizer]:
     """
     Calcular matriz TF-IDF final.
+
+    Returns:
+        Tuple (tfidf_matrix_data, vectorizer) — vectorizer is returned for artifact serialization
     """
     vectorizer = TfidfVectorizer(
         max_features=max_features,
@@ -459,7 +477,7 @@ def calculate_tfidf_matrix(
         'total_score': round(total_score, 2)
     }
 
-    return tfidf_matrix_data
+    return tfidf_matrix_data, vectorizer
 
 
 def start_processing_thread(tfidf_id: int):
