@@ -46,10 +46,14 @@ EXTRA_STOPWORDS = {
     "bibliography", "bibliografía", "bibliografia",
     "see", "ver", "cf", "cfr", "comp", "compare",
     "ibid", "ibidem", "op", "cit", "loc",
+    # Abreviaciones bibliográficas de volumen/número/páginas
+    "no", "num", "number", "vol", "volume",
 
     # Abreviaciones comunes
     "etc", "ie", "eg", "vs", "via", "dr", "prof", "mr", "mrs", "ms",
     "sr", "sra", "srta", "dra", "ing", "lic", "phd", "msc", "bsc",
+    # IDs de bases de datos que aparecen en metadatos exportados
+    "cid",
 
     # Palabras muy cortas sin significado
     "aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj",
