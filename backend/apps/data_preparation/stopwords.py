@@ -30,6 +30,9 @@ EXTRA_STOPWORDS = {
     "universidad", "university", "universidade",
     "revista", "journal", "conference", "conferencia",
     "proceedings", "actas", "simposio", "symposium",
+    # Secciones estándar de papers (sin carga semántica propia)
+    "literature", "review", "background", "related", "overview",
+    "analysis", "propose", "proposed", "present", "presented",
 
     # Palabras de relleno académicas (preposiciones, conjunciones, adverbios sin carga semántica)
     "thus", "therefore", "however", "moreover", "furthermore",
