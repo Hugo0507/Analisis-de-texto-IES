@@ -20,7 +20,7 @@ class DatasetFileSerializer(serializers.ModelSerializer):
     download_url = serializers.SerializerMethodField()
 
     def get_download_url(self, obj):
-        return f'/api/datasets/{obj.dataset_id}/files/{obj.id}/download/'
+        return f'/api/v1/datasets/{obj.dataset_id}/files/{obj.id}/download/'
 
     class Meta:
         model = DatasetFile
