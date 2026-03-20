@@ -298,7 +298,7 @@ def calculate_tf_matrix(
         min_df=min_df,
         max_df=max_df,
         ngram_range=ngram_range,
-        token_pattern=r"(?u)\b[a-zA-Z]{3,}\b",
+        token_pattern=r"(?u)\b[a-zA-Z]{2,}\b",
         stop_words=list(EXTRA_STOPWORDS),
     )
 
@@ -370,7 +370,7 @@ def calculate_idf_vector(
         use_idf=True,
         smooth_idf=smooth_idf,
         sublinear_tf=False,
-        token_pattern=r"(?u)\b[a-zA-Z]{3,}\b",
+        token_pattern=r"(?u)\b[a-zA-Z]{2,}\b",
         stop_words=list(EXTRA_STOPWORDS),
     )
 
@@ -445,7 +445,7 @@ def calculate_tfidf_matrix(
         use_idf=use_idf,
         smooth_idf=smooth_idf,
         sublinear_tf=sublinear_tf,
-        token_pattern=r"(?u)\b[a-zA-Z]{3,}\b",
+        token_pattern=r"(?u)\b[a-zA-Z]{2,}\b",
         stop_words=list(EXTRA_STOPWORDS),
     )
 
