@@ -217,6 +217,11 @@ def vectorize_texts(bow, texts: List[str]):
         min_df=bow.min_df,
         max_df=bow.max_df,
         ngram_range=ngram_range,
+        # Solo tokens alfabéticos de mínimo 3 caracteres.
+        # El patrón por defecto (\w\w+) incluye dígitos, lo que permite
+        # que años (2018, 2021) y números sueltos (40) entren al vocabulario
+        # incluso si el preprocesamiento los eliminó del texto.
+        token_pattern=r"(?u)\b[a-zA-Z]{3,}\b",
     )
 
     matrix = vectorizer.fit_transform(texts)

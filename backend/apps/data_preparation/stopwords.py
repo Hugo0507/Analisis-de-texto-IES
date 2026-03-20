@@ -17,7 +17,11 @@ EXTRA_STOPWORDS = {
     "00", "01", "02", "03", "04", "05", "06", "07", "08", "09",
     "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
     "20", "30", "40", "50", "60", "70", "80", "90", "100",
-    "2020", "2021", "2022", "2023", "2024",
+    # Años completos — rango amplio para cubrir referencias bibliográficas
+    "1990", "1991", "1992", "1993", "1994", "1995", "1996", "1997", "1998", "1999",
+    "2000", "2001", "2002", "2003", "2004", "2005", "2006", "2007", "2008", "2009",
+    "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019",
+    "2020", "2021", "2022", "2023", "2024", "2025",
 
     # Términos académicos genéricos
     "abstract", "paper", "study", "research", "article", "journal",
@@ -27,10 +31,13 @@ EXTRA_STOPWORDS = {
     "revista", "journal", "conference", "conferencia",
     "proceedings", "actas", "simposio", "symposium",
 
-    # Palabras de relleno académicas
+    # Palabras de relleno académicas (preposiciones, conjunciones, adverbios sin carga semántica)
     "thus", "therefore", "however", "moreover", "furthermore",
     "indeed", "hence", "whereas", "whereby", "herein",
     "thereof", "therein", "thereby", "accordingly",
+    "within", "without", "whether", "whilst", "although", "though",
+    "among", "amongst", "upon", "across", "along", "toward", "towards",
+    "despite", "regarding", "concerning", "considering",
     "por", "tanto", "embargo", "además", "asimismo",
     "mediante", "través", "respecto", "relación",
 
