@@ -232,7 +232,6 @@ const UploadStage: React.FC<UploadStageProps> = ({ workspaceId, onNext, onBack }
         continue;
       }
 
-      const idx = files.length;
       setFiles(prev => [...prev, { name: file.name, size: file.size, status: 'uploading' }]);
       setUploading(true);
 
