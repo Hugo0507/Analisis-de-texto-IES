@@ -587,7 +587,7 @@ class DatasetViewSet(viewsets.ModelViewSet):
             response['Content-Disposition'] = f'attachment; filename="{download_name}"'
             return response
 
-        # Fallback: serve from disk if content not yet stored in DB
+        # Fallback 1: serve from disk if content not yet stored in DB
         file_path = dataset_file.file_path
         if file_path and not file_path.startswith('drive://') and os.path.exists(file_path):
             guessed_type, _ = mimetypes.guess_type(file_path)
@@ -598,8 +598,16 @@ class DatasetViewSet(viewsets.ModelViewSet):
                 filename=download_name,
             )
 
+        # Fallback 2: serve extracted text as .txt when the original binary is unavailable
+        # (ocurre cuando el archivo fue subido antes de que existiera file_content o el disco se borró)
+        if dataset_file.txt_content:
+            txt_name = os.path.splitext(download_name)[0] + '.txt'
+            response = HttpResponse(dataset_file.txt_content, content_type='text/plain; charset=utf-8')
+            response['Content-Disposition'] = f'attachment; filename="{txt_name}"'
+            return response
+
         return Response(
-            {'error': 'File content not available. Re-upload the file to make it downloadable.'},
+            {'error': 'Contenido del archivo no disponible. Vuelve a subir el archivo para habilitarlo.'},
             status=status.HTTP_404_NOT_FOUND,
         )
 

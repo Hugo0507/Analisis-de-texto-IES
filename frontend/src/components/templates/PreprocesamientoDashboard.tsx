@@ -379,7 +379,15 @@ export const PreprocesamientoDashboard: React.FC = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
     } catch (err: any) {
-      const msg = err?.response?.data?.error || err?.message || 'Error desconocido';
+      let msg = err?.message || 'Error desconocido';
+      // La respuesta viene como blob — hay que leerla como texto para obtener el JSON
+      if (err?.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const json = JSON.parse(text);
+          msg = json.error || msg;
+        } catch { /* mantener msg original */ }
+      }
       showError(`No se pudo descargar "${file.original_filename || file.filename}": ${msg}`);
     }
   };
