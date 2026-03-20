@@ -17,10 +17,26 @@ const publicApiClient: AxiosInstance = axios.create({
   },
 });
 
-// Response interceptor - error handling only, no auth logic
+// Retry on 503 (HF Spaces cold start — container wakes up in ~30-60s)
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 2000;
+
+// Response interceptor - retry on 503, error handling otherwise
 publicApiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const config = error.config as any;
+
+    if (error.response?.status === 503 && (config._retryCount || 0) < MAX_RETRIES) {
+      config._retryCount = (config._retryCount || 0) + 1;
+      const delay = RETRY_DELAY_MS * config._retryCount; // 2s, 4s, 6s
+      console.warn(
+        `Public API 503 — backend waking up. Retry ${config._retryCount}/${MAX_RETRIES} in ${delay / 1000}s...`
+      );
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      return publicApiClient(config);
+    }
+
     console.error('Public API error:', error.response?.status, error.message);
     return Promise.reject(error);
   }

@@ -4,7 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('tfidf_analysis', '0002_remove_tfidf_fields'),
+        ('tfidf_analysis', '0001_initial'),
     ]
 
     operations = [

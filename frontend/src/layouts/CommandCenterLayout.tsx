@@ -9,7 +9,7 @@
 
 import React, { useState } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { FilterProvider } from '../contexts/FilterContext';
+import { FilterProvider, useFilter } from '../contexts/FilterContext';
 import { FilterSidebar } from '../components/organisms';
 
 // Navigation items for dashboard sections
@@ -52,6 +52,30 @@ const NavIcon: React.FC<{ type: string; className?: string }> = ({ type, classNa
   };
 
   return <>{icons[type] || null}</>;
+};
+
+// Banner shown when the backend is waking up (HF Spaces cold start)
+const BackendUnavailableBanner: React.FC = () => {
+  const { backendUnavailable, refreshDatasets, isLoadingDatasets } = useFilter();
+  if (!backendUnavailable) return null;
+  return (
+    <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-between text-sm">
+      <div className="flex items-center gap-2 text-amber-800">
+        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+            d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+        </svg>
+        <span>El servidor está iniciando (puede tardar ~60 s). Los datos se cargarán automáticamente.</span>
+      </div>
+      <button
+        onClick={() => refreshDatasets()}
+        disabled={isLoadingDatasets}
+        className="ml-4 px-3 py-1 rounded-md bg-amber-200 hover:bg-amber-300 text-amber-900 font-medium transition-colors disabled:opacity-50"
+      >
+        {isLoadingDatasets ? 'Conectando…' : 'Reintentar'}
+      </button>
+    </div>
+  );
 };
 
 export const CommandCenterLayout: React.FC = () => {
@@ -180,6 +204,9 @@ export const CommandCenterLayout: React.FC = () => {
               ))}
             </nav>
           </header>
+
+          {/* Backend unavailable banner */}
+          <BackendUnavailableBanner />
 
           {/* Page Content */}
           <main className="flex-1 overflow-y-auto p-4 md:p-6">
