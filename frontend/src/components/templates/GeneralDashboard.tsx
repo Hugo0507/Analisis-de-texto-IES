@@ -10,7 +10,9 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { ChartCard } from '../molecules';
 import publicTopicModelingService from '../../services/publicTopicModelingService';
 import publicBertopicService from '../../services/publicBertopicService';
+import publicDataPreparationService from '../../services/publicDataPreparationService';
 import { useFilter } from '../../contexts/FilterContext';
+import { LANGUAGE_NAMES } from '../../services/dataPreparationService';
 import type { TopicModeling } from '../../services/topicModelingService';
 import type { BERTopicAnalysis } from '../../services/bertopicService';
 
@@ -955,6 +957,282 @@ const ExportMenu: React.FC<ExportMenuProps> = ({ topics, topicsByCategory, docTo
   );
 };
 
+// ─── Metrics Strip ────────────────────────────────────────────────────────────
+
+interface PrepSummary {
+  files_processed: number;
+  files_omitted: number;
+  duplicates_removed: number;
+  predominant_language: string;
+  predominant_language_percentage: number;
+}
+
+interface MetricItem {
+  id: string;
+  icon: React.ReactNode;
+  value: string;
+  label: string;
+  quality: 'good' | 'average' | 'poor' | 'neutral' | 'info';
+  tooltip: { title: string; body: string; range?: string; source?: string };
+  show: boolean;
+}
+
+const Q = {
+  good:    { border: 'border-l-emerald-400', text: 'text-emerald-300', dot: 'bg-emerald-400', badge: 'text-emerald-400/80 border-emerald-500/30' },
+  average: { border: 'border-l-amber-400',   text: 'text-amber-300',   dot: 'bg-amber-400',   badge: 'text-amber-400/80 border-amber-500/30' },
+  poor:    { border: 'border-l-rose-400',     text: 'text-rose-300',     dot: 'bg-rose-400',    badge: 'text-rose-400/80 border-rose-500/30' },
+  neutral: { border: 'border-l-slate-600',    text: 'text-slate-200',    dot: 'bg-slate-500',   badge: 'text-slate-500/80 border-slate-600/30' },
+  info:    { border: 'border-l-blue-400',     text: 'text-blue-300',     dot: 'bg-blue-400',    badge: 'text-blue-400/80 border-blue-500/30' },
+};
+
+const MetricChip: React.FC<{ metric: MetricItem; flipTooltip?: boolean }> = ({ metric, flipTooltip }) => {
+  const q = Q[metric.quality];
+  return (
+    <div className={`group relative flex-1 min-w-[120px] max-w-[200px] rounded-xl bg-slate-800/30 border border-slate-700/40 border-l-2 ${q.border} px-4 py-3 cursor-default select-none`}>
+      {/* Icon + info badge */}
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-slate-600">{metric.icon}</span>
+        <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium ${q.badge}`}>ℹ</span>
+      </div>
+      {/* Value */}
+      <div className={`text-lg font-bold leading-tight ${q.text} mb-0.5 truncate`}>{metric.value}</div>
+      {/* Label */}
+      <div className="text-xs text-slate-500 leading-snug">{metric.label}</div>
+
+      {/* Tooltip — aparece abajo por defecto, arriba si flipTooltip */}
+      <div className={`
+        hidden group-hover:block absolute z-50 w-64
+        ${flipTooltip ? 'bottom-full mb-2' : 'top-full mt-2'}
+        left-0 rounded-xl border border-slate-700/70 bg-slate-900/98 backdrop-blur-sm shadow-2xl p-3.5 pointer-events-none
+      `}>
+        <div className="flex items-center gap-2 mb-2">
+          <span className={`w-2 h-2 rounded-full ${q.dot} shrink-0`} />
+          <p className={`text-xs font-semibold ${q.text}`}>{metric.tooltip.title}</p>
+        </div>
+        <p className="text-xs text-slate-400 leading-relaxed mb-2">{metric.tooltip.body}</p>
+        {metric.tooltip.range && (
+          <div className="text-xs rounded-lg bg-slate-800/60 border border-slate-700/40 px-2.5 py-1.5 mb-1.5">
+            <span className="text-slate-600">Rango ideal: </span>
+            <span className="text-slate-300 font-medium">{metric.tooltip.range}</span>
+          </div>
+        )}
+        {metric.tooltip.source && (
+          <div className="text-xs text-slate-600 mt-1">
+            Fuente: <span className="text-slate-500">{metric.tooltip.source}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+interface MetricsStripProps {
+  topicModel: TopicModeling | null;
+  bertopic: BERTopicAnalysis | null;
+  enrichedTopics: EnrichedTopic[];
+  prepSummary: PrepSummary | null;
+}
+
+const MetricsStrip: React.FC<MetricsStripProps> = ({ topicModel, bertopic, enrichedTopics, prepSummary }) => {
+  const coherence = topicModel?.coherence_score ?? bertopic?.coherence_score ?? null;
+  const coherenceQ: MetricItem['quality'] =
+    coherence == null ? 'neutral' : coherence >= 0.65 ? 'good' : coherence >= 0.40 ? 'average' : 'poor';
+
+  const totalDocs   = topicModel?.documents_processed ?? bertopic?.documents_processed ?? 0;
+  const vocabSize   = topicModel?.vocabulary_size ?? bertopic?.vocabulary_size ?? 0;
+  const numTopics   = enrichedTopics.length;
+  const outliers    = bertopic?.num_outliers ?? 0;
+  const perplexity  = topicModel?.perplexity_score ?? null;
+
+  // Cobertura: % docs asignados a un tópico (no outlier)
+  const coverage = totalDocs > 0 && bertopic != null
+    ? ((totalDocs - outliers) / totalDocs) * 100
+    : totalDocs > 0 && topicModel != null ? 100 : null;
+  const coverageQ: MetricItem['quality'] =
+    coverage == null ? 'neutral' : coverage >= 85 ? 'good' : coverage >= 65 ? 'average' : 'poor';
+
+  // Densidad léxica: términos únicos por documento
+  const lexDensity = totalDocs > 0 && vocabSize > 0 ? vocabSize / totalDocs : null;
+
+  // Preprocesamiento
+  const langCode = prepSummary?.predominant_language ?? null;
+  const langName  = langCode ? (LANGUAGE_NAMES[langCode]?.name ?? langCode.toUpperCase()) : null;
+  const langFlag  = langCode ? (LANGUAGE_NAMES[langCode]?.flag ?? '🌐') : null;
+  const langPct   = prepSummary?.predominant_language_percentage ?? null;
+
+  const dupRemoved  = prepSummary?.duplicates_removed ?? null;
+  const filesProc   = prepSummary?.files_processed ?? null;
+  const dupRate     = dupRemoved != null && filesProc != null && (filesProc + dupRemoved) > 0
+    ? (dupRemoved / (filesProc + dupRemoved)) * 100
+    : null;
+  const dupQ: MetricItem['quality'] =
+    dupRate == null ? 'neutral' : dupRate < 5 ? 'good' : dupRate < 20 ? 'average' : 'info';
+
+  const modelName = topicModel?.algorithm_display ?? topicModel?.algorithm?.toUpperCase()
+    ?? (bertopic ? 'BERTopic' : null);
+
+  const metrics: MetricItem[] = [
+    {
+      id: 'coherence',
+      show: coherence != null,
+      icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" /></svg>,
+      value: coherence != null ? coherence.toFixed(3) : '—',
+      label: 'Coherencia C_V',
+      quality: coherenceQ,
+      tooltip: {
+        title: 'Coherencia C_V del modelo de tópicos',
+        body: 'Mide qué tan semánticamente relacionadas están las palabras principales de cada tópico. Un valor alto indica tópicos más interpretables y con significado real para el investigador.',
+        range: '≥ 0.65 excelente · 0.40–0.64 aceptable · < 0.40 revisar',
+        source: modelName ?? undefined,
+      },
+    },
+    {
+      id: 'corpus',
+      show: totalDocs > 0,
+      icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>,
+      value: totalDocs.toLocaleString('es-CO'),
+      label: 'Documentos analizados',
+      quality: 'neutral',
+      tooltip: {
+        title: 'Tamaño del corpus analizado',
+        body: 'Número total de documentos que el modelo procesó para extraer los tópicos. Un corpus más grande generalmente produce modelos más robustos y representativos.',
+        range: 'Mínimo recomendado: 50 documentos para LDA · 200+ para BERTopic',
+        source: modelName ?? undefined,
+      },
+    },
+    {
+      id: 'vocab',
+      show: vocabSize > 0,
+      icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /></svg>,
+      value: vocabSize.toLocaleString('es-CO'),
+      label: 'Vocabulario único',
+      quality: 'neutral',
+      tooltip: {
+        title: 'Tamaño del vocabulario único',
+        body: 'Número de términos distintos que el modelo consideró tras aplicar preprocesamiento (stopwords, stemming, etc.). Refleja la riqueza léxica del corpus.',
+        source: 'Preprocesamiento + Vectorización',
+      },
+    },
+    {
+      id: 'topics',
+      show: numTopics > 0,
+      icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" strokeWidth={2} /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v3m0 14v3M4.22 4.22l2.12 2.12m11.32 11.32l2.12 2.12M2 12h3m14 0h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" /></svg>,
+      value: String(numTopics),
+      label: 'Tópicos identificados',
+      quality: 'neutral',
+      tooltip: {
+        title: 'Número de tópicos extraídos',
+        body: 'Grupos temáticos distintos identificados en el corpus. Cada tópico representa un conjunto de términos semánticamente relacionados que co-ocurren en los documentos.',
+        range: 'Óptimo: validar con índice de coherencia y revisión experta',
+        source: modelName ?? undefined,
+      },
+    },
+    {
+      id: 'coverage',
+      show: coverage != null && bertopic != null,
+      icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+      value: coverage != null ? `${coverage.toFixed(1)}%` : '—',
+      label: 'Cobertura del corpus',
+      quality: coverageQ,
+      tooltip: {
+        title: 'Cobertura temática del corpus',
+        body: 'Porcentaje de documentos que fueron asignados a algún tópico (no clasificados como outliers). Un valor bajo puede indicar que el corpus es muy heterogéneo o que el modelo necesita ajuste.',
+        range: '≥ 85% excelente · 65–84% aceptable · < 65% revisar parámetros',
+        source: 'BERTopic (HDBSCAN clustering)',
+      },
+    },
+    {
+      id: 'lex_density',
+      show: lexDensity != null,
+      icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+      value: lexDensity != null ? `${lexDensity.toFixed(1)}` : '—',
+      label: 'Términos únicos/doc',
+      quality: 'neutral',
+      tooltip: {
+        title: 'Densidad léxica del corpus',
+        body: 'Promedio de términos únicos por documento tras preprocesamiento. Indica la variedad de vocabulario por documento. Valores muy bajos pueden indicar documentos cortos o un preprocesamiento muy agresivo.',
+        source: 'Vectorización',
+      },
+    },
+    {
+      id: 'perplexity',
+      show: perplexity != null,
+      icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>,
+      value: perplexity != null ? perplexity.toFixed(1) : '—',
+      label: 'Perplejidad (LDA)',
+      quality: 'neutral',
+      tooltip: {
+        title: 'Perplejidad del modelo LDA',
+        body: 'Medida estadística de qué tan bien el modelo predice una muestra. A menor perplejidad, mejor ajuste del modelo a los datos. Comparar entre modelos del mismo corpus.',
+        range: 'No hay rango universal — comparar entre iteraciones del mismo corpus',
+        source: `LDA · ${topicModel?.num_topics ?? '?'} tópicos`,
+      },
+    },
+    {
+      id: 'outliers',
+      show: bertopic != null && outliers > 0,
+      icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
+      value: `${outliers.toLocaleString('es-CO')}`,
+      label: 'Outliers (sin tópico)',
+      quality: outliers / Math.max(totalDocs, 1) < 0.10 ? 'good' : outliers / Math.max(totalDocs, 1) < 0.25 ? 'average' : 'poor',
+      tooltip: {
+        title: 'Documentos sin tópico asignado (BERTopic)',
+        body: 'Documentos que HDBSCAN no pudo asignar a ningún clúster (tópico -1). Un número alto puede indicar documentos muy cortos, muy específicos, o que el parámetro min_cluster_size es demasiado grande.',
+        range: '< 10% del corpus: aceptable · > 25%: revisar parámetros HDBSCAN',
+        source: 'BERTopic · HDBSCAN clustering',
+      },
+    },
+    {
+      id: 'language',
+      show: langName != null,
+      icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" /></svg>,
+      value: `${langFlag ?? ''} ${langName ?? '—'}`,
+      label: langPct != null ? `Idioma predominante (${langPct.toFixed(0)}%)` : 'Idioma predominante',
+      quality: 'info',
+      tooltip: {
+        title: 'Idioma predominante del corpus',
+        body: 'Idioma detectado en la mayor parte de los documentos tras el análisis de preprocesamiento. Fundamental para elegir el modelo de spaCy correcto en NER y los stopwords en vectorización.',
+        source: 'Preprocesamiento (detección automática)',
+      },
+    },
+    {
+      id: 'duplicates',
+      show: dupRemoved != null && dupRemoved > 0,
+      icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>,
+      value: dupRemoved != null ? dupRemoved.toLocaleString('es-CO') : '—',
+      label: dupRate != null ? `Duplicados eliminados (${dupRate.toFixed(0)}%)` : 'Duplicados eliminados',
+      quality: dupQ,
+      tooltip: {
+        title: 'Duplicados eliminados en preprocesamiento',
+        body: 'Número de documentos detectados como duplicados y removidos del corpus antes del análisis. Eliminar duplicados mejora la calidad del modelo al evitar sobrerepresentación de contenidos.',
+        range: '< 5% del corpus: normal · > 20%: revisar fuente de datos',
+        source: 'Preprocesamiento',
+      },
+    },
+  ];
+
+  const visibleMetrics = metrics.filter(m => m.show);
+  if (visibleMetrics.length === 0) return null;
+
+  return (
+    <div className="rounded-2xl border border-slate-700/40 bg-slate-900/40 backdrop-blur-sm p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <span className="w-1 h-3.5 rounded-full bg-gradient-to-b from-cyan-400 to-violet-400" />
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Indicadores de calidad del análisis</p>
+      </div>
+      <div className="flex flex-wrap gap-2.5">
+        {visibleMetrics.map((m, i) => (
+          <MetricChip
+            key={m.id}
+            metric={m}
+            flipTooltip={i >= visibleMetrics.length - 3}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 // ─── Loading Skeleton ─────────────────────────────────────────────────────────
 
 const LoadingSkeleton: React.FC = () => (
@@ -974,6 +1252,7 @@ const LoadingSkeleton: React.FC = () => (
 export const GeneralDashboard: React.FC = () => {
   const [topicModel, setTopicModel] = useState<TopicModeling | null>(null);
   const [bertopic, setBertopic] = useState<BERTopicAnalysis | null>(null);
+  const [prepSummary, setPrepSummary] = useState<PrepSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -990,6 +1269,7 @@ export const GeneralDashboard: React.FC = () => {
     if (!filters.selectedDatasetId) {
       setTopicModel(null);
       setBertopic(null);
+      setPrepSummary(null);
       setIsLoading(false);
       setSelectedTopicId(null);
       return;
@@ -1000,17 +1280,30 @@ export const GeneralDashboard: React.FC = () => {
       setError(null);
       setSelectedTopicId(null);
       try {
-        const [topicList, bertopicList] = await Promise.all([
+        const [topicList, bertopicList, prepList] = await Promise.all([
           publicTopicModelingService.getTopicModelings(filters.selectedDatasetId!),
           publicBertopicService.getBERTopicAnalyses(filters.selectedDatasetId!),
+          publicDataPreparationService.getPreparations(filters.selectedDatasetId!),
         ]);
         const ctm = topicList.find(t => t.status === 'completed');
         const cbt = bertopicList.find(b => b.status === 'completed');
-        const [td, bd] = await Promise.all([
+        const latestPrep = prepList[0] ?? null;
+        const [td, bd, prepDetail] = await Promise.all([
           ctm ? publicTopicModelingService.getTopicModelingById(ctm.id) : Promise.resolve(null),
           cbt ? publicBertopicService.getBERTopicById(cbt.id) : Promise.resolve(null),
+          latestPrep ? publicDataPreparationService.getPreparation(latestPrep.id) : Promise.resolve(null),
         ]);
-        if (!cancelled) { setTopicModel(td); setBertopic(bd); }
+        if (!cancelled) {
+          setTopicModel(td);
+          setBertopic(bd);
+          setPrepSummary(prepDetail ? {
+            files_processed: prepDetail.files_processed ?? 0,
+            files_omitted: prepDetail.files_omitted ?? 0,
+            duplicates_removed: prepDetail.duplicates_removed ?? 0,
+            predominant_language: prepDetail.predominant_language ?? '',
+            predominant_language_percentage: prepDetail.predominant_language_percentage ?? 0,
+          } : null);
+        }
       } catch {
         if (!cancelled) setError('No se pudo cargar el landscape. Verifica la conexión con el backend.');
       } finally {
@@ -1169,6 +1462,14 @@ export const GeneralDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* ── Metrics Strip ── */}
+      <MetricsStrip
+        topicModel={topicModel}
+        bertopic={bertopic}
+        enrichedTopics={enrichedTopics}
+        prepSummary={prepSummary}
+      />
 
       {/* ── Knowledge Map ── */}
       <ChartCard
