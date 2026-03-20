@@ -4,7 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('bag_of_words', '0001_initial'),
+        ('bag_of_words', '0002_remove_tfidf_fields'),
     ]
 
     operations = [
