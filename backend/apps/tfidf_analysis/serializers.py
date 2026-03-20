@@ -16,6 +16,7 @@ class TfIdfAnalysisListSerializer(serializers.ModelSerializer):
     status_label = serializers.CharField(read_only=True)
     current_stage_label = serializers.CharField(read_only=True)
     source_type_label = serializers.CharField(source='get_source_type_display', read_only=True)
+    has_artifact = serializers.SerializerMethodField()
 
     class Meta:
         model = TfIdfAnalysis
@@ -35,9 +36,13 @@ class TfIdfAnalysisListSerializer(serializers.ModelSerializer):
             'current_stage',
             'current_stage_label',
             'progress_percentage',
+            'has_artifact',
             'created_at',
             'updated_at',
         ]
+
+    def get_has_artifact(self, obj):
+        return bool(obj.vectorizer_artifact)
 
 
 class TfIdfAnalysisDetailSerializer(serializers.ModelSerializer):

@@ -81,6 +81,7 @@ export interface BagOfWordsListItem {
   current_stage_label: string | null;
   vocabulary_size: number;
   document_count: number;
+  has_artifact: boolean;
   created_at: string;
 }
 

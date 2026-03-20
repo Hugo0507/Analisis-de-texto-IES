@@ -11,3 +11,4 @@ export { default as analysisService } from './analysisService';
 export { default as datasetsService } from './datasetsService';
 export { default as ngramAnalysisService } from './ngramAnalysisService';
 export { default as dashboardService } from './dashboardService';
+export { default as workspaceService } from './workspaceService';
