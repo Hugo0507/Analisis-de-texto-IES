@@ -212,6 +212,8 @@ def vectorize_texts(bow, texts: List[str]):
     """
     ngram_range = (bow.ngram_min, bow.ngram_max)
 
+    from apps.data_preparation.stopwords import EXTRA_STOPWORDS
+
     vectorizer = CountVectorizer(
         max_features=bow.max_features,
         min_df=bow.min_df,
@@ -222,6 +224,8 @@ def vectorize_texts(bow, texts: List[str]):
         # que años (2018, 2021) y números sueltos (40) entren al vocabulario
         # incluso si el preprocesamiento los eliminó del texto.
         token_pattern=r"(?u)\b[a-zA-Z]{3,}\b",
+        # Segunda línea de defensa: stopwords aplicadas en vectorización
+        stop_words=list(EXTRA_STOPWORDS),
     )
 
     matrix = vectorizer.fit_transform(texts)
