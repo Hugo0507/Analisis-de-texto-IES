@@ -4,12 +4,16 @@ Views for Analysis app.
 Exposes Use Cases as REST API endpoints for NLP/ML analysis.
 """
 
+import csv
+import logging
+
+from django.http import HttpResponse
+from django.utils import timezone
+from django.db.models import Count
+
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
-import logging
-from django.utils import timezone
 
 from .use_cases.generate_bow import GenerateBowUseCase
 from .use_cases.calculate_tfidf import CalculateTfidfUseCase
@@ -412,6 +416,90 @@ class FactorAnalysisViewSet(viewsets.ViewSet):
         else:
             return Response(result, status=status.HTTP_404_NOT_FOUND)
 
+    @action(detail=False, methods=['get'], url_path='export')
+    def export_csv(self, request):
+        """
+        Export factor analysis results as CSV.
+
+        GET /api/analysis/factors/export/
+        """
+        factors = Factor.objects.all().order_by('category', 'name')
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="factor_analysis.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow([
+            'factor_name', 'category', 'global_frequency',
+            'relevance_score', 'keyword_count',
+        ])
+
+        for f in factors:
+            writer.writerow([
+                f.name,
+                f.category,
+                f.global_frequency,
+                f.relevance_score or 0,
+                len(f.keywords) if f.keywords else 0,
+            ])
+
+        return response
+
+    @action(detail=False, methods=['get'], url_path='temporal')
+    def temporal_analysis(self, request):
+        """
+        Temporal analysis: documents and top factors grouped by year.
+
+        GET /api/analysis/factors/temporal/
+        """
+        from apps.datasets.models import DatasetFile
+        from apps.analysis.models import DocumentFactor
+
+        # Group documents by year
+        yearly_data = (
+            DatasetFile.objects
+            .filter(bib_year__isnull=False)
+            .values('bib_year')
+            .annotate(doc_count=Count('id'))
+            .order_by('bib_year')
+        )
+
+        results = []
+        for entry in yearly_data:
+            year = entry['bib_year']
+
+            # Get top factors for this year's documents
+            doc_ids = DatasetFile.objects.filter(
+                bib_year=year
+            ).values_list('id', flat=True)
+
+            top_factors = (
+                DocumentFactor.objects
+                .filter(document_id__in=doc_ids)
+                .values('factor__name', 'factor__category')
+                .annotate(total_mentions=Count('id'))
+                .order_by('-total_mentions')[:5]
+            )
+
+            results.append({
+                'year': year,
+                'doc_count': entry['doc_count'],
+                'top_factors': [
+                    {
+                        'factor_name': tf['factor__name'],
+                        'category': tf['factor__category'],
+                        'mention_count': tf['total_mentions'],
+                    }
+                    for tf in top_factors
+                ],
+            })
+
+        return Response({
+            'success': True,
+            'temporal_data': results,
+            'total_years': len(results),
+        })
+
     @action(detail=False, methods=['post'], url_path='seed')
     def seed(self, request):
         """
@@ -658,6 +746,108 @@ class FactorAnalysisViewSet(viewsets.ViewSet):
             )
 
 
+    @action(detail=False, methods=['get'], url_path='cooccurrence-graph')
+    def cooccurrence_graph(self, request):
+        """
+        Return factor co-occurrence data in graph format for network visualization.
+
+        GET /api/analysis/factors/cooccurrence-graph/
+
+        Response format:
+        {
+            "nodes": [
+                {"id": "factor_1", "label": "Tecnologias Emergentes",
+                 "category": "tecnologico", "frequency": 120, "size": 15}
+            ],
+            "edges": [
+                {"source": "factor_1", "target": "factor_2",
+                 "weight": 45, "strength": 0.8}
+            ]
+        }
+        """
+        use_case = AnalyzeFactorsUseCase()
+
+        # Get factor analysis (from cache if available)
+        result = use_case.execute(use_cache=True)
+
+        if not result.get('success'):
+            return Response(
+                {'success': False, 'error': result.get('error', 'Factor analysis not available')},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Build nodes from global_statistics
+        global_stats = result.get('global_statistics', [])
+        co_occurrence = result.get('co_occurrence', [])
+
+        # Determine max frequency for node sizing
+        max_freq = max(
+            (s['global_frequency'] for s in global_stats), default=1
+        )
+
+        nodes = []
+        for stat in global_stats:
+            fid = stat['factor_id']
+            freq = stat['global_frequency']
+            # Scale node size between 5 and 30
+            size = 5 + (freq / max_freq) * 25 if max_freq > 0 else 10
+
+            nodes.append({
+                'id': f"factor_{fid}",
+                'label': stat['factor_name'],
+                'category': stat['category'],
+                'frequency': freq,
+                'document_coverage': stat.get('document_coverage', 0),
+                'size': round(size, 1),
+            })
+
+        # Build edges from co_occurrence
+        max_co = max(
+            (c['co_occurrence_count'] for c in co_occurrence), default=1
+        )
+
+        edges = []
+        for co in co_occurrence:
+            weight = co['co_occurrence_count']
+            strength = weight / max_co if max_co > 0 else 0.0
+
+            edges.append({
+                'source': f"factor_{co['factor1_id']}",
+                'target': f"factor_{co['factor2_id']}",
+                'weight': weight,
+                'strength': round(strength, 4),
+            })
+
+        return Response({
+            'success': True,
+            'nodes': nodes,
+            'edges': edges,
+            'total_nodes': len(nodes),
+            'total_edges': len(edges),
+        })
+
+    @action(detail=False, methods=['get'], url_path='evaluation')
+    def evaluation(self, request):
+        """
+        Evaluate factor detection quality with proxy metrics.
+
+        GET /api/analysis/factors/evaluation/
+        GET /api/analysis/factors/evaluation/?factor_id=1
+        """
+        from .services.factor_evaluation_service import FactorEvaluationService
+
+        factor_id = request.query_params.get('factor_id')
+        factor_id = int(factor_id) if factor_id else None
+
+        service = FactorEvaluationService()
+        result = service.evaluate_factor_detection(factor_id=factor_id)
+
+        if result.get('success'):
+            return Response(result, status=status.HTTP_200_OK)
+        else:
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+
+
 class FactorCRUDViewSet(viewsets.ViewSet):
     """
     CRUD for Factor model.
@@ -877,3 +1067,51 @@ class FactorRunViewSet(viewsets.ViewSet):
             return Response({'success': True}, status=status.HTTP_204_NO_CONTENT)
         except FactorAnalysisRun.DoesNotExist:
             return Response({'success': False, 'error': 'Análisis no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class DatasetFileExportViewSet(viewsets.ViewSet):
+    """
+    Export endpoint for DatasetFile bibliographic metadata.
+
+    Endpoints:
+    - GET /api/analysis/dataset-export/export/
+    """
+
+    @action(detail=False, methods=['get'], url_path='export')
+    def export_csv(self, request):
+        """
+        Export dataset files bibliographic metadata as CSV.
+
+        GET /api/analysis/dataset-export/export/?dataset_id=1
+        """
+        from apps.datasets.models import DatasetFile
+
+        dataset_id = request.query_params.get('dataset_id')
+        qs = DatasetFile.objects.select_related('dataset')
+
+        if dataset_id:
+            qs = qs.filter(dataset_id=dataset_id)
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="dataset_files.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow([
+            'id', 'title', 'authors', 'year', 'doi',
+            'journal', 'source_db', 'inclusion_status', 'dataset_name',
+        ])
+
+        for f in qs.iterator():
+            writer.writerow([
+                f.id,
+                f.bib_title or f.filename,
+                f.bib_authors or '',
+                f.bib_year or '',
+                f.bib_doi or '',
+                f.bib_journal or '',
+                f.bib_source_db or '',
+                f.inclusion_status,
+                f.dataset.name if f.dataset else '',
+            ])
+
+        return response

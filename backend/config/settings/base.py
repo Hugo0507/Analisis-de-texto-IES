@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'apps.pipeline',
     'apps.infrastructure',
     'apps.public_api',
+    'apps.ai_analysis',
 ]
 
 # Try to import simplejwt - if available, add to INSTALLED_APPS
@@ -393,3 +394,10 @@ GLOBAL_STOPWORDS_FILE = BASE_DIR / 'data' / 'global_stopwords.txt'
 PIPELINE_CACHE_TTL = 3600  # 1 hora
 PIPELINE_MAX_WORKERS = 4
 PIPELINE_TIMEOUT = 1800  # 30 minutos
+
+# ============================================================
+# AI ANALYSIS API KEYS
+# ============================================================
+ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+GOOGLE_GEMINI_API_KEY = os.environ.get('GOOGLE_GEMINI_API_KEY', '')
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
