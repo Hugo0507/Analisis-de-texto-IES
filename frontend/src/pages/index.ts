@@ -37,8 +37,4 @@ export { TopicModelingView } from './TopicModelingView';
 export { BERTopicList } from './BERTopicList';
 export { BERTopicCreate } from './BERTopicCreate';
 export { BERTopicView } from './BERTopicView';
-export { AIClaudePage } from './AIClaudePage';
-export { AIGeminiPage } from './AIGeminiPage';
-export { AIChatGPTPage } from './AIChatGPTPage';
-export { AIComparacionPage } from './AIComparacionPage';
 export { TopicComparison } from './TopicComparison';
