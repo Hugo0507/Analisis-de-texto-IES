@@ -108,6 +108,39 @@ const analysisAdminNavItems: NavItem[] = [
     icon: 'factors',
     description: 'Factores de transformación digital',
   },
+  {
+    path: '/admin/analisis/topic-benchmark',
+    label: 'Benchmark Modelos',
+    icon: 'benchmark',
+    description: 'LDA vs NMF vs LSA vs pLSA vs BERTopic',
+  },
+];
+
+const iaNavItems: NavItem[] = [
+  {
+    path: '/admin/ia/claude',
+    label: 'Claude (Anthropic)',
+    icon: 'ia-claude',
+    description: 'Análisis con Claude',
+  },
+  {
+    path: '/admin/ia/gemini',
+    label: 'Gemini (Google)',
+    icon: 'ia-gemini',
+    description: 'Análisis con Gemini',
+  },
+  {
+    path: '/admin/ia/chatgpt',
+    label: 'ChatGPT (OpenAI)',
+    icon: 'ia-chatgpt',
+    description: 'Análisis con ChatGPT',
+  },
+  {
+    path: '/admin/ia/comparacion',
+    label: 'Comparación Multi-LLM',
+    icon: 'ia-compare',
+    description: 'Comparar LLMs vs NLP',
+  },
 ];
 
 const modelingNavItems: NavItem[] = [
@@ -456,6 +489,51 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '', onClose }) => 
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     {item.icon === 'factors' && (
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    )}
+                    {item.icon === 'benchmark' && (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    )}
+                  </svg>
+                  <span className="text-sm font-medium">{item.label}</span>
+                </NavLink>
+              );
+            })}
+          </div>
+
+          {/* IA Section */}
+          <div className="mb-6">
+            <h2 className="text-emerald-400 font-bold text-sm uppercase tracking-wider px-3 mb-4">
+              IA
+            </h2>
+
+            {iaNavItems.map((item) => {
+              const isActiveRoute = location.pathname.startsWith(item.path);
+
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  onClick={handleNavClick}
+                  className={() =>
+                    `flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 mb-2 ${
+                      isActiveRoute
+                        ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md'
+                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    }`
+                  }
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {item.icon === 'ia-claude' && (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    )}
+                    {item.icon === 'ia-gemini' && (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    )}
+                    {item.icon === 'ia-chatgpt' && (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                    )}
+                    {item.icon === 'ia-compare' && (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                     )}
                   </svg>
                   <span className="text-sm font-medium">{item.label}</span>
