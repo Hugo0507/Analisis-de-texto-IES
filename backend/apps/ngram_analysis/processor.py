@@ -202,11 +202,17 @@ def vectorize_texts(
     Returns:
         Tuple (vectorizer, matrix)
     """
+    from apps.data_preparation.stopwords import EXTRA_STOPWORDS
+
     vectorizer = CountVectorizer(
         max_features=ngram_analysis.max_features,
         min_df=ngram_analysis.min_df,
         max_df=ngram_analysis.max_df,
         ngram_range=ngram_range,
+        # Solo tokens alfabéticos de mínimo 3 caracteres (excluye números, "pp", "no", etc.)
+        token_pattern=r"(?u)\b[a-zA-Z]{3,}\b",
+        # Segunda línea de defensa: stopwords aplicadas en vectorización
+        stop_words=list(EXTRA_STOPWORDS),
     )
 
     matrix = vectorizer.fit_transform(texts)
