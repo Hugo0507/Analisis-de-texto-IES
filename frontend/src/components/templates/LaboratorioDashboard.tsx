@@ -17,7 +17,7 @@ import workspaceService, {
   Workspace,
   CreateWorkspacePayload,
 } from '../../services/workspaceService';
-import { dashboardService } from '../../services/dashboardService';
+import dashboardService from '../../services/dashboardService';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
