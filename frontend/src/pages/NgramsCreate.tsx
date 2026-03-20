@@ -52,6 +52,19 @@ export const NgramsCreate: React.FC = () => {
   const [maxFeatures, setMaxFeatures] = useState(100000);
   const [minDf, setMinDf] = useState(1);
   const [maxDf, setMaxDf] = useState(1.0);
+  const [useDefaultVectorizerConfig, setUseDefaultVectorizerConfig] = useState(true);
+
+  const DEFAULT_VECTORIZER = { max_features: 100000, min_df: 1, max_df: 1.0 };
+
+  const handleVectorizerToggle = () => {
+    const next = !useDefaultVectorizerConfig;
+    setUseDefaultVectorizerConfig(next);
+    if (next) {
+      setMaxFeatures(DEFAULT_VECTORIZER.max_features);
+      setMinDf(DEFAULT_VECTORIZER.min_df);
+      setMaxDf(DEFAULT_VECTORIZER.max_df);
+    }
+  };
 
   useEffect(() => {
     loadPreparations();
@@ -235,7 +248,10 @@ export const NgramsCreate: React.FC = () => {
             <form onSubmit={handleSubmit} className="bg-white p-8" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
               {/* Información Básica */}
               <div className="mb-8">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Información Básica</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-sm font-bold">1</span>
+                  Información Básica
+                </h2>
 
                 {/* Nombre */}
                 <div className="mb-4">
@@ -289,7 +305,10 @@ export const NgramsCreate: React.FC = () => {
 
               {/* Configuraciones de N-gramas */}
               <div className="mb-8">
-                <h2 className="text-lg font-semibold text-gray-900 mb-2">Configuraciones de N-gramas</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <span className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold">2</span>
+                  Configuraciones de N-gramas
+                </h2>
                 <p className="text-sm text-gray-600 mb-4">
                   Selecciona las configuraciones que deseas comparar. Se ejecutarán todos los análisis y se mostrarán las diferencias.
                 </p>
@@ -414,73 +433,141 @@ export const NgramsCreate: React.FC = () => {
 
               {/* Configuración del Vectorizador */}
               <div className="mb-8">
-                <h2 className="text-lg font-semibold text-gray-900 mb-2">Configuración del Vectorizador</h2>
-                <p className="text-sm text-gray-600 mb-4">
-                  Controla cómo se construye el vocabulario de n-gramas. Se aplica a todas las configuraciones seleccionadas.
-                </p>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="w-8 h-8 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-sm font-bold">3</span>
+                  Configuración del Vectorizador
+                </h2>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* max_features */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Máximo de características
-                    </label>
-                    <input
-                      type="number"
-                      min={100}
-                      step={1000}
-                      value={maxFeatures}
-                      onChange={(e) => setMaxFeatures(Number(e.target.value))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Número máximo de n-gramas distintos en el vocabulario. Valores entre 10 000 y 50 000 son habituales para bigramas.
-                    </p>
+                {/* Toggle */}
+                <div className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900 mb-1">Modo de Configuración</h3>
+                      <p className="text-xs text-gray-600">
+                        {useDefaultVectorizerConfig
+                          ? '✅ Usando configuración por defecto (recomendado)'
+                          : '⚙️ Configuración personalizada'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleVectorizerToggle}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
+                        useDefaultVectorizerConfig ? 'bg-emerald-500' : 'bg-gray-300'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          useDefaultVectorizerConfig ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
                   </div>
 
-                  {/* min_df */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Frecuencia mínima de documento <span className="text-gray-400">(min_df)</span>
-                    </label>
-                    <input
-                      type="number"
-                      min={1}
-                      value={minDf}
-                      onChange={(e) => setMinDf(Number(e.target.value))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      El n-grama debe aparecer en al menos este número de documentos. Usar 2–5 elimina bigramas que solo aparecen una vez.
-                    </p>
-                  </div>
-
-                  {/* max_df */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Frecuencia máxima de documento <span className="text-gray-400">(max_df)</span>
-                    </label>
-                    <input
-                      type="number"
-                      min={0.01}
-                      max={1.0}
-                      step={0.05}
-                      value={maxDf}
-                      onChange={(e) => setMaxDf(Number(e.target.value))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Proporción máxima del corpus. Un n-grama que aparece en más del 90 % de los documentos aporta poco (ej: 0.90).
-                    </p>
-                  </div>
+                  {useDefaultVectorizerConfig && (
+                    <div className="mt-3 pt-3 border-t border-blue-200">
+                      <p className="text-xs text-gray-700 font-medium mb-2">Valores por defecto:</p>
+                      <ul className="text-xs text-gray-600 space-y-1">
+                        <li>• <strong>N-gramas máximos:</strong> Todos los encontrados (sin límite)</li>
+                        <li>• <strong>Frecuencia mínima:</strong> 1 (incluye n-gramas que aparecen 1+ veces)</li>
+                        <li>• <strong>Frecuencia máxima:</strong> 100% (incluye todos los n-gramas)</li>
+                      </ul>
+                    </div>
+                  )}
                 </div>
 
-                <div className="mt-4 bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-                  <p className="text-xs text-emerald-800">
-                    <span className="font-semibold">Configuración recomendada para bigramas (2,2):</span>{' '}
-                    max_features = 20 000 · min_df = 2 · max_df = 0.90. Esto descarta bigramas hapax y los que son tan frecuentes que no discriminan.
-                  </p>
-                </div>
+                {!useDefaultVectorizerConfig && (
+                  <div className="space-y-6">
+                    {/* Max Features */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Número Máximo de N-gramas *
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={maxFeatures}
+                        onChange={(e) => setMaxFeatures(Number(e.target.value))}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      />
+                      <div className="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <p className="text-xs text-blue-900 font-medium mb-1">📊 ¿Qué es esto?</p>
+                        <p className="text-xs text-blue-800 mb-2">
+                          Define el tamaño máximo del vocabulario de n-gramas. El sistema tomará los N n-gramas más frecuentes del corpus.
+                        </p>
+                        <p className="text-xs text-blue-900 font-medium mb-1">⚙️ ¿Qué pasa si lo cambio?</p>
+                        <ul className="text-xs text-blue-800 space-y-1 ml-4">
+                          <li><strong>Valor bajo (1 000-5 000):</strong> Solo los bigramas más frecuentes, análisis rápido.</li>
+                          <li><strong>Valor medio (10 000-20 000):</strong> Balance óptimo para bigramas en corpus académico.</li>
+                          <li><strong>Valor alto (50 000+):</strong> Vocabulario completo, más lento y con más ruido.</li>
+                        </ul>
+                        <p className="text-xs text-blue-700 mt-2 italic">
+                          💡 Recomendado para bigramas (2,2): entre 10 000 y 20 000.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Min DF */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Frecuencia Mínima de Documento (min_df) *
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={minDf}
+                        onChange={(e) => setMinDf(Number(e.target.value))}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      />
+                      <div className="mt-2 bg-green-50 border border-green-200 rounded-lg p-3">
+                        <p className="text-xs text-green-900 font-medium mb-1">🔍 ¿Qué es esto?</p>
+                        <p className="text-xs text-green-800 mb-2">
+                          Elimina n-gramas que aparecen en muy pocos documentos (raros o poco relevantes).
+                        </p>
+                        <p className="text-xs text-green-900 font-medium mb-1">⚙️ ¿Qué pasa si lo cambio?</p>
+                        <ul className="text-xs text-green-800 space-y-1 ml-4">
+                          <li><strong>min_df = 1:</strong> Incluye TODOS los n-gramas (incluso si aparecen 1 sola vez).</li>
+                          <li><strong>min_df = 2:</strong> Ignora n-gramas que aparecen en 1 solo documento.</li>
+                          <li><strong>min_df = 5:</strong> Solo n-gramas que aparecen en al menos 5 documentos.</li>
+                        </ul>
+                        <p className="text-xs text-green-700 mt-2 italic">
+                          💡 Ejemplo: "transformacion digitall" (typo) aparece 1 vez → con min_df=2 se elimina automáticamente.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Max DF */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Frecuencia Máxima de Documento (max_df) *
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={1}
+                        step={0.1}
+                        value={maxDf}
+                        onChange={(e) => setMaxDf(Number(e.target.value))}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      />
+                      <div className="mt-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                        <p className="text-xs text-amber-900 font-medium mb-1">🚫 ¿Qué es esto?</p>
+                        <p className="text-xs text-amber-800 mb-2">
+                          Elimina n-gramas demasiado comunes que aparecen en casi todos los documentos y no aportan información diferenciadora.
+                        </p>
+                        <p className="text-xs text-amber-900 font-medium mb-1">⚙️ ¿Qué pasa si lo cambio?</p>
+                        <ul className="text-xs text-amber-800 space-y-1 ml-4">
+                          <li><strong>max_df = 1.0 (100%):</strong> Incluye TODOS los n-gramas, incluso los súper comunes.</li>
+                          <li><strong>max_df = 0.9 (90%):</strong> Ignora n-gramas que aparecen en más del 90% de documentos.</li>
+                          <li><strong>max_df = 0.5 (50%):</strong> Solo n-gramas que aparecen en máximo 50% de documentos.</li>
+                        </ul>
+                        <p className="text-xs text-amber-700 mt-2 italic">
+                          💡 Ejemplo: "higher education" aparece en 95% de papers → con max_df=0.9 se elimina.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </form>
           )}
