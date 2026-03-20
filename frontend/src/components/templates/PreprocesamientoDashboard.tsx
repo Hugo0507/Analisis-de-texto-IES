@@ -19,6 +19,7 @@ import { useFilter } from '../../contexts/FilterContext';
 import { LANGUAGE_NAMES } from '../../services/dataPreparationService';
 import type { DatasetFile } from '../../services/datasetsService';
 import apiClient from '../../services/api';
+import { useToast } from '../../contexts/ToastContext';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const getLanguageName = (code: string): string =>
@@ -213,6 +214,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
   const [error, setError]             = useState<string | null>(null);
   const [crossFilter, setCrossFilterState] = useState<{ chartId: string; segmentId: string } | null>(null);
   const { filters, setSelectedPreparation } = useFilter();
+  const { showError } = useToast();
 
   // File list state
   const [fileSearch, setFileSearch]       = useState('');
@@ -370,19 +372,20 @@ export const PreprocesamientoDashboard: React.FC = () => {
   };
 
   const handleDownload = async (file: DatasetFile) => {
-    const url = file.download_url ?? `/datasets/${data?.dataset?.id}/files/${file.id}/download/`;
+    const url = file.download_url ?? `/api/v1/datasets/${data?.dataset?.id}/files/${file.id}/download/`;
     try {
       const response = await apiClient.get(url, { responseType: 'blob' });
       const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = file.original_filename;
+      link.download = file.original_filename || file.filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
-    } catch (err) {
-      console.error('Error al descargar el archivo:', err);
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || err?.message || 'Error desconocido';
+      showError(`No se pudo descargar "${file.original_filename || file.filename}": ${msg}`);
     }
   };
 
@@ -1103,23 +1106,6 @@ export const PreprocesamientoDashboard: React.FC = () => {
                           >
                             <DownloadIcon />
                           </button>
-                          {/* Replace */}
-                          <label
-                            title="Reemplazar archivo"
-                            className="p-1.5 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
-                          >
-                            <UploadIcon />
-                            <input
-                              type="file"
-                              accept=".pdf,.txt,.docx"
-                              className="hidden"
-                              onChange={(e) => {
-                                const f = e.target.files?.[0];
-                                if (f) console.info('Replace file:', file.id, 'with:', f.name);
-                                e.target.value = '';
-                              }}
-                            />
-                          </label>
                           {/* Delete */}
                           <button
                             onClick={() => handleDelete(file)}
