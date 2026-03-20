@@ -108,17 +108,20 @@ class SimpleDriveService:
                         directory_counts[relative_path] = 0
                     directory_counts[relative_path] += 1
 
-                    # Crear registro con metadata, sin contenido descargado
+                    # Descargar contenido del archivo desde Drive para persistirlo en DB
+                    file_bytes = self.drive_gateway.download_file_as_bytes(file_info['id'])
+
                     DatasetFile.objects.create(
                         dataset=dataset,
                         filename=file_info['name'],
                         original_filename=file_info['name'],
-                        file_path=f"drive://{file_info['id']}",  # Guardar ID de Drive (NO descarga)
+                        file_path=f"drive://{file_info['id']}",
                         file_size_bytes=int(file_info.get('size', 0)),
                         mime_type=file_info['mimeType'],
-                        directory_path=relative_path,  # Ruta completa: "Redalyc/subcarpeta"
-                        directory_name=directory_name,  # Nombre de carpeta inmediata: "subcarpeta"
-                        status='completed'  # Metadata registrada (procesamiento ocurre en Pipeline NLP)
+                        directory_path=relative_path,
+                        directory_name=directory_name,
+                        file_content=file_bytes,  # Persiste en Neon para descarga confiable
+                        status='completed'
                     )
                     created_files_count += 1
                 except Exception as e:
