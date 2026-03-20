@@ -263,7 +263,7 @@ class TrainTopicModelsUseCase:
         n_topics: int = 10
     ) -> Dict[str, Any]:
         """
-        Compare all topic models.
+        Compare all topic models, including BERTopic if available.
 
         Args:
             document_ids: List of document IDs
@@ -293,6 +293,11 @@ class TrainTopicModelsUseCase:
                     'explained_variance': result.get('explained_variance')
                 }
 
+        # Include BERTopic if completed analysis exists
+        bertopic_result = self._get_bertopic_metrics()
+        if bertopic_result:
+            results['bertopic'] = bertopic_result
+
         return {
             'success': True,
             'models': results,
@@ -301,3 +306,50 @@ class TrainTopicModelsUseCase:
                 key=lambda x: x[1].get('coherence') or 0.0
             )[0] if results else None
         }
+
+    def _get_bertopic_metrics(self) -> Dict[str, Any]:
+        """
+        Get BERTopic metrics from the most recent completed analysis.
+
+        Returns:
+            Dictionary with BERTopic metrics, or None if not available.
+        """
+        try:
+            from apps.bertopic.models import BERTopicAnalysis
+
+            analysis = (
+                BERTopicAnalysis.objects
+                .filter(status=BERTopicAnalysis.STATUS_COMPLETED)
+                .order_by('-processing_completed_at')
+                .first()
+            )
+
+            if not analysis:
+                logger.info("No completed BERTopic analysis found for comparison")
+                return None
+
+            # Calculate outlier ratio
+            docs_processed = analysis.documents_processed or 0
+            num_outliers = analysis.num_outliers or 0
+            outlier_ratio = (
+                num_outliers / docs_processed
+                if docs_processed > 0
+                else 0.0
+            )
+
+            return {
+                'n_topics': analysis.num_topics_found,
+                'coherence': analysis.coherence_score,
+                'outlier_ratio': round(outlier_ratio, 4),
+                'num_outliers': num_outliers,
+                'documents_processed': docs_processed,
+                'embedding_model': analysis.embedding_model,
+                'analysis_name': analysis.name,
+            }
+
+        except ImportError:
+            logger.warning("BERTopic app not available")
+            return None
+        except Exception as e:
+            logger.warning(f"Error fetching BERTopic metrics: {e}")
+            return None

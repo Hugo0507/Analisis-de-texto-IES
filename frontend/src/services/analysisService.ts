@@ -298,6 +298,24 @@ class AnalysisService {
     const response = await apiClient.delete(`/analysis/factor-runs/${id}/`);
     return response.data;
   }
+
+  /**
+   * Descarga los resultados de análisis de factores como CSV.
+   * Usa responseType blob para que el navegador descargue el archivo directamente.
+   */
+  async exportFactorsCSV(): Promise<void> {
+    const response = await apiClient.get('/analysis/factors/export/', {
+      responseType: 'blob',
+    });
+    const url = URL.createObjectURL(new Blob([response.data], { type: 'text/csv;charset=utf-8;' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'factores_transformacion_digital.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
 }
 
 const analysisService = new AnalysisService();

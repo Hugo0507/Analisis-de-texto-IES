@@ -141,6 +141,7 @@ export const Factors: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [noFactorsInDb, setNoFactorsInDb] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
