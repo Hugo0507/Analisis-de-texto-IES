@@ -29,6 +29,10 @@ if hf_hostname not in ALLOWED_HOSTS:
 if '.hf.space' not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append('.hf.space')
 
+# HuggingFace internal health-check proxy
+if 'proxy.spaces.internal.huggingface.tech' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('proxy.spaces.internal.huggingface.tech')
+
 # Log ALLOWED_HOSTS for debugging
 print(f"✅ ALLOWED_HOSTS configured: {ALLOWED_HOSTS}")
 
