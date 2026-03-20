@@ -49,6 +49,11 @@ EXTRA_STOPWORDS = {
     "particular", "specific", "general", "certain", "common",
     "three", "four", "five", "six", "seven", "eight", "nine", "ten",
     "years", "days", "weeks", "months",
+    "available", "necessary", "improve", "understanding", "people",
+    "issues", "better", "result", "help", "considered", "terms",
+    "state", "national", "potential", "aspects", "perspective",
+    "able", "order", "means", "focus", "individual", "applied",
+    "become", "provided", "addition", "understand", "ability",
     # Fragmentos de PDF/OCR (palabras que no son palabras reales)
     "tion", "ing", "ment", "ness", "ity",
 
@@ -63,8 +68,8 @@ EXTRA_STOPWORDS = {
     # Abreviaciones comunes
     "etc", "ie", "eg", "vs", "via", "dr", "prof", "mr", "mrs", "ms",
     "sr", "sra", "srta", "dra", "ing", "lic", "phd", "msc", "bsc",
-    # IDs de bases de datos que aparecen en metadatos exportados
-    "cid",
+    # IDs de bases de datos y artefactos de URLs que aparecen en metadatos exportados
+    "cid", "dx",
 
     # Palabras muy cortas sin significado
     # Nota: "ai" (Artificial Intelligence) y "ar" (Augmented Reality) se excluyen
