@@ -1334,9 +1334,13 @@ export const VectorizacionDashboard: React.FC = () => {
   const { filters, setSelectedBow, setSelectedNgram, setSelectedTfidf } = useFilter();
 
   useEffect(() => {
-    if (filters.selectedDatasetId) fetchData(filters.selectedDatasetId);
-    else { setData(null); setIsLoading(false); }
-  }, [filters.selectedDatasetId]);
+    if (filters.selectedDatasetId) {
+      fetchData(filters.selectedDatasetId, filters.selectedBowId, filters.selectedNgramId, filters.selectedTfidfId);
+    } else {
+      setData(null); setIsLoading(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.selectedDatasetId, filters.selectedBowId, filters.selectedNgramId, filters.selectedTfidfId]);
 
   useEffect(() => {
     setSelectedTerm(null);
@@ -1345,11 +1349,29 @@ export const VectorizacionDashboard: React.FC = () => {
     setActiveSection('analysis');
   }, [filters.selectedDatasetId]);
 
-  const fetchData = async (datasetId: number) => {
+  const fetchData = async (
+    datasetId: number,
+    bowId?: number | null,
+    ngramId?: number | null,
+    tfidfId?: number | null,
+  ) => {
     try {
       setIsLoading(true); setError(null);
-      const result = await dashboardService.getVectorizationData(datasetId);
+      const result = await dashboardService.getVectorizationData(datasetId, bowId, ngramId, tfidfId);
       setData(result);
+      // Auto-select first completed analysis alphabetically if no ID explicitly chosen
+      if (!bowId) {
+        const first = result.bowAnalyses.find(a => a.status === 'completed');
+        if (first) setSelectedBow(first.id);
+      }
+      if (!ngramId) {
+        const first = result.ngramAnalyses.find(a => a.status === 'completed');
+        if (first) setSelectedNgram(first.id);
+      }
+      if (!tfidfId) {
+        const first = result.tfidfAnalyses.find(a => a.status === 'completed');
+        if (first) setSelectedTfidf(first.id);
+      }
     } catch (err) {
       setError('Error al cargar los datos de vectorización');
       console.error('Vectorization dashboard fetch error:', err);
@@ -1602,6 +1624,58 @@ export const VectorizacionDashboard: React.FC = () => {
           </button>
         )}
       </div>
+
+      {/* ── Analysis Selector Bar ── */}
+      {(
+        (data?.bowAnalyses?.length ?? 0) > 1 ||
+        (data?.ngramAnalyses?.length ?? 0) > 1 ||
+        (data?.tfidfAnalyses?.length ?? 0) > 1
+      ) && (
+        <div className="flex flex-wrap gap-4 p-4 rounded-xl bg-slate-800/40 border border-slate-700/50">
+          {(data?.bowAnalyses?.length ?? 0) > 1 && (
+            <div className="flex items-center gap-2 min-w-[200px] flex-1">
+              <span className="text-xs text-slate-400 whitespace-nowrap font-medium">BoW:</span>
+              <select
+                value={filters.selectedBowId ?? data?.selectedBow?.id ?? ''}
+                onChange={e => setSelectedBow(Number(e.target.value))}
+                className="flex-1 bg-slate-900/70 border border-slate-600/50 text-slate-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/50 cursor-pointer"
+              >
+                {data?.bowAnalyses.map(a => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {(data?.ngramAnalyses?.length ?? 0) > 1 && (
+            <div className="flex items-center gap-2 min-w-[200px] flex-1">
+              <span className="text-xs text-slate-400 whitespace-nowrap font-medium">N-gramas:</span>
+              <select
+                value={filters.selectedNgramId ?? data?.selectedNgram?.id ?? ''}
+                onChange={e => setSelectedNgram(Number(e.target.value))}
+                className="flex-1 bg-slate-900/70 border border-slate-600/50 text-slate-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500/50 cursor-pointer"
+              >
+                {data?.ngramAnalyses.map(a => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {(data?.tfidfAnalyses?.length ?? 0) > 1 && (
+            <div className="flex items-center gap-2 min-w-[200px] flex-1">
+              <span className="text-xs text-slate-400 whitespace-nowrap font-medium">TF-IDF:</span>
+              <select
+                value={filters.selectedTfidfId ?? data?.selectedTfidf?.id ?? ''}
+                onChange={e => setSelectedTfidf(Number(e.target.value))}
+                className="flex-1 bg-slate-900/70 border border-slate-600/50 text-slate-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/50 cursor-pointer"
+              >
+                {data?.tfidfAnalyses.map(a => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Analytics KPI Bar ── */}
       {(() => {
