@@ -162,10 +162,7 @@ class DashboardService {
       ]);
 
       // Fetch preparations for this dataset
-      const allPreparations = await publicDataPreparationService.getPreparations();
-      const preparations = allPreparations.filter(
-        p => p.dataset_name === dataset.name
-      );
+      const preparations = await publicDataPreparationService.getPreparations(datasetId);
 
       // Get the first completed preparation details if available
       let selectedPreparation: DataPreparation | null = null;
@@ -247,13 +244,13 @@ class DashboardService {
   // VECTORIZATION DATA
   // ==========================================================
 
-  async getVectorizationData(_datasetId: number): Promise<VectorizationDashboardData> {
+  async getVectorizationData(datasetId: number): Promise<VectorizationDashboardData> {
     try {
-      // Fetch all analyses
+      // Fetch analyses filtered by dataset
       const [allBow, allNgram, allTfidf] = await Promise.all([
-        publicBagOfWordsService.getBagOfWords(),
-        publicNgramAnalysisService.getNgramAnalyses(),
-        publicTfIdfAnalysisService.getTfIdfAnalyses(),
+        publicBagOfWordsService.getBagOfWords(datasetId),
+        publicNgramAnalysisService.getNgramAnalyses(datasetId),
+        publicTfIdfAnalysisService.getTfIdfAnalyses(datasetId),
       ]);
 
       // Return all analyses (public API already filters to completed only)
@@ -337,13 +334,13 @@ class DashboardService {
   // MODELING DATA
   // ==========================================================
 
-  async getModelingData(_datasetId: number): Promise<ModelingDashboardData> {
+  async getModelingData(datasetId: number): Promise<ModelingDashboardData> {
     try {
-      // Fetch all analyses
+      // Fetch analyses filtered by dataset
       const [allNer, allTopicModeling, allBertopic] = await Promise.all([
-        publicNerAnalysisService.getNerAnalyses(),
-        publicTopicModelingService.getTopicModelings(),
-        publicBertopicService.getBERTopicAnalyses(),
+        publicNerAnalysisService.getNerAnalyses(datasetId),
+        publicTopicModelingService.getTopicModelings(datasetId),
+        publicBertopicService.getBERTopicAnalyses(datasetId),
       ]);
 
       // Get first completed analysis of each type

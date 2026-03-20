@@ -8,8 +8,9 @@ import publicApiClient from './publicApi';
 import type { NerAnalysisListItem, NerAnalysis } from './nerAnalysisService';
 
 class PublicNerAnalysisService {
-  async getNerAnalyses(): Promise<NerAnalysisListItem[]> {
-    const response = await publicApiClient.get('/ner-analysis/');
+  async getNerAnalyses(datasetId?: number): Promise<NerAnalysisListItem[]> {
+    const params = datasetId ? { dataset_id: datasetId } : {};
+    const response = await publicApiClient.get('/ner-analysis/', { params });
     return response.data.results || response.data;
   }
 

@@ -8,8 +8,9 @@ import publicApiClient from './publicApi';
 import type { TopicModelingListItem, TopicModeling } from './topicModelingService';
 
 class PublicTopicModelingService {
-  async getTopicModelings(): Promise<TopicModelingListItem[]> {
-    const response = await publicApiClient.get('/topic-modeling/');
+  async getTopicModelings(datasetId?: number): Promise<TopicModelingListItem[]> {
+    const params = datasetId ? { dataset_id: datasetId } : {};
+    const response = await publicApiClient.get('/topic-modeling/', { params });
     return response.data.results || response.data;
   }
 
