@@ -210,7 +210,7 @@ def vectorize_texts(
         max_df=ngram_analysis.max_df,
         ngram_range=ngram_range,
         # Solo tokens alfabéticos de mínimo 3 caracteres (excluye números, "pp", "no", etc.)
-        token_pattern=r"(?u)\b[a-zA-Z]{3,}\b",
+        token_pattern=r"(?u)\b[a-zA-Z]{2,}\b",
         # Segunda línea de defensa: stopwords aplicadas en vectorización
         stop_words=list(EXTRA_STOPWORDS),
     )

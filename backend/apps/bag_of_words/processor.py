@@ -223,7 +223,7 @@ def vectorize_texts(bow, texts: List[str]):
         # El patrón por defecto (\w\w+) incluye dígitos, lo que permite
         # que años (2018, 2021) y números sueltos (40) entren al vocabulario
         # incluso si el preprocesamiento los eliminó del texto.
-        token_pattern=r"(?u)\b[a-zA-Z]{3,}\b",
+        token_pattern=r"(?u)\b[a-zA-Z]{2,}\b",
         # Segunda línea de defensa: stopwords aplicadas en vectorización
         stop_words=list(EXTRA_STOPWORDS),
     )

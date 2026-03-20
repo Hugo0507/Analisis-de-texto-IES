@@ -67,8 +67,10 @@ EXTRA_STOPWORDS = {
     "cid",
 
     # Palabras muy cortas sin significado
-    "aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj",
-    "ak", "am", "an", "ao", "ap", "aq", "ar", "as", "at", "au",
+    # Nota: "ai" (Artificial Intelligence) y "ar" (Augmented Reality) se excluyen
+    # intencionalmente para que aparezcan en vocabularios de análisis.
+    "aa", "ab", "ac", "ad", "ae", "af", "ag", "ah", "aj",
+    "ak", "am", "an", "ao", "ap", "aq", "as", "at", "au",
     "av", "aw", "ax", "ay", "az",
     "ba", "bb", "bc", "bd", "be", "bf", "bg", "bh", "bi", "bj",
     "bk", "bl", "bm", "bn", "bo", "bp", "bq", "br", "bs", "bt",
