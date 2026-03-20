@@ -291,11 +291,15 @@ def calculate_tf_matrix(
     Returns:
         Tuple (tf_matrix_data, feature_names)
     """
+    from apps.data_preparation.stopwords import EXTRA_STOPWORDS
+
     vectorizer = CountVectorizer(
         max_features=max_features,
         min_df=min_df,
         max_df=max_df,
         ngram_range=ngram_range,
+        token_pattern=r"(?u)\b[a-zA-Z]{3,}\b",
+        stop_words=list(EXTRA_STOPWORDS),
     )
 
     matrix = vectorizer.fit_transform(texts)
@@ -356,6 +360,8 @@ def calculate_idf_vector(
     """
     Calcular vector IDF (Inverse Document Frequency).
     """
+    from apps.data_preparation.stopwords import EXTRA_STOPWORDS
+
     vectorizer = TfidfVectorizer(
         max_features=max_features,
         min_df=min_df,
@@ -363,7 +369,9 @@ def calculate_idf_vector(
         ngram_range=ngram_range,
         use_idf=True,
         smooth_idf=smooth_idf,
-        sublinear_tf=False
+        sublinear_tf=False,
+        token_pattern=r"(?u)\b[a-zA-Z]{3,}\b",
+        stop_words=list(EXTRA_STOPWORDS),
     )
 
     vectorizer.fit(texts)
@@ -427,6 +435,8 @@ def calculate_tfidf_matrix(
     Returns:
         Tuple (tfidf_matrix_data, vectorizer) — vectorizer is returned for artifact serialization
     """
+    from apps.data_preparation.stopwords import EXTRA_STOPWORDS
+
     vectorizer = TfidfVectorizer(
         max_features=max_features,
         min_df=min_df,
@@ -434,7 +444,9 @@ def calculate_tfidf_matrix(
         ngram_range=ngram_range,
         use_idf=use_idf,
         smooth_idf=smooth_idf,
-        sublinear_tf=sublinear_tf
+        sublinear_tf=sublinear_tf,
+        token_pattern=r"(?u)\b[a-zA-Z]{3,}\b",
+        stop_words=list(EXTRA_STOPWORDS),
     )
 
     matrix = vectorizer.fit_transform(texts)
