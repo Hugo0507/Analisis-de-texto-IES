@@ -202,6 +202,14 @@ class BagOfWords(models.Model):
         help_text="Fecha de finalización del procesamiento"
     )
 
+    # === Artefacto de modelo (serializado para inferencia) ===
+    model_artifact = models.FileField(
+        upload_to='artifacts/bow/',
+        null=True,
+        blank=True,
+        help_text="Vectorizador CountVectorizer serializado (joblib) para inferencia sobre nuevos documentos"
+    )
+
     class Meta:
         ordering = ['-created_at']
         verbose_name = 'Bolsa de Palabras'

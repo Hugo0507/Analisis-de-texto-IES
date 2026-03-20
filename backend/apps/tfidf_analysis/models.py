@@ -241,6 +241,15 @@ class TfIdfAnalysis(models.Model):
         verbose_name='Última actualización'
     )
 
+    # Artefacto de vectorizador (serializado para inferencia)
+    vectorizer_artifact = models.FileField(
+        upload_to='artifacts/tfidf/',
+        null=True,
+        blank=True,
+        verbose_name='Artefacto del vectorizador',
+        help_text="TfidfVectorizer serializado (joblib) con IDF del corpus para inferencia"
+    )
+
     class Meta:
         verbose_name = 'Análisis TF-IDF'
         verbose_name_plural = 'Análisis TF-IDF'

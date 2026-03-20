@@ -163,6 +163,7 @@ export interface TopicModelingListItem {
   progress_percentage: number;
   documents_processed: number;
   coherence_score: number | null;
+  has_artifact: boolean;
   created_by_username: string;
   created_at: string;
 }
