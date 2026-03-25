@@ -135,6 +135,9 @@ def process_topic_modeling(tm_id: int):
             buf_vec.seek(0)
             vec_filename = f"tm_{tm_id}_vectorizer.pkl"
             tm.vectorizer_artifact.save(vec_filename, ContentFile(buf_vec.read()), save=False)
+            # Guardar también en BinaryField para persistencia en hosting efímero
+            buf_vec.seek(0)
+            tm.vectorizer_artifact_bin = buf_vec.read()
 
             # Modelo
             buf_model = io.BytesIO()
@@ -142,6 +145,9 @@ def process_topic_modeling(tm_id: int):
             buf_model.seek(0)
             model_filename = f"tm_{tm_id}_model.pkl"
             tm.model_artifact.save(model_filename, ContentFile(buf_model.read()), save=False)
+            # Guardar también en BinaryField para persistencia en hosting efímero
+            buf_model.seek(0)
+            tm.model_artifact_bin = buf_model.read()
 
             logger.info(f"[TM {tm_id}] ✅ Artefactos serializados: {vec_filename}, {model_filename}")
         except Exception as artifact_error:

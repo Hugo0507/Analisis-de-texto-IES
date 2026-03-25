@@ -129,6 +129,9 @@ def process_tfidf_analysis(tfidf_id: int):
             buffer.seek(0)
             artifact_filename = f"tfidf_{tfidf_id}_vectorizer.pkl"
             tfidf_analysis.vectorizer_artifact.save(artifact_filename, ContentFile(buffer.read()), save=False)
+            # Guardar también en BinaryField para persistencia en hosting efímero
+            buffer.seek(0)
+            tfidf_analysis.vectorizer_artifact_bin = buffer.read()
             logger.info(f"[TfIdf {tfidf_id}] ✅ Vectorizador TF-IDF serializado: {artifact_filename}")
         except Exception as artifact_error:
             logger.warning(f"[TfIdf {tfidf_id}] ⚠️ No se pudo serializar el vectorizador: {artifact_error}")

@@ -1283,12 +1283,14 @@ export const GeneralDashboard: React.FC = () => {
       setIsLoading(true);
       setError(null);
       setSelectedTopicId(null);
+      const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
       try {
-        const [rawTopicList, rawBertopicList, prepList] = await Promise.all([
-          publicTopicModelingService.getTopicModelings(filters.selectedDatasetId!),
-          publicBertopicService.getBERTopicAnalyses(filters.selectedDatasetId!),
-          publicDataPreparationService.getPreparations(filters.selectedDatasetId!),
-        ]);
+        // Sequential calls with delay to avoid 429 on free-tier hosting
+        const rawTopicList = await publicTopicModelingService.getTopicModelings(filters.selectedDatasetId!);
+        await delay(350);
+        const rawBertopicList = await publicBertopicService.getBERTopicAnalyses(filters.selectedDatasetId!);
+        await delay(350);
+        const prepList = await publicDataPreparationService.getPreparations(filters.selectedDatasetId!);
 
         // Sort alphabetically for consistent selection order
         const sortedTopics  = [...rawTopicList].sort((a, b) => a.name.localeCompare(b.name));
@@ -1307,11 +1309,12 @@ export const GeneralDashboard: React.FC = () => {
         // Use first completed preparation (sorted: most recently created from API is typically first)
         const completedPrep = prepList.find(p => p.status === 'completed') ?? null;
 
-        const [td, bd, prepDetail] = await Promise.all([
-          ctm  ? publicTopicModelingService.getTopicModelingById(ctm.id)  : Promise.resolve(null),
-          cbt  ? publicBertopicService.getBERTopicById(cbt.id)            : Promise.resolve(null),
-          completedPrep ? publicDataPreparationService.getPreparation(completedPrep.id) : Promise.resolve(null),
-        ]);
+        // Sequential detail calls with delay to avoid 429
+        const td = ctm ? await publicTopicModelingService.getTopicModelingById(ctm.id) : null;
+        if (ctm) await delay(350);
+        const bd = cbt ? await publicBertopicService.getBERTopicById(cbt.id) : null;
+        if (cbt) await delay(350);
+        const prepDetail = completedPrep ? await publicDataPreparationService.getPreparation(completedPrep.id) : null;
 
         if (!cancelled) {
           setTopicList(sortedTopics);
