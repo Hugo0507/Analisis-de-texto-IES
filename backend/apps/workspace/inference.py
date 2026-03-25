@@ -17,22 +17,52 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 logger = logging.getLogger(__name__)
 
 
-def load_artifact(artifact_field) -> Any:
-    """
-    Cargar un artefacto serializado desde un FileField de Django.
+def _load_from_binary(binary_data) -> Any:
+    """Cargar artefacto desde BinaryField (datos en DB)."""
+    if not binary_data:
+        return None
+    buffer = io.BytesIO(binary_data)
+    return joblib.load(buffer)
 
-    Args:
-        artifact_field: FileField del modelo Django
 
-    Returns:
-        Objeto deserializado
-    """
-    artifact_field.open('rb')
+def _load_from_file(artifact_field) -> Any:
+    """Cargar artefacto desde FileField (filesystem). Fallback."""
+    if not artifact_field or not artifact_field.name:
+        return None
     try:
-        obj = joblib.load(artifact_field)
-    finally:
-        artifact_field.close()
-    return obj
+        artifact_field.open('rb')
+        try:
+            return joblib.load(artifact_field)
+        finally:
+            artifact_field.close()
+    except (FileNotFoundError, OSError):
+        return None
+
+
+def load_artifact(model_instance, bin_field_name: str, file_field_name: str) -> Any:
+    """
+    Cargar artefacto con fallback:
+      1. BinaryField (DB) — siempre disponible en producción
+      2. FileField (filesystem) — funciona en desarrollo local
+      3. Error si ambos fallan
+    """
+    # Intentar desde DB primero
+    bin_data = getattr(model_instance, bin_field_name, None)
+    obj = _load_from_binary(bin_data)
+    if obj is not None:
+        return obj
+
+    # Fallback a filesystem
+    file_field = getattr(model_instance, file_field_name, None)
+    obj = _load_from_file(file_field)
+    if obj is not None:
+        return obj
+
+    raise FileNotFoundError(
+        f'No se encontró el artefacto {bin_field_name} '
+        f'ni en DB ni en filesystem. '
+        f'Reejecutar el análisis para regenerar.'
+    )
 
 
 def infer_bow(texts: List[str], bow_id: int) -> Dict[str, Any]:
@@ -50,10 +80,7 @@ def infer_bow(texts: List[str], bow_id: int) -> Dict[str, Any]:
 
     bow = BagOfWords.objects.get(id=bow_id)
 
-    if not bow.model_artifact:
-        raise ValueError(f"BoW {bow_id} no tiene artefacto serializado. Ejecuta el análisis nuevamente.")
-
-    vectorizer: CountVectorizer = load_artifact(bow.model_artifact)
+    vectorizer: CountVectorizer = load_artifact(bow, 'model_artifact_bin', 'model_artifact')
 
     # Inferencia: transform preserva el vocabulario del corpus original
     matrix = vectorizer.transform(texts)
@@ -104,10 +131,7 @@ def infer_tfidf(texts: List[str], tfidf_id: int) -> Dict[str, Any]:
 
     tfidf = TfIdfAnalysis.objects.get(id=tfidf_id)
 
-    if not tfidf.vectorizer_artifact:
-        raise ValueError(f"TF-IDF {tfidf_id} no tiene artefacto serializado. Ejecuta el análisis nuevamente.")
-
-    vectorizer: TfidfVectorizer = load_artifact(tfidf.vectorizer_artifact)
+    vectorizer: TfidfVectorizer = load_artifact(tfidf, 'vectorizer_artifact_bin', 'vectorizer_artifact')
 
     # Inferencia: transform usa los IDF aprendidos del corpus
     matrix = vectorizer.transform(texts)
@@ -154,14 +178,8 @@ def infer_topics(texts: List[str], topic_model_id: int) -> Dict[str, Any]:
 
     tm = TopicModeling.objects.get(id=topic_model_id)
 
-    if not tm.vectorizer_artifact or not tm.model_artifact:
-        raise ValueError(
-            f"TopicModeling {topic_model_id} no tiene artefactos serializados. "
-            "Ejecuta el análisis nuevamente."
-        )
-
-    vectorizer = load_artifact(tm.vectorizer_artifact)
-    model = load_artifact(tm.model_artifact)
+    vectorizer = load_artifact(tm, 'vectorizer_artifact_bin', 'vectorizer_artifact')
+    model = load_artifact(tm, 'model_artifact_bin', 'model_artifact')
 
     # Vectorizar nuevos textos con vocabulario del corpus
     doc_term_matrix = vectorizer.transform(texts)

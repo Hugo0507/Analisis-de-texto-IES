@@ -209,6 +209,11 @@ class BagOfWords(models.Model):
         blank=True,
         help_text="Vectorizador CountVectorizer serializado (joblib) para inferencia sobre nuevos documentos"
     )
+    model_artifact_bin = models.BinaryField(
+        null=True,
+        blank=True,
+        help_text="Vectorizador serializado (joblib) almacenado en DB para persistencia en hosting efímero"
+    )
 
     class Meta:
         ordering = ['-created_at']

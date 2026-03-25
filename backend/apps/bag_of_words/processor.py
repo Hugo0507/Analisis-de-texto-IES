@@ -127,6 +127,9 @@ def process_bag_of_words(bow_id: int):
             buffer.seek(0)
             artifact_filename = f"bow_{bow_id}_vectorizer.pkl"
             bow.model_artifact.save(artifact_filename, ContentFile(buffer.read()), save=False)
+            # Guardar también en BinaryField para persistencia en hosting efímero
+            buffer.seek(0)
+            bow.model_artifact_bin = buffer.read()
             logger.info(f"[BoW {bow_id}] ✅ Vectorizador serializado: {artifact_filename}")
         except Exception as artifact_error:
             logger.warning(f"[BoW {bow_id}] ⚠️ No se pudo serializar el vectorizador: {artifact_error}")

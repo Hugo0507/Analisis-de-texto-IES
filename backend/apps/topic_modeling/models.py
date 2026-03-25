@@ -277,6 +277,18 @@ class TopicModeling(models.Model):
         verbose_name='Artefacto del vectorizador',
         help_text="Vectorizador serializado (joblib) compatible con el modelo de tópicos"
     )
+    model_artifact_bin = models.BinaryField(
+        null=True,
+        blank=True,
+        verbose_name='Artefacto del modelo (DB)',
+        help_text="Modelo de tópicos serializado (joblib) almacenado en DB para persistencia"
+    )
+    vectorizer_artifact_bin = models.BinaryField(
+        null=True,
+        blank=True,
+        verbose_name='Artefacto del vectorizador (DB)',
+        help_text="Vectorizador serializado (joblib) almacenado en DB para persistencia"
+    )
 
     class Meta:
         db_table = 'topic_modeling'
