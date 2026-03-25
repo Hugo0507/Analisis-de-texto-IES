@@ -249,6 +249,12 @@ class TfIdfAnalysis(models.Model):
         verbose_name='Artefacto del vectorizador',
         help_text="TfidfVectorizer serializado (joblib) con IDF del corpus para inferencia"
     )
+    vectorizer_artifact_bin = models.BinaryField(
+        null=True,
+        blank=True,
+        verbose_name='Artefacto del vectorizador (DB)',
+        help_text="TfidfVectorizer serializado (joblib) almacenado en DB para persistencia en hosting efímero"
+    )
 
     class Meta:
         verbose_name = 'Análisis TF-IDF'
