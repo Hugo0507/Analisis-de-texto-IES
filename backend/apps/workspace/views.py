@@ -175,13 +175,13 @@ def workspace_run(request, workspace_id):
 
 def _inference_process_entry(workspace_id: str):
     """
-    Entry point del proceso hijo de inferencia.
+    Entry point del proceso hijo de inferencia (fork).
 
-    Inicializa Django en el subproceso (necesario porque multiprocessing
-    forkea después de que gunicorn ya cargó la app) y ejecuta la inferencia.
+    Cierra las conexiones DB heredadas del padre para que Django
+    cree nuevas en este proceso.
     """
     try:
-        # Cerrar conexiones heredadas del padre para que Django cree nuevas
+        # Cerrar conexiones heredadas del padre
         from django.db import connections
         for conn in connections.all():
             conn.close()
@@ -203,7 +203,7 @@ def _inference_process_entry(workspace_id: str):
 
 
 def _run_inference(workspace_id: str):
-    """Lógica principal de inferencia (corre en proceso aislado)."""
+    """Lógica principal de inferencia (corre en proceso aislado via fork)."""
     from .inference import infer_bow, infer_tfidf, infer_topics, preprocess_for_inference
 
     workspace = Workspace.objects.prefetch_related('documents').get(id=workspace_id)

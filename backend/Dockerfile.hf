@@ -55,6 +55,7 @@ COPY requirements-hf.txt .
 RUN pip install --no-cache-dir --default-timeout=1000 --prefer-binary -r requirements-hf.txt
 
 # Copy application code
+# Cache-bust: 2026-03-27 force rebuild for sync+gthread fix
 COPY . .
 
 # Create necessary directories
