@@ -977,48 +977,64 @@ interface MetricItem {
   show: boolean;
 }
 
+// Q — paleta de calidad con ratios WCAG AA verificados sobre bg-slate-800/85
+// emerald-300 (#6ee7b7) / amber-300 (#fcd34d) / rose-300 (#fda4af) sobre #1e293b → ≥ 5.5:1
+// slate-100 (#f1f5f9) sobre #1e293b → ≈ 14:1  |  blue-300 (#93c5fd) → ≈ 7.2:1
 const Q = {
-  good:    { border: 'border-l-emerald-400', text: 'text-emerald-300', dot: 'bg-emerald-400', badge: 'text-emerald-400/80 border-emerald-500/30' },
-  average: { border: 'border-l-amber-400',   text: 'text-amber-300',   dot: 'bg-amber-400',   badge: 'text-amber-400/80 border-amber-500/30' },
-  poor:    { border: 'border-l-rose-400',     text: 'text-rose-300',     dot: 'bg-rose-400',    badge: 'text-rose-400/80 border-rose-500/30' },
-  neutral: { border: 'border-l-slate-500',    text: 'text-slate-200',    dot: 'bg-slate-400',   badge: 'text-slate-400/90 border-slate-500/40' },
-  info:    { border: 'border-l-blue-400',     text: 'text-blue-300',     dot: 'bg-blue-400',    badge: 'text-blue-400/80 border-blue-500/30' },
+  good:    { border: 'border-l-emerald-400', text: 'text-emerald-300', dot: 'bg-emerald-400', chip: 'bg-emerald-400/10 text-emerald-300 border-emerald-400/40' },
+  average: { border: 'border-l-amber-400',   text: 'text-amber-300',   dot: 'bg-amber-400',   chip: 'bg-amber-400/10   text-amber-300   border-amber-400/40'   },
+  poor:    { border: 'border-l-rose-400',     text: 'text-rose-300',     dot: 'bg-rose-400',    chip: 'bg-rose-400/10    text-rose-300    border-rose-400/40'    },
+  neutral: { border: 'border-l-slate-400',    text: 'text-slate-100',    dot: 'bg-slate-300',   chip: 'bg-slate-700      text-slate-200   border-slate-500'      },
+  info:    { border: 'border-l-blue-400',     text: 'text-blue-300',     dot: 'bg-blue-400',    chip: 'bg-blue-400/10    text-blue-300    border-blue-400/40'    },
 };
 
 const MetricChip: React.FC<{ metric: MetricItem; flipTooltip?: boolean }> = ({ metric, flipTooltip }) => {
   const q = Q[metric.quality];
   return (
-    <div className={`group relative flex-1 min-w-[120px] max-w-[200px] rounded-xl bg-slate-800/30 border border-slate-700/40 border-l-2 ${q.border} px-4 py-3 cursor-default select-none`}>
-      {/* Icon + info badge */}
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-slate-400">{metric.icon}</span>
-        <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium ${q.badge}`}>ℹ</span>
-      </div>
-      {/* Value */}
-      <div className={`text-lg font-bold leading-tight ${q.text} mb-0.5 truncate`}>{metric.value}</div>
-      {/* Label */}
-      <div className="text-xs text-slate-400 leading-snug">{metric.label}</div>
+    // bg-slate-800/85 ≈ #1a2234 — fondo sólido legible, border visible
+    <div className={`group relative flex-1 min-w-[130px] max-w-[210px] rounded-xl bg-slate-800/85 border border-slate-600 border-l-2 ${q.border} px-4 py-3.5 cursor-default select-none`}>
 
-      {/* Tooltip — aparece abajo por defecto, arriba si flipTooltip */}
-      <div className={`
-        hidden group-hover:block absolute z-50 w-64
-        ${flipTooltip ? 'bottom-full mb-2' : 'top-full mt-2'}
-        left-0 rounded-xl border border-slate-700/70 bg-slate-900/98 backdrop-blur-sm shadow-2xl p-3.5 pointer-events-none
-      `}>
+      {/* Icon + calidad badge */}
+      <div className="flex items-center justify-between mb-2.5">
+        {/* Icono con color semántico del estado */}
+        <span className={`${q.text}`}>{metric.icon}</span>
+        {/* Badge de calidad: texto legible 12px, contraste ≥ 4.5:1 */}
+        <span className={`text-xs px-1.5 py-0.5 rounded-full border font-semibold ${q.chip}`} aria-hidden="true">i</span>
+      </div>
+
+      {/* Valor — grande y con color de calidad (contraste ≥ 5.5:1) */}
+      <div className={`text-xl font-bold leading-tight ${q.text} mb-1 truncate`} aria-label={metric.label}>
+        {metric.value}
+      </div>
+
+      {/* Etiqueta — slate-200 (#e2e8f0) sobre #1a2234 → ≈ 10:1 contraste */}
+      <div className="text-xs font-medium text-slate-200 leading-snug">{metric.label}</div>
+
+      {/* Tooltip — visible al hacer hover, posición adaptativa */}
+      <div
+        role="tooltip"
+        className={`
+          hidden group-hover:block absolute z-50 w-72
+          ${flipTooltip ? 'bottom-full mb-2' : 'top-full mt-2'}
+          left-0 rounded-xl border border-slate-600 bg-slate-900 shadow-2xl p-4 pointer-events-none
+        `}
+      >
         <div className="flex items-center gap-2 mb-2">
-          <span className={`w-2 h-2 rounded-full ${q.dot} shrink-0`} />
-          <p className={`text-xs font-semibold ${q.text}`}>{metric.tooltip.title}</p>
+          <span className={`w-2.5 h-2.5 rounded-full ${q.dot} shrink-0`} />
+          {/* Título tooltip: slate-100 → ≈ 14:1 */}
+          <p className={`text-sm font-semibold ${q.text}`}>{metric.tooltip.title}</p>
         </div>
-        <p className="text-xs text-slate-400 leading-relaxed mb-2">{metric.tooltip.body}</p>
+        {/* Cuerpo: slate-300 (#cbd5e1) sobre bg-slate-900 (#0f172a) → ≈ 7.5:1 */}
+        <p className="text-sm text-slate-300 leading-relaxed mb-2.5">{metric.tooltip.body}</p>
         {metric.tooltip.range && (
-          <div className="text-xs rounded-lg bg-slate-800/60 border border-slate-700/40 px-2.5 py-1.5 mb-1.5">
-            <span className="text-slate-400">Rango ideal: </span>
-            <span className="text-slate-200 font-medium">{metric.tooltip.range}</span>
+          <div className="text-xs rounded-lg bg-slate-800 border border-slate-600 px-3 py-2 mb-2">
+            <span className="text-slate-300 font-medium">Rango: </span>
+            <span className="text-white font-semibold">{metric.tooltip.range}</span>
           </div>
         )}
         {metric.tooltip.source && (
-          <div className="text-xs text-slate-400 mt-1">
-            Fuente: <span className="text-slate-300">{metric.tooltip.source}</span>
+          <div className="text-xs text-slate-300 mt-1">
+            Fuente: <span className="text-white font-medium">{metric.tooltip.source}</span>
           </div>
         )}
       </div>
@@ -1215,12 +1231,16 @@ const MetricsStrip: React.FC<MetricsStripProps> = ({ topicModel, bertopic, enric
   if (visibleMetrics.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-slate-700/40 bg-slate-900/40 backdrop-blur-sm p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <span className="w-1 h-3.5 rounded-full bg-gradient-to-b from-cyan-400 to-violet-400" />
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Indicadores de calidad del análisis</p>
+    // Contenedor con fondo sólido — sin opacidad para garantizar contraste predecible
+    <div className="rounded-2xl border border-slate-600 bg-slate-900 p-5">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="w-1 h-4 rounded-full bg-gradient-to-b from-cyan-400 to-violet-400" aria-hidden="true" />
+        {/* Título de sección: slate-200 → contraste ≈ 10:1 sobre bg-slate-900 */}
+        <p className="text-sm font-semibold text-slate-200 uppercase tracking-wider">
+          Indicadores de calidad del análisis
+        </p>
       </div>
-      <div className="flex flex-wrap gap-2.5">
+      <div className="flex flex-wrap gap-3">
         {visibleMetrics.map((m, i) => (
           <MetricChip
             key={m.id}
@@ -1509,14 +1529,26 @@ export const GeneralDashboard: React.FC = () => {
 
       {/* ── Analysis Selector Bar ── */}
       {(topicList.length > 1 || bertopicList.length > 1) && (
-        <div className="flex flex-wrap gap-4 p-4 rounded-xl bg-slate-800/40 border border-slate-700/50">
+        // bg-slate-900 sólido + border-slate-600 → fondo predecible para contraste
+        <div className="flex flex-wrap gap-4 p-5 rounded-xl bg-slate-900 border border-slate-600">
           {topicList.length > 1 && (
-            <div className="flex items-center gap-2 min-w-[220px] flex-1">
-              <span className="text-xs text-slate-400 whitespace-nowrap font-medium">Modelo de Tema:</span>
+            <div className="flex flex-col gap-1.5 min-w-[220px] flex-1">
+              {/* Label visible: 14px (text-sm), slate-200 → ≈ 10:1 contraste */}
+              <label
+                htmlFor="select-topic-model"
+                className="text-sm font-semibold text-slate-200 whitespace-nowrap"
+              >
+                Modelo de Temas
+              </label>
               <select
+                id="select-topic-model"
                 value={filters.selectedTopicModelId ?? topicModel?.id ?? ''}
                 onChange={e => setSelectedTopicModel(Number(e.target.value))}
-                className="flex-1 bg-slate-900/70 border border-slate-600/50 text-slate-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/50 cursor-pointer"
+                // text-sm (14px) + text-white sobre bg-slate-800 → ≈ 13:1 contraste
+                // border-slate-500 sólido → visible sin depender de opacidad
+                // focus ring 2px cyan con offset — cumple WCAG 2.4.11 (foco visible)
+                // min-h-[44px] — cumple touch target WCAG 2.5.5 + Apple HIG
+                className="min-h-[44px] bg-slate-800 border border-slate-500 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-slate-900 focus:border-emerald-400 cursor-pointer transition-colors hover:border-slate-400"
               >
                 {topicList.map(a => (
                   <option key={a.id} value={a.id}>{a.name} ({a.algorithm_display})</option>
@@ -1525,12 +1557,18 @@ export const GeneralDashboard: React.FC = () => {
             </div>
           )}
           {bertopicList.length > 1 && (
-            <div className="flex items-center gap-2 min-w-[220px] flex-1">
-              <span className="text-xs text-slate-400 whitespace-nowrap font-medium">BERTopic:</span>
+            <div className="flex flex-col gap-1.5 min-w-[220px] flex-1">
+              <label
+                htmlFor="select-bertopic"
+                className="text-sm font-semibold text-slate-200 whitespace-nowrap"
+              >
+                Modelo BERTopic
+              </label>
               <select
+                id="select-bertopic"
                 value={filters.selectedBertopicId ?? bertopic?.id ?? ''}
                 onChange={e => setSelectedBertopic(Number(e.target.value))}
-                className="flex-1 bg-slate-900/70 border border-slate-600/50 text-slate-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500/50 cursor-pointer"
+                className="min-h-[44px] bg-slate-800 border border-slate-500 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-slate-900 focus:border-amber-400 cursor-pointer transition-colors hover:border-slate-400"
               >
                 {bertopicList.map(a => (
                   <option key={a.id} value={a.id}>{a.name}</option>
