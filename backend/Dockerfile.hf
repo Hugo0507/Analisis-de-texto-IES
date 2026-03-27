@@ -82,11 +82,13 @@ EXPOSE 7860
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:7860/api/v1/health/ || exit 1
 
-# Run migrations and start server
+# Run migrations, rebuild ML artifacts, and start server
 CMD python manage.py fix_migration_history && \
     python manage.py migrate --fake admin --noinput && \
     python manage.py migrate --noinput && \
     python manage.py create_test_user && \
+    echo "🔧 Rebuilding BoW/TF-IDF artifacts with local scikit-learn..." && \
+    python manage.py rebuild_artifacts --force && \
     gunicorn config.wsgi:application \
     --bind 0.0.0.0:7860 \
     --workers 2 \
