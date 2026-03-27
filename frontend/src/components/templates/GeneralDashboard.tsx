@@ -709,7 +709,7 @@ const ClusterCard: React.FC<ClusterCardProps> = ({ topic, docTopics, activeTab, 
   ];
 
   return (
-    <div className={`rounded-xl border ${cat.borderClass} bg-slate-800/25 flex flex-col`}>
+    <div className={`rounded-xl border ${cat.borderClass} bg-slate-800 flex flex-col`}>
       {/* Header */}
       <div className="p-4 pb-2">
         <div className="flex items-start justify-between mb-2">
@@ -1683,20 +1683,20 @@ export const GeneralDashboard: React.FC = () => {
       {/* ── Methodology Footer ── */}
       <div className="p-5 rounded-xl bg-slate-800/20 border border-slate-700/30">
         <div className="flex items-start gap-3">
-          <svg className="w-5 h-5 text-slate-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-slate-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <div>
             <p className="text-sm font-medium text-slate-300 mb-1">Metodología del Landscape</p>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <p className="text-xs text-slate-400 leading-relaxed">
               Los temas se extraen mediante modelos de{' '}
               <span className="text-slate-300">modelado de temas</span> (LDA / NMF / LSA) y{' '}
               <span className="text-slate-300">BERTopic</span> aplicados al corpus preprocesado.
               La clasificación en categorías factoriales se realiza automáticamente por coincidencia
               semántica con los descriptores del marco OE3.
               {sourceLabel && (
-                <span className="block mt-1 text-slate-600">Fuente activa: {sourceLabel}</span>
+                <span className="block mt-1 text-slate-400">Fuente activa: {sourceLabel}</span>
               )}
             </p>
           </div>
