@@ -438,14 +438,47 @@ interface ResultsStageProps {
 const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
   const { results } = workspace;
 
-  const Section: React.FC<{ title: string; color: string; children: React.ReactNode }> = ({ title, color, children }) => (
-    <div className={`rounded-2xl border bg-slate-800/40 overflow-hidden`} style={{ borderColor: `${color}33` }}>
-      <div className="px-5 py-3 border-b" style={{ borderColor: `${color}33`, backgroundColor: `${color}11` }}>
-        <h4 className="text-sm font-semibold text-white">{title}</h4>
+  const Section: React.FC<{ title: string; color: string; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, color, children, defaultOpen = true }) => {
+    const [open, setOpen] = useState(defaultOpen);
+    return (
+      <div className="rounded-2xl border bg-slate-800/40 overflow-hidden" style={{ borderColor: `${color}33` }}>
+        <button
+          onClick={() => setOpen(!open)}
+          className="w-full px-5 py-3 border-b flex items-center justify-between cursor-pointer hover:brightness-110 transition-all"
+          style={{ borderColor: `${color}33`, backgroundColor: `${color}11` }}
+        >
+          <h4 className="text-sm font-semibold text-white">{title}</h4>
+          <svg className={`w-4 h-4 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {open && <div className="p-5">{children}</div>}
       </div>
-      <div className="p-5">{children}</div>
-    </div>
-  );
+    );
+  };
+
+  // Generar resumen interpretativo de temas
+  const topicSummary = (() => {
+    if (!results.topics?.all_topics_affinity?.length) return null;
+    const sorted = [...results.topics.all_topics_affinity].sort((a, b) => b.weight - a.weight);
+    const primary = sorted[0];
+    const secondary = sorted.length > 1 ? sorted[1] : null;
+    if (!primary) return null;
+
+    let text = `El documento trata principalmente sobre "${primary.topic_label}" (${primary.percentage}%)`;
+    if (secondary && secondary.percentage > 5) {
+      text += `, con afinidad secundaria a "${secondary.topic_label}" (${secondary.percentage}%)`;
+    }
+    text += '.';
+    return text;
+  })();
+
+  // Stats de preprocesamiento
+  const stats = results.preprocessing_stats;
+  const noiseFiltered = stats ? stats.total_raw_tokens - stats.total_clean_tokens : 0;
+  const noisePercent = stats && stats.total_raw_tokens > 0
+    ? ((noiseFiltered / stats.total_raw_tokens) * 100).toFixed(1)
+    : '0';
 
   return (
     <div className="space-y-6">
@@ -453,14 +486,64 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
         <div>
           <h3 className="text-lg font-semibold text-white">Resultados de inferencia</h3>
           <p className="text-sm text-slate-400 mt-0.5">
-            {results.document_count ?? 0} documento{results.document_count !== 1 ? 's' : ''} analizados
-            usando los modelos del corpus de referencia.
+            {results.document_count ?? 0} documento{(results.document_count ?? 0) !== 1 ? 's' : ''} analizado{(results.document_count ?? 0) !== 1 ? 's' : ''}
+            {' '}usando los modelos del corpus de referencia.
           </p>
         </div>
         <button onClick={onReset} className="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium transition-colors shrink-0">
           Nuevo análisis
         </button>
       </div>
+
+      {/* Resumen interpretativo */}
+      {topicSummary && (
+        <div className="p-4 rounded-xl bg-violet-500/10 border border-violet-500/30">
+          <p className="text-sm text-violet-200 font-medium">{topicSummary}</p>
+        </div>
+      )}
+
+      {/* Indicador de calidad de preprocesamiento */}
+      {stats && stats.total_raw_tokens > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/40 text-center">
+            <p className="text-lg font-bold text-emerald-400">{stats.total_clean_tokens.toLocaleString()}</p>
+            <p className="text-xs text-slate-400 mt-0.5">Tokens útiles</p>
+          </div>
+          <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/40 text-center">
+            <p className="text-lg font-bold text-slate-300">{stats.total_raw_tokens.toLocaleString()}</p>
+            <p className="text-xs text-slate-400 mt-0.5">Tokens extraídos</p>
+          </div>
+          <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/40 text-center">
+            <p className="text-lg font-bold text-amber-400">{noisePercent}%</p>
+            <p className="text-xs text-slate-400 mt-0.5">Ruido filtrado</p>
+          </div>
+          <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/40 text-center">
+            <p className="text-lg font-bold text-white">{stats.documents_processed}</p>
+            <p className="text-xs text-slate-400 mt-0.5">Docs procesados</p>
+          </div>
+        </div>
+      )}
+
+      {/* Documentos rechazados por idioma */}
+      {results.rejected_documents && results.rejected_documents.length > 0 && (
+        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
+          <p className="text-sm font-semibold text-amber-300 mb-2">
+            {results.rejected_documents.length} documento{results.rejected_documents.length !== 1 ? 's' : ''} rechazado{results.rejected_documents.length !== 1 ? 's' : ''} por idioma
+          </p>
+          <div className="space-y-1">
+            {results.rejected_documents.map((d, i) => (
+              <div key={i} className="flex items-center gap-2 text-xs">
+                <span className="text-amber-400 font-medium truncate max-w-[200px]">{d.filename}</span>
+                <span className="text-slate-500">—</span>
+                <span className="text-slate-400">
+                  detectado: <span className="text-white font-medium">{d.detected_language}</span>
+                  {' '}(esperado: {d.expected_language}, confianza: {(d.confidence * 100).toFixed(0)}%)
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* BoW */}
       {results.bow && !results.bow.error && (
@@ -479,20 +562,27 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
             ))}
           </div>
           <div className="space-y-1.5">
-            <p className="text-xs text-slate-400 font-medium mb-2">Top 10 términos</p>
-            {results.bow.top_terms.slice(0, 10).map((t, i) => (
-              <div key={t.term} className="flex items-center gap-2">
-                <span className="text-xs text-slate-500 w-5 text-right">{i + 1}</span>
-                <div className="flex-1 h-4 bg-slate-700/50 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-violet-500/60 rounded-full"
-                    style={{ width: `${(t.score / (results.bow!.top_terms[0]?.score || 1)) * 100}%` }}
-                  />
+            <p className="text-xs text-slate-400 font-medium mb-2">Top 15 términos por frecuencia</p>
+            {results.bow.top_terms.slice(0, 15).map((t, i) => {
+              const maxScore = results.bow!.top_terms[0]?.score || 1;
+              const pct = (t.score / maxScore) * 100;
+              return (
+                <div key={t.term} className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500 w-5 text-right">{i + 1}</span>
+                  <div className="flex-1 h-5 bg-slate-700/50 rounded overflow-hidden relative">
+                    <div
+                      className="h-full rounded transition-all"
+                      style={{
+                        width: `${pct}%`,
+                        background: `linear-gradient(90deg, rgba(139,92,246,0.7), rgba(139,92,246,${0.3 + (pct / 100) * 0.5}))`,
+                      }}
+                    />
+                    <span className="absolute inset-y-0 left-2 flex items-center text-xs text-white font-medium">{t.term}</span>
+                  </div>
+                  <span className="text-xs text-slate-400 w-12 text-right font-mono">{t.score.toFixed(0)}</span>
                 </div>
-                <span className="text-xs text-slate-300 w-24 truncate">{t.term}</span>
-                <span className="text-xs text-slate-500 w-10 text-right">{t.score.toFixed(0)}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Section>
       )}
@@ -513,20 +603,34 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
             ))}
           </div>
           <div className="space-y-1.5">
-            <p className="text-xs text-slate-400 font-medium mb-2">Top 10 términos por TF-IDF</p>
-            {results.tfidf.top_terms.slice(0, 10).map((t, i) => (
-              <div key={t.term} className="flex items-center gap-2">
-                <span className="text-xs text-slate-500 w-5 text-right">{i + 1}</span>
-                <div className="flex-1 h-4 bg-slate-700/50 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-cyan-500/60 rounded-full"
-                    style={{ width: `${(t.score / (results.tfidf!.top_terms[0]?.score || 1)) * 100}%` }}
-                  />
+            <p className="text-xs text-slate-400 font-medium mb-2">Top 15 términos por TF-IDF</p>
+            {results.tfidf.top_terms.slice(0, 15).map((t, i) => {
+              const maxScore = results.tfidf!.top_terms[0]?.score || 1;
+              const pct = (t.score / maxScore) * 100;
+              const isHighScore = pct > 70;
+              return (
+                <div key={t.term} className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500 w-5 text-right">{i + 1}</span>
+                  <div className="flex-1 h-5 bg-slate-700/50 rounded overflow-hidden relative">
+                    <div
+                      className="h-full rounded transition-all"
+                      style={{
+                        width: `${pct}%`,
+                        background: isHighScore
+                          ? 'linear-gradient(90deg, rgba(6,182,212,0.8), rgba(34,211,238,0.9))'
+                          : `linear-gradient(90deg, rgba(6,182,212,0.5), rgba(6,182,212,${0.2 + (pct / 100) * 0.4}))`,
+                      }}
+                    />
+                    <span className={`absolute inset-y-0 left-2 flex items-center text-xs font-medium ${isHighScore ? 'text-white' : 'text-slate-200'}`}>
+                      {t.term}
+                    </span>
+                  </div>
+                  <span className={`text-xs w-14 text-right font-mono ${isHighScore ? 'text-cyan-300 font-semibold' : 'text-slate-400'}`}>
+                    {t.score.toFixed(2)}
+                  </span>
                 </div>
-                <span className="text-xs text-slate-300 w-24 truncate">{t.term}</span>
-                <span className="text-xs text-slate-500 w-14 text-right">{t.score.toFixed(2)}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Section>
       )}
@@ -534,25 +638,70 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
       {/* Topics */}
       {results.topics && !results.topics.error && (
         <Section title={`Modelado de Temas — ${results.topics.algorithm.toUpperCase()}`} color="#f59e0b">
-          <div className="space-y-3">
+          {/* Distribución de temas dominantes */}
+          <div className="space-y-3 mb-6">
             <p className="text-xs text-slate-400 font-medium">Distribución de temas dominantes en los nuevos documentos</p>
             {results.topics.topic_distribution.map(t => (
               <div key={t.topic_id} className="flex items-center gap-3">
-                <span className="text-xs text-slate-400 w-20 truncate shrink-0">
+                <span className="text-xs text-slate-400 w-24 truncate shrink-0" title={t.topic_label || `Tema ${t.topic_id}`}>
                   {t.topic_label || `Tema ${t.topic_id}`}
                 </span>
-                <div className="flex-1 h-5 bg-slate-700/50 rounded-full overflow-hidden">
+                <div className="flex-1 h-5 bg-slate-700/50 rounded overflow-hidden">
                   <div
-                    className="h-full bg-amber-500/60 rounded-full flex items-center justify-end pr-2"
-                    style={{ width: `${t.percentage}%` }}
+                    className="h-full bg-amber-500/60 rounded flex items-center justify-end pr-2"
+                    style={{ width: `${Math.max(t.percentage, 3)}%` }}
                   >
-                    <span className="text-xs text-amber-200 font-medium">{t.percentage}%</span>
+                    {t.percentage >= 10 && (
+                      <span className="text-xs text-amber-200 font-medium">{t.percentage}%</span>
+                    )}
                   </div>
                 </div>
+                {t.percentage < 10 && (
+                  <span className="text-xs text-amber-300 font-medium w-10">{t.percentage}%</span>
+                )}
                 <span className="text-xs text-slate-500 w-8 text-right shrink-0">{t.document_count}</span>
               </div>
             ))}
           </div>
+
+          {/* Afinidad completa: Heatmap de todos los temas */}
+          {results.topics.all_topics_affinity && results.topics.all_topics_affinity.length > 0 && (
+            <div className="space-y-3 pt-4 border-t border-slate-700/50">
+              <p className="text-xs text-slate-400 font-medium">Afinidad promedio con todos los temas del corpus</p>
+              <div className="grid gap-2">
+                {results.topics.all_topics_affinity.map(a => {
+                  const maxWeight = results.topics!.all_topics_affinity[0]?.weight || 1;
+                  const intensity = a.weight / maxWeight;
+                  return (
+                    <div key={a.topic_id} className="flex items-center gap-3">
+                      <span className="text-xs text-slate-400 w-24 truncate shrink-0" title={a.topic_label}>
+                        {a.topic_label}
+                      </span>
+                      <div className="flex-1 h-6 bg-slate-700/30 rounded overflow-hidden relative">
+                        <div
+                          className="h-full rounded"
+                          style={{
+                            width: `${Math.max(a.percentage, 2)}%`,
+                            background: `rgba(245,158,11,${0.3 + intensity * 0.6})`,
+                          }}
+                        />
+                        <span className="absolute inset-y-0 left-2 flex items-center text-xs text-slate-200">
+                          {a.percentage}%
+                        </span>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        {a.top_words?.slice(0, 3).map((w, wi) => (
+                          <span key={wi} className="text-xs px-1.5 py-0.5 rounded bg-slate-700/60 text-slate-300">
+                            {typeof w === 'string' ? w : w.word}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </Section>
       )}
 

@@ -54,6 +54,14 @@ export interface DocumentTopicResult {
   topic_distribution: number[];
 }
 
+export interface TopicAffinityResult {
+  topic_id: number;
+  topic_label: string;
+  top_words: Array<{ word: string; weight: number }>;
+  weight: number;
+  percentage: number;
+}
+
 export interface TopicInferenceResult {
   document_topics: DocumentTopicResult[];
   topic_distribution: Array<{
@@ -62,6 +70,7 @@ export interface TopicInferenceResult {
     document_count: number;
     percentage: number;
   }>;
+  all_topics_affinity: TopicAffinityResult[];
   num_topics: number;
   algorithm: string;
   corpus_topics: Array<{ topic_id: number; topic_label: string; words: Array<{ word: string; weight: number }> }>;
@@ -70,11 +79,28 @@ export interface TopicInferenceResult {
   error?: string;
 }
 
+export interface PreprocessingStats {
+  total_raw_tokens: number;
+  total_clean_tokens: number;
+  documents_processed: number;
+  documents_failed: number;
+}
+
+export interface RejectedDocument {
+  filename: string;
+  detected_language: string;
+  expected_language: string;
+  confidence: number;
+  reason: string;
+}
+
 export interface WorkspaceResults {
   document_count?: number;
   bow?: BowInferenceResult;
   tfidf?: TfidfInferenceResult;
   topics?: TopicInferenceResult;
+  preprocessing_stats?: PreprocessingStats;
+  rejected_documents?: RejectedDocument[];
 }
 
 export interface Workspace {
