@@ -4,15 +4,17 @@ Workspace Views
 API para el Laboratorio: subida de PDFs e inferencia con modelos del corpus.
 
 Arquitectura de procesos:
-    - La inferencia corre en un Process separado (multiprocessing) para aislar
-      el heap de C extensions (numpy/scipy/joblib) del proceso gunicorn.
-    - Un Thread monitor vigila el proceso hijo; si crashea o excede el timeout
+    - La inferencia corre en un subprocess completamente separado via
+      `python manage.py run_inference <workspace_id>`. Esto evita la
+      heap corruption causada por fork() heredando estado de numpy/scipy
+      del proceso gunicorn padre.
+    - Un Thread monitor vigila el subprocess; si crashea o excede el timeout
       de 5 minutos, marca el workspace como error automáticamente.
-    - Validación de idioma con langdetect antes de gastar recursos en inferencia.
 """
 
 import logging
-import multiprocessing
+import subprocess
+import sys
 import threading
 
 from rest_framework import status
@@ -117,8 +119,8 @@ def workspace_run(request, workspace_id):
     """
     Iniciar inferencia sobre los documentos subidos al workspace.
 
-    Lanza un Process separado para la inferencia y un Thread monitor
-    que detecta crashes o timeouts.
+    Lanza un subprocess completamente separado (python manage.py run_inference)
+    y un Thread monitor que detecta crashes o timeouts.
     """
     try:
         workspace = Workspace.objects.prefetch_related('documents').get(
@@ -149,17 +151,20 @@ def workspace_run(request, workspace_id):
     workspace.results = {}
     workspace.save()
 
-    # Lanzar proceso de inferencia aislado (heap separado)
-    process = multiprocessing.Process(
-        target=_inference_process_entry,
-        args=(str(workspace.id),),
-        daemon=True,
+    # Lanzar subprocess completamente aislado (sin fork, sin heap compartido)
+    process = subprocess.Popen(
+        [sys.executable, 'manage.py', 'run_inference', str(workspace.id)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
     )
-    process.start()
 
-    # Monitor: vigila el proceso y actualiza status si crashea/timeout
+    logger.info(
+        f"[WS {workspace_id}] Subprocess de inferencia lanzado (PID: {process.pid})"
+    )
+
+    # Monitor: vigila el subprocess y actualiza status si crashea/timeout
     monitor = threading.Thread(
-        target=_monitor_inference_process,
+        target=_monitor_inference_subprocess,
         args=(process, str(workspace.id)),
         daemon=True,
     )
@@ -171,293 +176,26 @@ def workspace_run(request, workspace_id):
     )
 
 
-# ── Proceso de inferencia (se ejecuta en subprocess aislado) ──────────────
+# ── Monitor del subprocess de inferencia ─────────────────────────────────
 
-def _inference_process_entry(workspace_id: str):
+def _monitor_inference_subprocess(process: subprocess.Popen, workspace_id: str):
     """
-    Entry point del proceso hijo de inferencia (fork).
+    Vigila el subprocess de inferencia.
 
-    Cierra las conexiones DB heredadas del padre para que Django
-    cree nuevas en este proceso.
-    """
-    try:
-        # Cerrar conexiones heredadas del padre
-        from django.db import connections
-        for conn in connections.all():
-            conn.close()
-
-        _run_inference(workspace_id)
-    except Exception as e:
-        # Intentar marcar el workspace como error desde el proceso hijo
-        logger.exception(f"[WS {workspace_id}] Error fatal en proceso de inferencia: {e}")
-        try:
-            from django.db import connections
-            for conn in connections.all():
-                conn.close()
-            workspace = Workspace.objects.get(id=workspace_id)
-            workspace.status = Workspace.STATUS_ERROR
-            workspace.error_message = str(e)[:500]
-            workspace.save()
-        except Exception:
-            pass
-
-
-def _run_inference(workspace_id: str):
-    """Lógica principal de inferencia (corre en proceso aislado via fork)."""
-    from .inference import (
-        infer_bow, infer_tfidf, infer_topics,
-        preprocess_for_inference, get_inference_stopwords,
-    )
-
-    workspace = Workspace.objects.prefetch_related('documents').get(id=workspace_id)
-    docs = workspace.documents.all()
-
-    # Obtener stopwords y idioma del corpus para preprocesar igual que el entrenamiento
-    dataset_id = workspace.dataset_id
-    stopwords = get_inference_stopwords(dataset_id=dataset_id)
-
-    # Obtener idioma predominante del corpus
-    from apps.data_preparation.models import DataPreparation
-    prep = DataPreparation.objects.filter(
-        dataset_id=dataset_id,
-        status=DataPreparation.STATUS_COMPLETED,
-    ).order_by('-created_at').first()
-    corpus_language = prep.predominant_language if prep else 'en'
-
-    logger.info(
-        f"[WS {workspace_id}] Preprocesamiento con {len(stopwords)} stopwords, "
-        f"idioma='{corpus_language}', lematización=True"
-    )
-
-    # ── PASO 1: Extraer texto y preprocesar PDFs (0–20%) ────────────────
-    logger.info(f"[WS {workspace_id}] Extrayendo texto de {docs.count()} PDFs...")
-    workspace.progress_percentage = 5
-    workspace.save()
-
-    texts = []
-    preprocessing_stats = {
-        'total_raw_tokens': 0,
-        'total_clean_tokens': 0,
-        'documents_processed': 0,
-        'documents_failed': 0,
-    }
-
-    for doc in docs:
-        try:
-            doc.status = WorkspaceDocument.STATUS_EXTRACTING
-            doc.save()
-
-            extracted = _extract_pdf_text(doc.file)
-            raw_token_count = len(extracted.split())
-
-            preprocessed = preprocess_for_inference(
-                extracted,
-                stopwords=stopwords,
-                lemmatize=True,
-                language=corpus_language,
-            )
-            clean_token_count = len(preprocessed.split()) if preprocessed else 0
-
-            preprocessing_stats['total_raw_tokens'] += raw_token_count
-            preprocessing_stats['total_clean_tokens'] += clean_token_count
-            preprocessing_stats['documents_processed'] += 1
-
-            doc.extracted_text = extracted
-            doc.preprocessed_text = preprocessed
-            doc.status = WorkspaceDocument.STATUS_READY
-            doc.save()
-
-            texts.append(preprocessed)
-        except Exception as e:
-            doc.status = WorkspaceDocument.STATUS_ERROR
-            doc.error_message = str(e)
-            doc.save()
-            preprocessing_stats['documents_failed'] += 1
-            logger.warning(f"[WS {workspace_id}] Error en doc {doc.id}: {e}")
-
-    if not texts:
-        raise ValueError("No se pudo extraer texto de ningún documento.")
-
-    workspace.progress_percentage = 20
-    workspace.save()
-
-    # ── PASO 2: Validación de idioma (20–30%) ──────────────────────────
-    logger.info(f"[WS {workspace_id}] Validando idioma de los documentos...")
-    _validate_document_languages(workspace, docs)
-    workspace.progress_percentage = 30
-    workspace.save()
-
-    # Verificar si quedan textos válidos después de la validación
-    valid_docs = workspace.documents.filter(status=WorkspaceDocument.STATUS_READY)
-    valid_texts = [d.preprocessed_text for d in valid_docs if d.preprocessed_text]
-
-    if not valid_texts:
-        raise ValueError(
-            "Todos los documentos fueron rechazados por idioma incompatible. "
-            "Sube documentos en el mismo idioma del corpus."
-        )
-
-    workspace.progress_percentage = 40
-    workspace.save()
-
-    # ── PASO 3: Inferencia BoW (40–60%) ────────────────────────────────
-    results = {}
-
-    if workspace.bow_id:
-        logger.info(f"[WS {workspace_id}] Inferencia BoW con modelo {workspace.bow_id}...")
-        try:
-            results['bow'] = infer_bow(valid_texts, workspace.bow_id)
-        except Exception as e:
-            logger.warning(f"[WS {workspace_id}] Error inferencia BoW: {e}")
-            results['bow'] = {'error': str(e)}
-        workspace.progress_percentage = 60
-        workspace.save()
-
-    # ── PASO 4: Inferencia TF-IDF (60–80%) ─────────────────────────────
-    if workspace.tfidf_id:
-        logger.info(f"[WS {workspace_id}] Inferencia TF-IDF con modelo {workspace.tfidf_id}...")
-        try:
-            results['tfidf'] = infer_tfidf(valid_texts, workspace.tfidf_id)
-        except Exception as e:
-            logger.warning(f"[WS {workspace_id}] Error inferencia TF-IDF: {e}")
-            results['tfidf'] = {'error': str(e)}
-        workspace.progress_percentage = 80
-        workspace.save()
-
-    # ── PASO 5: Inferencia Topic Model (80–100%) ──────────────────────
-    if workspace.topic_model_id:
-        logger.info(f"[WS {workspace_id}] Inferencia tópicos con modelo {workspace.topic_model_id}...")
-        try:
-            results['topics'] = infer_topics(valid_texts, workspace.topic_model_id)
-        except Exception as e:
-            logger.warning(f"[WS {workspace_id}] Error inferencia tópicos: {e}")
-            results['topics'] = {'error': str(e)}
-
-    # ── Finalizar ──────────────────────────────────────────────────────
-    results['document_count'] = len(valid_texts)
-    results['preprocessing_stats'] = preprocessing_stats
-
-    # Documentos rechazados por idioma
-    rejected_docs = workspace.documents.filter(
-        status=WorkspaceDocument.STATUS_ERROR,
-        detected_language__isnull=False,
-    )
-    results['rejected_documents'] = [
-        {
-            'filename': d.original_filename,
-            'detected_language': d.detected_language,
-            'expected_language': corpus_language,
-            'confidence': round(d.language_confidence, 2),
-            'reason': d.error_message or '',
-        }
-        for d in rejected_docs
-    ]
-
-    workspace.results = results
-    workspace.status = Workspace.STATUS_COMPLETED
-    workspace.progress_percentage = 100
-    workspace.save()
-
-    logger.info(f"[WS {workspace_id}] Inferencia completada")
-
-
-# ── Validación de idioma ──────────────────────────────────────────────────
-
-def _validate_document_languages(workspace: Workspace, docs):
-    """
-    Detecta el idioma de cada documento y rechaza los que no coinciden
-    con el idioma predominante del corpus (DataPreparation).
-
-    Si no hay DataPreparation completada para el dataset, se omite la
-    validación y solo se registra el idioma detectado.
-    """
-    from apps.data_preparation.language_detector import LanguageDetector
-    from apps.data_preparation.models import DataPreparation
-
-    # Obtener idioma predominante del corpus
-    prep = DataPreparation.objects.filter(
-        dataset=workspace.dataset,
-        status=DataPreparation.STATUS_COMPLETED,
-    ).order_by('-created_at').first()
-
-    expected_lang = prep.predominant_language if prep else None
-
-    if expected_lang:
-        logger.info(
-            f"[WS {workspace.id}] Idioma esperado del corpus: '{expected_lang}'"
-        )
-    else:
-        logger.info(
-            f"[WS {workspace.id}] Sin DataPreparation; se omite filtro de idioma"
-        )
-
-    rejected_count = 0
-
-    for doc in docs:
-        # Solo validar documentos que ya tienen texto extraído
-        if doc.status != WorkspaceDocument.STATUS_READY or not doc.extracted_text:
-            continue
-
-        # Detectar idioma usando langdetect (misma lib que DataPreparation)
-        detected_lang, confidence = LanguageDetector.detect_language(
-            doc.extracted_text[:5000]  # Primeros 5000 chars son suficientes
-        )
-
-        doc.detected_language = detected_lang
-        doc.language_confidence = confidence
-
-        # Rechazar si el idioma no coincide con el corpus
-        if expected_lang and detected_lang != expected_lang and confidence > 0.7:
-            doc.status = WorkspaceDocument.STATUS_ERROR
-            doc.error_message = (
-                f"Idioma incompatible: se detectó '{detected_lang}' "
-                f"(confianza: {confidence:.0%}), pero el corpus fue "
-                f"procesado en '{expected_lang}'. "
-                f"Sube un documento en el mismo idioma del corpus."
-            )
-            rejected_count += 1
-            logger.info(
-                f"[WS {workspace.id}] Doc {doc.id} rechazado: "
-                f"'{detected_lang}' != '{expected_lang}'"
-            )
-        else:
-            logger.info(
-                f"[WS {workspace.id}] Doc {doc.id} idioma OK: "
-                f"'{detected_lang}' (confianza: {confidence:.0%})"
-            )
-
-        doc.save()
-
-    if rejected_count > 0:
-        logger.warning(
-            f"[WS {workspace.id}] {rejected_count} documento(s) rechazado(s) "
-            f"por idioma incompatible"
-        )
-
-
-# ── Monitor del proceso de inferencia ─────────────────────────────────────
-
-def _monitor_inference_process(process: multiprocessing.Process, workspace_id: str):
-    """
-    Vigila el proceso hijo de inferencia.
-
-    Si el proceso termina con exitcode != 0 (crash por heap corruption,
-    SIGKILL, OOM, etc.) o excede el timeout, marca el workspace como error.
+    Si el proceso termina con returncode != 0 (crash, OOM, etc.)
+    o excede el timeout, marca el workspace como error.
     Esto garantiza que NUNCA quede un workspace atascado en 'processing'.
     """
     try:
-        process.join(timeout=INFERENCE_TIMEOUT_SECONDS)
-
-        if process.is_alive():
-            # Timeout alcanzado — matar el proceso
+        try:
+            stdout, stderr = process.communicate(timeout=INFERENCE_TIMEOUT_SECONDS)
+        except subprocess.TimeoutExpired:
             logger.error(
                 f"[WS {workspace_id}] Timeout de {INFERENCE_TIMEOUT_SECONDS}s "
-                f"alcanzado. Terminando proceso..."
+                f"alcanzado. Terminando subprocess..."
             )
-            process.terminate()
-            process.join(timeout=10)
-            if process.is_alive():
-                process.kill()
+            process.kill()
+            stdout, stderr = process.communicate(timeout=10)
 
             _mark_workspace_error(
                 workspace_id,
@@ -466,22 +204,20 @@ def _monitor_inference_process(process: multiprocessing.Process, workspace_id: s
             )
             return
 
-        if process.exitcode != 0:
-            # Proceso crasheó (heap corruption, SIGABRT, etc.)
+        if process.returncode != 0:
+            stderr_text = stderr.decode('utf-8', errors='replace')[-500:] if stderr else ''
             logger.error(
-                f"[WS {workspace_id}] Proceso de inferencia terminó con "
-                f"código {process.exitcode}"
+                f"[WS {workspace_id}] Subprocess terminó con código {process.returncode}. "
+                f"stderr: {stderr_text}"
             )
             _mark_workspace_error(
                 workspace_id,
-                f"El proceso de inferencia terminó inesperadamente "
-                f"(código: {process.exitcode}). Intenta de nuevo."
+                f"El proceso de inferencia terminó con error "
+                f"(código: {process.returncode}). Intenta de nuevo."
             )
             return
 
-        # exitcode == 0: el proceso completó normalmente.
-        # El workspace ya fue marcado como completed/error dentro de _run_inference.
-        logger.info(f"[WS {workspace_id}] Proceso de inferencia finalizó OK")
+        logger.info(f"[WS {workspace_id}] Subprocess de inferencia finalizó OK")
 
     except Exception as e:
         logger.exception(f"[WS {workspace_id}] Error en monitor: {e}")
@@ -499,40 +235,3 @@ def _mark_workspace_error(workspace_id: str, message: str):
             logger.info(f"[WS {workspace_id}] Marcado como error: {message}")
     except Exception as e:
         logger.error(f"[WS {workspace_id}] No se pudo marcar error: {e}")
-
-
-# ── Extracción de texto de PDFs ──────────────────────────────────────────
-
-def _extract_pdf_text(file_field) -> str:
-    """Extraer texto de un PDF usando PyMuPDF (fitz) o PyPDF2 como fallback."""
-    try:
-        import fitz  # PyMuPDF
-        file_field.open('rb')
-        try:
-            pdf_bytes = file_field.read()
-        finally:
-            file_field.close()
-
-        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-        pages_text = []
-        for page in doc:
-            pages_text.append(page.get_text())
-        doc.close()
-
-        return '\n'.join(pages_text).strip()
-    except ImportError:
-        # Fallback a PyPDF2 si fitz no está disponible
-        try:
-            import PyPDF2
-            file_field.open('rb')
-            try:
-                reader = PyPDF2.PdfReader(file_field)
-                pages_text = [page.extract_text() or '' for page in reader.pages]
-            finally:
-                file_field.close()
-            return '\n'.join(pages_text).strip()
-        except ImportError:
-            raise ImportError(
-                "Se requiere PyMuPDF (fitz) o PyPDF2 para extraer texto de PDFs. "
-                "Instala con: pip install pymupdf"
-            )
