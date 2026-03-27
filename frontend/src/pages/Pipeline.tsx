@@ -24,10 +24,10 @@ const STAGE_META: Record<string, { label: string; group: string; defaults: strin
   preprocessing:      { label: 'Preprocesamiento de texto', group: 'Preprocesamiento', defaults: ['Eliminar stopwords: sí', 'Eliminar puntuación: sí', 'Eliminar números: sí', 'Stemming: no', 'Longitud mínima: 3', 'Longitud máxima: 30'] },
   bow_generation:     { label: 'Bolsa de Palabras (BoW)', group: 'Vectorización', defaults: ['Vocabulario máximo: 5,000 términos', 'Frecuencia mínima: 2 docs', 'Frecuencia máxima: 85%', 'N-gramas: (1,1)'] },
   tfidf_calculation:  { label: 'Matriz TF-IDF', group: 'Vectorización', defaults: ['Vocabulario máximo: 5,000 términos', 'Normalización: L2', 'IDF activado: sí'] },
-  lda_training:       { label: 'Topic Modeling — LDA', group: 'Modelado', defaults: ['Latent Dirichlet Allocation', 'Tópicos: 10'] },
-  nmf_training:       { label: 'Topic Modeling — NMF', group: 'Modelado', defaults: ['Non-negative Matrix Factorization', 'Tópicos: 10'] },
-  lsa_training:       { label: 'Topic Modeling — LSA', group: 'Modelado', defaults: ['Latent Semantic Analysis (SVD)', 'Tópicos: 10'] },
-  plsa_training:      { label: 'Topic Modeling — pLSA', group: 'Modelado', defaults: ['Probabilistic Latent Semantic Analysis', 'Tópicos: 10'] },
+  lda_training:       { label: 'Modelado de Temas — LDA', group: 'Modelado', defaults: ['Latent Dirichlet Allocation', 'Temas: 10'] },
+  nmf_training:       { label: 'Modelado de Temas — NMF', group: 'Modelado', defaults: ['Non-negative Matrix Factorization', 'Temas: 10'] },
+  lsa_training:       { label: 'Modelado de Temas — LSA', group: 'Modelado', defaults: ['Latent Semantic Analysis (SVD)', 'Temas: 10'] },
+  plsa_training:      { label: 'Modelado de Temas — pLSA', group: 'Modelado', defaults: ['Probabilistic Latent Semantic Analysis', 'Temas: 10'] },
   topic_comparison:   { label: 'Comparación de modelos', group: 'Modelado', defaults: ['Compara LDA · NMF · LSA · pLSA', 'Métrica: coherencia + perplejidad'] },
   factor_analysis:    { label: 'Análisis de factores', group: 'Análisis', defaults: ['Normalización por longitud: sí', '16 factores predefinidos', '8 categorías'] },
   consolidation:      { label: 'Consolidación de resultados', group: 'Reporte', defaults: ['Agregación de métricas globales'] },
@@ -62,7 +62,7 @@ function formatDate(iso: string): string {
 
 function fmt(n: unknown): string {
   if (n == null) return '—';
-  if (typeof n === 'number') return n % 1 === 0 ? n.toLocaleString('es-CO') : n.toFixed(4);
+  if (typeof n === 'number') return n % 1 === 0 ? n.toLocaleString('es-CO') : n.toFixed(2);
   return String(n);
 }
 
@@ -163,7 +163,7 @@ const StageResultPanel: React.FC<{ stageName: string; data: Record<string, unkno
         </div>
         {topics.length > 0 && (
           <>
-            <p className="text-xs font-medium text-slate-500 flex items-center gap-1"><Layers className="w-3 h-3" />Primeros tópicos</p>
+            <p className="text-xs font-medium text-slate-500 flex items-center gap-1"><Layers className="w-3 h-3" />Primeros temas</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {topics.slice(0, 6).map((t, i) => <TopicCard key={i} topic={t} idx={i} />)}
             </div>
@@ -438,7 +438,7 @@ export const Pipeline: React.FC = () => {
           <Info className="w-4 h-4 shrink-0 mt-0.5 text-slate-400" />
           <span className="leading-relaxed">
             Ejecuta las <strong>14 etapas del flujo NLP</strong> de forma automática con los valores por defecto.
-            Incluye preprocesamiento, vectorización (BoW + TF-IDF), modelado de tópicos (LDA · NMF · LSA · pLSA) y análisis de factores.
+            Incluye preprocesamiento, vectorización (BoW + TF-IDF), modelado de temas (LDA · NMF · LSA · pLSA) y análisis de factores.
             Haz clic en cada etapa para ver los resultados detallados.
           </span>
         </div>

@@ -197,7 +197,7 @@ export const TopicModelingView: React.FC = () => {
       tooltip: {
         callbacks: {
           label: function(context: any) {
-            return `Peso: ${context.parsed.x.toFixed(4)}`;
+            return `Peso: ${context.parsed.x.toFixed(2)}`;
           },
         },
       },
@@ -243,7 +243,7 @@ export const TopicModelingView: React.FC = () => {
             </button>
             <div>
               <h1 className="text-xl font-semibold text-gray-900">{analysis.name}</h1>
-              <p className="text-sm text-gray-600 mt-0.5">Topic Modeling - {analysis.algorithm_display}</p>
+              <p className="text-sm text-gray-600 mt-0.5">Modelado de Temas - {analysis.algorithm_display}</p>
             </div>
           </div>
 
@@ -305,7 +305,7 @@ export const TopicModelingView: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-700">Configuración</p>
               <p className="text-sm text-gray-900 mt-1">
-                {analysis.num_topics} tópicos, {analysis.num_words} palabras/tópico
+                {analysis.num_topics} temas, {analysis.num_words} palabras/tema
               </p>
               <p className="text-xs text-gray-500 mt-0.5">
                 Max iteraciones: {analysis.max_iterations}
@@ -339,7 +339,7 @@ export const TopicModelingView: React.FC = () => {
                 <div className="bg-white bg-opacity-20 p-4 rounded-lg">
                   <p className="text-sm opacity-90">Coherencia</p>
                   <p className="text-3xl font-bold mt-2">
-                    {analysis.coherence_score !== null ? analysis.coherence_score.toFixed(4) : 'N/A'}
+                    {analysis.coherence_score !== null ? analysis.coherence_score.toFixed(2) : 'N/A'}
                   </p>
                 </div>
                 <div className="bg-white bg-opacity-20 p-4 rounded-lg">
@@ -351,7 +351,7 @@ export const TopicModelingView: React.FC = () => {
               </div>
               <div className="mt-4 pt-4 border-t border-white border-opacity-20">
                 <p className="text-xs opacity-90">
-                  <strong>Coherencia:</strong> Mide qué tan relacionadas están las palabras en cada tópico (mayor es mejor).
+                  <strong>Coherencia:</strong> Mide qué tan relacionadas están las palabras en cada tema (mayor es mejor).
                   {analysis.is_probabilistic && <> <strong>Perplejidad:</strong> Mide qué tan bien el modelo predice nuevos datos (menor es mejor).</>}
                 </p>
               </div>
@@ -392,7 +392,7 @@ export const TopicModelingView: React.FC = () => {
                         <span
                           key={idx}
                           className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium"
-                          title={`Peso: ${word.weight.toFixed(4)}`}
+                          title={`Peso: ${word.weight.toFixed(2)}`}
                         >
                           {word.word}
                         </span>
@@ -474,7 +474,7 @@ export const TopicModelingView: React.FC = () => {
                 </table>
               </div>
               <p className="text-xs text-gray-500 mt-3">
-                Mostrando hasta 50 documentos asignados a este tópico
+                Mostrando hasta 50 documentos asignados a este tema
               </p>
             </div>
 

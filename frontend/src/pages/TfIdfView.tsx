@@ -314,7 +314,7 @@ export const TfIdfView: React.FC = () => {
                     </div>
 
                     <div className="bg-purple-50 rounded-lg p-4">
-                      <p className="text-xs font-medium text-purple-700 mb-1">Esparsidad</p>
+                      <p className="text-xs font-medium text-purple-700 mb-1">Dispersión</p>
                       <p className="text-xl font-bold text-purple-900">
                         {(analysis.tf_matrix.matrix_sparsity * 100).toFixed(1)}%
                       </p>
@@ -356,7 +356,7 @@ export const TfIdfView: React.FC = () => {
                               <tr key={term.rank} className="border-b border-gray-100 hover:bg-gray-50">
                                 <td className="px-4 py-2 text-sm text-gray-600">{term.rank}</td>
                                 <td className="px-4 py-2 text-sm font-medium text-gray-900">{term.term}</td>
-                                <td className="px-4 py-2 text-sm text-gray-900 text-right">{term.score.toFixed(4)}</td>
+                                <td className="px-4 py-2 text-sm text-gray-900 text-right">{term.score.toFixed(2)}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -428,7 +428,7 @@ export const TfIdfView: React.FC = () => {
                               <tr key={term.rank} className="border-b border-gray-100 hover:bg-indigo-50">
                                 <td className="px-4 py-2 text-sm text-gray-600">{term.rank}</td>
                                 <td className="px-4 py-2 text-sm font-medium text-gray-900">{term.term}</td>
-                                <td className="px-4 py-2 text-sm text-gray-900 text-right">{term.idf.toFixed(4)}</td>
+                                <td className="px-4 py-2 text-sm text-gray-900 text-right">{term.idf.toFixed(2)}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -458,7 +458,7 @@ export const TfIdfView: React.FC = () => {
                               <tr key={term.rank} className="border-b border-gray-100 hover:bg-indigo-50">
                                 <td className="px-4 py-2 text-sm text-gray-600">{term.rank}</td>
                                 <td className="px-4 py-2 text-sm font-medium text-gray-900">{term.term}</td>
-                                <td className="px-4 py-2 text-sm text-gray-900 text-right">{term.idf.toFixed(4)}</td>
+                                <td className="px-4 py-2 text-sm text-gray-900 text-right">{term.idf.toFixed(2)}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -495,7 +495,7 @@ export const TfIdfView: React.FC = () => {
                     </div>
 
                     <div className="bg-emerald-50 rounded-lg p-4">
-                      <p className="text-xs font-medium text-emerald-700 mb-1">Esparsidad</p>
+                      <p className="text-xs font-medium text-emerald-700 mb-1">Dispersión</p>
                       <p className="text-xl font-bold text-emerald-900">
                         {(analysis.tfidf_matrix.matrix_sparsity * 100).toFixed(1)}%
                       </p>
@@ -505,7 +505,7 @@ export const TfIdfView: React.FC = () => {
                     <div className="bg-emerald-50 rounded-lg p-4">
                       <p className="text-xs font-medium text-emerald-700 mb-1">Promedio por Doc</p>
                       <p className="text-xl font-bold text-emerald-900">
-                        {analysis.tfidf_matrix.avg_tfidf_per_document.toFixed(4)}
+                        {analysis.tfidf_matrix.avg_tfidf_per_document.toFixed(2)}
                       </p>
                     </div>
 
@@ -540,7 +540,7 @@ export const TfIdfView: React.FC = () => {
                               <tr key={term.rank} className="border-b border-gray-100 hover:bg-emerald-50">
                                 <td className="px-4 py-2 text-sm text-gray-600">{term.rank}</td>
                                 <td className="px-4 py-2 text-sm font-medium text-gray-900">{term.term}</td>
-                                <td className="px-4 py-2 text-sm text-gray-900 text-right">{term.score.toFixed(4)}</td>
+                                <td className="px-4 py-2 text-sm text-gray-900 text-right">{term.score.toFixed(2)}</td>
                               </tr>
                             ))}
                           </tbody>
