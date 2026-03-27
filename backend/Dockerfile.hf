@@ -92,8 +92,7 @@ CMD python manage.py fix_migration_history && \
     gunicorn config.wsgi:application \
     --bind 0.0.0.0:7860 \
     --workers 2 \
-    --worker-class gthread \
-    --threads 4 \
+    --worker-class sync \
     --timeout 300 \
     --access-logfile - \
     --error-logfile - \

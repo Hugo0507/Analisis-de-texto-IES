@@ -115,6 +115,18 @@ class WorkspaceDocument(models.Model):
     extracted_text = models.TextField(null=True, blank=True, verbose_name='Texto extraído')
     preprocessed_text = models.TextField(null=True, blank=True, verbose_name='Texto preprocesado')
 
+    # Idioma detectado del documento
+    detected_language = models.CharField(
+        max_length=10, null=True, blank=True,
+        verbose_name='Idioma detectado',
+        help_text='Código ISO detectado por langdetect (ej: en, es)'
+    )
+    language_confidence = models.FloatField(
+        default=0.0,
+        verbose_name='Confianza detección idioma',
+        help_text='Probabilidad de langdetect (0.0 – 1.0)'
+    )
+
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,

@@ -325,22 +325,47 @@ interface ProcessingStageProps {
   onError: () => void;
 }
 
+const POLL_INTERVAL_MS = 2500;
+const MAX_POLL_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutos
+
 const ProcessingStage: React.FC<ProcessingStageProps> = ({ workspaceId, onDone, onError }) => {
   const [progress, setProgress] = useState(0);
   const [statusMsg, setStatusMsg] = useState('Iniciando inferencia…');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [elapsed, setElapsed] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startTimeRef = useRef(Date.now());
 
   useEffect(() => {
     // Kick off inference
-    workspaceService.runInference(workspaceId).catch(onError);
+    workspaceService.runInference(workspaceId).catch(() => {
+      setErrorMsg('No se pudo iniciar la inferencia. Intenta de nuevo.');
+      onError();
+    });
 
-    // Poll for status
+    // Poll for status with timeout
     intervalRef.current = setInterval(async () => {
+      const elapsedMs = Date.now() - startTimeRef.current;
+      setElapsed(Math.floor(elapsedMs / 1000));
+
+      // Timeout — dejar de hacer polling
+      if (elapsedMs > MAX_POLL_TIMEOUT_MS) {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        setErrorMsg(
+          'La inferencia excedió el tiempo máximo de 5 minutos. '
+          + 'El servidor puede estar sobrecargado. Intenta de nuevo más tarde.'
+        );
+        onError();
+        return;
+      }
+
       try {
         const ws = await workspaceService.getWorkspace(workspaceId);
         setProgress(ws.progress_percentage);
 
-        if (ws.progress_percentage < 40) setStatusMsg('Extrayendo texto de los PDFs…');
+        if (ws.progress_percentage < 20) setStatusMsg('Extrayendo texto de los PDFs…');
+        else if (ws.progress_percentage < 30) setStatusMsg('Validando idioma de los documentos…');
+        else if (ws.progress_percentage < 40) setStatusMsg('Preparando inferencia…');
         else if (ws.progress_percentage < 60) setStatusMsg('Aplicando Bolsa de Palabras…');
         else if (ws.progress_percentage < 80) setStatusMsg('Calculando TF-IDF…');
         else if (ws.progress_percentage < 100) setStatusMsg('Asignando tópicos…');
@@ -351,15 +376,22 @@ const ProcessingStage: React.FC<ProcessingStageProps> = ({ workspaceId, onDone, 
           onDone(ws);
         } else if (ws.status === 'error') {
           if (intervalRef.current) clearInterval(intervalRef.current);
+          setErrorMsg(ws.error_message || 'Ocurrió un error durante la inferencia.');
           onError();
         }
       } catch {
-        // Polling error — keep trying
+        // Polling error — seguir intentando (puede ser un blip de red)
       }
-    }, 2000);
+    }, POLL_INTERVAL_MS);
 
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [workspaceId]);
+
+  const formatElapsed = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
+  };
 
   return (
     <div className="py-12 flex flex-col items-center gap-6">
@@ -368,7 +400,7 @@ const ProcessingStage: React.FC<ProcessingStageProps> = ({ workspaceId, onDone, 
           <circle cx="50" cy="50" r="42" fill="none" stroke="#1e293b" strokeWidth="8" />
           <circle
             cx="50" cy="50" r="42" fill="none"
-            stroke="#8b5cf6" strokeWidth="8"
+            stroke={errorMsg ? '#ef4444' : '#8b5cf6'} strokeWidth="8"
             strokeLinecap="round"
             strokeDasharray={`${2 * Math.PI * 42}`}
             strokeDashoffset={`${2 * Math.PI * 42 * (1 - progress / 100)}`}
@@ -377,9 +409,20 @@ const ProcessingStage: React.FC<ProcessingStageProps> = ({ workspaceId, onDone, 
         </svg>
         <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-white">{progress}%</span>
       </div>
-      <div className="text-center">
-        <p className="text-white font-semibold">{statusMsg}</p>
-        <p className="text-slate-400 text-sm mt-1">Los modelos del corpus analizan los nuevos documentos…</p>
+      <div className="text-center max-w-md">
+        {errorMsg ? (
+          <>
+            <p className="text-red-400 font-semibold">Error en la inferencia</p>
+            <p className="text-red-300/80 text-sm mt-1">{errorMsg}</p>
+          </>
+        ) : (
+          <>
+            <p className="text-white font-semibold">{statusMsg}</p>
+            <p className="text-slate-400 text-sm mt-1">
+              Los modelos del corpus analizan los nuevos documentos… ({formatElapsed(elapsed)})
+            </p>
+          </>
+        )}
       </div>
     </div>
   );

@@ -11,7 +11,8 @@ class WorkspaceDocumentSerializer(serializers.ModelSerializer):
         model = WorkspaceDocument
         fields = [
             'id', 'original_filename', 'file_size', 'status',
-            'error_message', 'created_at',
+            'error_message', 'detected_language', 'language_confidence',
+            'created_at',
         ]
         read_only_fields = fields
 

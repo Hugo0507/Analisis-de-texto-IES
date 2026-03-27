@@ -21,6 +21,10 @@ def _load_from_binary(binary_data) -> Any:
     """Cargar artefacto desde BinaryField (datos en DB)."""
     if not binary_data:
         return None
+    # psycopg2 devuelve memoryview para bytea; convertir a bytes
+    # para evitar corrupción de heap con joblib/numpy en subprocesos
+    if isinstance(binary_data, memoryview):
+        binary_data = bytes(binary_data)
     buffer = io.BytesIO(binary_data)
     return joblib.load(buffer)
 

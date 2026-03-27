@@ -14,6 +14,8 @@ export interface WorkspaceDocument {
   file_size: number;
   status: 'pending' | 'extracting' | 'ready' | 'error';
   error_message: string | null;
+  detected_language: string | null;
+  language_confidence: number;
   created_at: string;
 }
 
