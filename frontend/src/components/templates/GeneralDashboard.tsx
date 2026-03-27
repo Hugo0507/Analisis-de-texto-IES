@@ -504,7 +504,7 @@ const TopicPanel: React.FC<TopicPanelProps> = ({ topic, svgX, svgY, mode, onClos
       <div className="flex items-start justify-between mb-1 gap-1">
         <div className={`text-xs font-bold ${cat.textClass} truncate flex-1`}>{topic.label}</div>
         {mode === 'selected' && onClose && (
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-300 shrink-0 ml-1">
+          <button onClick={onClose} aria-label="Cerrar panel" className="text-slate-400 hover:text-slate-200 shrink-0 ml-1">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -630,7 +630,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ cat, topics, docTopics, exp
             ))}
           </div>
         ) : (
-          <p className="text-xs text-slate-500 italic">Sin temas asignados aún</p>
+          <p className="text-xs text-slate-400 italic">Sin temas asignados aún</p>
         )}
 
         {/* Toggle docs button */}
@@ -661,7 +661,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ cat, topics, docTopics, exp
                   {d.document_name ?? `Documento ${d.document_id}`}
                 </span>
                 {(d.dominant_topic_weight ?? d.topic_weight) != null && (
-                  <span className="text-slate-500 shrink-0 ml-auto">
+                  <span className="text-slate-400 shrink-0 ml-auto">
                     {((d.dominant_topic_weight ?? d.topic_weight ?? 0) * 100).toFixed(0)}%
                   </span>
                 )}
@@ -709,7 +709,7 @@ const ClusterCard: React.FC<ClusterCardProps> = ({ topic, docTopics, activeTab, 
   ];
 
   return (
-    <div className={`rounded-xl border ${cat.borderClass} bg-slate-800/25 flex flex-col`}>
+    <div className={`rounded-xl border ${cat.borderClass} bg-slate-800 flex flex-col`}>
       {/* Header */}
       <div className="p-4 pb-2">
         <div className="flex items-start justify-between mb-2">
@@ -737,7 +737,7 @@ const ClusterCard: React.FC<ClusterCardProps> = ({ topic, docTopics, activeTab, 
               className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
                 activeTab === tab.id
                   ? `${cat.badgeClass} border ${cat.borderClass}`
-                  : 'text-slate-500 hover:text-slate-300'
+                  : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               {tab.label}
@@ -760,7 +760,7 @@ const ClusterCard: React.FC<ClusterCardProps> = ({ topic, docTopics, activeTab, 
                     style={{ width: `${(w.weight / maxW) * 100}%`, backgroundColor: cat.color, opacity: 0.85 }}
                   />
                 </div>
-                <span className="text-xs text-slate-500 w-8 text-right shrink-0">
+                <span className="text-xs text-slate-400 w-8 text-right shrink-0">
                   {(w.weight * 100).toFixed(0)}%
                 </span>
               </div>
@@ -779,7 +779,7 @@ const ClusterCard: React.FC<ClusterCardProps> = ({ topic, docTopics, activeTab, 
                     {d.document_name ?? `Documento ${d.document_id}`}
                   </span>
                   {(d.dominant_topic_weight ?? d.topic_weight) != null && (
-                    <span className="text-slate-500 shrink-0">
+                    <span className="text-slate-400 shrink-0">
                       {((d.dominant_topic_weight ?? d.topic_weight ?? 0) * 100).toFixed(0)}%
                     </span>
                   )}
@@ -787,7 +787,7 @@ const ClusterCard: React.FC<ClusterCardProps> = ({ topic, docTopics, activeTab, 
               ))}
             </ul>
           ) : (
-            <p className="text-xs text-slate-500 italic py-2">
+            <p className="text-xs text-slate-400 italic py-2">
               No hay información de documentos disponible para este clúster.
             </p>
           )
@@ -805,7 +805,7 @@ const ClusterCard: React.FC<ClusterCardProps> = ({ topic, docTopics, activeTab, 
               { label: 'Peso mínimo de término', value: `${(topic.words[topic.words.length - 1]?.weight * 100 ?? 0).toFixed(2)}%` },
             ].map(item => (
               <div key={item.label} className="flex justify-between items-start gap-2">
-                <span className="text-slate-500">{item.label}</span>
+                <span className="text-slate-400">{item.label}</span>
                 <span className={`${cat.textClass} font-medium text-right`}>{String(item.value)}</span>
               </div>
             ))}
@@ -930,7 +930,7 @@ const ExportMenu: React.FC<ExportMenuProps> = ({ topics, topicsByCategory, docTo
       {open && (
         <div className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-slate-700/60 bg-slate-900/95 backdrop-blur-sm shadow-2xl z-50 overflow-hidden">
           <div className="px-3 py-2 border-b border-slate-700/40">
-            <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Formato de exportación</p>
+            <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">Formato de exportación</p>
           </div>
           {[
             { label: 'CSV completo (Excel)', ext: 'csv', desc: 'UTF-8 con BOM — compatible con Excel', action: exportAllCSV, color: 'text-emerald-300' },
@@ -947,7 +947,7 @@ const ExportMenu: React.FC<ExportMenuProps> = ({ topics, topicsByCategory, docTo
               </div>
               <div>
                 <p className="text-sm text-white font-medium">{opt.label}</p>
-                <p className="text-xs text-slate-500">{opt.desc}</p>
+                <p className="text-xs text-slate-400">{opt.desc}</p>
               </div>
             </button>
           ))}
@@ -981,7 +981,7 @@ const Q = {
   good:    { border: 'border-l-emerald-400', text: 'text-emerald-300', dot: 'bg-emerald-400', badge: 'text-emerald-400/80 border-emerald-500/30' },
   average: { border: 'border-l-amber-400',   text: 'text-amber-300',   dot: 'bg-amber-400',   badge: 'text-amber-400/80 border-amber-500/30' },
   poor:    { border: 'border-l-rose-400',     text: 'text-rose-300',     dot: 'bg-rose-400',    badge: 'text-rose-400/80 border-rose-500/30' },
-  neutral: { border: 'border-l-slate-600',    text: 'text-slate-200',    dot: 'bg-slate-500',   badge: 'text-slate-500/80 border-slate-600/30' },
+  neutral: { border: 'border-l-slate-500',    text: 'text-slate-200',    dot: 'bg-slate-400',   badge: 'text-slate-400/90 border-slate-500/40' },
   info:    { border: 'border-l-blue-400',     text: 'text-blue-300',     dot: 'bg-blue-400',    badge: 'text-blue-400/80 border-blue-500/30' },
 };
 
@@ -991,13 +991,13 @@ const MetricChip: React.FC<{ metric: MetricItem; flipTooltip?: boolean }> = ({ m
     <div className={`group relative flex-1 min-w-[120px] max-w-[200px] rounded-xl bg-slate-800/30 border border-slate-700/40 border-l-2 ${q.border} px-4 py-3 cursor-default select-none`}>
       {/* Icon + info badge */}
       <div className="flex items-center justify-between mb-2">
-        <span className="text-slate-600">{metric.icon}</span>
+        <span className="text-slate-400">{metric.icon}</span>
         <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium ${q.badge}`}>ℹ</span>
       </div>
       {/* Value */}
       <div className={`text-lg font-bold leading-tight ${q.text} mb-0.5 truncate`}>{metric.value}</div>
       {/* Label */}
-      <div className="text-xs text-slate-500 leading-snug">{metric.label}</div>
+      <div className="text-xs text-slate-400 leading-snug">{metric.label}</div>
 
       {/* Tooltip — aparece abajo por defecto, arriba si flipTooltip */}
       <div className={`
@@ -1012,13 +1012,13 @@ const MetricChip: React.FC<{ metric: MetricItem; flipTooltip?: boolean }> = ({ m
         <p className="text-xs text-slate-400 leading-relaxed mb-2">{metric.tooltip.body}</p>
         {metric.tooltip.range && (
           <div className="text-xs rounded-lg bg-slate-800/60 border border-slate-700/40 px-2.5 py-1.5 mb-1.5">
-            <span className="text-slate-600">Rango ideal: </span>
-            <span className="text-slate-300 font-medium">{metric.tooltip.range}</span>
+            <span className="text-slate-400">Rango ideal: </span>
+            <span className="text-slate-200 font-medium">{metric.tooltip.range}</span>
           </div>
         )}
         {metric.tooltip.source && (
-          <div className="text-xs text-slate-600 mt-1">
-            Fuente: <span className="text-slate-500">{metric.tooltip.source}</span>
+          <div className="text-xs text-slate-400 mt-1">
+            Fuente: <span className="text-slate-300">{metric.tooltip.source}</span>
           </div>
         )}
       </div>
@@ -1449,7 +1449,7 @@ export const GeneralDashboard: React.FC = () => {
       <div className="p-8 rounded-xl bg-slate-800/30 border border-slate-700/50 text-center">
         <h3 className="text-lg font-semibold text-white mb-2">Sin datos para este dataset</h3>
         <p className="text-slate-400 max-w-md mx-auto">
-          Aún no hay análisis de Modelado de Tópicos o BERTopic completados para el dataset seleccionado.
+          Aún no hay análisis de Modelado de Temas o BERTopic completados para el dataset seleccionado.
           Crea un análisis desde Administración para visualizar el Science Mapping.
         </p>
       </div>
@@ -1475,21 +1475,21 @@ export const GeneralDashboard: React.FC = () => {
             <h2 className="text-2xl font-bold text-white leading-tight">
               Landscape de la TD en Educación Superior
             </h2>
-            <p className="mt-1 text-sm text-slate-400 max-w-xl">
+            <p className="mt-1 text-sm text-slate-300 max-w-xl">
               Mapa de conocimiento consolidado identificado mediante análisis de temas
               sobre el corpus de literatura académica.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3 shrink-0">
             {[
-              { label: 'Tópicos', value: totalTopics || '—', color: 'text-cyan-300' },
+              { label: 'Temas', value: totalTopics || '—', color: 'text-cyan-300' },
               { label: 'Documentos', value: totalDocs ? totalDocs.toLocaleString() : '—', color: 'text-violet-300' },
               { label: 'Categorías', value: 6, color: 'text-emerald-300' },
             ].map(s => (
               <div key={s.label}
                 className="text-center px-4 py-2 rounded-xl bg-slate-800/60 border border-slate-700/40">
                 <div className={`text-xl font-bold ${s.color}`}>{s.value}</div>
-                <div className="text-xs text-slate-500">{s.label}</div>
+                <div className="text-xs text-slate-400">{s.label}</div>
               </div>
             ))}
             {/* Export button */}
@@ -1611,7 +1611,7 @@ export const GeneralDashboard: React.FC = () => {
             )}
             {/* Hint */}
             {!selectedTopicId && (
-              <p className="mt-2 text-center text-xs text-slate-600">
+              <p className="mt-2 text-center text-xs text-slate-400">
                 Haz clic en un nodo para fijar el panel de detalle
               </p>
             )}
@@ -1683,20 +1683,20 @@ export const GeneralDashboard: React.FC = () => {
       {/* ── Methodology Footer ── */}
       <div className="p-5 rounded-xl bg-slate-800/20 border border-slate-700/30">
         <div className="flex items-start gap-3">
-          <svg className="w-5 h-5 text-slate-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-slate-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <div>
             <p className="text-sm font-medium text-slate-300 mb-1">Metodología del Landscape</p>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <p className="text-xs text-slate-400 leading-relaxed">
               Los temas se extraen mediante modelos de{' '}
               <span className="text-slate-300">modelado de temas</span> (LDA / NMF / LSA) y{' '}
               <span className="text-slate-300">BERTopic</span> aplicados al corpus preprocesado.
               La clasificación en categorías factoriales se realiza automáticamente por coincidencia
               semántica con los descriptores del marco OE3.
               {sourceLabel && (
-                <span className="block mt-1 text-slate-600">Fuente activa: {sourceLabel}</span>
+                <span className="block mt-1 text-slate-400">Fuente activa: {sourceLabel}</span>
               )}
             </p>
           </div>
