@@ -204,12 +204,32 @@ def _inference_process_entry(workspace_id: str):
 
 def _run_inference(workspace_id: str):
     """Lógica principal de inferencia (corre en proceso aislado via fork)."""
-    from .inference import infer_bow, infer_tfidf, infer_topics, preprocess_for_inference
+    from .inference import (
+        infer_bow, infer_tfidf, infer_topics,
+        preprocess_for_inference, get_inference_stopwords,
+    )
 
     workspace = Workspace.objects.prefetch_related('documents').get(id=workspace_id)
     docs = workspace.documents.all()
 
-    # ── PASO 1: Extraer texto de PDFs (0–20%) ──────────────────────────
+    # Obtener stopwords y idioma del corpus para preprocesar igual que el entrenamiento
+    dataset_id = workspace.dataset_id
+    stopwords = get_inference_stopwords(dataset_id=dataset_id)
+
+    # Obtener idioma predominante del corpus
+    from apps.data_preparation.models import DataPreparation
+    prep = DataPreparation.objects.filter(
+        dataset_id=dataset_id,
+        status=DataPreparation.STATUS_COMPLETED,
+    ).order_by('-created_at').first()
+    corpus_language = prep.predominant_language if prep else 'en'
+
+    logger.info(
+        f"[WS {workspace_id}] Preprocesamiento con {len(stopwords)} stopwords, "
+        f"idioma='{corpus_language}', lematización=True"
+    )
+
+    # ── PASO 1: Extraer texto y preprocesar PDFs (0–20%) ────────────────
     logger.info(f"[WS {workspace_id}] Extrayendo texto de {docs.count()} PDFs...")
     workspace.progress_percentage = 5
     workspace.save()
@@ -221,7 +241,12 @@ def _run_inference(workspace_id: str):
             doc.save()
 
             extracted = _extract_pdf_text(doc.file)
-            preprocessed = preprocess_for_inference(extracted)
+            preprocessed = preprocess_for_inference(
+                extracted,
+                stopwords=stopwords,
+                lemmatize=True,
+                language=corpus_language,
+            )
 
             doc.extracted_text = extracted
             doc.preprocessed_text = preprocessed

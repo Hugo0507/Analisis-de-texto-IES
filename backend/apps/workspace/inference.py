@@ -8,7 +8,8 @@ del corpus original se preservan para resultados comparables.
 
 import io
 import logging
-from typing import List, Dict, Any
+import re
+from typing import List, Dict, Any, Optional, Set
 
 import joblib
 import numpy as np
@@ -16,6 +17,8 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 
 logger = logging.getLogger(__name__)
 
+
+# ── Carga de artefactos ──────────────────────────────────────────────────────
 
 def _load_from_binary(binary_data) -> Any:
     """Cargar artefacto desde BinaryField (datos en DB)."""
@@ -50,13 +53,11 @@ def load_artifact(model_instance, bin_field_name: str, file_field_name: str) -> 
       2. FileField (filesystem) — funciona en desarrollo local
       3. Error si ambos fallan
     """
-    # Intentar desde DB primero
     bin_data = getattr(model_instance, bin_field_name, None)
     obj = _load_from_binary(bin_data)
     if obj is not None:
         return obj
 
-    # Fallback a filesystem
     file_field = getattr(model_instance, file_field_name, None)
     obj = _load_from_file(file_field)
     if obj is not None:
@@ -69,24 +70,14 @@ def load_artifact(model_instance, bin_field_name: str, file_field_name: str) -> 
     )
 
 
+# ── Inferencia BoW ───────────────────────────────────────────────────────────
+
 def infer_bow(texts: List[str], bow_id: int) -> Dict[str, Any]:
-    """
-    Inferencia BoW sobre nuevos textos usando vectorizador entrenado.
-
-    Args:
-        texts: Textos preprocesados a analizar
-        bow_id: ID del análisis BagOfWords de referencia
-
-    Returns:
-        Diccionario con top_terms, matrix_shape, sparsity, avg_terms_per_doc
-    """
     from apps.bag_of_words.models import BagOfWords
 
     bow = BagOfWords.objects.get(id=bow_id)
-
     vectorizer: CountVectorizer = load_artifact(bow, 'model_artifact_bin', 'model_artifact')
 
-    # Inferencia: transform preserva el vocabulario del corpus original
     matrix = vectorizer.transform(texts)
     feature_names = vectorizer.get_feature_names_out()
 
@@ -117,27 +108,14 @@ def infer_bow(texts: List[str], bow_id: int) -> Dict[str, Any]:
     }
 
 
+# ── Inferencia TF-IDF ───────────────────────────────────────────────────────
+
 def infer_tfidf(texts: List[str], tfidf_id: int) -> Dict[str, Any]:
-    """
-    Inferencia TF-IDF sobre nuevos textos usando vectorizador entrenado.
-
-    Los pesos IDF del corpus original se preservan — los scores son
-    comparables con los del corpus de entrenamiento.
-
-    Args:
-        texts: Textos preprocesados a analizar
-        tfidf_id: ID del análisis TfIdfAnalysis de referencia
-
-    Returns:
-        Diccionario con top_terms, matrix_shape, sparsity
-    """
     from apps.tfidf_analysis.models import TfIdfAnalysis
 
     tfidf = TfIdfAnalysis.objects.get(id=tfidf_id)
-
     vectorizer: TfidfVectorizer = load_artifact(tfidf, 'vectorizer_artifact_bin', 'vectorizer_artifact')
 
-    # Inferencia: transform usa los IDF aprendidos del corpus
     matrix = vectorizer.transform(texts)
     feature_names = vectorizer.get_feature_names_out()
 
@@ -164,34 +142,19 @@ def infer_tfidf(texts: List[str], tfidf_id: int) -> Dict[str, Any]:
     }
 
 
+# ── Inferencia Topics ────────────────────────────────────────────────────────
+
 def infer_topics(texts: List[str], topic_model_id: int) -> Dict[str, Any]:
-    """
-    Inferencia de tópicos sobre nuevos textos usando modelo entrenado.
-
-    El espacio de tópicos del corpus original se preserva — permite
-    asignar documentos nuevos a los mismos tópicos del corpus.
-
-    Args:
-        texts: Textos preprocesados a analizar
-        topic_model_id: ID del TopicModeling de referencia
-
-    Returns:
-        Diccionario con document_topics, dominant_topics, topic_distribution
-    """
     from apps.topic_modeling.models import TopicModeling
 
     tm = TopicModeling.objects.get(id=topic_model_id)
-
     vectorizer = load_artifact(tm, 'vectorizer_artifact_bin', 'vectorizer_artifact')
     model = load_artifact(tm, 'model_artifact_bin', 'model_artifact')
 
-    # Vectorizar nuevos textos con vocabulario del corpus
     doc_term_matrix = vectorizer.transform(texts)
-
-    # Inferir distribución de tópicos (transform, no fit_transform)
     doc_topic_matrix = model.transform(doc_term_matrix)
 
-    # Construir resultados por documento
+    # Resultados por documento con distribución completa
     document_topics = []
     for idx, topic_dist in enumerate(doc_topic_matrix):
         dominant_topic = int(np.argmax(topic_dist))
@@ -219,9 +182,27 @@ def infer_topics(texts: List[str], topic_model_id: int) -> Dict[str, Any]:
             'percentage': round(count / len(texts) * 100, 1),
         })
 
+    # Distribución promedio sobre TODOS los tópicos (no solo dominantes)
+    # Esto permite al frontend mostrar la afinidad del documento con cada tópico
+    avg_distribution = np.mean(doc_topic_matrix, axis=0)
+    all_topics_affinity = []
+    for topic_id in range(len(avg_distribution)):
+        corpus_topic = corpus_topics.get(topic_id, {})
+        weight = float(avg_distribution[topic_id])
+        if weight > 0.001:  # Solo tópicos con afinidad mínima
+            all_topics_affinity.append({
+                'topic_id': topic_id,
+                'topic_label': corpus_topic.get('topic_label', f'Tópico {topic_id}'),
+                'top_words': corpus_topic.get('top_words', [])[:10],
+                'weight': round(weight, 4),
+                'percentage': round(weight * 100, 1),
+            })
+    all_topics_affinity.sort(key=lambda x: x['weight'], reverse=True)
+
     return {
         'document_topics': document_topics,
         'topic_distribution': topic_distribution,
+        'all_topics_affinity': all_topics_affinity,
         'num_topics': tm.num_topics,
         'algorithm': tm.algorithm,
         'corpus_topics': tm.topics,
@@ -230,14 +211,139 @@ def infer_topics(texts: List[str], topic_model_id: int) -> Dict[str, Any]:
     }
 
 
-def preprocess_for_inference(text: str) -> str:
-    """
-    Preprocesamiento básico para texto extraído de PDFs nuevos.
+# ── Preprocesamiento para inferencia ─────────────────────────────────────────
 
-    Normalización mínima consistente con el preprocesamiento del corpus.
+# Patrones compilados para limpieza de texto de PDFs
+_RE_URL = re.compile(r'https?://\S+|www\.\S+', re.IGNORECASE)
+_RE_EMAIL = re.compile(r'\S+@\S+\.\S+')
+_RE_DOI = re.compile(r'\b(?:doi|DOI)[:\s]*10\.\S+')
+_RE_ISBN = re.compile(r'\b(?:ISBN|ISSN)[:\s\-]*[\d\-Xx]+', re.IGNORECASE)
+_RE_PAGE_NUMBERS = re.compile(r'\b(?:pp?\.|pages?)\s*\d+[\s\-–]+\d+', re.IGNORECASE)
+_RE_CITATION_BRACKETS = re.compile(r'\[[\d,;\s\-–]+\]')
+_RE_CITATION_PARENS = re.compile(r'\(\s*(?:[A-Z][a-z]+(?:\s+(?:et\s+al\.?|&|and)\s*)?(?:,?\s*\d{4})\s*(?:;\s*)?)+\)')
+_RE_NUMBERS_STANDALONE = re.compile(r'\b\d+(?:\.\d+)?\b')
+_RE_NON_ALPHA = re.compile(r'[^a-zA-Z\s]')
+_RE_MULTI_SPACE = re.compile(r'\s+')
+_RE_SHORT_WORDS = re.compile(r'\b[a-zA-Z]\b')
+
+# Sección de referencias: líneas que comienzan con "References", "Bibliography", etc.
+_RE_REFERENCES_SECTION = re.compile(
+    r'\n\s*(?:references|bibliography|bibliograf[íi]a|works?\s+cited|literatura\s+citada)\s*\n',
+    re.IGNORECASE,
+)
+
+
+def get_inference_stopwords(
+    dataset_id: Optional[int] = None,
+    language: str = 'en',
+) -> Set[str]:
     """
-    import re
-    text = text.lower()
-    text = re.sub(r'[^\w\s]', ' ', text)
-    text = re.sub(r'\s+', ' ', text).strip()
+    Obtener las mismas stopwords usadas en el preprocesamiento del corpus.
+
+    Combina EXTRA_STOPWORDS + NLTK + custom_stopwords del DataPreparation.
+    """
+    from apps.data_preparation.stopwords import get_combined_stopwords
+    from apps.data_preparation.models import DataPreparation
+
+    custom = []
+    if dataset_id:
+        prep = DataPreparation.objects.filter(
+            dataset_id=dataset_id,
+            status=DataPreparation.STATUS_COMPLETED,
+        ).order_by('-created_at').first()
+        if prep:
+            custom = prep.custom_stopwords or []
+            language = prep.predominant_language or language
+
+    return get_combined_stopwords(custom_stopwords=custom, language=language)
+
+
+def _strip_references_section(text: str) -> str:
+    """Eliminar la sección de referencias/bibliografía del final del texto."""
+    match = _RE_REFERENCES_SECTION.search(text)
+    if match:
+        # Truncar desde donde empieza la sección de referencias
+        return text[:match.start()].strip()
     return text
+
+
+def preprocess_for_inference(
+    text: str,
+    stopwords: Optional[Set[str]] = None,
+    lemmatize: bool = True,
+    language: str = 'en',
+) -> str:
+    """
+    Preprocesamiento completo para texto extraído de PDFs nuevos.
+
+    Replica el pipeline del corpus:
+      1. Eliminar sección de referencias/bibliografía
+      2. Eliminar URLs, emails, DOIs, ISBNs, citas en brackets
+      3. Eliminar números de páginas y citas parentéticas
+      4. Convertir a minúsculas
+      5. Eliminar caracteres no alfabéticos
+      6. Lematizar con spaCy (si disponible)
+      7. Aplicar stopwords (EXTRA + NLTK + custom del dataset)
+      8. Eliminar palabras de 1 carácter
+
+    Args:
+        text: Texto crudo extraído del PDF
+        stopwords: Conjunto de stopwords a aplicar. Si None, usa solo EXTRA_STOPWORDS.
+        lemmatize: Si aplicar lematización con spaCy
+        language: Código de idioma para spaCy ('en' o 'es')
+    """
+    if not text or not text.strip():
+        return ''
+
+    # 1. Truncar sección de referencias
+    text = _strip_references_section(text)
+
+    # 2–3. Eliminar URLs, emails, DOIs, citas, etc.
+    text = _RE_URL.sub(' ', text)
+    text = _RE_EMAIL.sub(' ', text)
+    text = _RE_DOI.sub(' ', text)
+    text = _RE_ISBN.sub(' ', text)
+    text = _RE_PAGE_NUMBERS.sub(' ', text)
+    text = _RE_CITATION_BRACKETS.sub(' ', text)
+    text = _RE_CITATION_PARENS.sub(' ', text)
+
+    # 4. Minúsculas
+    text = text.lower()
+
+    # 5. Eliminar números y caracteres no alfabéticos
+    text = _RE_NUMBERS_STANDALONE.sub(' ', text)
+    text = _RE_NON_ALPHA.sub(' ', text)
+
+    # 6. Lematizar (si spaCy está disponible)
+    if lemmatize:
+        text = _lemmatize_text(text, language)
+
+    # 7. Aplicar stopwords
+    if stopwords:
+        words = text.split()
+        words = [w for w in words if w not in stopwords]
+        text = ' '.join(words)
+
+    # 8. Eliminar palabras de 1 carácter y normalizar espacios
+    text = _RE_SHORT_WORDS.sub(' ', text)
+    text = _RE_MULTI_SPACE.sub(' ', text).strip()
+
+    return text
+
+
+def _lemmatize_text(text: str, language: str = 'en') -> str:
+    """Lematizar texto con spaCy. Fallback silencioso si no está disponible."""
+    try:
+        import spacy
+        model_name = 'es_core_news_sm' if language == 'es' else 'en_core_web_sm'
+        nlp = spacy.load(model_name)
+
+        # Limitar a 100K caracteres para evitar OOM en spaCy
+        if len(text) > 100_000:
+            text = text[:100_000]
+
+        doc = nlp(text)
+        return ' '.join(token.lemma_ for token in doc if not token.is_space)
+    except Exception as e:
+        logger.warning(f"Lematización omitida: {e}")
+        return text
