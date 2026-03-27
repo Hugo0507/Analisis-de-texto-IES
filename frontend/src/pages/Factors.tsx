@@ -292,7 +292,7 @@ export const Factors: React.FC = () => {
             <button
               onClick={handleExportCsv}
               disabled={isExporting}
-              className="p-2 sm:p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2 sm:p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400"
               title="Exportar CSV"
               aria-label="Exportar factores como CSV"
             >
@@ -301,7 +301,7 @@ export const Factors: React.FC = () => {
             <button
               onClick={refreshAnalysis}
               disabled={isRunning}
-              className="p-2 sm:p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2 sm:p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400"
               title="Re-ejecutar análisis"
               aria-label="Re-ejecutar análisis de factores"
             >

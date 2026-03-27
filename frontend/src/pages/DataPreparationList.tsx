@@ -174,7 +174,7 @@ export const DataPreparationList: React.FC = () => {
             <button
               onClick={loadPreparations}
               disabled={isLoading}
-              className="p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400"
               title="Refrescar lista"
             >
               <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -185,7 +185,7 @@ export const DataPreparationList: React.FC = () => {
             {/* Add Button */}
             <button
               onClick={() => navigate('/admin/preprocesamiento/preparacion-datos/nuevo')}
-              className="p-3 bg-emerald-500 hover:bg-emerald-600 rounded-full transition-all shadow-md hover:shadow-lg"
+              className="p-3 bg-emerald-500 hover:bg-emerald-600 rounded-full transition-all shadow-md hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-400"
               title="Nueva preparación"
             >
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -295,7 +295,7 @@ export const DataPreparationList: React.FC = () => {
                         {/* Ver Button */}
                         <button
                           onClick={() => navigate(`/admin/preprocesamiento/preparacion-datos/${prep.id}`)}
-                          className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                          className="p-2 text-gray-500 hover:text-blue-600 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1"
                           title="Ver detalles"
                         >
                           <Eye className="w-4 h-4" />
@@ -305,7 +305,7 @@ export const DataPreparationList: React.FC = () => {
                         <button
                           onClick={() => handleDeleteClick(prep)}
                           disabled={deletingId === prep.id}
-                          className="p-2 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50"
+                          className="p-2 text-gray-500 hover:text-red-600 rounded-lg transition-colors disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-1"
                           title="Eliminar"
                         >
                           {deletingId === prep.id ? (
@@ -415,13 +415,13 @@ export const DataPreparationList: React.FC = () => {
               <div className="flex gap-3">
                 <button
                   onClick={handleDeleteCancel}
-                  className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                  className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleDeleteConfirm}
-                  className={`flex-1 px-4 py-2.5 text-white rounded-lg transition-colors font-medium shadow-md hover:shadow-lg ${
+                  className={`flex-1 px-4 py-2.5 text-white rounded-lg transition-colors font-medium shadow-md hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-400 ${
                     preparationToDelete.status === 'processing'
                       ? 'bg-red-600 hover:bg-red-700'
                       : 'bg-red-600 hover:bg-red-700'

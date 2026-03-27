@@ -94,14 +94,14 @@ export const FactorsList: React.FC = () => {
           <div className="flex items-center gap-3">
             <button
               onClick={loadRuns}
-              className="p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+              className="p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400"
               title="Refrescar"
             >
               <RefreshCw className="w-5 h-5 text-gray-700" />
             </button>
             <button
               onClick={() => navigate('/admin/analisis/analisis-de-factores/nuevo')}
-              className="p-3 bg-emerald-500 hover:bg-emerald-600 rounded-full transition-all shadow-md hover:shadow-lg"
+              className="p-3 bg-emerald-500 hover:bg-emerald-600 rounded-full transition-all shadow-md hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-400"
               title="Nuevo análisis"
             >
               <Plus className="w-5 h-5 text-white" />
@@ -188,7 +188,7 @@ export const FactorsList: React.FC = () => {
                           {run.status === 'completed' && (
                             <button
                               onClick={() => navigate(`/admin/analisis/analisis-de-factores/${run.id}`)}
-                              className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                              className="p-2 text-gray-500 hover:text-blue-600 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-1"
                               title="Ver resultados"
                             >
                               <Eye className="w-5 h-5" />
@@ -196,7 +196,7 @@ export const FactorsList: React.FC = () => {
                           )}
                           <button
                             onClick={() => setRunToDelete(run)}
-                            className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                            className="p-2 text-gray-500 hover:text-red-600 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-1"
                             title="Eliminar"
                           >
                             <Trash2 className="w-5 h-5" />
@@ -223,13 +223,13 @@ export const FactorsList: React.FC = () => {
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setRunToDelete(null)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium"
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400"
               >
                 Cancelar
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium"
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-400"
               >
                 Eliminar
               </button>

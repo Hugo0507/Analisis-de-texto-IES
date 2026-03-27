@@ -188,7 +188,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '', onClose }) => 
           {/* Close button - Mobile only */}
           <button
             onClick={onClose}
-            className="lg:hidden p-2 rounded-lg hover:bg-slate-800 transition-colors mr-2"
+            className="lg:hidden p-2 rounded-lg hover:bg-slate-800 transition-colors mr-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500"
             aria-label="Cerrar menú"
           >
             <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -206,7 +206,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '', onClose }) => 
             <div className="relative" ref={logoutMenuRef}>
               <button
                 onClick={() => setShowLogoutMenu(!showLogoutMenu)}
-                className="w-8 h-8 rounded-full border-2 border-slate-600 flex items-center justify-center hover:border-emerald-400 transition-colors"
+                className="w-8 h-8 rounded-full border-2 border-slate-600 flex items-center justify-center hover:border-emerald-400 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
                 title="Menú de usuario"
               >
                 <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

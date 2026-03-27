@@ -190,7 +190,7 @@ export const NgramsCreate: React.FC = () => {
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate('/admin/preprocesamiento/n-gramas')}
-              className="p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+              className="p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400"
               title="Volver"
             >
               <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -207,7 +207,7 @@ export const NgramsCreate: React.FC = () => {
           <button
             onClick={handleSubmit}
             disabled={isLoading || dataPreparationId === 0}
-            className="p-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+            className="p-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-400"
             title="Guardar"
           >
             {isLoading ? (
