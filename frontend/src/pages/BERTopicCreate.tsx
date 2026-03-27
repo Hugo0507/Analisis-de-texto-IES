@@ -141,7 +141,7 @@ export const BERTopicCreate: React.FC = () => {
             </button>
             <div>
               <h1 className="text-xl font-semibold text-gray-900">Crear Análisis BERTopic</h1>
-              <p className="text-sm text-gray-500">Topic Modeling con BERT</p>
+              <p className="text-sm text-gray-500">Modelado de Temas con BERT</p>
             </div>
           </div>
 
@@ -422,7 +422,7 @@ export const BERTopicCreate: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    N Neighbors (5-50)
+                    Vecinos (N) (5-50)
                   </label>
                   <input
                     type="number"
@@ -433,13 +433,13 @@ export const BERTopicCreate: React.FC = () => {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Número de vecinos a considerar. Valores más altos = tópicos más globales.
+                    Número de vecinos a considerar. Valores más altos = temas más globales.
                   </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    N Components (2-100)
+                    Componentes (N) (2-100)
                   </label>
                   <input
                     type="number"
@@ -462,13 +462,13 @@ export const BERTopicCreate: React.FC = () => {
                 Parámetros HDBSCAN (Clustering)
               </h3>
               <p className="text-xs text-indigo-800 mb-3">
-                Controla cómo se forman los clusters de documentos similares
+                Controla cómo se forman los clústeres de documentos similares
               </p>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Min Cluster Size (5-100)
+                    Tamaño Mínimo de Clúster (5-100)
                   </label>
                   <input
                     type="number"
@@ -479,13 +479,13 @@ export const BERTopicCreate: React.FC = () => {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Tamaño mínimo de un cluster. Valores más altos = menos tópicos más grandes.
+                    Tamaño mínimo de un clúster. Valores más altos = menos temas más grandes.
                   </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Min Samples (1-50)
+                    Muestras Mínimas (1-50)
                   </label>
                   <input
                     type="number"
@@ -496,7 +496,7 @@ export const BERTopicCreate: React.FC = () => {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Muestras mínimas para un punto core. Controla el ruido del clustering.
+                    Muestras mínimas para un punto core. Controla el ruido del agrupamiento.
                   </p>
                 </div>
               </div>
@@ -504,15 +504,15 @@ export const BERTopicCreate: React.FC = () => {
 
             {/* Topic Configuration */}
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-amber-900 mb-2">Configuración de Tópicos</h3>
+              <h3 className="text-sm font-semibold text-amber-900 mb-2">Configuración de Temas</h3>
               <p className="text-xs text-amber-800 mb-3">
-                Define cómo se representan los tópicos encontrados
+                Define cómo se representan los temas encontrados
               </p>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Palabras por Tópico (5-50)
+                    Palabras por Tema (5-50)
                   </label>
                   <input
                     type="number"
@@ -523,7 +523,7 @@ export const BERTopicCreate: React.FC = () => {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Número de palabras representativas por tópico.
+                    Número de palabras representativas por tema.
                   </p>
                 </div>
 

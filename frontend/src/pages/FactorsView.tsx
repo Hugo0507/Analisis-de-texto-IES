@@ -69,7 +69,7 @@ const HBar: React.FC<{ label: string; value: number; maxValue: number; category:
         <div className={`${barColor(category)} h-full rounded-full transition-all duration-500`} style={{ width: `${Math.max(width, 2)}%` }} />
       </div>
       <span className="w-10 sm:w-12 text-xs text-slate-500 text-right shrink-0 font-mono">
-        {value > 0 ? value.toFixed(3) : '—'}
+        {value > 0 ? value.toFixed(2) : '—'}
       </span>
       <span className={`hidden sm:inline-flex text-xs px-2 py-0.5 rounded-full border ${meta.bg} ${meta.color} shrink-0`}>
         {meta.label}

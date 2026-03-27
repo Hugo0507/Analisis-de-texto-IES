@@ -257,7 +257,7 @@ export const BERTopicList: React.FC = () => {
                       {/* Coherencia Column */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="text-sm text-gray-600">
-                          {analysis.coherence_score !== null ? analysis.coherence_score.toFixed(4) : '-'}
+                          {analysis.coherence_score !== null ? analysis.coherence_score.toFixed(2) : '-'}
                         </span>
                       </td>
 

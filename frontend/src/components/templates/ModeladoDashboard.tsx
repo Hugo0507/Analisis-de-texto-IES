@@ -219,7 +219,7 @@ export const ModeladoDashboard: React.FC = () => {
         <div>
           <h2 className="text-2xl font-bold text-white">Modelado</h2>
           <p className="text-slate-400 text-sm mt-1">
-            Análisis de NER, Topic Modeling y BERTopic
+            Análisis de NER, Modelado de Temas y BERTopic
           </p>
         </div>
 
@@ -233,7 +233,7 @@ export const ModeladoDashboard: React.FC = () => {
             <h3 className="text-lg font-semibold text-white mb-2">Sin Análisis de Modelado</h3>
             <p className="text-slate-400 max-w-md mx-auto mb-6">
               No se han encontrado análisis de modelado para este dataset.
-              Crea un análisis NER, Topic Modeling o BERTopic desde la sección de Administración.
+              Crea un análisis NER, Modelado de Temas o BERTopic desde la sección de Administración.
             </p>
             <a
               href="/admin/ner"
@@ -259,7 +259,7 @@ export const ModeladoDashboard: React.FC = () => {
         <div>
           <h2 className="text-2xl font-bold text-white">Modelado</h2>
           <p className="text-slate-400 text-sm mt-1">
-            Análisis de NER, Topic Modeling y BERTopic
+            Análisis de NER, Modelado de Temas y BERTopic
           </p>
         </div>
       </div>
@@ -287,7 +287,7 @@ export const ModeladoDashboard: React.FC = () => {
           )}
           {(data?.topicModelingAnalyses?.length ?? 0) > 1 && (
             <div className="flex items-center gap-2 min-w-[200px] flex-1">
-              <span className="text-xs text-slate-400 whitespace-nowrap font-medium">Topic Model:</span>
+              <span className="text-xs text-slate-400 whitespace-nowrap font-medium">Modelo de Tema:</span>
               <select
                 value={filters.selectedTopicModelId ?? data?.selectedTopicModeling?.id ?? ''}
                 onChange={e => setSelectedTopicModel(Number(e.target.value))}
@@ -331,7 +331,7 @@ export const ModeladoDashboard: React.FC = () => {
         />
 
         <MetricCardDark
-          title="Topic Models"
+          title="Modelos de Temas"
           value={data?.topicModelingAnalyses?.length || 0}
           subtitle="Modelos LSA/NMF/LDA"
           icon={
@@ -437,8 +437,8 @@ export const ModeladoDashboard: React.FC = () => {
       {/* Topic Modeling Section */}
       {data?.selectedTopicModeling && data.topics && data.topics.length > 0 && (
         <ChartCard
-          title="Tópicos Identificados"
-          subtitle={`${data.selectedTopicModeling.name} - ${data.topics.length} tópicos`}
+          title="Temas Identificados"
+          subtitle={`${data.selectedTopicModeling.name} - ${data.topics.length} temas`}
           accentColor="emerald"
           size="lg"
           icon={
@@ -464,8 +464,8 @@ export const ModeladoDashboard: React.FC = () => {
       {/* Topic Distribution */}
       {data?.topicDistribution && data.topicDistribution.length > 0 && (
         <ChartCard
-          title="Distribución de Tópicos"
-          subtitle="Documentos por tópico"
+          title="Distribución de Temas"
+          subtitle="Documentos por tema"
           accentColor="cyan"
           size="md"
           icon={
@@ -488,8 +488,8 @@ export const ModeladoDashboard: React.FC = () => {
       {/* BERTopic Section */}
       {data?.selectedBertopic && data.bertopicClusters && data.bertopicClusters.length > 0 && (
         <ChartCard
-          title="Clusters BERTopic"
-          subtitle={`${data.bertopicClusters.length} clusters identificados`}
+          title="Clústeres BERTopic"
+          subtitle={`${data.bertopicClusters.length} clústeres identificados`}
           accentColor="amber"
           size="lg"
           icon={
@@ -508,7 +508,7 @@ export const ModeladoDashboard: React.FC = () => {
               >
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-sm font-medium text-white">
-                    {cluster.label || `Cluster ${cluster.topicId}`}
+                    {cluster.label || `Clúster ${cluster.topicId}`}
                   </h4>
                   <span className="px-2 py-0.5 text-xs rounded-full bg-amber-500/20 text-amber-400">
                     {cluster.numDocuments} docs
@@ -567,7 +567,7 @@ export const ModeladoDashboard: React.FC = () => {
             {/* Topic Modeling Selector */}
             {data?.topicModelingAnalyses && data.topicModelingAnalyses.length > 1 && (
               <div>
-                <label className="text-xs text-slate-400 block mb-1">Topic Modeling</label>
+                <label className="text-xs text-slate-400 block mb-1">Modelado de Temas</label>
                 <select
                   value={filters.selectedTopicModelId || ''}
                   onChange={(e) => setSelectedTopicModel(e.target.value ? Number(e.target.value) : null)}

@@ -254,7 +254,7 @@ export const BagOfWordsView: React.FC = () => {
                 </div>
 
                 <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
-                  <p className="text-xs font-medium text-white/80 mb-1">Esparsidad</p>
+                  <p className="text-xs font-medium text-white/80 mb-1">Dispersión</p>
                   <p className="text-2xl font-bold">{(analysis.matrix_sparsity * 100).toFixed(1)}%</p>
                 </div>
 

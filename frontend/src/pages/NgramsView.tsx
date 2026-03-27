@@ -284,7 +284,7 @@ export const NgramsView: React.FC = () => {
                     </div>
 
                     <div className="bg-gray-50 rounded-lg p-3">
-                      <p className="text-xs font-medium text-gray-500 mb-1">Esparsidad</p>
+                      <p className="text-xs font-medium text-gray-500 mb-1">Dispersión</p>
                       <p className="text-xl font-bold text-gray-900">
                         {(selectedResult.matrix_sparsity * 100).toFixed(1)}%
                       </p>

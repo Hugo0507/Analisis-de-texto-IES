@@ -178,11 +178,11 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext }) =>
           noOptionsMsg="No hay análisis TF-IDF completados con artefactos. Ejecuta un análisis TF-IDF primero."
         />
         <SelectRow
-          label="Topic Modeling"
+          label="Modelado de Temas"
           options={topicOptions}
           value={selectedTopic}
           onChange={setSelectedTopic}
-          noOptionsMsg="No hay Topic Models completados con artefactos. Ejecuta un Topic Modeling primero."
+          noOptionsMsg="No hay Modelos de Temas completados con artefactos. Ejecuta un Modelado de Temas primero."
         />
       </div>
 
@@ -368,7 +368,7 @@ const ProcessingStage: React.FC<ProcessingStageProps> = ({ workspaceId, onDone, 
         else if (ws.progress_percentage < 40) setStatusMsg('Preparando inferencia…');
         else if (ws.progress_percentage < 60) setStatusMsg('Aplicando Bolsa de Palabras…');
         else if (ws.progress_percentage < 80) setStatusMsg('Calculando TF-IDF…');
-        else if (ws.progress_percentage < 100) setStatusMsg('Asignando tópicos…');
+        else if (ws.progress_percentage < 100) setStatusMsg('Asignando temas…');
         else setStatusMsg('Completado.');
 
         if (ws.status === 'completed') {
@@ -470,7 +470,7 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
               { label: 'Vocabulario ref.', value: results.bow.vocabulary_size.toLocaleString() },
               { label: 'Total ocurrencias', value: results.bow.total_term_occurrences.toLocaleString() },
               { label: 'Términos/doc (prom.)', value: results.bow.avg_terms_per_document.toFixed(1) },
-              { label: 'Sparsity', value: `${(results.bow.matrix_sparsity * 100).toFixed(1)}%` },
+              { label: 'Dispersión', value: `${(results.bow.matrix_sparsity * 100).toFixed(1)}%` },
             ].map(({ label, value }) => (
               <div key={label} className="p-3 rounded-xl bg-slate-900/50 text-center">
                 <p className="text-lg font-bold text-white">{value}</p>
@@ -502,8 +502,8 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
         <Section title="TF-IDF (pesos del corpus)" color="#06b6d4">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
             {[
-              { label: 'TF-IDF prom./doc', value: results.tfidf.avg_tfidf_per_document.toFixed(4) },
-              { label: 'Sparsity', value: `${(results.tfidf.matrix_sparsity * 100).toFixed(1)}%` },
+              { label: 'TF-IDF prom./doc', value: results.tfidf.avg_tfidf_per_document.toFixed(2) },
+              { label: 'Dispersión', value: `${(results.tfidf.matrix_sparsity * 100).toFixed(1)}%` },
               { label: 'Documentos', value: results.tfidf.matrix_shape.rows.toString() },
             ].map(({ label, value }) => (
               <div key={label} className="p-3 rounded-xl bg-slate-900/50 text-center">
@@ -524,7 +524,7 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
                   />
                 </div>
                 <span className="text-xs text-slate-300 w-24 truncate">{t.term}</span>
-                <span className="text-xs text-slate-500 w-14 text-right">{t.score.toFixed(4)}</span>
+                <span className="text-xs text-slate-500 w-14 text-right">{t.score.toFixed(2)}</span>
               </div>
             ))}
           </div>
@@ -533,13 +533,13 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
 
       {/* Topics */}
       {results.topics && !results.topics.error && (
-        <Section title={`Topic Modeling — ${results.topics.algorithm.toUpperCase()}`} color="#f59e0b">
+        <Section title={`Modelado de Temas — ${results.topics.algorithm.toUpperCase()}`} color="#f59e0b">
           <div className="space-y-3">
-            <p className="text-xs text-slate-400 font-medium">Distribución de tópicos dominantes en los nuevos documentos</p>
+            <p className="text-xs text-slate-400 font-medium">Distribución de temas dominantes en los nuevos documentos</p>
             {results.topics.topic_distribution.map(t => (
               <div key={t.topic_id} className="flex items-center gap-3">
                 <span className="text-xs text-slate-400 w-20 truncate shrink-0">
-                  {t.topic_label || `Tópico ${t.topic_id}`}
+                  {t.topic_label || `Tema ${t.topic_id}`}
                 </span>
                 <div className="flex-1 h-5 bg-slate-700/50 rounded-full overflow-hidden">
                   <div

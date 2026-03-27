@@ -33,7 +33,7 @@ function modelMeta(key: string) {
   return MODEL_META[key.toLowerCase()] ?? { label: key.toUpperCase(), color: 'text-slate-700', bg: 'bg-slate-50 border-slate-200', bar: 'bg-slate-400' };
 }
 
-function fmt(value: number | undefined | null, decimals: number = 4): string {
+function fmt(value: number | undefined | null, decimals: number = 2): string {
   if (value == null) return '—';
   return value.toFixed(decimals);
 }
@@ -60,7 +60,7 @@ const MetricBar: React.FC<MetricBarProps> = ({ label, value, max, barColor, isBe
         />
       </div>
       <span className="w-16 text-xs font-mono text-right text-slate-500 shrink-0">
-        {value != null ? value.toFixed(4) : '—'}
+        {value != null ? value.toFixed(2) : '—'}
       </span>
       {isBest && (
         <Trophy className="w-3.5 h-3.5 text-emerald-500 shrink-0" aria-label="Mejor modelo" />
@@ -125,7 +125,7 @@ export const TopicComparison: React.FC = () => {
           <div className="flex items-center gap-3 shrink-0 ml-4">
             {/* N-topics selector */}
             <div className="flex items-center gap-2">
-              <label htmlFor="n-topics" className="text-xs text-slate-500 hidden sm:inline">N tópicos</label>
+              <label htmlFor="n-topics" className="text-xs text-slate-500 hidden sm:inline">N temas</label>
               <select
                 id="n-topics"
                 value={nTopics}
@@ -154,8 +154,8 @@ export const TopicComparison: React.FC = () => {
         <div className="flex gap-2.5 text-sm text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
           <Info className="w-4 h-4 shrink-0 mt-0.5 text-slate-400" />
           <span className="leading-relaxed">
-            Comparación de métricas para LDA, NMF, LSA, pLSA y BERTopic con <strong>{nTopics} tópicos</strong>.
-            La coherencia es la métrica principal: valores más altos indican tópicos más interpretables.
+            Comparación de métricas para LDA, NMF, LSA, pLSA y BERTopic con <strong>{nTopics} temas</strong>.
+            La coherencia es la métrica principal: valores más altos indican temas más interpretables.
             El mejor modelo se resalta en verde.
           </span>
         </div>
@@ -167,7 +167,7 @@ export const TopicComparison: React.FC = () => {
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Sin modelos entrenados</h3>
             <p className="text-sm text-gray-600 max-w-md mx-auto">
-              Entrena al menos un modelo de topic modeling (LDA, NMF, LSA o pLSA) desde la sección de Modelado
+              Entrena al menos un modelo de Modelado de Temas (LDA, NMF, LSA o pLSA) desde la sección de Modelado
               para ver la comparación de benchmarks.
             </p>
           </div>
@@ -195,11 +195,11 @@ export const TopicComparison: React.FC = () => {
             <div className="bg-white p-5 sm:p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
               <h2 className="text-base font-semibold text-slate-800 mb-4">Métricas comparativas</h2>
               <div className="overflow-x-auto -mx-5 sm:mx-0 px-5 sm:px-0">
-                <table className="w-full text-sm min-w-[560px]" role="table" aria-label="Comparación de modelos de tópicos">
+                <table className="w-full text-sm min-w-[560px]" role="table" aria-label="Comparación de modelos de temas">
                   <thead>
                     <tr className="border-b border-slate-100">
                       <th className="text-left text-xs font-medium text-slate-500 py-2 pr-4">Modelo</th>
-                      <th className="text-right text-xs font-medium text-slate-500 py-2 pr-4">N Tópicos</th>
+                      <th className="text-right text-xs font-medium text-slate-500 py-2 pr-4">N Temas</th>
                       <th className="text-right text-xs font-medium text-slate-500 py-2 pr-4">Coherencia</th>
                       <th className="text-right text-xs font-medium text-slate-500 py-2 pr-4">Perplejidad</th>
                       <th className="text-right text-xs font-medium text-slate-500 py-2 pr-4">Error Reconstrucción</th>
@@ -225,7 +225,7 @@ export const TopicComparison: React.FC = () => {
                             {model.perplexity != null ? model.perplexity.toFixed(2) : '—'}
                           </td>
                           <td className="py-3 pr-4 text-right font-mono text-slate-600 text-sm">
-                            {model.reconstruction_error != null ? model.reconstruction_error.toFixed(4) : '—'}
+                            {model.reconstruction_error != null ? model.reconstruction_error.toFixed(2) : '—'}
                           </td>
                           <td className="py-3 text-center">
                             {isBest ? (
@@ -246,7 +246,7 @@ export const TopicComparison: React.FC = () => {
             <div className="bg-white p-5 sm:p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
               <h2 className="text-base font-semibold text-slate-800 mb-1">Coherencia por modelo</h2>
               <p className="text-xs text-slate-400 mb-4">
-                Valores más altos indican tópicos más interpretables semánticamente.
+                Valores más altos indican temas más interpretables semánticamente.
                 El verde indica el mejor modelo.
               </p>
               <div className="space-y-2">

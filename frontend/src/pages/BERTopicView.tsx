@@ -289,7 +289,7 @@ export const BERTopicView: React.FC = () => {
                 <div className="bg-gray-50 rounded-lg p-3">
                   <p className="text-xs font-medium text-gray-500 mb-1">Coherencia C_V</p>
                   <p className="text-lg font-bold text-gray-900">
-                    {analysis.coherence_score !== null ? analysis.coherence_score.toFixed(4) : 'N/A'}
+                    {analysis.coherence_score !== null ? analysis.coherence_score.toFixed(2) : 'N/A'}
                   </p>
                 </div>
               </div>
@@ -297,7 +297,7 @@ export const BERTopicView: React.FC = () => {
 
           {/* Visualization 1: Topic Distribution (Doughnut Chart) */}
           <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Distribución de Tópicos</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Distribución de Temas</h2>
             <div style={{ height: '400px' }}>
               <Doughnut data={doughnutData} options={doughnutOptions} />
             </div>
@@ -305,7 +305,7 @@ export const BERTopicView: React.FC = () => {
 
           {/* Visualization 2: Topic Words */}
           <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Tópicos y Palabras Clave</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Temas y Palabras Clave</h2>
 
             <div className="space-y-4">
               {analysis.topics.map((topic) => (
@@ -321,7 +321,7 @@ export const BERTopicView: React.FC = () => {
                         key={idx}
                         className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium"
                       >
-                        {word.word} ({word.weight.toFixed(4)})
+                        {word.word} ({word.weight.toFixed(2)})
                       </span>
                     ))}
                   </div>
@@ -368,27 +368,27 @@ export const BERTopicView: React.FC = () => {
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs font-medium text-gray-500 mb-1">N Neighbors</p>
+                <p className="text-xs font-medium text-gray-500 mb-1">Vecinos (N)</p>
                 <p className="text-lg font-bold text-gray-900">{analysis.n_neighbors}</p>
               </div>
 
               <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs font-medium text-gray-500 mb-1">N Components</p>
+                <p className="text-xs font-medium text-gray-500 mb-1">Componentes (N)</p>
                 <p className="text-lg font-bold text-gray-900">{analysis.n_components}</p>
               </div>
 
               <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs font-medium text-gray-500 mb-1">Min Cluster Size</p>
+                <p className="text-xs font-medium text-gray-500 mb-1">Tamaño mín. de clúster</p>
                 <p className="text-lg font-bold text-gray-900">{analysis.min_cluster_size}</p>
               </div>
 
               <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs font-medium text-gray-500 mb-1">Min Samples</p>
+                <p className="text-xs font-medium text-gray-500 mb-1">Muestras Mínimas</p>
                 <p className="text-lg font-bold text-gray-900">{analysis.min_samples}</p>
               </div>
 
               <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs font-medium text-gray-500 mb-1">Palabras por Tópico</p>
+                <p className="text-xs font-medium text-gray-500 mb-1">Palabras por Tema</p>
                 <p className="text-lg font-bold text-gray-900">{analysis.num_words}</p>
               </div>
 

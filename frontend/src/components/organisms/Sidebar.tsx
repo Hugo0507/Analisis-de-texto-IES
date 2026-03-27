@@ -125,15 +125,15 @@ const modelingNavItems: NavItem[] = [
   },
   {
     path: '/admin/modelado/topic-modeling',
-    label: 'Topic Modeling',
+    label: 'Modelado de Temas',
     icon: 'topic-modeling',
-    description: 'Modelado de tópicos (LSA, NMF, PLSA, LDA)',
+    description: 'Modelado de temas (LSA, NMF, PLSA, LDA)',
   },
   {
     path: '/admin/modelado/bertopic',
     label: 'BERTopic',
     icon: 'bertopic',
-    description: 'Topic Modeling con BERT (UMAP + HDBSCAN)',
+    description: 'Modelado de Temas con BERT (UMAP + HDBSCAN)',
   },
 ];
 
@@ -226,7 +226,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '', onClose }) => 
                   }}
                 >
                   <div className="px-4 py-3 border-b border-gray-200">
-                    <p className="text-xs text-gray-500">Logueado como</p>
+                    <p className="text-xs text-gray-500">Conectado como</p>
                     <p className="text-sm font-medium text-gray-900 truncate">{user.email}</p>
                   </div>
                   <button
