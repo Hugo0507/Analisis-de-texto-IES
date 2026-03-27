@@ -12,8 +12,8 @@ backlog = 2048
 
 # Worker Processes
 workers = int(os.environ.get("GUNICORN_WORKERS", multiprocessing.cpu_count() * 2 + 1))
-worker_class = "gthread"  # Use threads for better Django compatibility
-threads = int(os.environ.get("GUNICORN_THREADS", 2))
+worker_class = "sync"  # sync avoids heap corruption with numpy/scipy/joblib in subprocesses
+threads = 1  # Not used with sync, but kept for reference
 worker_connections = 1000
 max_requests = 1000  # Restart workers after N requests (prevents memory leaks)
 max_requests_jitter = 50  # Randomize max_requests to prevent all workers restarting simultaneously
