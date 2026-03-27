@@ -125,7 +125,7 @@ export const Login: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 rounded"
                     disabled={isLoading}
                   >
                     {showPassword ? (
@@ -147,7 +147,7 @@ export const Login: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => navigate('/admin/forgot-password')}
-                  className="text-xs text-teal-600 hover:text-teal-700 font-medium"
+                  className="text-xs text-teal-600 hover:text-teal-700 font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 rounded"
                   disabled={isLoading}
                 >
                   ¿Olvidaste tu contraseña?
@@ -158,7 +158,7 @@ export const Login: React.FC = () => {
               <button
                 type="submit"
                 disabled={isLoading || !username.trim() || !password.trim()}
-                className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 px-6 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm"
+                className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 px-6 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-teal-400"
                 style={{ backgroundColor: '#10968E' }}
               >
                 {isLoading ? (
@@ -178,7 +178,7 @@ export const Login: React.FC = () => {
         <div className="p-6 text-center">
           <button
             onClick={() => navigate('/')}
-            className="text-xs text-gray-500 hover:text-gray-700"
+            className="text-xs text-gray-500 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 rounded"
           >
             ← Volver al dashboard público
           </button>

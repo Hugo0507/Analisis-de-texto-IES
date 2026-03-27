@@ -188,7 +188,8 @@ export const NerAnalysisView: React.FC = () => {
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/admin/modelado/ner')}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="Volver"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400"
               title="Volver"
             >
               <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">

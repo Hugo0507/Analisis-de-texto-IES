@@ -415,7 +415,7 @@ export const Pipeline: React.FC = () => {
             <h1 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">Pipeline NLP Completo</h1>
           </div>
           <div className="flex items-center gap-3 shrink-0 ml-4">
-            <button onClick={loadHistory} className="p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors" title="Refrescar historial">
+            <button onClick={loadHistory} className="p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400" title="Refrescar historial">
               <RefreshCw className="w-5 h-5 text-gray-700" />
             </button>
             <button

@@ -151,7 +151,7 @@ export const FactorsView: React.FC = () => {
       <div className="sticky top-0 z-40 bg-white border-b border-gray-200" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
         <div className="flex items-center justify-between px-4 sm:px-8 py-4">
           <div className="flex items-center gap-3 min-w-0">
-            <button onClick={() => navigate('/admin/analisis/analisis-de-factores')} className="p-2 rounded-full hover:bg-gray-100">
+            <button onClick={() => navigate('/admin/analisis/analisis-de-factores')} aria-label="Volver" className="p-2 rounded-full hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400">
               <ArrowLeft className="w-5 h-5 text-gray-600" />
             </button>
             <div className="min-w-0">
