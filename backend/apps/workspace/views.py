@@ -235,18 +235,32 @@ def _run_inference(workspace_id: str):
     workspace.save()
 
     texts = []
+    preprocessing_stats = {
+        'total_raw_tokens': 0,
+        'total_clean_tokens': 0,
+        'documents_processed': 0,
+        'documents_failed': 0,
+    }
+
     for doc in docs:
         try:
             doc.status = WorkspaceDocument.STATUS_EXTRACTING
             doc.save()
 
             extracted = _extract_pdf_text(doc.file)
+            raw_token_count = len(extracted.split())
+
             preprocessed = preprocess_for_inference(
                 extracted,
                 stopwords=stopwords,
                 lemmatize=True,
                 language=corpus_language,
             )
+            clean_token_count = len(preprocessed.split()) if preprocessed else 0
+
+            preprocessing_stats['total_raw_tokens'] += raw_token_count
+            preprocessing_stats['total_clean_tokens'] += clean_token_count
+            preprocessing_stats['documents_processed'] += 1
 
             doc.extracted_text = extracted
             doc.preprocessed_text = preprocessed
@@ -258,6 +272,7 @@ def _run_inference(workspace_id: str):
             doc.status = WorkspaceDocument.STATUS_ERROR
             doc.error_message = str(e)
             doc.save()
+            preprocessing_stats['documents_failed'] += 1
             logger.warning(f"[WS {workspace_id}] Error en doc {doc.id}: {e}")
 
     if not texts:
@@ -320,6 +335,24 @@ def _run_inference(workspace_id: str):
 
     # ── Finalizar ──────────────────────────────────────────────────────
     results['document_count'] = len(valid_texts)
+    results['preprocessing_stats'] = preprocessing_stats
+
+    # Documentos rechazados por idioma
+    rejected_docs = workspace.documents.filter(
+        status=WorkspaceDocument.STATUS_ERROR,
+        detected_language__isnull=False,
+    )
+    results['rejected_documents'] = [
+        {
+            'filename': d.original_filename,
+            'detected_language': d.detected_language,
+            'expected_language': corpus_language,
+            'confidence': round(d.language_confidence, 2),
+            'reason': d.error_message or '',
+        }
+        for d in rejected_docs
+    ]
+
     workspace.results = results
     workspace.status = Workspace.STATUS_COMPLETED
     workspace.progress_percentage = 100
