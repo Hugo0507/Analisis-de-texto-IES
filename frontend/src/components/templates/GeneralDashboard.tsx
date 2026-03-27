@@ -288,10 +288,10 @@ function buildClusterCSV(topic: EnrichedTopic, docTopics: DocumentTopicItem[]): 
     toCSVRow(['Término', 'Peso (%)']),
     ...topic.words.map(w => toCSVRow([w.word, (w.weight * 100).toFixed(2)])),
     toCSVRow(['', '']),
-    toCSVRow(['Documento', 'Peso del tópico']),
+    toCSVRow(['Documento', 'Peso del tema']),
     ...docTopics
       .filter(d => (d.dominant_topic ?? d.topic_id) === topic.id)
-      .map(d => toCSVRow([d.document_name ?? `Doc ${d.document_id}`, (d.dominant_topic_weight ?? d.topic_weight ?? 0).toFixed(4)])),
+      .map(d => toCSVRow([d.document_name ?? `Doc ${d.document_id}`, (d.dominant_topic_weight ?? d.topic_weight ?? 0).toFixed(2)])),
   ];
   return [infoHeader, ...infoRows].join('\n');
 }
@@ -386,7 +386,7 @@ const ScienceMap: React.FC<ScienceMapProps> = ({ topics, onTopicHover, onTopicCl
               <text x={cat.zoneX} y={cat.zoneY + 15}
                 textAnchor="middle" fill="rgba(148,163,184,0.8)"
                 fontSize={7}>
-                {catTopics.length} tópico{catTopics.length !== 1 ? 's' : ''}
+                {catTopics.length} tema{catTopics.length !== 1 ? 's' : ''}
               </text>
             )}
           </g>
@@ -600,7 +600,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ cat, topics, docTopics, exp
           <div className="flex items-center gap-2">
             {topics.length > 0 && (
               <span className={`text-xs px-2 py-0.5 rounded-full ${cat.badgeClass} font-medium`}>
-                {topics.length} tópico{topics.length !== 1 ? 's' : ''}
+                {topics.length} tema{topics.length !== 1 ? 's' : ''}
               </span>
             )}
             {/* Download button */}
@@ -630,7 +630,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ cat, topics, docTopics, exp
             ))}
           </div>
         ) : (
-          <p className="text-xs text-slate-500 italic">Sin tópicos asignados aún</p>
+          <p className="text-xs text-slate-500 italic">Sin temas asignados aún</p>
         )}
 
         {/* Toggle docs button */}
@@ -1076,12 +1076,12 @@ const MetricsStrip: React.FC<MetricsStripProps> = ({ topicModel, bertopic, enric
       id: 'coherence',
       show: coherence != null,
       icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" /></svg>,
-      value: coherence != null ? coherence.toFixed(3) : '—',
+      value: coherence != null ? coherence.toFixed(2) : '—',
       label: 'Coherencia C_V',
       quality: coherenceQ,
       tooltip: {
-        title: 'Coherencia C_V del modelo de tópicos',
-        body: 'Mide qué tan semánticamente relacionadas están las palabras principales de cada tópico. Un valor alto indica tópicos más interpretables y con significado real para el investigador.',
+        title: 'Coherencia C_V del modelo de temas',
+        body: 'Mide qué tan semánticamente relacionadas están las palabras principales de cada tema. Un valor alto indica temas más interpretables y con significado real para el investigador.',
         range: '≥ 0.65 excelente · 0.40–0.64 aceptable · < 0.40 revisar',
         source: modelName ?? undefined,
       },
@@ -1095,7 +1095,7 @@ const MetricsStrip: React.FC<MetricsStripProps> = ({ topicModel, bertopic, enric
       quality: 'neutral',
       tooltip: {
         title: 'Tamaño del corpus analizado',
-        body: 'Número total de documentos que el modelo procesó para extraer los tópicos. Un corpus más grande generalmente produce modelos más robustos y representativos.',
+        body: 'Número total de documentos que el modelo procesó para extraer los temas. Un corpus más grande generalmente produce modelos más robustos y representativos.',
         range: 'Mínimo recomendado: 50 documentos para LDA · 200+ para BERTopic',
         source: modelName ?? undefined,
       },
@@ -1118,11 +1118,11 @@ const MetricsStrip: React.FC<MetricsStripProps> = ({ topicModel, bertopic, enric
       show: numTopics > 0,
       icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" strokeWidth={2} /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v3m0 14v3M4.22 4.22l2.12 2.12m11.32 11.32l2.12 2.12M2 12h3m14 0h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" /></svg>,
       value: String(numTopics),
-      label: 'Tópicos identificados',
+      label: 'Temas identificados',
       quality: 'neutral',
       tooltip: {
-        title: 'Número de tópicos extraídos',
-        body: 'Grupos temáticos distintos identificados en el corpus. Cada tópico representa un conjunto de términos semánticamente relacionados que co-ocurren en los documentos.',
+        title: 'Número de temas extraídos',
+        body: 'Grupos temáticos distintos identificados en el corpus. Cada tema representa un conjunto de términos semánticamente relacionados que co-ocurren en los documentos.',
         range: 'Óptimo: validar con índice de coherencia y revisión experta',
         source: modelName ?? undefined,
       },
@@ -1136,7 +1136,7 @@ const MetricsStrip: React.FC<MetricsStripProps> = ({ topicModel, bertopic, enric
       quality: coverageQ,
       tooltip: {
         title: 'Cobertura temática del corpus',
-        body: 'Porcentaje de documentos que fueron asignados a algún tópico (no clasificados como outliers). Un valor bajo puede indicar que el corpus es muy heterogéneo o que el modelo necesita ajuste.',
+        body: 'Porcentaje de documentos que fueron asignados a algún tema (no clasificados como outliers). Un valor bajo puede indicar que el corpus es muy heterogéneo o que el modelo necesita ajuste.',
         range: '≥ 85% excelente · 65–84% aceptable · < 65% revisar parámetros',
         source: 'BERTopic (HDBSCAN clustering)',
       },
@@ -1165,7 +1165,7 @@ const MetricsStrip: React.FC<MetricsStripProps> = ({ topicModel, bertopic, enric
         title: 'Perplejidad del modelo LDA',
         body: 'Medida estadística de qué tan bien el modelo predice una muestra. A menor perplejidad, mejor ajuste del modelo a los datos. Comparar entre modelos del mismo corpus.',
         range: 'No hay rango universal — comparar entre iteraciones del mismo corpus',
-        source: `LDA · ${topicModel?.num_topics ?? '?'} tópicos`,
+        source: `LDA · ${topicModel?.num_topics ?? '?'} temas`,
       },
     },
     {
@@ -1173,11 +1173,11 @@ const MetricsStrip: React.FC<MetricsStripProps> = ({ topicModel, bertopic, enric
       show: bertopic != null && outliers > 0,
       icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
       value: `${outliers.toLocaleString('es-CO')}`,
-      label: 'Outliers (sin tópico)',
+      label: 'Outliers (sin tema)',
       quality: outliers / Math.max(totalDocs, 1) < 0.10 ? 'good' : outliers / Math.max(totalDocs, 1) < 0.25 ? 'average' : 'poor',
       tooltip: {
-        title: 'Documentos sin tópico asignado (BERTopic)',
-        body: 'Documentos que HDBSCAN no pudo asignar a ningún clúster (tópico -1). Un número alto puede indicar documentos muy cortos, muy específicos, o que el parámetro min_cluster_size es demasiado grande.',
+        title: 'Documentos sin tema asignado (BERTopic)',
+        body: 'Documentos que HDBSCAN no pudo asignar a ningún clúster (tema -1). Un número alto puede indicar documentos muy cortos, muy específicos, o que el parámetro min_cluster_size es demasiado grande.',
         range: '< 10% del corpus: aceptable · > 25%: revisar parámetros HDBSCAN',
         source: 'BERTopic · HDBSCAN clustering',
       },
@@ -1476,7 +1476,7 @@ export const GeneralDashboard: React.FC = () => {
               Landscape de la TD en Educación Superior
             </h2>
             <p className="mt-1 text-sm text-slate-400 max-w-xl">
-              Mapa de conocimiento consolidado identificado mediante análisis de tópicos
+              Mapa de conocimiento consolidado identificado mediante análisis de temas
               sobre el corpus de literatura académica.
             </p>
           </div>
@@ -1512,7 +1512,7 @@ export const GeneralDashboard: React.FC = () => {
         <div className="flex flex-wrap gap-4 p-4 rounded-xl bg-slate-800/40 border border-slate-700/50">
           {topicList.length > 1 && (
             <div className="flex items-center gap-2 min-w-[220px] flex-1">
-              <span className="text-xs text-slate-400 whitespace-nowrap font-medium">Topic Model:</span>
+              <span className="text-xs text-slate-400 whitespace-nowrap font-medium">Modelo de Tema:</span>
               <select
                 value={filters.selectedTopicModelId ?? topicModel?.id ?? ''}
                 onChange={e => setSelectedTopicModel(Number(e.target.value))}
@@ -1554,8 +1554,8 @@ export const GeneralDashboard: React.FC = () => {
         title="Mapa de Conocimiento"
         subtitle={
           totalTopics
-            ? `${totalTopics} tópicos — haz clic en un nodo para ver sus términos y documentos`
-            : 'Ejecuta un análisis de tópicos para visualizar el mapa de conocimiento'
+            ? `${totalTopics} temas — haz clic en un nodo para ver sus términos y documentos`
+            : 'Ejecuta un análisis de temas para visualizar el mapa de conocimiento'
         }
         accentColor="cyan"
         size="lg"
@@ -1625,7 +1625,7 @@ export const GeneralDashboard: React.FC = () => {
               </svg>
             </div>
             <p className="text-slate-400 text-sm max-w-xs">
-              No se encontraron análisis de tópicos completados. Ejecuta un modelo LDA o BERTopic en la pestaña{' '}
+              No se encontraron análisis de temas completados. Ejecuta un modelo LDA o BERTopic en la pestaña{' '}
               <span className="text-emerald-400">Modelado</span> para generar el mapa.
             </p>
           </div>
@@ -1690,8 +1690,8 @@ export const GeneralDashboard: React.FC = () => {
           <div>
             <p className="text-sm font-medium text-slate-300 mb-1">Metodología del Landscape</p>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Los tópicos se extraen mediante modelos de{' '}
-              <span className="text-slate-300">topic modelling</span> (LDA / NMF / LSA) y{' '}
+              Los temas se extraen mediante modelos de{' '}
+              <span className="text-slate-300">modelado de temas</span> (LDA / NMF / LSA) y{' '}
               <span className="text-slate-300">BERTopic</span> aplicados al corpus preprocesado.
               La clasificación en categorías factoriales se realiza automáticamente por coincidencia
               semántica con los descriptores del marco OE3.

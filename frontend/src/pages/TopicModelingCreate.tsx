@@ -119,7 +119,7 @@ export const TopicModelingCreate: React.FC = () => {
     }
 
     if (numTopics < 2 || numTopics > 100) {
-      showError('El número de tópicos debe estar entre 2 y 100');
+      showError('El número de temas debe estar entre 2 y 100');
       return;
     }
 
@@ -183,7 +183,7 @@ export const TopicModelingCreate: React.FC = () => {
               <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
               </svg>
-              <h1 className="text-xl font-semibold text-gray-900">Crear Análisis Topic Modeling</h1>
+              <h1 className="text-xl font-semibold text-gray-900">Crear Análisis de Modelado de Temas</h1>
             </div>
           </div>
 
@@ -241,7 +241,7 @@ export const TopicModelingCreate: React.FC = () => {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  placeholder="Ej: Topic Modeling - Papers Transformación Digital 2024"
+                  placeholder="Ej: Modelado de Temas - Papers Transformación Digital 2024"
                   required
                 />
               </div>
@@ -459,10 +459,10 @@ export const TopicModelingCreate: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div className="text-sm text-blue-800">
-                  <p className="font-semibold mb-1">¿Qué es Topic Modeling?</p>
+                  <p className="font-semibold mb-1">¿Qué es el Modelado de Temas?</p>
                   <p>
-                    Es una técnica de NLP que identifica automáticamente temas/tópicos ocultos en un conjunto de documentos.
-                    Cada tópico es un grupo de palabras relacionadas semánticamente. Por ejemplo, un tópico podría ser
+                    Es una técnica de PLN que identifica automáticamente temas ocultos en un conjunto de documentos.
+                    Cada tema es un grupo de palabras relacionadas semánticamente. Por ejemplo, un tema podría ser
                     "educación digital" con palabras como: tecnología, aprendizaje, virtual, plataforma, estudiantes.
                   </p>
                 </div>
@@ -470,13 +470,13 @@ export const TopicModelingCreate: React.FC = () => {
             </div>
 
             <div className="space-y-6">
-              {/* Número de Tópicos */}
+              {/* Número de Temas */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label htmlFor="numTopics" className="block text-sm font-medium text-gray-700">
-                    Número de Tópicos <span className="text-red-500">*</span>
+                    Número de Temas <span className="text-red-500">*</span>
                   </label>
-                  <span className="text-sm font-semibold text-emerald-600">{numTopics} tópicos</span>
+                  <span className="text-sm font-semibold text-emerald-600">{numTopics} temas</span>
                 </div>
                 <input
                   type="range"
@@ -496,25 +496,25 @@ export const TopicModelingCreate: React.FC = () => {
                   <span>100</span>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-3 mt-3">
-                  <p className="text-xs font-semibold text-gray-700 mb-1">💡 ¿Cuántos tópicos elegir?</p>
+                  <p className="text-xs font-semibold text-gray-700 mb-1">💡 ¿Cuántos temas elegir?</p>
                   <ul className="text-xs text-gray-600 space-y-1">
-                    <li>• <strong>2-5 tópicos:</strong> Para corpus muy enfocados en un tema específico</li>
-                    <li>• <strong>5-15 tópicos:</strong> Para datasets pequeños (100-500 documentos). Balance ideal entre especificidad y generalidad</li>
-                    <li>• <strong>15-30 tópicos:</strong> Para datasets medianos (500-2000 documentos)</li>
-                    <li>• <strong>30-50 tópicos:</strong> Para datasets grandes (2000+ documentos). Mayor granularidad en los temas</li>
-                    <li>• <strong>Más de 50:</strong> Solo para corpus muy grandes y diversos. Puede producir tópicos muy específicos o redundantes</li>
+                    <li>• <strong>2-5 temas:</strong> Para corpus muy enfocados en un tema específico</li>
+                    <li>• <strong>5-15 temas:</strong> Para datasets pequeños (100-500 documentos). Balance ideal entre especificidad y generalidad</li>
+                    <li>• <strong>15-30 temas:</strong> Para datasets medianos (500-2000 documentos)</li>
+                    <li>• <strong>30-50 temas:</strong> Para datasets grandes (2000+ documentos). Mayor granularidad en los temas</li>
+                    <li>• <strong>Más de 50:</strong> Solo para corpus muy grandes y diversos. Puede producir temas muy específicos o redundantes</li>
                   </ul>
                   <p className="text-xs text-gray-500 mt-2 italic">
-                    Consejo: Empieza con menos tópicos y aumenta gradualmente si necesitas más detalle.
+                    Consejo: Empieza con menos temas y aumenta gradualmente si necesitas más detalle.
                   </p>
                 </div>
               </div>
 
-              {/* Número de Palabras por Tópico */}
+              {/* Número de Palabras por Tema */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label htmlFor="numWords" className="block text-sm font-medium text-gray-700">
-                    Palabras por Tópico <span className="text-red-500">*</span>
+                    Palabras por Tema <span className="text-red-500">*</span>
                   </label>
                   <span className="text-sm font-semibold text-emerald-600">{numWords} palabras</span>
                 </div>
@@ -539,12 +539,12 @@ export const TopicModelingCreate: React.FC = () => {
                   <p className="text-xs font-semibold text-gray-700 mb-1">💡 ¿Cuántas palabras mostrar?</p>
                   <ul className="text-xs text-gray-600 space-y-1">
                     <li>• <strong>5-8 palabras:</strong> Vista compacta. Ideal para presentaciones o resúmenes ejecutivos</li>
-                    <li>• <strong>10-15 palabras:</strong> Balance óptimo (recomendado). Suficientes palabras para interpretar el tópico sin ruido</li>
-                    <li>• <strong>20-30 palabras:</strong> Vista detallada. Útil para análisis profundo o validación de tópicos</li>
+                    <li>• <strong>10-15 palabras:</strong> Balance óptimo (recomendado). Suficientes palabras para interpretar el tema sin ruido</li>
+                    <li>• <strong>20-30 palabras:</strong> Vista detallada. Útil para análisis profundo o validación de temas</li>
                     <li>• <strong>Más de 30:</strong> Puede incluir palabras menos relevantes que dificultan la interpretación</li>
                   </ul>
                   <p className="text-xs text-gray-500 mt-2 italic">
-                    Las palabras se ordenan por importancia (peso). Las primeras 5-10 son las más representativas del tópico.
+                    Las palabras se ordenan por importancia (peso). Las primeras 5-10 son las más representativas del tema.
                   </p>
                 </div>
               </div>

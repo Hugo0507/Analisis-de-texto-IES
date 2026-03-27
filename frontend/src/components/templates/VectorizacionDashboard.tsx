@@ -114,14 +114,14 @@ const exportTfidfCompleteCsv = (tfidf: TfIdfAnalysis, analysisName: string) => {
     .sort((a, b) => (tfidfMap.get(b[0]) || 0) - (tfidfMap.get(a[0]) || 0))
     .map(([term, idf], i) => [
       i + 1, term,
-      tfMap.has(term)   ? tfMap.get(term)!.toFixed(4)   : 'N/A',
-      idf.toFixed(4),
-      tfidfMap.has(term) ? tfidfMap.get(term)!.toFixed(4) : 'N/A',
+      tfMap.has(term)   ? tfMap.get(term)!.toFixed(2)   : 'N/A',
+      idf.toFixed(2),
+      tfidfMap.has(term) ? tfidfMap.get(term)!.toFixed(2) : 'N/A',
     ]);
   // If idf_values empty, fall back to top_terms
   const finalRows = rows.length > 0
     ? rows
-    : (tfidf.tfidf_matrix?.top_terms || []).map(t => [t.rank, t.term, 'N/A', 'N/A', t.score.toFixed(4)]);
+    : (tfidf.tfidf_matrix?.top_terms || []).map(t => [t.rank, t.term, 'N/A', 'N/A', t.score.toFixed(2)]);
   const csv = buildCsv(['rank', 'termino', 'tf', 'idf', 'tfidf'], finalRows);
   downloadFile(csv, `tfidf_completo_${slug}.csv`, 'text/csv');
 };
@@ -481,7 +481,7 @@ const WordDetailPanel: React.FC<WordDetailPanelProps> = ({
                 <div>
                   <div className="flex justify-between text-sm mb-1.5">
                     <span className="text-slate-300">Score TF-IDF</span>
-                    <span className="font-bold text-blue-400">{term.tfidfScore.toFixed(4)}</span>
+                    <span className="font-bold text-blue-400">{term.tfidfScore.toFixed(2)}</span>
                   </div>
                   <div className="h-2 rounded-full bg-slate-700/60">
                     <div className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-700" style={{ width: `${tfidfPct}%` }} />
@@ -491,7 +491,7 @@ const WordDetailPanel: React.FC<WordDetailPanelProps> = ({
                 {term.idfScore != null && (
                   <div className="flex justify-between text-sm py-2 border-b border-slate-700/40">
                     <span className="text-slate-400">Valor IDF</span>
-                    <span className="text-white font-medium">{term.idfScore.toFixed(4)}</span>
+                    <span className="text-white font-medium">{term.idfScore.toFixed(2)}</span>
                   </div>
                 )}
                 {term.tfidfRank && (
@@ -545,8 +545,8 @@ const WordDetailPanel: React.FC<WordDetailPanelProps> = ({
             <p className="text-xs text-slate-300 leading-relaxed">
               {term.bowScore != null && term.tfidfScore != null
                 ? term.tfidfScore > 0.2
-                  ? `"${term.text}" es un término clave: alta frecuencia (${term.bowScore.toLocaleString()}) y alto poder discriminativo (TF-IDF ${term.tfidfScore.toFixed(3)}).`
-                  : `"${term.text}" aparece frecuentemente (${term.bowScore.toLocaleString()} veces) pero su TF-IDF (${term.tfidfScore.toFixed(3)}) indica que es poco diferenciador entre documentos.`
+                  ? `"${term.text}" es un término clave: alta frecuencia (${term.bowScore.toLocaleString()}) y alto poder discriminativo (TF-IDF ${term.tfidfScore.toFixed(2)}).`
+                  : `"${term.text}" aparece frecuentemente (${term.bowScore.toLocaleString()} veces) pero su TF-IDF (${term.tfidfScore.toFixed(2)}) indica que es poco diferenciador entre documentos.`
                 : term.bowScore != null
                 ? `"${term.text}" tiene frecuencia ${term.bowScore.toLocaleString()} en el corpus.`
                 : `"${term.text}" aparece en N-gramas con frecuencia ${term.relatedNgrams[0]?.value || 0}.`}
@@ -858,7 +858,7 @@ const VocabularyTable: React.FC<VocabularyTableProps> = ({
               const isSelected = selectedTerm === row.term;
               const maxFreq = allTerms[0]?.freq || 1;
               const pct = (row.freq / maxFreq) * 100;
-              const freqDisplay = Number.isInteger(row.freq) ? row.freq.toLocaleString() : row.freq.toFixed(4);
+              const freqDisplay = Number.isInteger(row.freq) ? row.freq.toLocaleString() : row.freq.toFixed(2);
               return (
                 <tr key={row.term}
                   onClick={() => onTermClick?.(row.term, row.freq)}
@@ -871,8 +871,8 @@ const VocabularyTable: React.FC<VocabularyTableProps> = ({
                   <td className="px-3 py-2">
                     <span className="text-blue-600 font-mono text-xs font-semibold">{freqDisplay}</span>
                   </td>
-                  {hasIdf   && <td className="px-3 py-2 text-violet-600 font-mono text-xs">{row.idf   != null ? row.idf.toFixed(3)   : <span className="text-gray-300">—</span>}</td>}
-                  {hasTfidf && <td className="px-3 py-2 text-emerald-600 font-mono text-xs">{row.tfidf != null ? row.tfidf.toFixed(4) : <span className="text-gray-300">—</span>}</td>}
+                  {hasIdf   && <td className="px-3 py-2 text-violet-600 font-mono text-xs">{row.idf   != null ? row.idf.toFixed(2)   : <span className="text-gray-300">—</span>}</td>}
+                  {hasTfidf && <td className="px-3 py-2 text-emerald-600 font-mono text-xs">{row.tfidf != null ? row.tfidf.toFixed(2) : <span className="text-gray-300">—</span>}</td>}
                   <td className="px-3 py-2">
                     <div className="h-2 w-16 bg-gray-100 rounded-full overflow-hidden">
                       <div className={`h-2 rounded-full transition-all ${isSelected ? 'bg-blue-500' : 'bg-cyan-400'}`} style={{ width: `${pct}%` }} />
@@ -961,7 +961,7 @@ const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
         const fill = isSel ? selColor : barColor;
         const lbl  = item.label.length > 17 ? item.label.slice(0, 17) + '…' : item.label;
         const val  = typeof item.value === 'number' && item.value < 1
-          ? item.value.toFixed(3) : item.value.toLocaleString();
+          ? item.value.toFixed(2) : item.value.toLocaleString();
         return (
           <g key={item.id} onClick={() => onItemClick?.(item)} style={{ cursor: onItemClick ? 'pointer' : 'default' }}>
             {isSel && <rect x={0} y={y - 2} width={SVG_W} height={BAR_H + 4} rx={5} fill={selColor} fillOpacity={0.08} />}
@@ -1126,8 +1126,8 @@ const TfIdfScatter: React.FC<TfIdfScatterProps> = ({ data, onPointClick, selecte
         >
           <p className="font-bold text-white mb-1">"{hovered.term}"</p>
           <p className="text-slate-400">TF: <span className="text-cyan-400 font-mono">{formatNum(hovered.tf)}</span></p>
-          <p className="text-slate-400">IDF: <span className="text-blue-400 font-mono">{hovered.idf.toFixed(4)}</span></p>
-          <p className="text-slate-400">TF-IDF: <span className="text-purple-400 font-mono">{hovered.tfidf.toFixed(4)}</span></p>
+          <p className="text-slate-400">IDF: <span className="text-blue-400 font-mono">{hovered.idf.toFixed(2)}</span></p>
+          <p className="text-slate-400">TF-IDF: <span className="text-purple-400 font-mono">{hovered.tfidf.toFixed(2)}</span></p>
         </div>
       )}
 
@@ -1309,7 +1309,7 @@ const ComparacionView: React.FC<{
                   <div className="flex-1 h-2 bg-slate-800/50 rounded-full overflow-hidden">
                     <div className="h-2 bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${tfidfPct}%` }} />
                   </div>
-                  <span className="text-xs text-blue-400 font-mono w-16 text-right">{item.tfidfScore.toFixed(4)}</span>
+                  <span className="text-xs text-blue-400 font-mono w-16 text-right">{item.tfidfScore.toFixed(2)}</span>
                 </div>
               </div>
             </button>
@@ -1690,7 +1690,7 @@ export const VectorizacionDashboard: React.FC = () => {
         const ttr   = bow && bow.total_term_occurrences > 0
           ? ((bow.vocabulary_size / bow.total_term_occurrences) * 100).toFixed(2) + '%' : '—';
         const density   = bow ? ((1 - bow.matrix_sparsity) * 100).toFixed(1) + '%' : '—';
-        const avgIdf    = tfidf?.idf_vector?.avg_idf != null ? tfidf.idf_vector.avg_idf.toFixed(3) : '—';
+        const avgIdf    = tfidf?.idf_vector?.avg_idf != null ? tfidf.idf_vector.avg_idf.toFixed(2) : '—';
         const tokPerDoc = bow?.avg_terms_per_document != null ? bow.avg_terms_per_document.toFixed(1) : '—';
         const ngramVocab = ngram
           ? Object.values(ngram.results || {}).reduce((s, r) => s + (r.vocabulary_size || 0), 0).toLocaleString()
@@ -1715,10 +1715,10 @@ export const VectorizacionDashboard: React.FC = () => {
           },
           {
             label: 'Densidad de Matriz', value: density, unit: 'densidad doc-término',
-            sub: bow ? `sparsidad ${(bow.matrix_sparsity * 100).toFixed(1)}%` : 'sin BoW',
+            sub: bow ? `dispersión ${(bow.matrix_sparsity * 100).toFixed(1)}%` : 'sin BoW',
             accent: 'border-blue-300 bg-blue-50', val: 'text-blue-800', bar: 'bg-blue-500',
             icon: 'M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z',
-            tip: 'Densidad = 1 − sparsidad de la matriz documento-término. Alto = documentos comparten vocabulario. Bajo = vocabularios muy distintos por documento.',
+            tip: 'Densidad = 1 − dispersión de la matriz documento-término. Alto = documentos comparten vocabulario. Bajo = vocabularios muy distintos por documento.',
           },
           {
             label: 'Especificidad IDF', value: avgIdf, unit: 'IDF promedio',
