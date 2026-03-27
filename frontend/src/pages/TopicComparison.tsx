@@ -139,7 +139,7 @@ export const TopicComparison: React.FC = () => {
             </div>
             <button
               onClick={() => load(nTopics)}
-              className="p-2 sm:p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+              className="p-2 sm:p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400"
               title="Actualizar benchmark"
             >
               <RefreshCw className="w-4 h-4 text-gray-700" />
