@@ -412,7 +412,7 @@ def calculate_idf_vector(
     avg_idf = np.mean(list(idf_values.values()))
 
     idf_vector_data = {
-        'idf_values': {k: round(v, 4) for k, v in list(idf_values.items())[:1000]},  # Limitar a 1000 para performance
+        'idf_values': {k: round(v, 4) for k, v in idf_values.items()},
         'top_terms_by_idf': top_terms_by_idf,
         'bottom_terms_by_idf': bottom_terms_by_idf,
         'avg_idf': round(float(avg_idf), 4),

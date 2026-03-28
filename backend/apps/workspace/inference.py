@@ -70,13 +70,78 @@ def load_artifact(model_instance, bin_field_name: str, file_field_name: str) -> 
     )
 
 
+# ── Pre-carga de artefactos (debe hacerse ANTES de cargar spaCy) ──────────────
+
+def preload_inference_artifacts(workspace) -> Dict[str, Any]:
+    """
+    Cargar todos los artefactos ML necesarios para la inferencia ANTES de que
+    spaCy sea importado o cargado.
+
+    Objetivo: evitar el `double free or corruption` que ocurre cuando joblib/numpy
+    carga arrays desde BinaryField después de que los allocators C de spaCy han
+    modificado el estado del heap.
+
+    Debe llamarse al inicio de run_inference._run(), antes de cualquier
+    llamada a preprocess_for_inference o spacy.load().
+
+    Returns:
+        dict con claves opcionales:
+          'bow_vectorizer'    -> CountVectorizer (si workspace.bow_id está seteado)
+          'tfidf_vectorizer'  -> TfidfVectorizer (si workspace.tfidf_id está seteado)
+          'topic_vectorizer'  -> vectorizador del TopicModel
+          'topic_model'       -> modelo LDA/NMF
+    """
+    preloaded: Dict[str, Any] = {}
+
+    if workspace.bow_id:
+        from apps.bag_of_words.models import BagOfWords
+        bow = BagOfWords.objects.get(id=workspace.bow_id)
+        preloaded['bow_vectorizer'] = load_artifact(bow, 'model_artifact_bin', 'model_artifact')
+        logger.info(f"[WS {workspace.id}] Artefacto BoW #{workspace.bow_id} pre-cargado.")
+
+    if workspace.tfidf_id:
+        from apps.tfidf_analysis.models import TfIdfAnalysis
+        tfidf = TfIdfAnalysis.objects.get(id=workspace.tfidf_id)
+        preloaded['tfidf_vectorizer'] = load_artifact(
+            tfidf, 'vectorizer_artifact_bin', 'vectorizer_artifact'
+        )
+        logger.info(f"[WS {workspace.id}] Artefacto TF-IDF #{workspace.tfidf_id} pre-cargado.")
+
+    if workspace.topic_model_id:
+        from apps.topic_modeling.models import TopicModeling
+        tm = TopicModeling.objects.get(id=workspace.topic_model_id)
+        preloaded['topic_vectorizer'] = load_artifact(
+            tm, 'vectorizer_artifact_bin', 'vectorizer_artifact'
+        )
+        preloaded['topic_model'] = load_artifact(
+            tm, 'model_artifact_bin', 'model_artifact'
+        )
+        logger.info(f"[WS {workspace.id}] Artefactos Topic Model #{workspace.topic_model_id} pre-cargados.")
+
+    return preloaded
+
+
 # ── Inferencia BoW ───────────────────────────────────────────────────────────
 
-def infer_bow(texts: List[str], bow_id: int) -> Dict[str, Any]:
+def infer_bow(
+    texts: List[str],
+    bow_id: int,
+    preloaded_vectorizer: Optional[CountVectorizer] = None,
+) -> Dict[str, Any]:
+    """
+    Args:
+        texts: Textos preprocesados.
+        bow_id: ID del modelo BagOfWords de referencia.
+        preloaded_vectorizer: Si se pasa, se usa directamente sin llamar joblib.load().
+            Debe haberse cargado con preload_inference_artifacts() ANTES de spaCy.
+    """
     from apps.bag_of_words.models import BagOfWords
 
     bow = BagOfWords.objects.get(id=bow_id)
-    vectorizer: CountVectorizer = load_artifact(bow, 'model_artifact_bin', 'model_artifact')
+    if preloaded_vectorizer is not None:
+        vectorizer: CountVectorizer = preloaded_vectorizer
+    else:
+        vectorizer = load_artifact(bow, 'model_artifact_bin', 'model_artifact')
 
     matrix = vectorizer.transform(texts)
     feature_names = vectorizer.get_feature_names_out()
@@ -110,11 +175,24 @@ def infer_bow(texts: List[str], bow_id: int) -> Dict[str, Any]:
 
 # ── Inferencia TF-IDF ───────────────────────────────────────────────────────
 
-def infer_tfidf(texts: List[str], tfidf_id: int) -> Dict[str, Any]:
+def infer_tfidf(
+    texts: List[str],
+    tfidf_id: int,
+    preloaded_vectorizer: Optional[TfidfVectorizer] = None,
+) -> Dict[str, Any]:
+    """
+    Args:
+        texts: Textos preprocesados.
+        tfidf_id: ID del modelo TfIdfAnalysis de referencia.
+        preloaded_vectorizer: Si se pasa, se usa directamente sin llamar joblib.load().
+    """
     from apps.tfidf_analysis.models import TfIdfAnalysis
 
     tfidf = TfIdfAnalysis.objects.get(id=tfidf_id)
-    vectorizer: TfidfVectorizer = load_artifact(tfidf, 'vectorizer_artifact_bin', 'vectorizer_artifact')
+    if preloaded_vectorizer is not None:
+        vectorizer: TfidfVectorizer = preloaded_vectorizer
+    else:
+        vectorizer = load_artifact(tfidf, 'vectorizer_artifact_bin', 'vectorizer_artifact')
 
     matrix = vectorizer.transform(texts)
     feature_names = vectorizer.get_feature_names_out()
@@ -144,12 +222,28 @@ def infer_tfidf(texts: List[str], tfidf_id: int) -> Dict[str, Any]:
 
 # ── Inferencia Topics ────────────────────────────────────────────────────────
 
-def infer_topics(texts: List[str], topic_model_id: int) -> Dict[str, Any]:
+def infer_topics(
+    texts: List[str],
+    topic_model_id: int,
+    preloaded_vectorizer=None,
+    preloaded_model=None,
+) -> Dict[str, Any]:
+    """
+    Args:
+        texts: Textos preprocesados.
+        topic_model_id: ID del modelo TopicModeling de referencia.
+        preloaded_vectorizer: Vectorizador pre-cargado (evita joblib.load() tras spaCy).
+        preloaded_model: Modelo LDA/NMF pre-cargado.
+    """
     from apps.topic_modeling.models import TopicModeling
 
     tm = TopicModeling.objects.get(id=topic_model_id)
-    vectorizer = load_artifact(tm, 'vectorizer_artifact_bin', 'vectorizer_artifact')
-    model = load_artifact(tm, 'model_artifact_bin', 'model_artifact')
+    if preloaded_vectorizer is not None and preloaded_model is not None:
+        vectorizer = preloaded_vectorizer
+        model = preloaded_model
+    else:
+        vectorizer = load_artifact(tm, 'vectorizer_artifact_bin', 'vectorizer_artifact')
+        model = load_artifact(tm, 'model_artifact_bin', 'model_artifact')
 
     doc_term_matrix = vectorizer.transform(texts)
     doc_topic_matrix = model.transform(doc_term_matrix)
@@ -272,6 +366,7 @@ def preprocess_for_inference(
     stopwords: Optional[Set[str]] = None,
     lemmatize: bool = True,
     language: str = 'en',
+    nlp=None,
 ) -> str:
     """
     Preprocesamiento completo para texto extraído de PDFs nuevos.
@@ -291,6 +386,8 @@ def preprocess_for_inference(
         stopwords: Conjunto de stopwords a aplicar. Si None, usa solo EXTRA_STOPWORDS.
         lemmatize: Si aplicar lematización con spaCy
         language: Código de idioma para spaCy ('en' o 'es')
+        nlp: Instancia de spaCy ya cargada. Pasar para evitar recargar el modelo
+             por cada documento. Si None, carga internamente (fallback).
     """
     if not text or not text.strip():
         return ''
@@ -316,7 +413,7 @@ def preprocess_for_inference(
 
     # 6. Lematizar (si spaCy está disponible)
     if lemmatize:
-        text = _lemmatize_text(text, language)
+        text = _lemmatize_text(text, language, nlp=nlp)
 
     # 7. Aplicar stopwords
     if stopwords:
@@ -331,12 +428,41 @@ def preprocess_for_inference(
     return text
 
 
-def _lemmatize_text(text: str, language: str = 'en') -> str:
-    """Lematizar texto con spaCy. Fallback silencioso si no está disponible."""
+def load_spacy_model(language: str = 'en'):
+    """
+    Cargar modelo spaCy una sola vez y retornarlo.
+    Retorna None si no está disponible (fallback silencioso).
+
+    Debe llamarse UNA VEZ antes del bucle de documentos y pasarse como
+    argumento a preprocess_for_inference para evitar recargas por documento.
+    """
     try:
         import spacy
         model_name = 'es_core_news_sm' if language == 'es' else 'en_core_web_sm'
         nlp = spacy.load(model_name)
+        logger.info(f"Modelo spaCy '{model_name}' cargado correctamente.")
+        return nlp
+    except Exception as e:
+        logger.warning(f"No se pudo cargar modelo spaCy para '{language}': {e}. Se omitirá lematización.")
+        return None
+
+
+def _lemmatize_text(text: str, language: str = 'en', nlp=None) -> str:
+    """
+    Lematizar texto con spaCy.
+
+    Args:
+        text: Texto a lematizar.
+        language: Código de idioma ('en' o 'es'). Solo se usa si nlp es None.
+        nlp: Instancia de spaCy ya cargada. Si se pasa, se usa directamente
+             sin llamar spacy.load() (evita recargas por documento).
+             Si es None, carga el modelo (comportamiento anterior, fallback).
+    """
+    try:
+        if nlp is None:
+            import spacy
+            model_name = 'es_core_news_sm' if language == 'es' else 'en_core_web_sm'
+            nlp = spacy.load(model_name)
 
         # Limitar a 100K caracteres para evitar OOM en spaCy
         if len(text) > 100_000:
