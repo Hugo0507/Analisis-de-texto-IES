@@ -41,10 +41,12 @@ class Command(BaseCommand):
         from apps.workspace.inference import (
             infer_bow, infer_tfidf, infer_topics,
             preprocess_for_inference, get_inference_stopwords,
+            preload_inference_artifacts, load_spacy_model,
         )
 
         workspace = Workspace.objects.prefetch_related('documents').get(id=workspace_id)
         docs = workspace.documents.all()
+        total_docs = docs.count()
 
         # Obtener stopwords y idioma del corpus
         dataset_id = workspace.dataset_id
@@ -62,10 +64,28 @@ class Command(BaseCommand):
             f"idioma='{corpus_language}', lematización=True"
         )
 
-        # ── PASO 1: Extraer texto y preprocesar PDFs (0–20%) ────────────
-        logger.info(f"[WS {workspace_id}] Extrayendo texto de {docs.count()} PDFs...")
+        # ── PASO 0: Pre-cargar artefactos ML ANTES de spaCy ─────────────
+        # CRÍTICO: joblib/numpy deben cargar sus arrays antes de que los
+        # allocators C de spaCy modifiquen el heap. De lo contrario ocurre
+        # `double free or corruption` al llamar joblib.load() tras spaCy.
+        logger.info(f"[WS {workspace_id}] Pre-cargando artefactos ML...")
+        workspace.progress_percentage = 3
+        workspace.save()
+
+        try:
+            preloaded = preload_inference_artifacts(workspace)
+        except Exception as e:
+            logger.error(f"[WS {workspace_id}] Error pre-cargando artefactos: {e}")
+            raise
+
+        # ── PASO 1: Extraer texto y preprocesar PDFs (5–20%) ────────────
+        logger.info(f"[WS {workspace_id}] Extrayendo texto de {total_docs} PDFs...")
         workspace.progress_percentage = 5
         workspace.save()
+
+        # Cargar spaCy UNA SOLA VEZ antes del bucle de documentos.
+        # Evita recargar el modelo en cada llamada a preprocess_for_inference.
+        nlp = load_spacy_model(corpus_language)
 
         texts = []
         preprocessing_stats = {
@@ -75,7 +95,7 @@ class Command(BaseCommand):
             'documents_failed': 0,
         }
 
-        for doc in docs:
+        for i, doc in enumerate(docs):
             try:
                 doc.status = WorkspaceDocument.STATUS_EXTRACTING
                 doc.save()
@@ -88,6 +108,7 @@ class Command(BaseCommand):
                     stopwords=stopwords,
                     lemmatize=True,
                     language=corpus_language,
+                    nlp=nlp,
                 )
                 clean_token_count = len(preprocessed.split()) if preprocessed else 0
 
@@ -108,11 +129,13 @@ class Command(BaseCommand):
                 preprocessing_stats['documents_failed'] += 1
                 logger.warning(f"[WS {workspace_id}] Error en doc {doc.id}: {e}")
 
+            # Actualizar progreso por documento: de 5% a 20%
+            progress = 5 + int((i + 1) / total_docs * 15) if total_docs > 0 else 20
+            workspace.progress_percentage = progress
+            workspace.save()
+
         if not texts:
             raise ValueError("No se pudo extraer texto de ningún documento.")
-
-        workspace.progress_percentage = 20
-        workspace.save()
 
         # ── PASO 2: Validación de idioma (20–30%) ──────────────────────
         logger.info(f"[WS {workspace_id}] Validando idioma de los documentos...")
@@ -139,7 +162,11 @@ class Command(BaseCommand):
         if workspace.bow_id:
             logger.info(f"[WS {workspace_id}] Inferencia BoW con modelo {workspace.bow_id}...")
             try:
-                results['bow'] = infer_bow(valid_texts, workspace.bow_id)
+                results['bow'] = infer_bow(
+                    valid_texts,
+                    workspace.bow_id,
+                    preloaded_vectorizer=preloaded.get('bow_vectorizer'),
+                )
             except Exception as e:
                 logger.warning(f"[WS {workspace_id}] Error inferencia BoW: {e}")
                 results['bow'] = {'error': str(e)}
@@ -150,7 +177,11 @@ class Command(BaseCommand):
         if workspace.tfidf_id:
             logger.info(f"[WS {workspace_id}] Inferencia TF-IDF con modelo {workspace.tfidf_id}...")
             try:
-                results['tfidf'] = infer_tfidf(valid_texts, workspace.tfidf_id)
+                results['tfidf'] = infer_tfidf(
+                    valid_texts,
+                    workspace.tfidf_id,
+                    preloaded_vectorizer=preloaded.get('tfidf_vectorizer'),
+                )
             except Exception as e:
                 logger.warning(f"[WS {workspace_id}] Error inferencia TF-IDF: {e}")
                 results['tfidf'] = {'error': str(e)}
@@ -161,7 +192,12 @@ class Command(BaseCommand):
         if workspace.topic_model_id:
             logger.info(f"[WS {workspace_id}] Inferencia temas con modelo {workspace.topic_model_id}...")
             try:
-                results['topics'] = infer_topics(valid_texts, workspace.topic_model_id)
+                results['topics'] = infer_topics(
+                    valid_texts,
+                    workspace.topic_model_id,
+                    preloaded_vectorizer=preloaded.get('topic_vectorizer'),
+                    preloaded_model=preloaded.get('topic_model'),
+                )
             except Exception as e:
                 logger.warning(f"[WS {workspace_id}] Error inferencia temas: {e}")
                 results['topics'] = {'error': str(e)}
