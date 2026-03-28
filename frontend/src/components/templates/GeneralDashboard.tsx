@@ -43,9 +43,9 @@ const FACTOR_CATEGORIES: FactorCategory[] = [
     color: '#06b6d4',
     ringColor: 'rgba(6,182,212,0.18)',
     textClass: 'text-cyan-300',
-    bgClass: 'bg-gradient-to-br from-cyan-500/20 to-cyan-600/10',
-    borderClass: 'border-cyan-500/40',
-    badgeClass: 'bg-cyan-500/25 text-cyan-200',
+    bgClass: 'bg-slate-800',
+    borderClass: 'border-slate-600 border-l-4 border-l-cyan-400',
+    badgeClass: 'bg-cyan-400/10 text-cyan-300 border border-cyan-400/50',
     keywords: ['infrastructure', 'technology', 'digital', 'platform', 'system', 'software',
                'hardware', 'cloud', 'internet', 'network', 'tool', 'resource', 'ict', 'device',
                'infraestructura', 'plataforma', 'sistema', 'herramienta', 'tecnolog'],
@@ -65,9 +65,9 @@ const FACTOR_CATEGORIES: FactorCategory[] = [
     color: '#3b82f6',
     ringColor: 'rgba(59,130,246,0.18)',
     textClass: 'text-blue-300',
-    bgClass: 'bg-gradient-to-br from-blue-500/20 to-blue-600/10',
-    borderClass: 'border-blue-500/40',
-    badgeClass: 'bg-blue-500/25 text-blue-200',
+    bgClass: 'bg-slate-800',
+    borderClass: 'border-slate-600 border-l-4 border-l-blue-400',
+    badgeClass: 'bg-blue-400/10 text-blue-300 border border-blue-400/50',
     keywords: ['governance', 'strategy', 'policy', 'management', 'leadership', 'institutional',
                'organization', 'framework', 'model', 'plan', 'implementation', 'initiative',
                'gobernanza', 'estrategia', 'política', 'gestión', 'liderazgo', 'institucion'],
@@ -87,9 +87,9 @@ const FACTOR_CATEGORIES: FactorCategory[] = [
     color: '#8b5cf6',
     ringColor: 'rgba(139,92,246,0.18)',
     textClass: 'text-violet-300',
-    bgClass: 'bg-gradient-to-br from-violet-500/20 to-violet-600/10',
-    borderClass: 'border-violet-500/40',
-    badgeClass: 'bg-violet-500/25 text-violet-200',
+    bgClass: 'bg-slate-800',
+    borderClass: 'border-slate-600 border-l-4 border-l-violet-400',
+    badgeClass: 'bg-violet-400/10 text-violet-300 border border-violet-400/50',
     keywords: ['teaching', 'teacher', 'faculty', 'training', 'professional', 'development',
                'competency', 'skill', 'pedagogy', 'instruction', 'educator', 'literacy',
                'docente', 'formación', 'capacitación', 'competencia', 'enseñanza'],
@@ -109,9 +109,9 @@ const FACTOR_CATEGORIES: FactorCategory[] = [
     color: '#10b981',
     ringColor: 'rgba(16,185,129,0.18)',
     textClass: 'text-emerald-300',
-    bgClass: 'bg-gradient-to-br from-emerald-500/20 to-emerald-600/10',
-    borderClass: 'border-emerald-500/40',
-    badgeClass: 'bg-emerald-500/25 text-emerald-200',
+    bgClass: 'bg-slate-800',
+    borderClass: 'border-slate-600 border-l-4 border-l-emerald-400',
+    badgeClass: 'bg-emerald-400/10 text-emerald-300 border border-emerald-400/50',
     keywords: ['student', 'learning', 'education', 'academic', 'curriculum', 'online',
                'e-learning', 'engagement', 'experience', 'achievement', 'performance',
                'estudiante', 'aprendizaje', 'educación', 'académico', 'currículo'],
@@ -132,9 +132,9 @@ const FACTOR_CATEGORIES: FactorCategory[] = [
     color: '#f59e0b',
     ringColor: 'rgba(245,158,11,0.18)',
     textClass: 'text-amber-300',
-    bgClass: 'bg-gradient-to-br from-amber-500/20 to-amber-600/10',
-    borderClass: 'border-amber-500/40',
-    badgeClass: 'bg-amber-500/25 text-amber-200',
+    bgClass: 'bg-slate-800',
+    borderClass: 'border-slate-600 border-l-4 border-l-amber-400',
+    badgeClass: 'bg-amber-400/10 text-amber-300 border border-amber-400/50',
     keywords: ['culture', 'change', 'innovation', 'transformation', 'adoption', 'mindset',
                'resistance', 'readiness', 'attitude', 'perception', 'barrier', 'challenge',
                'cultura', 'cambio', 'innovación', 'transformación', 'adopción', 'barrera'],
@@ -154,9 +154,9 @@ const FACTOR_CATEGORIES: FactorCategory[] = [
     color: '#ec4899',
     ringColor: 'rgba(236,72,153,0.18)',
     textClass: 'text-pink-300',
-    bgClass: 'bg-gradient-to-br from-pink-500/20 to-pink-600/10',
-    borderClass: 'border-pink-500/40',
-    badgeClass: 'bg-pink-500/25 text-pink-200',
+    bgClass: 'bg-slate-800',
+    borderClass: 'border-slate-600 border-l-4 border-l-pink-400',
+    badgeClass: 'bg-pink-400/10 text-pink-300 border border-pink-400/50',
     keywords: ['quality', 'evaluation', 'assessment', 'performance', 'outcome', 'impact',
                'measure', 'indicator', 'effectiveness', 'efficiency', 'improvement', 'accreditation',
                'calidad', 'evaluación', 'rendimiento', 'resultado', 'impacto', 'medición'],
@@ -590,27 +590,31 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ cat, topics, docTopics, exp
   }, [cat, topics, docTopics]);
 
   return (
+    // bg-slate-800 sólido — contraste predecible para todos los textos interiores
     <div className={`rounded-xl border ${cat.borderClass} ${cat.bgClass} transition-all duration-200`}>
       {/* Card header */}
       <div className="p-5">
-        <div className="flex items-start justify-between mb-3">
-          <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${cat.badgeClass}`}>
+        <div className="flex items-start justify-between mb-4">
+          {/* Icono de categoría — 40px, color semántico, border visible */}
+          <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${cat.badgeClass}`}>
             {cat.icon}
           </div>
           <div className="flex items-center gap-2">
             {topics.length > 0 && (
-              <span className={`text-xs px-2 py-0.5 rounded-full ${cat.badgeClass} font-medium`}>
+              // Badge de conteo — text-sm (14px) + color semántico de categoría
+              <span className={`text-sm px-2.5 py-1 rounded-full font-semibold ${cat.badgeClass}`}>
                 {topics.length} tema{topics.length !== 1 ? 's' : ''}
               </span>
             )}
-            {/* Download button */}
+            {/* Download button — 32px mínimo, hover con feedback visual */}
             {topics.length > 0 && (
               <button
                 onClick={handleDownload}
                 title="Descargar CSV de esta categoría"
-                className={`w-7 h-7 flex items-center justify-center rounded-lg ${cat.badgeClass} hover:opacity-80 transition-opacity`}
+                aria-label={`Descargar CSV de ${cat.label}`}
+                className={`w-8 h-8 flex items-center justify-center rounded-lg ${cat.badgeClass} hover:opacity-75 transition-opacity cursor-pointer`}
               >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </button>
@@ -618,50 +622,63 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ cat, topics, docTopics, exp
           </div>
         </div>
 
-        <h4 className={`text-sm font-semibold ${cat.textClass} mb-1`}>{cat.label}</h4>
-        <p className="text-xs text-slate-300 mb-3 leading-relaxed">{cat.description}</p>
+        {/* Título: text-base (16px) + color semántico → ≥ 5.5:1 contraste sobre bg-slate-800 */}
+        <h4 className={`text-base font-semibold ${cat.textClass} mb-1.5`}>{cat.label}</h4>
+        {/* Descripción: text-sm (14px) + slate-300 → ≈ 7.5:1 contraste */}
+        <p className="text-sm text-slate-300 mb-4 leading-relaxed">{cat.description}</p>
 
         {topTerms.length > 0 ? (
-          <div className="flex flex-wrap gap-1">
+          // Pills de términos — borde sólido slate-600 + texto legible slate-100
+          <div className="flex flex-wrap gap-1.5">
             {topTerms.map(term => (
-              <span key={term} className={`text-xs px-2 py-0.5 rounded-md border ${cat.borderClass} text-slate-200 bg-slate-800/50`}>
+              <span
+                key={term}
+                className="text-sm px-2.5 py-1 rounded-md border border-slate-600 text-slate-100 bg-slate-700/60"
+              >
                 {term}
               </span>
             ))}
           </div>
         ) : (
-          <p className="text-xs text-slate-400 italic">Sin temas asignados aún</p>
+          // text-sm + slate-300 en itálica — legible, no invisible
+          <p className="text-sm text-slate-300 italic">Sin temas asignados aún</p>
         )}
 
-        {/* Toggle docs button */}
+        {/* Toggle de documentos — min-h-[44px] (WCAG 2.5.5), text-sm, padding adecuado */}
         {topDocs.length > 0 && (
           <button
             onClick={onToggle}
-            className={`mt-3 w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium ${cat.badgeClass} hover:opacity-80 transition-opacity`}
+            className={`mt-4 w-full flex items-center justify-between px-4 min-h-[44px] rounded-lg text-sm font-semibold ${cat.badgeClass} hover:opacity-75 transition-opacity cursor-pointer`}
+            aria-expanded={expanded}
           >
             <span>Top documentos ({topDocs.length})</span>
-            <svg className={`w-3.5 h-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className={`w-4 h-4 transition-transform ${expanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
         )}
       </div>
 
-      {/* Expandable doc list */}
+      {/* Listado expandible de documentos */}
       {expanded && topDocs.length > 0 && (
-        <div className={`border-t ${cat.borderClass} px-5 pb-4 pt-3`}>
-          <p className="text-xs text-slate-400 font-medium mb-2">Documentos representativos</p>
-          <ul className="space-y-1">
+        <div className="border-t border-slate-600 px-5 pb-5 pt-4">
+          {/* Título sección: text-sm + slate-300 → contraste ≥ 7.5:1 */}
+          <p className="text-sm font-semibold text-slate-300 mb-3">Documentos representativos</p>
+          <ul className="space-y-2">
             {topDocs.map((d, i) => (
-              <li key={i} className="flex items-start gap-2 text-xs">
-                <span className={`${cat.textClass} font-bold shrink-0`}>{i + 1}.</span>
-                <span className="text-slate-200 break-all leading-relaxed"
+              <li key={i} className="flex items-start gap-2">
+                {/* Número: color semántico de categoría */}
+                <span className={`text-sm ${cat.textClass} font-bold shrink-0`}>{i + 1}.</span>
+                {/* Nombre doc: text-sm + slate-100 → ≈ 14:1 contraste */}
+                <span
+                  className="text-sm text-slate-100 break-all leading-relaxed flex-1"
                   title={d.document_name}
                 >
                   {d.document_name ?? `Documento ${d.document_id}`}
                 </span>
                 {(d.dominant_topic_weight ?? d.topic_weight) != null && (
-                  <span className="text-slate-400 shrink-0 ml-auto">
+                  // Peso: text-sm + slate-300 → contraste ≥ 7.5:1
+                  <span className="text-sm text-slate-300 shrink-0 ml-auto font-medium tabular-nums">
                     {((d.dominant_topic_weight ?? d.topic_weight ?? 0) * 100).toFixed(0)}%
                   </span>
                 )}
@@ -709,35 +726,44 @@ const ClusterCard: React.FC<ClusterCardProps> = ({ topic, docTopics, activeTab, 
   ];
 
   return (
+    // bg-slate-800 sólido + borde izquierdo semántico (via cat.borderClass actualizado)
     <div className={`rounded-xl border ${cat.borderClass} bg-slate-800 flex flex-col`}>
       {/* Header */}
       <div className="p-4 pb-2">
-        <div className="flex items-start justify-between mb-2">
-          <h5 className="text-xs font-semibold text-white truncate flex-1 mr-2">{topic.label}</h5>
-          <div className="flex items-center gap-1 shrink-0">
-            <span className={`text-xs px-2 py-0.5 rounded-full ${cat.badgeClass}`}>{cat.shortLabel}</span>
+        <div className="flex items-start justify-between mb-3">
+          {/* Título: text-sm (14px) + text-white → ≈ 21:1 */}
+          <h5 className="text-sm font-semibold text-white leading-snug flex-1 mr-2">{topic.label}</h5>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Badge de categoría: text-xs + color semántico */}
+            <span className={`text-xs px-2 py-1 rounded-full font-semibold ${cat.badgeClass}`}>{cat.shortLabel}</span>
+            {/* Download — 32px, visible, semántico */}
             <button
               onClick={handleDownload}
               title="Descargar CSV de este clúster"
-              className={`w-6 h-6 flex items-center justify-center rounded-md ${cat.badgeClass} hover:opacity-80 transition-opacity`}
+              aria-label={`Descargar CSV del clúster ${topic.label}`}
+              className={`w-8 h-8 flex items-center justify-center rounded-md ${cat.badgeClass} hover:opacity-75 transition-opacity cursor-pointer`}
             >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </button>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-1">
+        {/* Tabs — texto-sm, altura mínima ~36px, estados activo/inactivo con contraste claro */}
+        <div className="flex gap-1" role="tablist">
           {tabs.map(tab => (
             <button
               key={tab.id}
+              role="tab"
+              aria-selected={activeTab === tab.id}
               onClick={() => onTabChange(tab.id)}
-              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+              className={`px-3 py-2 rounded-md text-xs font-semibold transition-colors ${
                 activeTab === tab.id
-                  ? `${cat.badgeClass} border ${cat.borderClass}`
-                  : 'text-slate-400 hover:text-slate-200'
+                  // Activo: bg+texto semántico + borde visible
+                  ? `${cat.badgeClass} border`
+                  // Inactivo: slate-300 (≈ 7.5:1) → hover a white (≈ 21:1)
+                  : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
               }`}
             >
               {tab.label}
@@ -747,20 +773,23 @@ const ClusterCard: React.FC<ClusterCardProps> = ({ topic, docTopics, activeTab, 
       </div>
 
       {/* Tab content */}
-      <div className="px-4 pb-4 pt-2 flex-1">
-        {/* Terms tab */}
+      <div className="px-4 pb-4 pt-2 flex-1" role="tabpanel">
+        {/* Términos tab */}
         {activeTab === 'terms' && (
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {topic.words.slice(0, 8).map((w, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <span className="text-xs text-slate-300 w-24 truncate shrink-0">{w.word}</span>
-                <div className="flex-1 h-1.5 bg-slate-700/60 rounded-full overflow-hidden">
+              <div key={i} className="flex items-center gap-2.5">
+                {/* Término: text-sm + slate-200 → ≈ 10:1 */}
+                <span className="text-sm text-slate-200 w-28 truncate shrink-0">{w.word}</span>
+                {/* Barra de progreso: track sólido, fill con color de categoría */}
+                <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all"
-                    style={{ width: `${(w.weight / maxW) * 100}%`, backgroundColor: cat.color, opacity: 0.85 }}
+                    style={{ width: `${(w.weight / maxW) * 100}%`, backgroundColor: cat.color }}
                   />
                 </div>
-                <span className="text-xs text-slate-400 w-8 text-right shrink-0">
+                {/* Porcentaje: text-sm + slate-300 + tabular-nums → ≈ 7.5:1 */}
+                <span className="text-sm text-slate-300 w-9 text-right shrink-0 tabular-nums font-medium">
                   {(w.weight * 100).toFixed(0)}%
                 </span>
               </div>
@@ -768,18 +797,21 @@ const ClusterCard: React.FC<ClusterCardProps> = ({ topic, docTopics, activeTab, 
           </div>
         )}
 
-        {/* Documents tab */}
+        {/* Documentos tab */}
         {activeTab === 'docs' && (
           topicDocs.length > 0 ? (
-            <ul className="space-y-1">
+            <ul className="space-y-2">
               {topicDocs.map((d, i) => (
-                <li key={i} className="flex items-start gap-2 text-xs">
-                  <span className={`${cat.textClass} font-bold shrink-0`}>{i + 1}.</span>
-                  <span className="text-slate-200 break-all leading-relaxed flex-1" title={d.document_name}>
+                <li key={i} className="flex items-start gap-2">
+                  {/* Número: color semántico de categoría */}
+                  <span className={`text-sm ${cat.textClass} font-bold shrink-0`}>{i + 1}.</span>
+                  {/* Nombre: text-sm + slate-100 → ≈ 14:1 */}
+                  <span className="text-sm text-slate-100 break-all leading-relaxed flex-1" title={d.document_name}>
                     {d.document_name ?? `Documento ${d.document_id}`}
                   </span>
                   {(d.dominant_topic_weight ?? d.topic_weight) != null && (
-                    <span className="text-slate-400 shrink-0">
+                    // Peso: text-sm + slate-300 + tabular-nums
+                    <span className="text-sm text-slate-300 shrink-0 font-medium tabular-nums">
                       {((d.dominant_topic_weight ?? d.topic_weight ?? 0) * 100).toFixed(0)}%
                     </span>
                   )}
@@ -787,15 +819,16 @@ const ClusterCard: React.FC<ClusterCardProps> = ({ topic, docTopics, activeTab, 
               ))}
             </ul>
           ) : (
-            <p className="text-xs text-slate-400 italic py-2">
+            // text-sm + slate-300 — legible, no invisible
+            <p className="text-sm text-slate-300 italic py-2">
               No hay información de documentos disponible para este clúster.
             </p>
           )
         )}
 
-        {/* Details tab */}
+        {/* Detalles tab */}
         {activeTab === 'details' && (
-          <div className="space-y-2 text-xs">
+          <div className="space-y-2.5">
             {[
               { label: 'Fuente del modelo', value: topic.source.toUpperCase() },
               { label: 'Categoría OE3', value: CAT_BY_ID[topic.categoryId]?.label ?? topic.categoryId },
@@ -805,8 +838,10 @@ const ClusterCard: React.FC<ClusterCardProps> = ({ topic, docTopics, activeTab, 
               { label: 'Peso mínimo de término', value: `${(topic.words[topic.words.length - 1]?.weight * 100 ?? 0).toFixed(2)}%` },
             ].map(item => (
               <div key={item.label} className="flex justify-between items-start gap-2">
-                <span className="text-slate-400">{item.label}</span>
-                <span className={`${cat.textClass} font-medium text-right`}>{String(item.value)}</span>
+                {/* Etiqueta: text-sm + slate-300 → ≈ 7.5:1 (antes text-xs slate-400 = ≈ 3.5:1, fallaba) */}
+                <span className="text-sm text-slate-300">{item.label}</span>
+                {/* Valor: color semántico, font-semibold, tabular-nums */}
+                <span className={`text-sm ${cat.textClass} font-semibold text-right tabular-nums`}>{String(item.value)}</span>
               </div>
             ))}
           </div>
@@ -1647,24 +1682,26 @@ export const GeneralDashboard: React.FC = () => {
                 docTopics={docTopics}
               />
             )}
-            {/* Hint */}
+            {/* Hint — text-sm + slate-300 para legibilidad */}
             {!selectedTopicId && (
-              <p className="mt-2 text-center text-xs text-slate-400">
+              <p className="mt-3 text-center text-sm text-slate-300">
                 Haz clic en un nodo para fijar el panel de detalle
               </p>
             )}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-slate-800/60 border border-slate-700/50 flex items-center justify-center mb-4">
-              <svg className="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {/* Ícono de empty state — bg sólido + borde visible */}
+            <div className="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-600 flex items-center justify-center mb-5">
+              <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                   d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
               </svg>
             </div>
-            <p className="text-slate-400 text-sm max-w-xs">
+            {/* Texto empty state: text-sm + slate-300 → contraste ≥ 7.5:1 */}
+            <p className="text-slate-300 text-sm max-w-xs leading-relaxed">
               No se encontraron análisis de temas completados. Ejecuta un modelo LDA o BERTopic en la pestaña{' '}
-              <span className="text-emerald-400">Modelado</span> para generar el mapa.
+              <span className="text-emerald-400 font-semibold">Modelado</span> para generar el mapa.
             </p>
           </div>
         )}
@@ -1672,8 +1709,8 @@ export const GeneralDashboard: React.FC = () => {
 
       {/* ── Factor Categories ── */}
       <div>
-        <h3 className="text-base font-semibold text-white mb-3 flex items-center gap-2">
-          <span className="w-1 h-4 rounded-full bg-gradient-to-b from-cyan-400 to-violet-400" />
+        <h3 className="text-lg font-bold text-white mb-5 flex items-center gap-2.5">
+          <span className="w-1 h-5 rounded-full bg-gradient-to-b from-cyan-400 to-violet-400" aria-hidden="true" />
           Categorías Factoriales de la TD en IES
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1718,23 +1755,26 @@ export const GeneralDashboard: React.FC = () => {
         </ChartCard>
       )}
 
-      {/* ── Methodology Footer ── */}
-      <div className="p-5 rounded-xl bg-slate-800/20 border border-slate-700/30">
+      {/* ── Methodology Footer — bg sólido, texto legible ── */}
+      <div className="p-5 rounded-xl bg-slate-800 border border-slate-600">
         <div className="flex items-start gap-3">
-          <svg className="w-5 h-5 text-slate-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {/* Icono: slate-300 → contraste ≥ 7.5:1 */}
+          <svg className="w-5 h-5 text-slate-300 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <div>
-            <p className="text-sm font-medium text-slate-300 mb-1">Metodología del Landscape</p>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            {/* Título: text-sm + text-white → ≈ 21:1 */}
+            <p className="text-sm font-semibold text-white mb-1.5">Metodología del Landscape</p>
+            {/* Cuerpo: text-sm (14px) + slate-300 → ≈ 7.5:1 (antes text-xs slate-400 = ≈ 3.5:1) */}
+            <p className="text-sm text-slate-300 leading-relaxed">
               Los temas se extraen mediante modelos de{' '}
-              <span className="text-slate-300">modelado de temas</span> (LDA / NMF / LSA) y{' '}
-              <span className="text-slate-300">BERTopic</span> aplicados al corpus preprocesado.
+              <span className="text-white font-medium">modelado de temas</span> (LDA / NMF / LSA) y{' '}
+              <span className="text-white font-medium">BERTopic</span> aplicados al corpus preprocesado.
               La clasificación en categorías factoriales se realiza automáticamente por coincidencia
               semántica con los descriptores del marco OE3.
               {sourceLabel && (
-                <span className="block mt-1 text-slate-400">Fuente activa: {sourceLabel}</span>
+                <span className="block mt-1.5 text-slate-300">Fuente activa: <span className="text-white font-medium">{sourceLabel}</span></span>
               )}
             </p>
           </div>
