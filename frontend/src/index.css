@@ -10,7 +10,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #F0F2F5;
+  background-color: #0f172a;
+  color-scheme: dark;
 }
 
 code {
@@ -38,25 +39,25 @@ code {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #1e293b;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
+  background: #475569;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: #64748b;
 }
 
 /* Utility Classes */
 .card {
-  @apply bg-white rounded-lg shadow-card p-6;
+  @apply bg-slate-800 rounded-lg shadow-card p-6 border border-slate-700;
 }
 
 .card:hover {
-  @apply shadow-card-hover;
+  @apply shadow-card-hover border-slate-600;
 }
 
 .btn-primary {
@@ -64,11 +65,11 @@ code {
 }
 
 .btn-secondary {
-  @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  @apply bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
 }
 
 .input-field {
-  @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyber-500 focus:border-transparent;
+  @apply w-full px-4 py-2 bg-slate-800 border border-slate-600 text-white rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyber-500 focus:border-transparent;
 }
 
 /* Toast Animations */
