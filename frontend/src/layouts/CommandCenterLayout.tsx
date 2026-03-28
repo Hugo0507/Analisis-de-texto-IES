@@ -59,8 +59,8 @@ const BackendUnavailableBanner: React.FC = () => {
   const { backendUnavailable, refreshDatasets, isLoadingDatasets } = useFilter();
   if (!backendUnavailable) return null;
   return (
-    <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-between text-sm">
-      <div className="flex items-center gap-2 text-amber-800">
+    <div className="bg-amber-950/60 border-b border-amber-500/30 px-4 py-2 flex items-center justify-between text-sm">
+      <div className="flex items-center gap-2 text-amber-300">
         <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
             d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
@@ -70,7 +70,7 @@ const BackendUnavailableBanner: React.FC = () => {
       <button
         onClick={() => refreshDatasets()}
         disabled={isLoadingDatasets}
-        className="ml-4 px-3 py-1 rounded-md bg-amber-200 hover:bg-amber-300 text-amber-900 font-medium transition-colors disabled:opacity-50"
+        className="ml-4 px-3 py-1 rounded-md bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-medium transition-colors disabled:opacity-50"
       >
         {isLoadingDatasets ? 'Conectando…' : 'Reintentar'}
       </button>
@@ -84,7 +84,7 @@ export const CommandCenterLayout: React.FC = () => {
 
   return (
     <FilterProvider>
-      <div className="flex h-screen overflow-hidden bg-gray-50">
+      <div className="flex h-screen overflow-hidden bg-slate-900">
         {/* Mobile Overlay */}
         {mobileMenuOpen && (
           <div
@@ -110,15 +110,15 @@ export const CommandCenterLayout: React.FC = () => {
         {/* Main Content */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Header */}
-          <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-gray-200">
+          <header className="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-xl border-b border-slate-700">
             <div className="flex items-center justify-between px-4 h-16">
               {/* Mobile menu button */}
               <button
                 onClick={() => setMobileMenuOpen(true)}
-                className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                className="lg:hidden p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
                 aria-label="Abrir filtros"
               >
-                <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
@@ -131,8 +131,8 @@ export const CommandCenterLayout: React.FC = () => {
                   className="h-8 w-auto"
                 />
                 <div className="hidden sm:block">
-                  <h1 className="text-lg font-bold text-gray-900">Centro de Comando</h1>
-                  <p className="text-xs text-gray-500">Dashboard de Análisis</p>
+                  <h1 className="text-lg font-bold text-white">Centro de Comando</h1>
+                  <p className="text-sm text-slate-400">Dashboard de Análisis</p>
                 </div>
               </div>
 
@@ -147,8 +147,8 @@ export const CommandCenterLayout: React.FC = () => {
                       flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
                       transition-all duration-200
                       ${isActive
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                        ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
                       }
                     `}
                   >
@@ -163,7 +163,7 @@ export const CommandCenterLayout: React.FC = () => {
                 {/* Link to Admin */}
                 <NavLink
                   to="/admin/configuracion/datasets"
-                  className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
                   title="Ir a Administración"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -173,7 +173,7 @@ export const CommandCenterLayout: React.FC = () => {
                 </NavLink>
 
                 {/* Notifications placeholder */}
-                <button className="relative p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+                <button className="relative p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
@@ -190,11 +190,11 @@ export const CommandCenterLayout: React.FC = () => {
                   to={item.path}
                   end={item.end}
                   className={({ isActive }) => `
-                    flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap
+                    flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap
                     transition-all duration-200
                     ${isActive
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : 'text-gray-600 bg-gray-100 hover:bg-gray-200'
+                      ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                      : 'text-slate-400 bg-slate-800 hover:bg-slate-700 hover:text-slate-200'
                     }
                   `}
                 >
