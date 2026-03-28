@@ -68,3 +68,6 @@ cache/
 # Output
 output/
 .claude/
+
+# Contexto local (no subir a git)
+CONTEXTO_LOCAL.md
