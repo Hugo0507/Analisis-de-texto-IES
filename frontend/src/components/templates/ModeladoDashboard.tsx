@@ -2,9 +2,9 @@
  * ModeladoDashboard - Modeling visualization dashboard
  *
  * Displays NLP modeling analysis results:
- * - NER entity distribution and top entities
- * - Topic Modeling visualization
- * - BERTopic clusters
+ * - NER entity distribution, top entities, frequency bar chart
+ * - Topic Modeling visualization with word weight bars + quality KPIs
+ * - BERTopic clusters with word weight bars, distribution donut, quality KPIs
  */
 
 import React, { useState, useEffect } from 'react';
@@ -14,20 +14,79 @@ import dashboardService from '../../services/dashboardService';
 import type { ModelingDashboardData } from '../../services/dashboardService';
 import { useFilter } from '../../contexts/FilterContext';
 
-// Entity Type Badge Colors
+// ---------------------------------------------------------------------------
+// Color helpers & constants
+// ---------------------------------------------------------------------------
+
 const ENTITY_BADGE_COLORS: Record<string, string> = {
-  PERSON: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  ORG: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-  GPE: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  LOC: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-  DATE: 'bg-pink-500/20 text-pink-400 border-pink-500/30',
-  MONEY: 'bg-green-500/20 text-green-400 border-green-500/30',
-  EVENT: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-  PRODUCT: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-  default: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
+  PERSON: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+  ORG: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+  GPE: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+  LOC: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
+  DATE: 'bg-pink-500/15 text-pink-300 border-pink-500/30',
+  MONEY: 'bg-green-500/15 text-green-300 border-green-500/30',
+  EVENT: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
+  PRODUCT: 'bg-orange-500/15 text-orange-300 border-orange-500/30',
+  default: 'bg-slate-600/30 text-slate-300 border-slate-500/30',
 };
 
-// Topic Card Component
+const ALGORITHM_BADGE_COLORS: Record<string, string> = {
+  lda: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+  nmf: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
+  lsa: 'bg-violet-500/15 text-violet-300 border-violet-500/30',
+  plsa: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+};
+
+const TOPIC_CARD_COLORS: Record<string, { gradient: string; bar: string }> = {
+  emerald: { gradient: 'from-emerald-500/15 to-teal-500/15 border-emerald-500/30', bar: 'bg-emerald-400' },
+  purple:  { gradient: 'from-purple-500/15 to-violet-500/15 border-purple-500/30', bar: 'bg-purple-400' },
+  cyan:    { gradient: 'from-cyan-500/15 to-blue-500/15 border-cyan-500/30',       bar: 'bg-cyan-400' },
+  amber:   { gradient: 'from-amber-500/15 to-orange-500/15 border-amber-500/30',   bar: 'bg-amber-400' },
+};
+
+const coherenceBadgeClass = (score: number | null): string => {
+  if (score === null) return 'bg-slate-600/30 text-slate-300 border-slate-500/30';
+  if (score > 0.5) return 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
+  if (score > 0.3) return 'bg-amber-500/15 text-amber-300 border-amber-500/30';
+  return 'bg-rose-500/15 text-rose-300 border-rose-500/30';
+};
+
+const outliersBadgeClass = (num_outliers: number, docs: number): string => {
+  if (docs === 0) return 'bg-slate-600/30 text-slate-300 border-slate-500/30';
+  return num_outliers / docs > 0.2
+    ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+    : 'bg-slate-600/30 text-slate-300 border-slate-500/30';
+};
+
+// ---------------------------------------------------------------------------
+// Compact quality metric card (smaller than MetricCardDark)
+// ---------------------------------------------------------------------------
+
+interface CompactMetricProps {
+  label: string;
+  value: string | number;
+  badge?: string;
+  badgeClass?: string;
+}
+
+const CompactMetric: React.FC<CompactMetricProps> = ({ label, value, badge, badgeClass }) => (
+  <div className="p-3 rounded-xl bg-slate-800/40 border border-slate-700/50">
+    <p className="text-xs text-slate-400 font-medium mb-1">{label}</p>
+    <div className="flex items-center gap-2 flex-wrap">
+      <span className="text-xl font-bold text-white">
+        {typeof value === 'number' ? value.toLocaleString() : value}
+      </span>
+      {badge !== undefined && badgeClass && (
+        <span className={`px-2 py-0.5 text-xs rounded border ${badgeClass}`}>{badge}</span>
+      )}
+    </div>
+  </div>
+);
+
+// ---------------------------------------------------------------------------
+// Topic Card — word weight bars replace opacity trick
+// ---------------------------------------------------------------------------
+
 interface TopicCardProps {
   topic: {
     id: number;
@@ -39,35 +98,92 @@ interface TopicCardProps {
 }
 
 const TopicCard: React.FC<TopicCardProps> = ({ topic, accentColor }) => {
-  const colorClasses: Record<string, string> = {
-    emerald: 'from-emerald-500/20 to-teal-500/20 border-emerald-500/30',
-    purple: 'from-purple-500/20 to-violet-500/20 border-purple-500/30',
-    cyan: 'from-cyan-500/20 to-blue-500/20 border-cyan-500/30',
-    amber: 'from-amber-500/20 to-orange-500/20 border-amber-500/30',
-  };
+  const colors = TOPIC_CARD_COLORS[accentColor] || TOPIC_CARD_COLORS.emerald;
+  const maxWeight = Math.max(...topic.words.map(w => w.weight), 0.001);
 
   return (
-    <div className={`p-4 rounded-xl bg-gradient-to-br ${colorClasses[accentColor] || colorClasses.emerald} border`}>
+    <div className={`p-4 rounded-xl bg-gradient-to-br ${colors.gradient} border`}>
       <div className="flex items-center justify-between mb-3">
-        <h4 className="text-sm font-medium text-white">{topic.label || `Topic ${topic.id}`}</h4>
-        <span className="text-xs text-slate-400">{topic.documentCount} docs</span>
+        <h4 className="text-sm font-medium text-white truncate pr-2">
+          {topic.label || `Tópico ${topic.id}`}
+        </h4>
+        <span className="text-xs text-slate-300 shrink-0">{topic.documentCount} docs</span>
       </div>
-      <div className="flex flex-wrap gap-1">
-        {topic.words.slice(0, 8).map((word, i) => (
-          <span
-            key={word.word}
-            className="px-2 py-0.5 text-xs rounded-full bg-slate-800/50 text-slate-300"
-            style={{ opacity: 1 - i * 0.08 }}
-          >
-            {word.word}
-          </span>
-        ))}
+      <div className="space-y-1.5">
+        {topic.words.slice(0, 8).map((word) => {
+          const barPct = Math.round((word.weight / maxWeight) * 100);
+          return (
+            <div key={word.word} className="flex items-center gap-2">
+              <span className="text-xs text-slate-300 w-20 truncate shrink-0">{word.word}</span>
+              <div className="flex-1 h-1.5 bg-slate-700/60 rounded-full overflow-hidden">
+                <div
+                  className={`h-full ${colors.bar} rounded-full`}
+                  style={{ width: `${barPct}%`, opacity: 0.8 }}
+                />
+              </div>
+              <span className="text-xs text-slate-400 w-10 text-right shrink-0">
+                {word.weight.toFixed(4)}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 };
 
-// Entity List Component
+// ---------------------------------------------------------------------------
+// BERTopic Cluster Card — word weight bars
+// ---------------------------------------------------------------------------
+
+interface BertopicClusterCardProps {
+  cluster: {
+    topicId: number;
+    label: string;
+    words: Array<{ word: string; weight: number }>;
+    numDocuments: number;
+  };
+}
+
+const BertopicClusterCard: React.FC<BertopicClusterCardProps> = ({ cluster }) => {
+  const maxWeight = Math.max(...cluster.words.map(w => w.weight), 0.001);
+  return (
+    <div className="p-4 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+      <div className="flex items-center justify-between mb-3">
+        <h4 className="text-sm font-medium text-white truncate pr-2">
+          {cluster.label || `Clúster ${cluster.topicId}`}
+        </h4>
+        <span className="px-2 py-0.5 text-xs rounded-full bg-amber-500/20 text-amber-300">
+          {cluster.numDocuments} docs
+        </span>
+      </div>
+      <div className="space-y-1.5">
+        {cluster.words.slice(0, 6).map((word) => {
+          const barPct = Math.round((word.weight / maxWeight) * 100);
+          return (
+            <div key={word.word} className="flex items-center gap-2">
+              <span className="text-xs text-slate-300 w-20 truncate shrink-0">{word.word}</span>
+              <div className="flex-1 h-1.5 bg-slate-700/60 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-amber-400 rounded-full"
+                  style={{ width: `${barPct}%`, opacity: 0.8 }}
+                />
+              </div>
+              <span className="text-xs text-slate-400 w-10 text-right shrink-0">
+                {word.weight.toFixed(4)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// Entity List (existing — minor color update)
+// ---------------------------------------------------------------------------
+
 interface EntityListProps {
   entities: Array<{ text: string; frequency: number }>;
   entityType: string;
@@ -76,20 +192,17 @@ interface EntityListProps {
 
 const EntityList: React.FC<EntityListProps> = ({ entities, entityType, maxItems = 5 }) => {
   const badgeClass = ENTITY_BADGE_COLORS[entityType] || ENTITY_BADGE_COLORS.default;
-
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <span className={`px-2 py-0.5 text-xs rounded border ${badgeClass}`}>
-          {entityType}
-        </span>
-        <span className="text-xs text-slate-500">{entities.length} entidades</span>
+        <span className={`px-2 py-0.5 text-xs rounded border ${badgeClass}`}>{entityType}</span>
+        <span className="text-xs text-slate-400">{entities.length} entidades</span>
       </div>
       <div className="space-y-1">
         {entities.slice(0, maxItems).map((entity) => (
           <div key={entity.text} className="flex items-center justify-between text-sm">
             <span className="text-slate-300 truncate">{entity.text}</span>
-            <span className="text-slate-500">{entity.frequency}</span>
+            <span className="text-slate-400">{entity.frequency}</span>
           </div>
         ))}
       </div>
@@ -97,13 +210,58 @@ const EntityList: React.FC<EntityListProps> = ({ entities, entityType, maxItems 
   );
 };
 
+// ---------------------------------------------------------------------------
+// Entity Frequency Bar Chart (CSS horizontal bars, top-20 by frequency)
+// ---------------------------------------------------------------------------
+
+interface EntityFrequencyChartProps {
+  entities: Array<{ text: string; label: string; frequency: number }>;
+}
+
+const EntityFrequencyChart: React.FC<EntityFrequencyChartProps> = ({ entities }) => {
+  const top20 = [...entities].sort((a, b) => b.frequency - a.frequency).slice(0, 20);
+  const maxFreq = top20[0]?.frequency || 1;
+
+  if (top20.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full text-slate-400 text-sm">
+        No hay datos de frecuencia
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2 overflow-y-auto pr-1" style={{ maxHeight: '340px' }}>
+      {top20.map((entity, i) => {
+        const badgeClass = ENTITY_BADGE_COLORS[entity.label] || ENTITY_BADGE_COLORS.default;
+        const barPct = Math.round((entity.frequency / maxFreq) * 100);
+        return (
+          <div key={`${entity.text}-${entity.label}-${i}`} className="flex items-center gap-2">
+            <span className={`text-xs px-1.5 py-0.5 rounded border ${badgeClass} shrink-0 w-14 text-center`}>
+              {entity.label}
+            </span>
+            <span className="text-sm text-slate-300 truncate w-28 shrink-0">{entity.text}</span>
+            <div className="flex-1 h-4 bg-slate-700/50 rounded overflow-hidden">
+              <div className="h-full bg-purple-500/60 rounded" style={{ width: `${barPct}%` }} />
+            </div>
+            <span className="text-sm text-slate-300 w-10 text-right shrink-0">{entity.frequency}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// Main Component
+// ---------------------------------------------------------------------------
+
 export const ModeladoDashboard: React.FC = () => {
   const [data, setData] = useState<ModelingDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { filters, setSelectedNer, setSelectedTopicModel, setSelectedBertopic } = useFilter();
 
-  // Fetch data when selected dataset or any analysis selection changes
   useEffect(() => {
     if (filters.selectedDatasetId) {
       fetchData(
@@ -130,7 +288,6 @@ export const ModeladoDashboard: React.FC = () => {
       setError(null);
       const result = await dashboardService.getModelingData(datasetId, nerId, topicId, bertopicId);
       setData(result);
-      // Auto-select first completed analysis alphabetically if no ID explicitly chosen
       if (!nerId) {
         const first = result.nerAnalyses.find(a => a.status === 'completed');
         if (first) setSelectedNer(first.id);
@@ -151,7 +308,8 @@ export const ModeladoDashboard: React.FC = () => {
     }
   };
 
-  // No dataset selected state
+  // ------- Empty / loading / error states (unchanged) --------
+
   if (!filters.selectedDatasetId) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -162,7 +320,7 @@ export const ModeladoDashboard: React.FC = () => {
             </svg>
           </div>
           <h3 className="text-lg font-medium text-white mb-2">Selecciona un Dataset</h3>
-          <p className="text-slate-400 text-sm max-w-md">
+          <p className="text-slate-300 text-sm max-w-md">
             Usa el selector de Dataset en el panel lateral izquierdo para visualizar los análisis de modelado.
           </p>
         </div>
@@ -175,7 +333,7 @@ export const ModeladoDashboard: React.FC = () => {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
-          <p className="text-slate-400 text-sm">Cargando análisis de modelado...</p>
+          <p className="text-slate-300 text-sm">Cargando análisis de modelado...</p>
         </div>
       </div>
     );
@@ -212,17 +370,13 @@ export const ModeladoDashboard: React.FC = () => {
     (data?.topicModelingAnalyses?.length || 0) > 0 ||
     (data?.bertopicAnalyses?.length || 0) > 0;
 
-  // No analyses available
   if (!hasAnyData) {
     return (
       <div className="space-y-6">
         <div>
           <h2 className="text-2xl font-bold text-white">Modelado</h2>
-          <p className="text-slate-400 text-sm mt-1">
-            Análisis de NER, Modelado de Temas y BERTopic
-          </p>
+          <p className="text-slate-300 text-sm mt-1">Análisis de NER, Modelado de Temas y BERTopic</p>
         </div>
-
         <div className="p-8 rounded-xl bg-slate-800/30 border border-slate-700/50">
           <div className="text-center">
             <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
@@ -231,37 +385,42 @@ export const ModeladoDashboard: React.FC = () => {
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-white mb-2">Sin Análisis de Modelado</h3>
-            <p className="text-slate-400 max-w-md mx-auto mb-6">
+            <p className="text-slate-300 max-w-md mx-auto mb-6">
               No se han encontrado análisis de modelado para este dataset.
               Crea un análisis NER, Modelado de Temas o BERTopic desde la sección de Administración.
             </p>
-            <a
-              href="/admin/ner"
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Crear Análisis
-            </a>
           </div>
         </div>
       </div>
     );
   }
 
+  // ------- Derived data --------
+
   const entityTypes = Object.keys(data?.topEntitiesByType || {});
+
+  const nerEntities = data?.selectedNer?.entities || [];
+
+  const topicAlgorithm = data?.selectedTopicModeling?.algorithm || '';
+  const topicAlgorithmDisplay = data?.selectedTopicModeling?.algorithm_display || '';
+  const topicAlgorithmBadge = ALGORITHM_BADGE_COLORS[topicAlgorithm] || ALGORITHM_BADGE_COLORS.lda;
+
+  const bertopicDistData = (data?.selectedBertopic?.topic_distribution || []).map((t) => ({
+    id: t.topic_label || `Clúster ${t.topic_id}`,
+    label: t.topic_label || `Clúster ${t.topic_id}`,
+    value: t.count,
+  }));
+
+  const bertopicDocsProcessed = data?.selectedBertopic?.documents_processed || 0;
+
+  // ------- Render --------
 
   return (
     <div className="space-y-6">
       {/* Page Title */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-white">Modelado</h2>
-          <p className="text-slate-400 text-sm mt-1">
-            Análisis de NER, Modelado de Temas y BERTopic
-          </p>
-        </div>
+      <div>
+        <h2 className="text-2xl font-bold text-white">Modelado</h2>
+        <p className="text-slate-300 text-sm mt-1">Análisis de NER, Modelado de Temas y BERTopic</p>
       </div>
 
       {/* Analysis Selector Bar */}
@@ -285,23 +444,39 @@ export const ModeladoDashboard: React.FC = () => {
               </select>
             </div>
           )}
+
           {(data?.topicModelingAnalyses?.length ?? 0) > 1 && (
-            <div className="flex items-center gap-2 min-w-[200px] flex-1">
-              <span className="text-xs text-slate-400 whitespace-nowrap font-medium">Modelo de Tema:</span>
+            <div className="flex items-center gap-2 min-w-[220px] flex-1">
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-xs text-slate-400 whitespace-nowrap font-medium">Modelo de Tema:</span>
+                {topicAlgorithmDisplay && (
+                  <span className={`px-1.5 py-0.5 text-xs rounded border ${topicAlgorithmBadge}`}>
+                    {topicAlgorithmDisplay}
+                  </span>
+                )}
+              </div>
               <select
                 value={filters.selectedTopicModelId ?? data?.selectedTopicModeling?.id ?? ''}
                 onChange={e => setSelectedTopicModel(Number(e.target.value))}
                 className="flex-1 bg-slate-900/70 border border-slate-600/50 text-slate-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/50 cursor-pointer"
               >
                 {data?.topicModelingAnalyses.map(a => (
-                  <option key={a.id} value={a.id}>{a.name}</option>
+                  <option key={a.id} value={a.id}>{a.name} [{a.algorithm_display}]</option>
                 ))}
               </select>
             </div>
           )}
+
           {(data?.bertopicAnalyses?.length ?? 0) > 1 && (
             <div className="flex items-center gap-2 min-w-[200px] flex-1">
-              <span className="text-xs text-slate-400 whitespace-nowrap font-medium">BERTopic:</span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-xs text-slate-400 whitespace-nowrap font-medium">BERTopic:</span>
+                {data?.selectedBertopic?.embedding_model_display && (
+                  <span className="px-1.5 py-0.5 text-xs rounded border bg-amber-500/15 text-amber-300 border-amber-500/30">
+                    {data.selectedBertopic.embedding_model_display}
+                  </span>
+                )}
+              </div>
               <select
                 value={filters.selectedBertopicId ?? data?.selectedBertopic?.id ?? ''}
                 onChange={e => setSelectedBertopic(Number(e.target.value))}
@@ -316,7 +491,7 @@ export const ModeladoDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* KPI Metrics Row */}
+      {/* ── KPI Metrics Row (aggregate counts) ── */}
       <DashboardGrid columns={4} gap="md">
         <MetricCardDark
           title="Análisis NER"
@@ -329,11 +504,10 @@ export const ModeladoDashboard: React.FC = () => {
           }
           accentColor="purple"
         />
-
         <MetricCardDark
           title="Modelos de Temas"
           value={data?.topicModelingAnalyses?.length || 0}
-          subtitle="Modelos LSA/NMF/LDA"
+          subtitle="LDA / NMF / LSA / PLSA"
           icon={
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -341,7 +515,6 @@ export const ModeladoDashboard: React.FC = () => {
           }
           accentColor="emerald"
         />
-
         <MetricCardDark
           title="BERTopic"
           value={data?.bertopicAnalyses?.length || 0}
@@ -353,11 +526,10 @@ export const ModeladoDashboard: React.FC = () => {
           }
           accentColor="amber"
         />
-
         <MetricCardDark
           title="Tipos de Entidad"
           value={entityTypes.length || '—'}
-          subtitle="Categorías NER"
+          subtitle="Categorías NER activas"
           icon={
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -367,242 +539,285 @@ export const ModeladoDashboard: React.FC = () => {
         />
       </DashboardGrid>
 
-      {/* NER Section */}
+      {/* ═══════════════════════════════════════════════════════
+          NER SECTION
+      ════════════════════════════════════════════════════════ */}
       {data?.selectedNer && (
-        <DashboardGrid columns={2} gap="lg">
-          {/* Entity Distribution Donut */}
-          <ChartCard
-            title="Distribución de Entidades"
-            subtitle={data.selectedNer.name}
-            accentColor="purple"
-            size="lg"
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
-              </svg>
-            }
-            onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId, filters.selectedNerId, filters.selectedTopicModelId, filters.selectedBertopicId)}
-            isLoading={isLoading}
-          >
-            <div className="h-[280px]">
-              {data.entityDistribution && data.entityDistribution.length > 0 ? (
-                <DonutChartViz
-                  data={data.entityDistribution}
-                  chartId="entity-distribution"
-                  centerValue={data.entityDistribution.reduce((sum, e) => sum + e.value, 0)}
-                  centerLabel="entidades"
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full text-slate-500 text-sm">
-                  No hay datos de entidades
-                </div>
-              )}
-            </div>
-          </ChartCard>
-
-          {/* Top Entities by Type */}
-          <ChartCard
-            title="Top Entidades por Tipo"
-            subtitle="Entidades más frecuentes"
-            accentColor="blue"
-            size="lg"
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-              </svg>
-            }
-          >
-            <div className="h-[280px] overflow-y-auto">
-              {entityTypes.length > 0 ? (
-                <div className="grid grid-cols-2 gap-4">
-                  {entityTypes.slice(0, 6).map((type) => (
-                    <EntityList
-                      key={type}
-                      entityType={type}
-                      entities={data.topEntitiesByType[type]}
-                      maxItems={4}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-full text-slate-500 text-sm">
-                  No hay entidades disponibles
-                </div>
-              )}
-            </div>
-          </ChartCard>
-        </DashboardGrid>
-      )}
-
-      {/* Topic Modeling Section */}
-      {data?.selectedTopicModeling && data.topics && data.topics.length > 0 && (
-        <ChartCard
-          title="Temas Identificados"
-          subtitle={`${data.selectedTopicModeling.name} - ${data.topics.length} temas`}
-          accentColor="emerald"
-          size="lg"
-          icon={
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-            </svg>
-          }
-          onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
-          isLoading={isLoading}
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
-            {data.topics.slice(0, 9).map((topic, i) => (
-              <TopicCard
-                key={topic.id}
-                topic={topic}
-                accentColor={['emerald', 'purple', 'cyan', 'amber'][i % 4]}
-              />
-            ))}
-          </div>
-        </ChartCard>
-      )}
-
-      {/* Topic Distribution */}
-      {data?.topicDistribution && data.topicDistribution.length > 0 && (
-        <ChartCard
-          title="Distribución de Temas"
-          subtitle="Documentos por tema"
-          accentColor="cyan"
-          size="md"
-          icon={
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          }
-        >
-          <div className="h-[200px]">
-            <DonutChartViz
-              data={data.topicDistribution}
-              chartId="topic-distribution"
-              centerValue={data.topicDistribution.reduce((sum, t) => sum + t.value, 0)}
-              centerLabel="docs"
+        <>
+          {/* NER Quality KPIs */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <CompactMetric
+              label="Documentos analizados"
+              value={data.selectedNer.documents_processed}
+            />
+            <CompactMetric
+              label="Entidades únicas"
+              value={data.selectedNer.unique_entities_count}
+            />
+            <CompactMetric
+              label="Total entidades"
+              value={data.selectedNer.total_entities_found}
+            />
+            <CompactMetric
+              label="Modelo spaCy"
+              value={data.selectedNer.spacy_model_label || data.selectedNer.spacy_model}
             />
           </div>
-        </ChartCard>
+
+          {/* NER Charts — donut + top entities by type */}
+          <DashboardGrid columns={2} gap="lg">
+            <ChartCard
+              title="Distribución de Entidades"
+              subtitle={data.selectedNer.name}
+              accentColor="purple"
+              size="lg"
+              icon={
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+              }
+              onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId, filters.selectedNerId, filters.selectedTopicModelId, filters.selectedBertopicId)}
+              isLoading={isLoading}
+            >
+              <div className="h-[280px]">
+                {data.entityDistribution && data.entityDistribution.length > 0 ? (
+                  <DonutChartViz
+                    data={data.entityDistribution}
+                    chartId="entity-distribution"
+                    centerValue={data.entityDistribution.reduce((sum, e) => sum + e.value, 0)}
+                    centerLabel="entidades"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-slate-400 text-sm">
+                    No hay datos de entidades
+                  </div>
+                )}
+              </div>
+            </ChartCard>
+
+            <ChartCard
+              title="Top Entidades por Tipo"
+              subtitle="Entidades más frecuentes"
+              accentColor="blue"
+              size="lg"
+              icon={
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
+              }
+            >
+              <div className="h-[280px] overflow-y-auto">
+                {entityTypes.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    {entityTypes.slice(0, 6).map((type) => (
+                      <EntityList
+                        key={type}
+                        entityType={type}
+                        entities={data.topEntitiesByType[type]}
+                        maxItems={4}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-slate-400 text-sm">
+                    No hay entidades disponibles
+                  </div>
+                )}
+              </div>
+            </ChartCard>
+          </DashboardGrid>
+
+          {/* NER — Top 20 entidades por frecuencia (bar chart) */}
+          {nerEntities.length > 0 && (
+            <ChartCard
+              title="Frecuencia de Entidades"
+              subtitle={`Top ${Math.min(nerEntities.length, 20)} entidades más frecuentes`}
+              accentColor="purple"
+              size="lg"
+              icon={
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              }
+            >
+              <div className="p-2">
+                <EntityFrequencyChart entities={nerEntities} />
+              </div>
+            </ChartCard>
+          )}
+        </>
       )}
 
-      {/* BERTopic Section */}
+      {/* ═══════════════════════════════════════════════════════
+          TOPIC MODELING SECTION
+      ════════════════════════════════════════════════════════ */}
+      {data?.selectedTopicModeling && data.topics && data.topics.length > 0 && (
+        <>
+          {/* Topic Modeling Quality KPIs */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <CompactMetric
+              label="Algoritmo"
+              value={topicAlgorithmDisplay || '—'}
+              badge={topicAlgorithmDisplay || undefined}
+              badgeClass={topicAlgorithmBadge}
+            />
+            <CompactMetric
+              label="Coherencia (C_V)"
+              value={data.selectedTopicModeling.coherence_score !== null
+                ? data.selectedTopicModeling.coherence_score.toFixed(4)
+                : '—'}
+              badge={data.selectedTopicModeling.coherence_score !== null
+                ? (data.selectedTopicModeling.coherence_score > 0.5 ? 'Buena' : data.selectedTopicModeling.coherence_score > 0.3 ? 'Media' : 'Baja')
+                : undefined}
+              badgeClass={coherenceBadgeClass(data.selectedTopicModeling.coherence_score)}
+            />
+            {data.selectedTopicModeling.perplexity_score !== null && (
+              <CompactMetric
+                label="Perplejidad (LDA)"
+                value={data.selectedTopicModeling.perplexity_score.toFixed(2)}
+                badge="menor = mejor"
+                badgeClass="bg-slate-600/30 text-slate-300 border-slate-500/30"
+              />
+            )}
+            <CompactMetric
+              label="Documentos"
+              value={data.selectedTopicModeling.documents_processed}
+            />
+          </div>
+
+          {/* Topics Grid */}
+          <ChartCard
+            title="Temas Identificados"
+            subtitle={`${data.selectedTopicModeling.name} — ${data.topics.length} temas`}
+            accentColor="emerald"
+            size="lg"
+            icon={
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+            }
+            onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
+            isLoading={isLoading}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
+              {data.topics.slice(0, 9).map((topic, i) => (
+                <TopicCard
+                  key={topic.id}
+                  topic={topic}
+                  accentColor={['emerald', 'purple', 'cyan', 'amber'][i % 4]}
+                />
+              ))}
+            </div>
+          </ChartCard>
+
+          {/* Topic Distribution Donut */}
+          {data.topicDistribution && data.topicDistribution.length > 0 && (
+            <ChartCard
+              title="Distribución de Temas"
+              subtitle="Documentos por tema"
+              accentColor="cyan"
+              size="md"
+              icon={
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              }
+            >
+              <div className="h-[200px]">
+                <DonutChartViz
+                  data={data.topicDistribution}
+                  chartId="topic-distribution"
+                  centerValue={data.topicDistribution.reduce((sum, t) => sum + t.value, 0)}
+                  centerLabel="docs"
+                />
+              </div>
+            </ChartCard>
+          )}
+        </>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════
+          BERTOPIC SECTION
+      ════════════════════════════════════════════════════════ */}
       {data?.selectedBertopic && data.bertopicClusters && data.bertopicClusters.length > 0 && (
-        <ChartCard
-          title="Clústeres BERTopic"
-          subtitle={`${data.bertopicClusters.length} clústeres identificados`}
-          accentColor="amber"
-          size="lg"
-          icon={
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          }
-          onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
-          isLoading={isLoading}
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
-            {data.bertopicClusters.slice(0, 9).map((cluster) => (
-              <div
-                key={cluster.topicId}
-                className="p-4 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-medium text-white">
-                    {cluster.label || `Clúster ${cluster.topicId}`}
-                  </h4>
-                  <span className="px-2 py-0.5 text-xs rounded-full bg-amber-500/20 text-amber-400">
-                    {cluster.numDocuments} docs
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {cluster.words.slice(0, 6).map((word, j) => (
-                    <span
-                      key={word.word}
-                      className="px-2 py-0.5 text-xs rounded-full bg-slate-800/50 text-slate-300"
-                      style={{ opacity: 1 - j * 0.1 }}
-                    >
-                      {word.word}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
+        <>
+          {/* BERTopic Quality KPIs */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <CompactMetric
+              label="Coherencia (C_V)"
+              value={data.selectedBertopic.coherence_score !== null
+                ? data.selectedBertopic.coherence_score.toFixed(4)
+                : '—'}
+              badge={data.selectedBertopic.coherence_score !== null
+                ? (data.selectedBertopic.coherence_score > 0.5 ? 'Buena' : data.selectedBertopic.coherence_score > 0.3 ? 'Media' : 'Baja')
+                : undefined}
+              badgeClass={coherenceBadgeClass(data.selectedBertopic.coherence_score)}
+            />
+            <CompactMetric
+              label="Outliers (ruido)"
+              value={data.selectedBertopic.num_outliers}
+              badge={bertopicDocsProcessed > 0
+                ? `${((data.selectedBertopic.num_outliers / bertopicDocsProcessed) * 100).toFixed(1)}%`
+                : undefined}
+              badgeClass={outliersBadgeClass(data.selectedBertopic.num_outliers, bertopicDocsProcessed)}
+            />
+            <CompactMetric
+              label="Clústeres encontrados"
+              value={data.selectedBertopic.num_topics_found}
+            />
+            <CompactMetric
+              label="Documentos"
+              value={bertopicDocsProcessed}
+            />
           </div>
-        </ChartCard>
-      )}
 
-      {/* Analysis Selectors */}
-      {((data?.nerAnalyses?.length || 0) > 1 || (data?.topicModelingAnalyses?.length || 0) > 1 || (data?.bertopicAnalyses?.length || 0) > 1) && (
-        <ChartCard
-          title="Selección de Análisis"
-          subtitle="Elige qué análisis visualizar"
-          accentColor="blue"
-          size="sm"
-          icon={
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-            </svg>
-          }
-        >
-          <div className="grid grid-cols-3 gap-4 p-2">
-            {/* NER Selector */}
-            {data?.nerAnalyses && data.nerAnalyses.length > 1 && (
-              <div>
-                <label className="text-xs text-slate-400 block mb-1">NER</label>
-                <select
-                  value={filters.selectedNerId || ''}
-                  onChange={(e) => setSelectedNer(e.target.value ? Number(e.target.value) : null)}
-                  className="w-full bg-slate-800/50 border border-slate-600/50 rounded-lg px-3 py-1.5 text-sm text-white"
-                >
-                  <option value="">Más reciente</option>
-                  {data.nerAnalyses.map((ner) => (
-                    <option key={ner.id} value={ner.id}>
-                      {ner.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+          {/* BERTopic Clusters Grid */}
+          <ChartCard
+            title="Clústeres BERTopic"
+            subtitle={`${data.selectedBertopic.name} — ${data.bertopicClusters.length} clústeres`}
+            accentColor="amber"
+            size="lg"
+            icon={
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            }
+            onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
+            isLoading={isLoading}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
+              {data.bertopicClusters.slice(0, 9).map((cluster) => (
+                <BertopicClusterCard key={cluster.topicId} cluster={cluster} />
+              ))}
+            </div>
+          </ChartCard>
 
-            {/* Topic Modeling Selector */}
-            {data?.topicModelingAnalyses && data.topicModelingAnalyses.length > 1 && (
-              <div>
-                <label className="text-xs text-slate-400 block mb-1">Modelado de Temas</label>
-                <select
-                  value={filters.selectedTopicModelId || ''}
-                  onChange={(e) => setSelectedTopicModel(e.target.value ? Number(e.target.value) : null)}
-                  className="w-full bg-slate-800/50 border border-slate-600/50 rounded-lg px-3 py-1.5 text-sm text-white"
-                >
-                  <option value="">Más reciente</option>
-                  {data.topicModelingAnalyses.map((tm) => (
-                    <option key={tm.id} value={tm.id}>
-                      {tm.name}
-                    </option>
-                  ))}
-                </select>
+          {/* BERTopic Distribution Donut */}
+          {bertopicDistData.length > 0 && (
+            <ChartCard
+              title="Distribución de Clústeres"
+              subtitle="Documentos por clúster BERTopic"
+              accentColor="amber"
+              size="md"
+              icon={
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                </svg>
+              }
+            >
+              <div className="h-[220px]">
+                <DonutChartViz
+                  data={bertopicDistData}
+                  chartId="bertopic-distribution"
+                  centerValue={bertopicDistData.reduce((sum, t) => sum + t.value, 0)}
+                  centerLabel="docs"
+                  skipCrossFilter
+                />
               </div>
-            )}
-
-            {/* BERTopic Selector */}
-            {data?.bertopicAnalyses && data.bertopicAnalyses.length > 1 && (
-              <div>
-                <label className="text-xs text-slate-400 block mb-1">BERTopic</label>
-                <select
-                  value={filters.selectedBertopicId || ''}
-                  onChange={(e) => setSelectedBertopic(e.target.value ? Number(e.target.value) : null)}
-                  className="w-full bg-slate-800/50 border border-slate-600/50 rounded-lg px-3 py-1.5 text-sm text-white"
-                >
-                  <option value="">Más reciente</option>
-                  {data.bertopicAnalyses.map((bt) => (
-                    <option key={bt.id} value={bt.id}>
-                      {bt.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-        </ChartCard>
+            </ChartCard>
+          )}
+        </>
       )}
     </div>
   );
