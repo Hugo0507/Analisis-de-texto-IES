@@ -70,54 +70,23 @@ def load_artifact(model_instance, bin_field_name: str, file_field_name: str) -> 
     )
 
 
-# ── Pre-carga de artefactos (debe hacerse ANTES de cargar spaCy) ──────────────
+# ── Pre-carga de artefactos (solo Topic Model; BoW y TF-IDF usan JSON) ───────
 
 def preload_inference_artifacts(workspace) -> Dict[str, Any]:
     """
-    Cargar todos los artefactos ML necesarios para la inferencia ANTES de que
-    spaCy sea importado o cargado.
+    Cargar artefactos ML necesarios para inferencia de Topic Model.
 
-    Objetivo: evitar el `double free or corruption` que ocurre cuando joblib/numpy
-    carga arrays desde BinaryField después de que los allocators C de spaCy han
-    modificado el estado del heap.
-
-    Debe llamarse al inicio de run_inference._run(), antes de cualquier
-    llamada a preprocess_for_inference o spacy.load().
+    BoW y TF-IDF ya NO usan joblib/scipy; sus matrices se construyen con
+    numpy puro desde los campos JSON (vocabulary / idf_values) de la DB.
+    Esto evita el `double free or corruption` (!prev) causado por scipy
+    sparse matrix C code al llamar CountVectorizer.transform().
 
     Returns:
         dict con claves opcionales:
-          'bow_vectorizer'    -> CountVectorizer (si workspace.bow_id está seteado)
-          'tfidf_vectorizer'  -> TfidfVectorizer (si workspace.tfidf_id está seteado)
           'topic_vectorizer'  -> vectorizador del TopicModel
           'topic_model'       -> modelo LDA/NMF
     """
     preloaded: Dict[str, Any] = {}
-
-    if workspace.bow_id:
-        try:
-            from apps.bag_of_words.models import BagOfWords
-            bow = BagOfWords.objects.get(id=workspace.bow_id)
-            preloaded['bow_vectorizer'] = load_artifact(bow, 'model_artifact_bin', 'model_artifact')
-            logger.info(f"[WS {workspace.id}] Artefacto BoW #{workspace.bow_id} pre-cargado.")
-        except FileNotFoundError as e:
-            logger.warning(
-                f"[WS {workspace.id}] BoW #{workspace.bow_id} sin artefacto — "
-                f"inferencia BoW será omitida. Detalle: {e}"
-            )
-
-    if workspace.tfidf_id:
-        try:
-            from apps.tfidf_analysis.models import TfIdfAnalysis
-            tfidf = TfIdfAnalysis.objects.get(id=workspace.tfidf_id)
-            preloaded['tfidf_vectorizer'] = load_artifact(
-                tfidf, 'vectorizer_artifact_bin', 'vectorizer_artifact'
-            )
-            logger.info(f"[WS {workspace.id}] Artefacto TF-IDF #{workspace.tfidf_id} pre-cargado.")
-        except FileNotFoundError as e:
-            logger.warning(
-                f"[WS {workspace.id}] TF-IDF #{workspace.tfidf_id} sin artefacto — "
-                f"inferencia TF-IDF será omitida. Detalle: {e}"
-            )
 
     if workspace.topic_model_id:
         try:
@@ -148,45 +117,57 @@ def infer_bow(
     preloaded_vectorizer: Optional[CountVectorizer] = None,
 ) -> Dict[str, Any]:
     """
-    Args:
-        texts: Textos preprocesados.
-        bow_id: ID del modelo BagOfWords de referencia.
-        preloaded_vectorizer: Si se pasa, se usa directamente sin llamar joblib.load().
-            Debe haberse cargado con preload_inference_artifacts() ANTES de spaCy.
+    Inferencia BoW usando numpy puro (sin sklearn CountVectorizer.transform).
+
+    El vocabulario se lee directamente del campo JSON de BagOfWords para
+    evitar la corrupción de heap (double free) causada por scipy sparse C code.
     """
     from apps.bag_of_words.models import BagOfWords
 
     bow = BagOfWords.objects.get(id=bow_id)
-    if preloaded_vectorizer is not None:
-        vectorizer: CountVectorizer = preloaded_vectorizer
-    else:
-        vectorizer = load_artifact(bow, 'model_artifact_bin', 'model_artifact')
+    vocab: Dict[str, int] = bow.vocabulary or {}
+    if not vocab:
+        raise ValueError(f"BoW #{bow_id} no tiene vocabulario disponible en DB.")
 
-    matrix = vectorizer.transform(texts)
-    feature_names = vectorizer.get_feature_names_out()
+    vocab_size = max(vocab.values()) + 1
+    n_docs = len(texts)
 
-    term_scores = np.asarray(matrix.sum(axis=0)).flatten()
+    # Construir matriz de conteo con numpy puro (sin scipy sparse)
+    matrix = np.zeros((n_docs, vocab_size), dtype=np.int32)
+    for row_idx, text in enumerate(texts):
+        for token in text.split():
+            idx = vocab.get(token)
+            if idx is not None:
+                matrix[row_idx, idx] += 1
+
+    # Mapa inverso índice → término para las stats
+    idx_to_term = [''] * vocab_size
+    for term, idx in vocab.items():
+        if idx < vocab_size:
+            idx_to_term[idx] = term
+
+    term_scores = matrix.sum(axis=0)
     top_indices = term_scores.argsort()[-50:][::-1]
     top_terms = [
-        {'term': feature_names[i], 'score': float(term_scores[i]), 'rank': idx + 1}
-        for idx, i in enumerate(top_indices)
+        {'term': idx_to_term[i], 'score': float(term_scores[i]), 'rank': rank + 1}
+        for rank, i in enumerate(top_indices)
         if term_scores[i] > 0
     ]
 
-    total_elements = matrix.shape[0] * matrix.shape[1]
-    non_zero = matrix.nnz
+    total_elements = n_docs * vocab_size
+    non_zero = int(np.count_nonzero(matrix))
     sparsity = float((total_elements - non_zero) / total_elements) if total_elements > 0 else 0.0
 
-    terms_per_doc = np.asarray((matrix > 0).sum(axis=1)).flatten()
-    avg_terms = float(np.mean(terms_per_doc)) if len(terms_per_doc) > 0 else 0.0
+    terms_per_doc = (matrix > 0).sum(axis=1)
+    avg_terms = float(np.mean(terms_per_doc)) if n_docs > 0 else 0.0
 
     return {
         'top_terms': top_terms,
-        'matrix_shape': {'rows': int(matrix.shape[0]), 'cols': int(matrix.shape[1])},
+        'matrix_shape': {'rows': n_docs, 'cols': vocab_size},
         'matrix_sparsity': round(sparsity, 4),
         'avg_terms_per_document': round(avg_terms, 2),
         'total_term_occurrences': int(matrix.sum()),
-        'vocabulary_size': len(vectorizer.vocabulary_),
+        'vocabulary_size': vocab_size,
         'reference_bow_id': bow_id,
         'reference_bow_name': bow.name,
     }
@@ -200,40 +181,56 @@ def infer_tfidf(
     preloaded_vectorizer: Optional[TfidfVectorizer] = None,
 ) -> Dict[str, Any]:
     """
-    Args:
-        texts: Textos preprocesados.
-        tfidf_id: ID del modelo TfIdfAnalysis de referencia.
-        preloaded_vectorizer: Si se pasa, se usa directamente sin llamar joblib.load().
+    Inferencia TF-IDF usando numpy puro (sin TfidfVectorizer.transform).
+
+    Los pesos IDF se leen directamente de idf_vector['idf_values'] en DB
+    para evitar la corrupción de heap causada por scipy sparse C code.
     """
     from apps.tfidf_analysis.models import TfIdfAnalysis
 
     tfidf = TfIdfAnalysis.objects.get(id=tfidf_id)
-    if preloaded_vectorizer is not None:
-        vectorizer: TfidfVectorizer = preloaded_vectorizer
-    else:
-        vectorizer = load_artifact(tfidf, 'vectorizer_artifact_bin', 'vectorizer_artifact')
+    idf_values: Dict[str, float] = (tfidf.idf_vector or {}).get('idf_values', {})
+    if not idf_values:
+        raise ValueError(f"TF-IDF #{tfidf_id} no tiene idf_values disponibles en DB.")
 
-    matrix = vectorizer.transform(texts)
-    feature_names = vectorizer.get_feature_names_out()
+    # Orden consistente de términos
+    terms = sorted(idf_values.keys())
+    vocab = {term: i for i, term in enumerate(terms)}
+    idf_array = np.array([idf_values[t] for t in terms], dtype=np.float64)
+    vocab_size = len(terms)
+    n_docs = len(texts)
 
-    matrix_dense = matrix.toarray()
-    tfidf_scores = matrix_dense.sum(axis=0)
+    # Matriz TF con numpy puro
+    tf_matrix = np.zeros((n_docs, vocab_size), dtype=np.float64)
+    for row_idx, text in enumerate(texts):
+        for token in text.split():
+            idx = vocab.get(token)
+            if idx is not None:
+                tf_matrix[row_idx, idx] += 1.0
+
+    # Aplicar IDF y normalizar L2 (replica TfidfVectorizer con norm='l2')
+    tfidf_matrix = tf_matrix * idf_array
+    row_norms = np.linalg.norm(tfidf_matrix, axis=1, keepdims=True)
+    row_norms[row_norms == 0] = 1.0
+    tfidf_matrix = tfidf_matrix / row_norms
+
+    tfidf_scores = tfidf_matrix.sum(axis=0)
     top_indices = tfidf_scores.argsort()[-50:][::-1]
     top_terms = [
-        {'term': feature_names[i], 'score': round(float(tfidf_scores[i]), 4), 'rank': idx + 1}
-        for idx, i in enumerate(top_indices)
+        {'term': terms[i], 'score': round(float(tfidf_scores[i]), 4), 'rank': rank + 1}
+        for rank, i in enumerate(top_indices)
         if tfidf_scores[i] > 0
     ]
 
-    total_elements = matrix.shape[0] * matrix.shape[1]
-    non_zero = matrix.nnz
+    total_elements = n_docs * vocab_size
+    non_zero = int(np.count_nonzero(tfidf_matrix))
     sparsity = float((total_elements - non_zero) / total_elements) if total_elements > 0 else 0.0
 
     return {
         'top_terms': top_terms,
-        'matrix_shape': {'rows': int(matrix.shape[0]), 'cols': int(matrix.shape[1])},
+        'matrix_shape': {'rows': n_docs, 'cols': vocab_size},
         'matrix_sparsity': round(sparsity, 4),
-        'avg_tfidf_per_document': round(float(np.mean(matrix_dense.sum(axis=1))), 4),
+        'avg_tfidf_per_document': round(float(np.mean(tfidf_matrix.sum(axis=1))), 4),
         'reference_tfidf_id': tfidf_id,
         'reference_tfidf_name': tfidf.name,
     }
