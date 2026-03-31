@@ -6,10 +6,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Doughnut } from 'react-chartjs-2';
+import { Doughnut, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   ArcElement,
+  CategoryScale,
+  LinearScale,
+  BarElement,
   Tooltip,
   Legend,
   ChartOptions,
@@ -20,7 +23,7 @@ import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
 
 // Register Chart.js components
-ChartJS.register(ArcElement, Tooltip, Legend);
+ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
 export const BERTopicView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -175,6 +178,39 @@ export const BERTopicView: React.FC = () => {
 
   const selectedTopicData = analysis.topics.find((t) => t.topic_id === selectedTopic);
 
+  // Bar chart for word weights of selected topic
+  const barData = selectedTopicData ? {
+    labels: selectedTopicData.words.slice(0, 10).map(w => w.word),
+    datasets: [
+      {
+        label: 'Peso c-TF-IDF',
+        data: selectedTopicData.words.slice(0, 10).map(w => w.weight),
+        backgroundColor: '#8b5cf6',
+        borderColor: '#7c3aed',
+        borderWidth: 1,
+        borderRadius: 4,
+      },
+    ],
+  } : null;
+
+  const barOptions: ChartOptions<'bar'> = {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (context) => `Peso: ${(context.parsed.x as number).toFixed(4)}`,
+        },
+      },
+    },
+    scales: {
+      x: { beginAtZero: true, grid: { color: '#f3f4f6' } },
+      y: { grid: { display: false } },
+    },
+  };
+
   const isProcessing = analysis.status === 'processing';
   const isCompleted = analysis.status === 'completed';
   const hasError = analysis.status === 'error';
@@ -304,32 +340,87 @@ export const BERTopicView: React.FC = () => {
             </div>
           </div>
 
-          {/* Visualization 2: Topic Words */}
+          {/* Visualization 2: Topic Words with weight bars */}
           <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Temas y Palabras Clave</h2>
 
-            <div className="space-y-4">
-              {analysis.topics.map((topic) => (
-                <div key={topic.topic_id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-gray-900">{topic.topic_label}</h3>
-                    <span className="text-xs text-gray-500">{topic.num_documents} documentos</span>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {topic.words.map((word, idx) => (
-                      <span
-                        key={idx}
-                        className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium"
-                      >
-                        {word.word} ({word.weight.toFixed(2)})
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {analysis.topics.map((topic) => {
+                const maxWeight = Math.max(...topic.words.map(w => w.weight), 0.001);
+                return (
+                  <div
+                    key={topic.topic_id}
+                    className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
+                      selectedTopic === topic.topic_id
+                        ? 'border-purple-400 bg-purple-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setSelectedTopic(topic.topic_id)}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold text-gray-900">{topic.topic_label}</h3>
+                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                        {topic.num_documents} docs
                       </span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {topic.words.slice(0, 8).map((word, idx) => {
+                        const barPct = Math.round((word.weight / maxWeight) * 100);
+                        return (
+                          <div key={idx} className="flex items-center gap-2">
+                            <span className="text-xs text-gray-700 w-24 truncate shrink-0">{word.word}</span>
+                            <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-purple-400 rounded-full"
+                                style={{ width: `${barPct}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-gray-400 w-12 text-right shrink-0">
+                              {word.weight.toFixed(4)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-xs text-gray-400 mt-3">Haz clic en un tema para ver su gráfico de pesos detallado ↓</p>
+          </div>
+
+          {/* Visualization 3: Word weights bar chart for selected topic */}
+          {barData && selectedTopicData && (
+            <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Pesos c-TF-IDF por Tema</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">Top 10 palabras con mayor peso en el tema seleccionado</p>
+                </div>
+                <div className="relative">
+                  <select
+                    value={selectedTopic}
+                    onChange={(e) => setSelectedTopic(Number(e.target.value))}
+                    className="appearance-none bg-white border border-gray-200 text-gray-700 rounded-xl pl-4 pr-10 py-2.5 text-sm font-medium cursor-pointer hover:border-purple-400 focus:ring-2 focus:ring-purple-300 focus:border-purple-500 focus:outline-none shadow-sm transition-colors"
+                  >
+                    {analysis.topics.map((topic) => (
+                      <option key={topic.topic_id} value={topic.topic_id}>
+                        {topic.topic_label}
+                      </option>
                     ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
                   </div>
                 </div>
-              ))}
+              </div>
+              <div style={{ height: '360px' }}>
+                <Bar data={barData} options={barOptions} />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Visualization 3: Documents by Topic */}
           <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
