@@ -56,16 +56,38 @@ class WorkspaceUploadSerializer(serializers.Serializer):
     file = serializers.FileField()
 
     def validate_file(self, value):
-        allowed_types = ['application/pdf']
-        if value.content_type not in allowed_types:
+        import os
+
+        # Verificar extensión .pdf (case-insensitive)
+        ext = os.path.splitext(value.name)[1].lower()
+        if ext != '.pdf':
+            raise serializers.ValidationError(
+                f"Solo se permiten archivos PDF (.pdf). "
+                f"El archivo '{value.name}' no tiene extensión .pdf."
+            )
+
+        # Verificar content_type: aceptar 'application/pdf' directamente,
+        # o tipos genéricos (application/octet-stream, binary/octet-stream, etc.)
+        # cuando la extensión ya confirmó que es un PDF.
+        # Algunos browsers/OS envían PDFs con content_type genérico.
+        pdf_content_types = {'application/pdf'}
+        generic_content_types = {
+            'application/octet-stream',
+            'binary/octet-stream',
+            'application/force-download',
+            'application/download',
+        }
+        if value.content_type not in pdf_content_types and value.content_type not in generic_content_types:
             raise serializers.ValidationError(
                 f"Solo se permiten archivos PDF. "
-                f"Recibido: {value.content_type}. "
-                "Selecciona un archivo con extensión .pdf e inténtalo de nuevo."
+                f"Tipo recibido: '{value.content_type}'. "
+                "Selecciona un archivo .pdf e inténtalo de nuevo."
             )
+
         max_size = 50 * 1024 * 1024  # 50 MB
         if value.size > max_size:
             raise serializers.ValidationError(
-                f"El archivo excede el tamaño máximo permitido de 50 MB."
+                f"El archivo excede el tamaño máximo permitido de 50 MB. "
+                f"Tamaño recibido: {value.size // (1024 * 1024):.1f} MB."
             )
         return value

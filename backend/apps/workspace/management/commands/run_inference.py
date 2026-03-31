@@ -160,47 +160,65 @@ class Command(BaseCommand):
         results = {}
 
         if workspace.bow_id:
-            logger.info(f"[WS {workspace_id}] Inferencia BoW con modelo {workspace.bow_id}...")
-            try:
-                results['bow'] = infer_bow(
-                    valid_texts,
-                    workspace.bow_id,
-                    preloaded_vectorizer=preloaded.get('bow_vectorizer'),
-                )
-            except Exception as e:
-                logger.warning(f"[WS {workspace_id}] Error inferencia BoW: {e}")
-                results['bow'] = {'error': str(e)}
+            if 'bow_vectorizer' not in preloaded:
+                logger.warning(f"[WS {workspace_id}] BoW #{workspace.bow_id} omitido (sin artefacto).")
+                results['bow'] = {
+                    'error': 'Artefacto no disponible. Re-ejecuta el análisis de Bag of Words para regenerarlo.'
+                }
+            else:
+                logger.info(f"[WS {workspace_id}] Inferencia BoW con modelo {workspace.bow_id}...")
+                try:
+                    results['bow'] = infer_bow(
+                        valid_texts,
+                        workspace.bow_id,
+                        preloaded_vectorizer=preloaded['bow_vectorizer'],
+                    )
+                except Exception as e:
+                    logger.warning(f"[WS {workspace_id}] Error inferencia BoW: {e}")
+                    results['bow'] = {'error': str(e)}
             workspace.progress_percentage = 60
             workspace.save()
 
         # ── PASO 4: Inferencia TF-IDF (60–80%) ─────────────────────
         if workspace.tfidf_id:
-            logger.info(f"[WS {workspace_id}] Inferencia TF-IDF con modelo {workspace.tfidf_id}...")
-            try:
-                results['tfidf'] = infer_tfidf(
-                    valid_texts,
-                    workspace.tfidf_id,
-                    preloaded_vectorizer=preloaded.get('tfidf_vectorizer'),
-                )
-            except Exception as e:
-                logger.warning(f"[WS {workspace_id}] Error inferencia TF-IDF: {e}")
-                results['tfidf'] = {'error': str(e)}
+            if 'tfidf_vectorizer' not in preloaded:
+                logger.warning(f"[WS {workspace_id}] TF-IDF #{workspace.tfidf_id} omitido (sin artefacto).")
+                results['tfidf'] = {
+                    'error': 'Artefacto no disponible. Re-ejecuta el análisis TF-IDF para regenerarlo.'
+                }
+            else:
+                logger.info(f"[WS {workspace_id}] Inferencia TF-IDF con modelo {workspace.tfidf_id}...")
+                try:
+                    results['tfidf'] = infer_tfidf(
+                        valid_texts,
+                        workspace.tfidf_id,
+                        preloaded_vectorizer=preloaded['tfidf_vectorizer'],
+                    )
+                except Exception as e:
+                    logger.warning(f"[WS {workspace_id}] Error inferencia TF-IDF: {e}")
+                    results['tfidf'] = {'error': str(e)}
             workspace.progress_percentage = 80
             workspace.save()
 
         # ── PASO 5: Inferencia Topic Model (80–100%) ───────────────
         if workspace.topic_model_id:
-            logger.info(f"[WS {workspace_id}] Inferencia temas con modelo {workspace.topic_model_id}...")
-            try:
-                results['topics'] = infer_topics(
-                    valid_texts,
-                    workspace.topic_model_id,
-                    preloaded_vectorizer=preloaded.get('topic_vectorizer'),
-                    preloaded_model=preloaded.get('topic_model'),
-                )
-            except Exception as e:
-                logger.warning(f"[WS {workspace_id}] Error inferencia temas: {e}")
-                results['topics'] = {'error': str(e)}
+            if 'topic_vectorizer' not in preloaded or 'topic_model' not in preloaded:
+                logger.warning(f"[WS {workspace_id}] Topic Model #{workspace.topic_model_id} omitido (sin artefacto).")
+                results['topics'] = {
+                    'error': 'Artefacto no disponible. Re-ejecuta el análisis de Topic Modeling para regenerarlo.'
+                }
+            else:
+                logger.info(f"[WS {workspace_id}] Inferencia temas con modelo {workspace.topic_model_id}...")
+                try:
+                    results['topics'] = infer_topics(
+                        valid_texts,
+                        workspace.topic_model_id,
+                        preloaded_vectorizer=preloaded['topic_vectorizer'],
+                        preloaded_model=preloaded['topic_model'],
+                    )
+                except Exception as e:
+                    logger.warning(f"[WS {workspace_id}] Error inferencia temas: {e}")
+                    results['topics'] = {'error': str(e)}
 
         # ── Finalizar ──────────────────────────────────────────────
         results['document_count'] = len(valid_texts)

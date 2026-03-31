@@ -94,29 +94,48 @@ def preload_inference_artifacts(workspace) -> Dict[str, Any]:
     preloaded: Dict[str, Any] = {}
 
     if workspace.bow_id:
-        from apps.bag_of_words.models import BagOfWords
-        bow = BagOfWords.objects.get(id=workspace.bow_id)
-        preloaded['bow_vectorizer'] = load_artifact(bow, 'model_artifact_bin', 'model_artifact')
-        logger.info(f"[WS {workspace.id}] Artefacto BoW #{workspace.bow_id} pre-cargado.")
+        try:
+            from apps.bag_of_words.models import BagOfWords
+            bow = BagOfWords.objects.get(id=workspace.bow_id)
+            preloaded['bow_vectorizer'] = load_artifact(bow, 'model_artifact_bin', 'model_artifact')
+            logger.info(f"[WS {workspace.id}] Artefacto BoW #{workspace.bow_id} pre-cargado.")
+        except FileNotFoundError as e:
+            logger.warning(
+                f"[WS {workspace.id}] BoW #{workspace.bow_id} sin artefacto — "
+                f"inferencia BoW será omitida. Detalle: {e}"
+            )
 
     if workspace.tfidf_id:
-        from apps.tfidf_analysis.models import TfIdfAnalysis
-        tfidf = TfIdfAnalysis.objects.get(id=workspace.tfidf_id)
-        preloaded['tfidf_vectorizer'] = load_artifact(
-            tfidf, 'vectorizer_artifact_bin', 'vectorizer_artifact'
-        )
-        logger.info(f"[WS {workspace.id}] Artefacto TF-IDF #{workspace.tfidf_id} pre-cargado.")
+        try:
+            from apps.tfidf_analysis.models import TfIdfAnalysis
+            tfidf = TfIdfAnalysis.objects.get(id=workspace.tfidf_id)
+            preloaded['tfidf_vectorizer'] = load_artifact(
+                tfidf, 'vectorizer_artifact_bin', 'vectorizer_artifact'
+            )
+            logger.info(f"[WS {workspace.id}] Artefacto TF-IDF #{workspace.tfidf_id} pre-cargado.")
+        except FileNotFoundError as e:
+            logger.warning(
+                f"[WS {workspace.id}] TF-IDF #{workspace.tfidf_id} sin artefacto — "
+                f"inferencia TF-IDF será omitida. Detalle: {e}"
+            )
 
     if workspace.topic_model_id:
-        from apps.topic_modeling.models import TopicModeling
-        tm = TopicModeling.objects.get(id=workspace.topic_model_id)
-        preloaded['topic_vectorizer'] = load_artifact(
-            tm, 'vectorizer_artifact_bin', 'vectorizer_artifact'
-        )
-        preloaded['topic_model'] = load_artifact(
-            tm, 'model_artifact_bin', 'model_artifact'
-        )
-        logger.info(f"[WS {workspace.id}] Artefactos Topic Model #{workspace.topic_model_id} pre-cargados.")
+        try:
+            from apps.topic_modeling.models import TopicModeling
+            tm = TopicModeling.objects.get(id=workspace.topic_model_id)
+            preloaded['topic_vectorizer'] = load_artifact(
+                tm, 'vectorizer_artifact_bin', 'vectorizer_artifact'
+            )
+            preloaded['topic_model'] = load_artifact(
+                tm, 'model_artifact_bin', 'model_artifact'
+            )
+            logger.info(f"[WS {workspace.id}] Artefactos Topic Model #{workspace.topic_model_id} pre-cargados.")
+        except FileNotFoundError as e:
+            logger.warning(
+                f"[WS {workspace.id}] Topic Model #{workspace.topic_model_id} sin artefacto — "
+                f"inferencia de tópicos será omitida. "
+                f"Re-ejecuta el análisis de Topic Modeling para regenerar. Detalle: {e}"
+            )
 
     return preloaded
 
@@ -430,17 +449,23 @@ def preprocess_for_inference(
 
 def load_spacy_model(language: str = 'en'):
     """
-    Cargar modelo spaCy una sola vez y retornarlo.
-    Retorna None si no está disponible (fallback silencioso).
+    Cargar modelo spaCy una sola vez y retornarlo, configurado solo para lematización.
 
-    Debe llamarse UNA VEZ antes del bucle de documentos y pasarse como
-    argumento a preprocess_for_inference para evitar recargas por documento.
+    Excluye los componentes parser, ner y senter que no son necesarios para
+    la lematización pero añaden un overhead significativo (2-3x más lento).
+    Solo carga: tok2vec → tagger → attribute_ruler → lemmatizer.
+
+    Retorna None si no está disponible (fallback silencioso).
+    Debe llamarse UNA VEZ antes del bucle de documentos.
     """
     try:
         import spacy
         model_name = 'es_core_news_sm' if language == 'es' else 'en_core_web_sm'
-        nlp = spacy.load(model_name)
-        logger.info(f"Modelo spaCy '{model_name}' cargado correctamente.")
+        # exclude elimina los componentes del pipeline completamente (más rápido que disable)
+        nlp = spacy.load(model_name, exclude=['parser', 'ner', 'senter'])
+        logger.info(
+            f"Modelo spaCy '{model_name}' cargado (pipeline: {nlp.pipe_names})."
+        )
         return nlp
     except Exception as e:
         logger.warning(f"No se pudo cargar modelo spaCy para '{language}': {e}. Se omitirá lematización.")
@@ -462,7 +487,7 @@ def _lemmatize_text(text: str, language: str = 'en', nlp=None) -> str:
         if nlp is None:
             import spacy
             model_name = 'es_core_news_sm' if language == 'es' else 'en_core_web_sm'
-            nlp = spacy.load(model_name)
+            nlp = spacy.load(model_name, exclude=['parser', 'ner', 'senter'])
 
         # Limitar a 100K caracteres para evitar OOM en spaCy
         if len(text) > 100_000:
