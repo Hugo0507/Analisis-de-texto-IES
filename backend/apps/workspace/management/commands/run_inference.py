@@ -41,7 +41,7 @@ class Command(BaseCommand):
         from apps.workspace.inference import (
             infer_bow, infer_tfidf, infer_topics,
             preprocess_for_inference, get_inference_stopwords,
-            preload_inference_artifacts, load_spacy_model,
+            preload_inference_artifacts,
         )
 
         workspace = Workspace.objects.prefetch_related('documents').get(id=workspace_id)
@@ -61,13 +61,11 @@ class Command(BaseCommand):
 
         logger.info(
             f"[WS {workspace_id}] Preprocesamiento con {len(stopwords)} stopwords, "
-            f"idioma='{corpus_language}', lematización=True"
+            f"idioma='{corpus_language}', lematización=False (desactivada para rendimiento en producción)"
         )
 
-        # ── PASO 0: Pre-cargar artefactos ML ANTES de spaCy ─────────────
-        # CRÍTICO: joblib/numpy deben cargar sus arrays antes de que los
-        # allocators C de spaCy modifiquen el heap. De lo contrario ocurre
-        # `double free or corruption` al llamar joblib.load() tras spaCy.
+        # ── PASO 0: Pre-cargar artefactos ML ────────────────────────────
+        # Carga todos los artefactos sklearn/joblib antes del procesamiento.
         logger.info(f"[WS {workspace_id}] Pre-cargando artefactos ML...")
         workspace.progress_percentage = 3
         workspace.save()
@@ -82,10 +80,6 @@ class Command(BaseCommand):
         logger.info(f"[WS {workspace_id}] Extrayendo texto de {total_docs} PDFs...")
         workspace.progress_percentage = 5
         workspace.save()
-
-        # Cargar spaCy UNA SOLA VEZ antes del bucle de documentos.
-        # Evita recargar el modelo en cada llamada a preprocess_for_inference.
-        nlp = load_spacy_model(corpus_language)
 
         texts = []
         preprocessing_stats = {
@@ -106,9 +100,8 @@ class Command(BaseCommand):
                 preprocessed = preprocess_for_inference(
                     extracted,
                     stopwords=stopwords,
-                    lemmatize=True,
+                    lemmatize=False,
                     language=corpus_language,
-                    nlp=nlp,
                 )
                 clean_token_count = len(preprocessed.split()) if preprocessed else 0
 
