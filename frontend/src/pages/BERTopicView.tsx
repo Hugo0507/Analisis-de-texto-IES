@@ -278,7 +278,7 @@ export const BERTopicView: React.FC = () => {
                 </div>
 
                 <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs font-medium text-gray-500 mb-1">Tópicos Encontrados</p>
+                  <p className="text-xs font-medium text-gray-500 mb-1">Temas Encontrados</p>
                   <p className="text-lg font-bold text-gray-900">{analysis.num_topics_found}</p>
                 </div>
 
@@ -334,18 +334,25 @@ export const BERTopicView: React.FC = () => {
           {/* Visualization 3: Documents by Topic */}
           <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Documentos por Tópico</h2>
-              <select
-                value={selectedTopic}
-                onChange={(e) => setSelectedTopic(Number(e.target.value))}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
-              >
-                {analysis.topics.map((topic) => (
-                  <option key={topic.topic_id} value={topic.topic_id}>
-                    {topic.topic_label}
-                  </option>
-                ))}
-              </select>
+              <h2 className="text-lg font-semibold text-gray-900">Documentos por Tema</h2>
+              <div className="relative">
+                <select
+                  value={selectedTopic}
+                  onChange={(e) => setSelectedTopic(Number(e.target.value))}
+                  className="appearance-none bg-white border border-gray-200 text-gray-700 rounded-xl pl-4 pr-10 py-2.5 text-sm font-medium cursor-pointer hover:border-emerald-400 focus:ring-2 focus:ring-emerald-300 focus:border-emerald-500 focus:outline-none shadow-sm transition-colors"
+                >
+                  {analysis.topics.map((topic) => (
+                    <option key={topic.topic_id} value={topic.topic_id}>
+                      {topic.topic_label}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
             </div>
 
             {selectedTopicData && (
