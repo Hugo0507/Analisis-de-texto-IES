@@ -260,7 +260,13 @@ export const ModeladoDashboard: React.FC = () => {
   const [data, setData] = useState<ModelingDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedEntityType, setSelectedEntityType] = useState<string | null>(null);
   const { filters, setSelectedNer, setSelectedTopicModel, setSelectedBertopic } = useFilter();
+
+  // Reset entity type filter when the NER selection changes
+  useEffect(() => {
+    setSelectedEntityType(null);
+  }, [filters.selectedNerId, filters.selectedDatasetId]);
 
   useEffect(() => {
     if (filters.selectedDatasetId) {
@@ -400,6 +406,9 @@ export const ModeladoDashboard: React.FC = () => {
   const entityTypes = Object.keys(data?.topEntitiesByType || {});
 
   const nerEntities = data?.selectedNer?.entities || [];
+  const filteredNerEntities = selectedEntityType
+    ? nerEntities.filter(e => e.label === selectedEntityType)
+    : nerEntities;
 
   const topicAlgorithm = data?.selectedTopicModeling?.algorithm || '';
   const topicAlgorithmDisplay = data?.selectedTopicModeling?.algorithm_display || '';
@@ -584,8 +593,18 @@ export const ModeladoDashboard: React.FC = () => {
                   <DonutChartViz
                     data={data.entityDistribution}
                     chartId="entity-distribution"
-                    centerValue={data.entityDistribution.reduce((sum, e) => sum + e.value, 0)}
-                    centerLabel="entidades"
+                    centerValue={
+                      selectedEntityType
+                        ? (data.entityDistribution.find(e => e.id === selectedEntityType)?.value ?? 0)
+                        : data.entityDistribution.reduce((sum, e) => sum + e.value, 0)
+                    }
+                    centerLabel={selectedEntityType ?? 'entidades'}
+                    activeSegments={selectedEntityType ? [selectedEntityType] : []}
+                    skipCrossFilter
+                    onSegmentClick={(datum) => {
+                      setSelectedEntityType(prev => prev === datum.id ? null : datum.id);
+                    }}
+                    onClearFilter={() => setSelectedEntityType(null)}
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full text-slate-400 text-sm">
@@ -627,11 +646,15 @@ export const ModeladoDashboard: React.FC = () => {
             </ChartCard>
           </DashboardGrid>
 
-          {/* NER — Top 20 entidades por frecuencia (bar chart) */}
+          {/* NER — Top 20 entidades por frecuencia (filtrado por tipo al hacer click en el donut) */}
           {nerEntities.length > 0 && (
             <ChartCard
               title="Frecuencia de Entidades"
-              subtitle={`Top ${Math.min(nerEntities.length, 20)} entidades más frecuentes`}
+              subtitle={
+                selectedEntityType
+                  ? `Filtrando por tipo: ${selectedEntityType} — ${filteredNerEntities.length} entidades`
+                  : `Top ${Math.min(nerEntities.length, 20)} entidades más frecuentes — haz click en el donut para filtrar`
+              }
               accentColor="purple"
               size="lg"
               icon={
@@ -641,7 +664,27 @@ export const ModeladoDashboard: React.FC = () => {
               }
             >
               <div className="p-2">
-                <EntityFrequencyChart entities={nerEntities} />
+                {/* Active filter badge + clear button */}
+                {selectedEntityType && (
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className={`px-2 py-0.5 text-xs rounded border ${ENTITY_BADGE_COLORS[selectedEntityType] || ENTITY_BADGE_COLORS.default}`}>
+                      {selectedEntityType}
+                    </span>
+                    <span className="text-sm text-slate-300">
+                      {filteredNerEntities.length} entidades encontradas
+                    </span>
+                    <button
+                      onClick={() => setSelectedEntityType(null)}
+                      className="ml-auto flex items-center gap-1 px-2 py-1 text-xs text-slate-300 bg-slate-700/50 hover:bg-slate-600/50 rounded-lg border border-slate-600/50 transition-colors min-h-[32px]"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Ver todos
+                    </button>
+                  </div>
+                )}
+                <EntityFrequencyChart entities={filteredNerEntities} />
               </div>
             </ChartCard>
           )}
