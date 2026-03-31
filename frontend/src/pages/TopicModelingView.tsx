@@ -346,8 +346,13 @@ export const TopicModelingView: React.FC = () => {
                 <div className="bg-white bg-opacity-20 p-4 rounded-lg">
                   <p className="text-sm opacity-90">Perplejidad</p>
                   <p className="text-3xl font-bold mt-2">
-                    {analysis.perplexity_score !== null ? analysis.perplexity_score.toFixed(2) : 'N/A'}
+                    {analysis.perplexity_score !== null
+                      ? analysis.perplexity_score.toFixed(2)
+                      : analysis.is_probabilistic ? 'N/A' : '—'}
                   </p>
+                  {!analysis.is_probabilistic && (
+                    <p className="text-xs opacity-75 mt-1">No aplica ({analysis.algorithm_display})</p>
+                  )}
                 </div>
               </div>
               <div className="mt-4 pt-4 border-t border-white border-opacity-20">
@@ -361,7 +366,7 @@ export const TopicModelingView: React.FC = () => {
             {/* VISUALIZACIÓN 1: DISTRIBUCIÓN DE TÓPICOS (DONUT) */}
             {donutData && (
               <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Distribución de Documentos por Tópico</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Distribución de Documentos por Tema</h2>
                 <div style={{ height: '400px' }}>
                   <Doughnut data={donutData} options={donutOptions} />
                 </div>
@@ -370,7 +375,7 @@ export const TopicModelingView: React.FC = () => {
 
             {/* VISUALIZACIÓN 2: DETALLES DE TÓPICOS (GRID) */}
             <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Todos los Tópicos</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Todos los Temas</h2>
               <div className="grid grid-cols-2 gap-4">
                 {analysis.topics.map((topic, index) => (
                   <div
@@ -408,18 +413,25 @@ export const TopicModelingView: React.FC = () => {
             {barData && selectedTopicData && (
               <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900">Palabras Clave por Tópico</h2>
-                  <select
-                    value={selectedTopic}
-                    onChange={(e) => setSelectedTopic(Number(e.target.value))}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm font-medium"
-                  >
-                    {analysis.topics.map((topic, index) => (
-                      <option key={index} value={index}>
-                        {topic.topic_label}
-                      </option>
-                    ))}
-                  </select>
+                  <h2 className="text-lg font-semibold text-gray-900">Palabras Clave por Tema</h2>
+                  <div className="relative">
+                    <select
+                      value={selectedTopic}
+                      onChange={(e) => setSelectedTopic(Number(e.target.value))}
+                      className="appearance-none bg-white border border-gray-200 text-gray-700 rounded-xl pl-4 pr-10 py-2.5 text-sm font-medium cursor-pointer hover:border-purple-400 focus:ring-2 focus:ring-purple-300 focus:border-purple-500 focus:outline-none shadow-sm transition-colors"
+                    >
+                      {analysis.topics.map((topic, index) => (
+                        <option key={index} value={index}>
+                          {topic.topic_label}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
                 <div style={{ height: '400px' }}>
                   <Bar data={barData} options={barOptions} />
@@ -430,25 +442,32 @@ export const TopicModelingView: React.FC = () => {
             {/* VISUALIZACIÓN 4: TABLA DE DOCUMENTOS POR TÓPICO */}
             <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Documentos por Tópico</h2>
-                <select
-                  value={selectedTopic}
-                  onChange={(e) => setSelectedTopic(Number(e.target.value))}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm font-medium"
-                >
-                  {analysis.topics.map((topic, index) => (
-                    <option key={index} value={index}>
-                      {topic.topic_label}
-                    </option>
-                  ))}
-                </select>
+                <h2 className="text-lg font-semibold text-gray-900">Documentos por Tema</h2>
+                <div className="relative">
+                  <select
+                    value={selectedTopic}
+                    onChange={(e) => setSelectedTopic(Number(e.target.value))}
+                    className="appearance-none bg-white border border-gray-200 text-gray-700 rounded-xl pl-4 pr-10 py-2.5 text-sm font-medium cursor-pointer hover:border-purple-400 focus:ring-2 focus:ring-purple-300 focus:border-purple-500 focus:outline-none shadow-sm transition-colors"
+                  >
+                    {analysis.topics.map((topic, index) => (
+                      <option key={index} value={index}>
+                        {topic.topic_label}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-200">
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Documento</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Tópico Dominante</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Tema Dominante</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Peso</th>
                     </tr>
                   </thead>
