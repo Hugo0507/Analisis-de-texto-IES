@@ -19,6 +19,7 @@ import workspaceService, {
 } from '../../services/workspaceService';
 import dashboardService from '../../services/dashboardService';
 
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Stage = 'configure' | 'upload' | 'processing' | 'results';
@@ -78,34 +79,56 @@ interface ConfigureStageProps {
 }
 
 const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext }) => {
+  // Sección A — modelos
   const [bowOptions, setBowOptions] = useState<AnalysisOption[]>([]);
   const [tfidfOptions, setTfidfOptions] = useState<AnalysisOption[]>([]);
   const [topicOptions, setTopicOptions] = useState<AnalysisOption[]>([]);
+  const [nerOptions, setNerOptions] = useState<AnalysisOption[]>([]);
+  const [bertopicOptions, setBertopicOptions] = useState<AnalysisOption[]>([]);
   const [selectedBow, setSelectedBow] = useState<number | null>(null);
   const [selectedTfidf, setSelectedTfidf] = useState<number | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<number | null>(null);
+  const [selectedNer, setSelectedNer] = useState<number | null>(null);
+  const [selectedBertopic, setSelectedBertopic] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Sección B — stopwords
+  const [corpusStopwords, setCorpusStopwords] = useState<string[]>([]);
+  const [customStopwords, setCustomStopwords] = useState<string[]>([]);
+  const [corpusExpanded, setCorpusExpanded] = useState(false);
+  const [newWord, setNewWord] = useState('');
+  const stopwordImportRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
-        const data = await dashboardService.getVectorizationData(datasetId);
+        const [data, modelingData] = await Promise.all([
+          dashboardService.getVectorizationData(datasetId),
+          dashboardService.getModelingData(datasetId),
+        ]);
+
         const bows = (data.bowAnalyses || [])
           .filter((a) => a.status === 'completed' && a.has_artifact)
           .sort((a, b) => a.name.localeCompare(b.name));
         const tfidfs = (data.tfidfAnalyses || [])
           .filter((a) => a.status === 'completed' && a.has_artifact)
           .sort((a, b) => a.name.localeCompare(b.name));
-
-        const modelingData = await dashboardService.getModelingData(datasetId);
         const topics = (modelingData.topicModelingAnalyses || [])
-          .filter((a) => a.status === 'completed' && a.has_artifact)
+          .filter((a: any) => a.status === 'completed' && a.has_artifact)
+          .sort((a: any, b: any) => a.name.localeCompare(b.name));
+        const ners = (modelingData.nerAnalyses || [])
+          .filter((a) => a.status === 'completed')
+          .sort((a, b) => a.name.localeCompare(b.name));
+        const bertopics = (modelingData.bertopicAnalyses || [])
+          .filter((a) => a.status === 'completed')
           .sort((a, b) => a.name.localeCompare(b.name));
 
         setBowOptions(bows.map((a: any) => ({ id: a.id, name: a.name })));
         setTfidfOptions(tfidfs.map((a: any) => ({ id: a.id, name: a.name })));
         setTopicOptions(topics.map((a: any) => ({ id: a.id, name: `${a.name} (${a.algorithm_display})` })));
+        setNerOptions(ners.map((a: any) => ({ id: a.id, name: `${a.name} (${a.spacy_model_label || a.spacy_model})` })));
+        setBertopicOptions(bertopics.map((a: any) => ({ id: a.id, name: `${a.name} (${a.num_topics_found ?? '?'} tópicos)` })));
 
         if (bows.length > 0) setSelectedBow(bows[0].id);
         if (tfidfs.length > 0) setSelectedTfidf(tfidfs[0].id);
@@ -115,9 +138,47 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext }) =>
       } finally {
         setLoading(false);
       }
+
+      try {
+        const sw = await workspaceService.getCorpusStopwords(datasetId);
+        setCorpusStopwords(sw);
+      } catch {
+        // No crítico — se omite si falla
+      }
     };
     load();
   }, [datasetId]);
+
+  const addCustomStopword = () => {
+    const w = newWord.trim().toLowerCase();
+    if (w && !customStopwords.includes(w) && !corpusStopwords.includes(w)) {
+      setCustomStopwords(prev => [...prev, w].sort());
+    }
+    setNewWord('');
+  };
+
+  const removeCustomStopword = (word: string) => {
+    setCustomStopwords(prev => prev.filter(w => w !== word));
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const content = ev.target?.result as string;
+      const words = content
+        .split('\n')
+        .map(l => l.trim().toLowerCase())
+        .filter(l => l && !l.startsWith('#'));
+      setCustomStopwords(prev => {
+        const combined = new Set([...prev, ...words.filter(w => !corpusStopwords.includes(w))]);
+        return [...combined].sort();
+      });
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
 
   const canContinue = selectedBow != null || selectedTfidf != null || selectedTopic != null;
 
@@ -127,9 +188,10 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext }) =>
     value: number | null;
     onChange: (v: number | null) => void;
     noOptionsMsg: string;
-  }> = ({ label, options, value, onChange, noOptionsMsg }) => (
+    accentColor?: string;
+  }> = ({ label, options, value, onChange, noOptionsMsg, accentColor = 'bg-violet-400' }) => (
     <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
-      <div className="w-2 h-2 rounded-full bg-violet-400 mt-2 shrink-0" />
+      <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${accentColor}`} />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-white mb-1">{label}</p>
         {options.length === 0 ? (
@@ -140,7 +202,7 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext }) =>
             onChange={e => onChange(e.target.value === '' ? null : Number(e.target.value))}
             className="w-full text-xs bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
           >
-            <option value="">(ninguno)</option>
+            <option value="">(ninguno — opcional)</option>
             {options.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
           </select>
         )}
@@ -153,48 +215,189 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext }) =>
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h3 className="text-lg font-semibold text-white mb-1">Selecciona los modelos de referencia</h3>
+        <h3 className="text-lg font-semibold text-white mb-1">Configurar sesión de análisis</h3>
         <p className="text-sm text-slate-400">
-          Los nuevos documentos se analizarán usando los modelos entrenados del corpus.
-          Solo aparecen modelos completados con artefactos guardados.
+          Selecciona los modelos de referencia y personaliza las stopwords antes de subir los documentos.
         </p>
       </div>
 
-      <div className="space-y-3">
-        <SelectRow
-          label="Bolsa de Palabras (BoW)"
-          options={bowOptions}
-          value={selectedBow}
-          onChange={setSelectedBow}
-          noOptionsMsg="No hay análisis BoW completados con artefactos. Ejecuta un análisis BoW primero."
-        />
-        <SelectRow
-          label="TF-IDF"
-          options={tfidfOptions}
-          value={selectedTfidf}
-          onChange={setSelectedTfidf}
-          noOptionsMsg="No hay análisis TF-IDF completados con artefactos. Ejecuta un análisis TF-IDF primero."
-        />
-        <SelectRow
-          label="Modelado de Temas"
-          options={topicOptions}
-          value={selectedTopic}
-          onChange={setSelectedTopic}
-          noOptionsMsg="No hay Modelos de Temas completados con artefactos. Ejecuta un Modelado de Temas primero."
-        />
+      {/* ── Sección A: Modelos ── */}
+      <div>
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+          A — Modelos de referencia
+        </p>
+        <div className="space-y-2">
+          <SelectRow
+            label="Bolsa de Palabras (BoW)"
+            options={bowOptions}
+            value={selectedBow}
+            onChange={setSelectedBow}
+            noOptionsMsg="No hay análisis BoW completados con artefactos."
+          />
+          <SelectRow
+            label="TF-IDF"
+            options={tfidfOptions}
+            value={selectedTfidf}
+            onChange={setSelectedTfidf}
+            noOptionsMsg="No hay análisis TF-IDF completados con artefactos."
+          />
+          <SelectRow
+            label="Modelado de Temas"
+            options={topicOptions}
+            value={selectedTopic}
+            onChange={setSelectedTopic}
+            noOptionsMsg="No hay Modelos de Temas completados con artefactos."
+          />
+          <SelectRow
+            label="NER — Reconocimiento de entidades"
+            options={nerOptions}
+            value={selectedNer}
+            onChange={setSelectedNer}
+            noOptionsMsg="No hay análisis NER completados. Ejecuta uno en el módulo NER primero."
+            accentColor="bg-emerald-400"
+          />
+          <SelectRow
+            label="BERTopic — Similitud temática"
+            options={bertopicOptions}
+            value={selectedBertopic}
+            onChange={setSelectedBertopic}
+            noOptionsMsg="No hay análisis BERTopic completados."
+            accentColor="bg-sky-400"
+          />
+          {selectedBertopic != null && (
+            <p className="text-xs text-slate-500 italic pl-6">
+              La similitud BERTopic usa matching de palabras clave, no inferencia nativa (UMAP/HDBSCAN no se almacenan).
+            </p>
+          )}
+        </div>
+        {!canContinue && (
+          <p className="text-xs text-amber-400 mt-3">
+            Selecciona al menos un modelo (BoW, TF-IDF o Temas) para continuar.
+          </p>
+        )}
+      </div>
+
+      {/* ── Sección B: Stopwords ── */}
+      <div>
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+          B — Stopwords
+        </p>
+
+        {/* Corpus stopwords (read-only) */}
+        <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-700/50 mb-3">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-medium text-slate-400">
+              Corpus ({corpusStopwords.length} palabras — solo lectura)
+            </p>
+            {corpusStopwords.length > 20 && (
+              <button
+                onClick={() => setCorpusExpanded(!corpusExpanded)}
+                className="text-xs text-violet-400 hover:text-violet-300 transition-colors"
+              >
+                {corpusExpanded ? 'Ver menos ↑' : `Ver todas (${corpusStopwords.length}) ↓`}
+              </button>
+            )}
+          </div>
+          {corpusStopwords.length === 0 ? (
+            <p className="text-xs text-slate-600 italic">No se pudieron cargar las stopwords del corpus.</p>
+          ) : (
+            <div className="flex flex-wrap gap-1">
+              {(corpusExpanded ? corpusStopwords : corpusStopwords.slice(0, 20)).map(w => (
+                <span key={w} className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-500 border border-slate-700">
+                  {w}
+                </span>
+              ))}
+              {!corpusExpanded && corpusStopwords.length > 20 && (
+                <span className="text-xs text-slate-600 self-center">
+                  +{corpusStopwords.length - 20} más…
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Custom stopwords editor */}
+        <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-medium text-slate-400">
+              Stopwords propias ({customStopwords.length})
+            </p>
+            <button
+              onClick={() => stopwordImportRef.current?.click()}
+              className="text-xs text-violet-400 hover:text-violet-300 transition-colors flex items-center gap-1"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              Importar TXT
+            </button>
+            <input
+              ref={stopwordImportRef}
+              type="file"
+              accept=".txt,.csv"
+              className="hidden"
+              onChange={handleImport}
+            />
+          </div>
+
+          {customStopwords.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-3">
+              {customStopwords.map(w => (
+                <span
+                  key={w}
+                  className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-violet-900/50 text-violet-200 border border-violet-700/50"
+                >
+                  {w}
+                  <button
+                    onClick={() => removeCustomStopword(w)}
+                    className="text-violet-400 hover:text-red-400 transition-colors leading-none"
+                    aria-label={`Eliminar ${w}`}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newWord}
+              onChange={e => setNewWord(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') { e.preventDefault(); addCustomStopword(); }
+              }}
+              placeholder="Añadir palabra y pulsar Enter…"
+              className="flex-1 text-xs bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+            />
+            <button
+              onClick={addCustomStopword}
+              className="px-3 py-2 rounded-lg bg-violet-700 hover:bg-violet-600 text-white text-xs font-semibold transition-colors"
+            >
+              Añadir
+            </button>
+          </div>
+        </div>
+
+        <p className="text-xs text-slate-600 mt-1.5">
+          {corpusStopwords.length} corpus + {customStopwords.length} propias = {corpusStopwords.length + customStopwords.length} stopwords en total
+        </p>
       </div>
 
       <div className="pt-2">
-        {!canContinue && (
-          <p className="text-xs text-amber-400 mb-3">
-            Selecciona al menos un modelo para continuar.
-          </p>
-        )}
         <button
           disabled={!canContinue}
-          onClick={() => onNext({ bow_id: selectedBow, tfidf_id: selectedTfidf, topic_model_id: selectedTopic })}
+          onClick={() => onNext({
+            bow_id: selectedBow,
+            tfidf_id: selectedTfidf,
+            topic_model_id: selectedTopic,
+            ner_id: selectedNer,
+            bertopic_id: selectedBertopic,
+            custom_stopwords: customStopwords,
+          })}
           className="px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
         >
           Continuar →
@@ -366,9 +569,11 @@ const ProcessingStage: React.FC<ProcessingStageProps> = ({ workspaceId, onDone, 
         if (ws.progress_percentage < 20) setStatusMsg('Extrayendo texto de los PDFs…');
         else if (ws.progress_percentage < 30) setStatusMsg('Validando idioma de los documentos…');
         else if (ws.progress_percentage < 40) setStatusMsg('Preparando inferencia…');
-        else if (ws.progress_percentage < 60) setStatusMsg('Aplicando Bolsa de Palabras…');
-        else if (ws.progress_percentage < 80) setStatusMsg('Calculando TF-IDF…');
-        else if (ws.progress_percentage < 100) setStatusMsg('Asignando temas…');
+        else if (ws.progress_percentage < 55) setStatusMsg('Aplicando Bolsa de Palabras…');
+        else if (ws.progress_percentage < 65) setStatusMsg('Calculando TF-IDF…');
+        else if (ws.progress_percentage < 75) setStatusMsg('Asignando temas…');
+        else if (ws.progress_percentage < 88) setStatusMsg('Extrayendo entidades (NER)…');
+        else if (ws.progress_percentage < 99) setStatusMsg('Calculando similitud BERTopic…');
         else setStatusMsg('Completado.');
 
         if (ws.status === 'completed') {
@@ -706,7 +911,13 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
       )}
 
       {/* Error notices */}
-      {[results.bow?.error, results.tfidf?.error, results.topics?.error].filter(Boolean).map((err, i) => (
+      {[
+        results.bow?.error && `BoW: ${results.bow.error}`,
+        results.tfidf?.error && `TF-IDF: ${results.tfidf.error}`,
+        results.topics?.error && `Temas: ${results.topics.error}`,
+        results.ner?.error && `NER: ${results.ner.error}`,
+        results.bertopic?.error && `BERTopic: ${results.bertopic.error}`,
+      ].filter(Boolean).map((err, i) => (
         <div key={i} className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm">{err}</div>
       ))}
     </div>
