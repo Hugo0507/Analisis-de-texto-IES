@@ -179,7 +179,8 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext, onIm
 
   const addCustomStopword = () => {
     const w = newWord.trim().toLowerCase();
-    if (w && !customStopwords.includes(w)) {
+    if (!w) return;
+    if (!customStopwords.includes(w)) {
       setCustomStopwords(prev => [...prev, w].sort());
     }
     setNewWord('');
@@ -287,6 +288,49 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext, onIm
         </p>
       </div>
 
+      {/* ── Cargar configuración guardada ── */}
+      <div>
+        <button
+          type="button"
+          onClick={() => { setImportError(null); configImportRef.current?.click(); }}
+          disabled={importLoading}
+          className="w-full px-4 py-2.5 min-h-[44px] rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-600/60 text-slate-300 text-sm font-medium transition-colors flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+        >
+          {importLoading ? (
+            <>
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Importando…
+            </>
+          ) : (
+            <>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Cargar configuración guardada (.json)
+            </>
+          )}
+        </button>
+        <input
+          ref={configImportRef}
+          type="file"
+          accept=".json"
+          className="hidden"
+          onChange={handleConfigImport}
+        />
+        {importError && (
+          <p className="mt-2 text-xs text-red-400 flex items-start gap-1.5">
+            <span className="shrink-0 mt-0.5">⚠</span>
+            <span>{importError}</span>
+          </p>
+        )}
+        <p className="mt-1.5 text-xs text-slate-600">
+          Carga un JSON exportado previamente para restaurar modelos, parámetros y stopwords.
+        </p>
+      </div>
+
       {/* ── Sección A: Modelos ── */}
       <div>
         <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
@@ -389,6 +433,7 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext, onIm
               Stopwords propias ({customStopwords.length})
             </p>
             <button
+              type="button"
               onClick={() => stopwordImportRef.current?.click()}
               className="text-xs text-violet-400 hover:text-violet-300 transition-colors flex items-center gap-1"
             >
@@ -438,6 +483,7 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext, onIm
               className="flex-1 text-xs bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
             />
             <button
+              type="button"
               onClick={addCustomStopword}
               className="px-3 py-2 rounded-lg bg-violet-700 hover:bg-violet-600 text-white text-xs font-semibold transition-colors"
             >
@@ -571,54 +617,6 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext, onIm
         </button>
       </div>
 
-      {/* ── Importar configuración guardada ── */}
-      <div className="pt-2">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="flex-1 h-px bg-slate-700/60" />
-          <span className="text-xs text-slate-500">o</span>
-          <div className="flex-1 h-px bg-slate-700/60" />
-        </div>
-
-        <button
-          onClick={() => { setImportError(null); configImportRef.current?.click(); }}
-          disabled={importLoading}
-          className="w-full px-4 py-2.5 min-h-[44px] rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-600/60 text-slate-300 text-sm font-medium transition-colors flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-900"
-        >
-          {importLoading ? (
-            <>
-              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-              Importando…
-            </>
-          ) : (
-            <>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              Cargar configuración guardada (.json)
-            </>
-          )}
-        </button>
-        <input
-          ref={configImportRef}
-          type="file"
-          accept=".json"
-          className="hidden"
-          onChange={handleConfigImport}
-        />
-
-        {importError && (
-          <p className="mt-2 text-xs text-red-400 flex items-start gap-1.5">
-            <span className="shrink-0 mt-0.5">⚠</span>
-            <span>{importError}</span>
-          </p>
-        )}
-        <p className="mt-2 text-xs text-slate-600">
-          Carga un JSON exportado previamente para restaurar modelos, parámetros y stopwords.
-        </p>
-      </div>
     </div>
   );
 };
