@@ -26,7 +26,8 @@ class WorkspaceSerializer(serializers.ModelSerializer):
         model = Workspace
         fields = [
             'id', 'dataset', 'dataset_name',
-            'bow_id', 'tfidf_id', 'topic_model_id',
+            'bow_id', 'tfidf_id', 'topic_model_id', 'ner_id', 'bertopic_id',
+            'custom_stopwords', 'inference_params',
             'status', 'progress_percentage', 'error_message',
             'results', 'documents', 'document_count',
             'created_at', 'updated_at', 'expires_at',
@@ -44,7 +45,11 @@ class WorkspaceSerializer(serializers.ModelSerializer):
 class WorkspaceCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Workspace
-        fields = ['dataset', 'bow_id', 'tfidf_id', 'topic_model_id']
+        fields = [
+            'dataset',
+            'bow_id', 'tfidf_id', 'topic_model_id', 'ner_id', 'bertopic_id',
+            'custom_stopwords', 'inference_params',
+        ]
 
     def create(self, validated_data):
         validated_data['created_by'] = self.context['request'].user

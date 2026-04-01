@@ -30,6 +30,14 @@ from .serializers import (
     WorkspaceUploadSerializer,
 )
 
+# Parámetros por defecto para inferencia
+DEFAULT_INFERENCE_PARAMS = {
+    'num_top_terms': 50,
+    'strip_references': True,
+    'min_word_length': 2,
+    'ner_entity_types': [],   # vacío = heredar del NER de referencia
+}
+
 logger = logging.getLogger(__name__)
 
 # Timeout máximo para el proceso de inferencia (5 minutos)
@@ -235,3 +243,134 @@ def _mark_workspace_error(workspace_id: str, message: str):
             logger.info(f"[WS {workspace_id}] Marcado como error: {message}")
     except Exception as e:
         logger.error(f"[WS {workspace_id}] No se pudo marcar error: {e}")
+
+
+# ── Stopwords ─────────────────────────────────────────────────────────────────
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def workspace_stopwords(request, workspace_id):
+    """
+    Obtener las stopwords activas del workspace.
+
+    Retorna:
+    - corpus_stopwords: palabras del corpus (solo lectura)
+    - custom_stopwords: palabras personalizadas del usuario para esta sesión
+    """
+    try:
+        workspace = Workspace.objects.get(id=workspace_id, created_by=request.user)
+    except Workspace.DoesNotExist:
+        return Response({'error': 'Workspace no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+    from apps.workspace.inference import get_inference_stopwords
+    corpus_stopwords = sorted(get_inference_stopwords(dataset_id=workspace.dataset_id))
+
+    return Response({
+        'corpus_stopwords': corpus_stopwords,
+        'custom_stopwords': workspace.custom_stopwords or [],
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def workspace_stopwords_update(request, workspace_id):
+    """
+    Añadir o quitar stopwords personalizadas.
+
+    Body: { "add": ["word1", "word2"], "remove": ["word3"] }
+    """
+    try:
+        workspace = Workspace.objects.get(id=workspace_id, created_by=request.user)
+    except Workspace.DoesNotExist:
+        return Response({'error': 'Workspace no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if workspace.status == Workspace.STATUS_PROCESSING:
+        return Response(
+            {'error': 'No se puede modificar stopwords mientras la inferencia está en curso.'},
+            status=status.HTTP_409_CONFLICT
+        )
+
+    to_add = request.data.get('add', [])
+    to_remove = request.data.get('remove', [])
+
+    if not isinstance(to_add, list) or not isinstance(to_remove, list):
+        return Response(
+            {'error': 'Los campos "add" y "remove" deben ser listas.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    current = set(workspace.custom_stopwords or [])
+
+    # Normalizar: lowercase, strip, solo palabras no vacías
+    new_words = {w.strip().lower() for w in to_add if isinstance(w, str) and w.strip()}
+    remove_words = {w.strip().lower() for w in to_remove if isinstance(w, str) and w.strip()}
+
+    current = (current | new_words) - remove_words
+    workspace.custom_stopwords = sorted(current)
+    workspace.save(update_fields=['custom_stopwords'])
+
+    return Response({
+        'custom_stopwords': workspace.custom_stopwords,
+        'added': sorted(new_words - remove_words),
+        'removed': sorted(remove_words & (current | remove_words)),
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser])
+def workspace_stopwords_import(request, workspace_id):
+    """
+    Importar stopwords desde un archivo TXT (una palabra por línea).
+
+    Las palabras importadas se añaden a las custom_stopwords existentes.
+    """
+    try:
+        workspace = Workspace.objects.get(id=workspace_id, created_by=request.user)
+    except Workspace.DoesNotExist:
+        return Response({'error': 'Workspace no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if workspace.status == Workspace.STATUS_PROCESSING:
+        return Response(
+            {'error': 'No se puede importar stopwords mientras la inferencia está en curso.'},
+            status=status.HTTP_409_CONFLICT
+        )
+
+    uploaded = request.FILES.get('file')
+    if not uploaded:
+        return Response({'error': 'No se recibió ningún archivo.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    allowed_extensions = {'.txt', '.csv'}
+    import os
+    ext = os.path.splitext(uploaded.name)[1].lower()
+    if ext not in allowed_extensions:
+        return Response(
+            {'error': f'Solo se aceptan archivos .txt o .csv. Recibido: {uploaded.name}'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        content = uploaded.read().decode('utf-8', errors='replace')
+    except Exception:
+        return Response({'error': 'No se pudo leer el archivo.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Parsear: una palabra por línea (ignorar líneas vacías y comentarios #)
+    imported = set()
+    for line in content.splitlines():
+        word = line.strip().lower()
+        if word and not word.startswith('#'):
+            imported.add(word)
+
+    if not imported:
+        return Response({'error': 'El archivo no contiene palabras válidas.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    current = set(workspace.custom_stopwords or [])
+    current |= imported
+    workspace.custom_stopwords = sorted(current)
+    workspace.save(update_fields=['custom_stopwords'])
+
+    return Response({
+        'custom_stopwords': workspace.custom_stopwords,
+        'imported_count': len(imported),
+        'imported_words': sorted(imported),
+    })

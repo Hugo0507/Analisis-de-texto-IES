@@ -50,6 +50,22 @@ class Workspace(models.Model):
     bow_id = models.IntegerField(null=True, blank=True, verbose_name='BoW de referencia')
     tfidf_id = models.IntegerField(null=True, blank=True, verbose_name='TF-IDF de referencia')
     topic_model_id = models.IntegerField(null=True, blank=True, verbose_name='Topic Model de referencia')
+    ner_id = models.IntegerField(null=True, blank=True, verbose_name='NER de referencia')
+    bertopic_id = models.IntegerField(null=True, blank=True, verbose_name='BERTopic de referencia')
+
+    # Configuración de preprocesamiento por sesión
+    custom_stopwords = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Stopwords personalizadas',
+        help_text='Lista de palabras adicionales a excluir durante el preprocesamiento'
+    )
+    inference_params = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Parámetros de inferencia',
+        help_text='Parámetros configurables: num_top_terms, strip_references, min_word_length, ner_entity_types'
+    )
 
     status = models.CharField(
         max_length=20,
