@@ -16,6 +16,7 @@ import { useFilter } from '../../contexts/FilterContext';
 import workspaceService, {
   Workspace,
   CreateWorkspacePayload,
+  ImportConfigResult,
 } from '../../services/workspaceService';
 import dashboardService from '../../services/dashboardService';
 
@@ -77,9 +78,10 @@ const StageIndicator: React.FC<{ current: Stage }> = ({ current }) => {
 interface ConfigureStageProps {
   datasetId: number;
   onNext: (payload: Omit<CreateWorkspacePayload, 'dataset'>) => void;
+  onImport: (result: ImportConfigResult & { workspace: Workspace }) => void;
 }
 
-const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext }) => {
+const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext, onImport }) => {
   // Sección A — modelos
   const [bowOptions, setBowOptions] = useState<AnalysisOption[]>([]);
   const [tfidfOptions, setTfidfOptions] = useState<AnalysisOption[]>([]);
@@ -99,6 +101,11 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext }) =>
   const [corpusExpanded, setCorpusExpanded] = useState(false);
   const [newWord, setNewWord] = useState('');
   const stopwordImportRef = useRef<HTMLInputElement>(null);
+
+  // Import config
+  const configImportRef = useRef<HTMLInputElement>(null);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importError, setImportError]     = useState<string | null>(null);
 
   // Sección C — parámetros de inferencia
   const ALL_NER_TYPES = ['PERSON', 'ORG', 'GPE', 'DATE', 'LOC', 'FAC', 'NORP', 'PRODUCT', 'EVENT'];
@@ -199,6 +206,42 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext }) =>
     };
     reader.readAsText(file);
     e.target.value = '';
+  };
+
+  const handleConfigImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setImportError(null);
+
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      let parsed: Record<string, unknown>;
+      try {
+        parsed = JSON.parse(ev.target?.result as string);
+      } catch {
+        setImportError('El archivo no es un JSON válido.');
+        return;
+      }
+      if (!parsed.schema_version || !parsed.models) {
+        setImportError('El archivo no parece ser una configuración exportada del Laboratorio.');
+        return;
+      }
+
+      setImportLoading(true);
+      try {
+        const result = await workspaceService.importConfig(datasetId, parsed);
+        const workspace = await workspaceService.getWorkspace(result.workspace_id);
+        onImport({ ...result, workspace });
+      } catch (err: any) {
+        setImportError(
+          err?.response?.data?.error || err?.message || 'Error al importar la configuración.'
+        );
+      } finally {
+        setImportLoading(false);
+      }
+    };
+    reader.readAsText(file);
   };
 
   const canContinue = selectedBow != null || selectedTfidf != null || selectedTopic != null;
@@ -526,6 +569,55 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext }) =>
         >
           Continuar →
         </button>
+      </div>
+
+      {/* ── Importar configuración guardada ── */}
+      <div className="pt-2">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="flex-1 h-px bg-slate-700/60" />
+          <span className="text-xs text-slate-500">o</span>
+          <div className="flex-1 h-px bg-slate-700/60" />
+        </div>
+
+        <button
+          onClick={() => { setImportError(null); configImportRef.current?.click(); }}
+          disabled={importLoading}
+          className="w-full px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-600/60 text-slate-300 text-sm font-medium transition-colors flex items-center justify-center gap-2"
+        >
+          {importLoading ? (
+            <>
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Importando…
+            </>
+          ) : (
+            <>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Cargar configuración guardada (.json)
+            </>
+          )}
+        </button>
+        <input
+          ref={configImportRef}
+          type="file"
+          accept=".json"
+          className="hidden"
+          onChange={handleConfigImport}
+        />
+
+        {importError && (
+          <p className="mt-2 text-xs text-red-400 flex items-start gap-1.5">
+            <span className="shrink-0 mt-0.5">⚠</span>
+            <span>{importError}</span>
+          </p>
+        )}
+        <p className="mt-2 text-xs text-slate-600">
+          Carga un JSON exportado previamente para restaurar modelos, parámetros y stopwords.
+        </p>
       </div>
     </div>
   );
@@ -1244,11 +1336,101 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
+// ── Import Decision Modal ─────────────────────────────────────────────────────
+
+interface ImportDecisionProps {
+  result: ImportConfigResult & { workspace: Workspace };
+  onViewResults: () => void;
+  onRerun: () => void;
+  onCancel: () => void;
+}
+
+const ImportDecisionModal: React.FC<ImportDecisionProps> = ({
+  result,
+  onViewResults,
+  onRerun,
+  onCancel,
+}) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div className="w-full max-w-md bg-slate-900 border border-slate-700/60 rounded-2xl p-6 shadow-2xl space-y-5">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-base font-semibold text-white">Configuración importada</h3>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Se creó un nuevo workspace con la configuración guardada.
+          </p>
+        </div>
+        <button
+          onClick={onCancel}
+          className="text-slate-500 hover:text-slate-300 transition-colors text-lg leading-none shrink-0"
+          aria-label="Cerrar"
+        >
+          ×
+        </button>
+      </div>
+
+      {/* Warnings */}
+      {result.warnings.length > 0 && (
+        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 space-y-1.5">
+          <p className="text-xs font-semibold text-amber-300">
+            {result.warnings.length} modelo{result.warnings.length !== 1 ? 's' : ''} no encontrado{result.warnings.length !== 1 ? 's' : ''}
+          </p>
+          {result.warnings.map((w, i) => (
+            <p key={i} className="text-xs text-amber-200/80 flex items-start gap-1.5">
+              <span className="shrink-0 mt-0.5">·</span>
+              <span>{w}</span>
+            </p>
+          ))}
+          <p className="text-xs text-slate-500 pt-1">
+            Los modelos disponibles se mantienen; los faltantes se omitirán.
+          </p>
+        </div>
+      )}
+
+      {/* Sin warnings */}
+      {result.warnings.length === 0 && (
+        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25">
+          <p className="text-xs text-emerald-300">Todos los modelos del config están disponibles.</p>
+        </div>
+      )}
+
+      {/* Opciones */}
+      <div className="space-y-2">
+        {result.has_results && (
+          <button
+            onClick={onViewResults}
+            className="w-full px-4 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold transition-colors text-left"
+          >
+            <span className="block">Ver resultados anteriores</span>
+            <span className="block text-xs text-violet-300 font-normal mt-0.5">
+              Muestra los resultados guardados en el config, sin re-ejecutar
+            </span>
+          </button>
+        )}
+        <button
+          onClick={onRerun}
+          className="w-full px-4 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold transition-colors text-left"
+        >
+          <span className="block">{result.has_results ? 'Re-ejecutar con esta configuración' : 'Continuar → subir documentos'}</span>
+          <span className="block text-xs text-slate-400 font-normal mt-0.5">
+            Sube nuevos PDFs y ejecuta el análisis con los modelos del config
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+
+// ── Main Component ────────────────────────────────────────────────────────────
+
 export const LaboratorioDashboard: React.FC = () => {
   const { filters } = useFilter();
   const [stage, setStage] = useState<Stage>('configure');
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [importDecision, setImportDecision] = useState<(ImportConfigResult & { workspace: Workspace }) | null>(null);
 
   const datasetId = filters.selectedDatasetId;
 
@@ -1263,6 +1445,24 @@ export const LaboratorioDashboard: React.FC = () => {
       setError(err?.response?.data?.detail || err?.message || 'Error al crear el workspace.');
     }
   }, [datasetId]);
+
+  const handleImport = useCallback((result: ImportConfigResult & { workspace: Workspace }) => {
+    setImportDecision(result);
+  }, []);
+
+  const handleImportViewResults = useCallback(() => {
+    if (!importDecision) return;
+    setWorkspace(importDecision.workspace);
+    setStage('results');
+    setImportDecision(null);
+  }, [importDecision]);
+
+  const handleImportRerun = useCallback(() => {
+    if (!importDecision) return;
+    setWorkspace(importDecision.workspace);
+    setStage('upload');
+    setImportDecision(null);
+  }, [importDecision]);
 
   const handleUploadDone = useCallback(() => {
     setStage('processing');
@@ -1292,6 +1492,16 @@ export const LaboratorioDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Import decision modal */}
+      {importDecision && (
+        <ImportDecisionModal
+          result={importDecision}
+          onViewResults={handleImportViewResults}
+          onRerun={handleImportRerun}
+          onCancel={() => setImportDecision(null)}
+        />
+      )}
+
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold text-white">Laboratorio</h2>
@@ -1315,7 +1525,7 @@ export const LaboratorioDashboard: React.FC = () => {
       {/* Stage content */}
       <div className="p-6 rounded-2xl bg-slate-800/30 border border-slate-700/50">
         {stage === 'configure' && (
-          <ConfigureStage datasetId={datasetId} onNext={handleConfigure} />
+          <ConfigureStage datasetId={datasetId} onNext={handleConfigure} onImport={handleImport} />
         )}
         {stage === 'upload' && workspace && (
           <UploadStage workspaceId={workspace.id} onNext={handleUploadDone} onBack={handleReset} />

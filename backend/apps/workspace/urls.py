@@ -7,6 +7,7 @@ from . import views
 
 urlpatterns = [
     path('workspace/', views.workspace_list, name='workspace-list'),
+    path('workspace/import/', views.workspace_import_config, name='workspace-import-config'),
     path('workspace/corpus-stopwords/', views.workspace_corpus_stopwords, name='workspace-corpus-stopwords'),
     path('workspace/<uuid:workspace_id>/', views.workspace_detail, name='workspace-detail'),
     path('workspace/<uuid:workspace_id>/upload/', views.workspace_upload, name='workspace-upload'),
