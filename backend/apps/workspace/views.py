@@ -420,7 +420,7 @@ def workspace_import_config(request):
         warnings      (list) — Mensajes por modelos que ya no existen en DB.
     """
     dataset_id = request.data.get('dataset_id')
-    config     = request.data.get('config')
+    config = request.data.get('config')
 
     if not dataset_id:
         return Response({'error': 'dataset_id es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -439,20 +439,20 @@ def workspace_import_config(request):
 
     warnings = []
     resolved = {
-        'bow_id':         None,
-        'tfidf_id':       None,
+        'bow_id': None,
+        'tfidf_id': None,
         'topic_model_id': None,
-        'ner_id':         None,
-        'bertopic_id':    None,
+        'ner_id': None,
+        'bertopic_id': None,
     }
 
     # Validar existencia de cada modelo en DB
     _MODEL_CHECKS = [
-        ('bow',         'bow_id',         'apps.bag_of_words.models',  'BagOfWords',      'BoW'),
-        ('tfidf',       'tfidf_id',       'apps.tfidf_analysis.models','TfIdfAnalysis',   'TF-IDF'),
-        ('topic_model', 'topic_model_id', 'apps.topic_modeling.models','TopicModeling',   'Topic Model'),
-        ('ner',         'ner_id',         'apps.ner_analysis.models',  'NerAnalysis',     'NER'),
-        ('bertopic',    'bertopic_id',    'apps.bertopic.models',      'BERTopicAnalysis','BERTopic'),
+        ('bow', 'bow_id', 'apps.bag_of_words.models', 'BagOfWords', 'BoW'),
+        ('tfidf', 'tfidf_id', 'apps.tfidf_analysis.models', 'TfIdfAnalysis', 'TF-IDF'),
+        ('topic_model', 'topic_model_id', 'apps.topic_modeling.models', 'TopicModeling', 'Topic Model'),
+        ('ner', 'ner_id', 'apps.ner_analysis.models', 'NerAnalysis', 'NER'),
+        ('bertopic', 'bertopic_id', 'apps.bertopic.models', 'BERTopicAnalysis', 'BERTopic'),
     ]
 
     for cfg_key, field, module_path, class_name, label in _MODEL_CHECKS:
@@ -472,20 +472,20 @@ def workspace_import_config(request):
 
     # Determinar si el config trae resultados previos
     results_data = config.get('results') or {}
-    has_results  = bool(results_data)
+    has_results = bool(results_data)
 
     # Crear workspace
     ws_kwargs = {
-        'created_by':      request.user,
-        'dataset':         dataset,
+        'created_by': request.user,
+        'dataset': dataset,
         'custom_stopwords': config.get('custom_stopwords') or [],
         'inference_params': config.get('inference_params') or {},
         **resolved,
     }
 
     if has_results:
-        ws_kwargs['results']             = results_data
-        ws_kwargs['status']              = Workspace.STATUS_COMPLETED
+        ws_kwargs['results'] = results_data
+        ws_kwargs['status'] = Workspace.STATUS_COMPLETED
         ws_kwargs['progress_percentage'] = 100
 
     workspace = Workspace.objects.create(**ws_kwargs)
@@ -497,8 +497,8 @@ def workspace_import_config(request):
 
     return Response({
         'workspace_id': str(workspace.id),
-        'has_results':  has_results,
-        'warnings':     warnings,
+        'has_results': has_results,
+        'warnings': warnings,
     }, status=status.HTTP_201_CREATED)
 
 
@@ -602,7 +602,7 @@ def _build_excel_bytes(workspace) -> bytes:
 
     HEADER_FONT = Font(bold=True, color='FFFFFF')
     HEADER_FILL = PatternFill(fill_type='solid', fgColor='334155')
-    TITLE_FONT  = Font(bold=True, size=11)
+    TITLE_FONT = Font(bold=True, size=11)
 
     def _hdr(sheet):
         """Aplica estilo de cabecera a la última fila escrita."""
@@ -790,11 +790,11 @@ def _build_excel_bytes(workspace) -> bytes:
 def _build_config_dict(workspace) -> dict:
     """Construye el diccionario de configuración exportable."""
     results = workspace.results or {}
-    bow_r    = results.get('bow') or {}
-    tfidf_r  = results.get('tfidf') or {}
+    bow_r = results.get('bow') or {}
+    tfidf_r = results.get('tfidf') or {}
     topics_r = results.get('topics') or {}
-    ner_r    = results.get('ner') or {}
-    bert_r   = results.get('bertopic') or {}
+    ner_r = results.get('ner') or {}
+    bert_r = results.get('bertopic') or {}
 
     def _model_entry(ws_id, name_key, result_dict):
         if ws_id is None:
@@ -807,11 +807,11 @@ def _build_config_dict(workspace) -> dict:
         'workspace_id': str(workspace.id),
         'dataset_name': workspace.dataset.name,
         'models': {
-            'bow':         _model_entry(workspace.bow_id,          'reference_bow_name',         bow_r),
-            'tfidf':       _model_entry(workspace.tfidf_id,        'reference_tfidf_name',       tfidf_r),
-            'topic_model': _model_entry(workspace.topic_model_id,  'reference_topic_model_name', topics_r),
-            'ner':         _model_entry(workspace.ner_id,          'reference_ner_name',         ner_r),
-            'bertopic':    _model_entry(workspace.bertopic_id,     'reference_bertopic_name',    bert_r),
+            'bow': _model_entry(workspace.bow_id, 'reference_bow_name', bow_r),
+            'tfidf': _model_entry(workspace.tfidf_id, 'reference_tfidf_name', tfidf_r),
+            'topic_model': _model_entry(workspace.topic_model_id, 'reference_topic_model_name', topics_r),
+            'ner': _model_entry(workspace.ner_id, 'reference_ner_name', ner_r),
+            'bertopic': _model_entry(workspace.bertopic_id, 'reference_bertopic_name', bert_r),
         },
         'custom_stopwords': workspace.custom_stopwords or [],
         'inference_params': workspace.inference_params or {},
