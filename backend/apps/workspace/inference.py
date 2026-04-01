@@ -115,6 +115,7 @@ def infer_bow(
     texts: List[str],
     bow_id: int,
     preloaded_vectorizer: Optional[CountVectorizer] = None,
+    num_top_terms: int = 50,
 ) -> Dict[str, Any]:
     """
     Inferencia BoW usando numpy puro (sin sklearn CountVectorizer.transform).
@@ -147,7 +148,7 @@ def infer_bow(
             idx_to_term[idx] = term
 
     term_scores = matrix.sum(axis=0)
-    top_indices = term_scores.argsort()[-50:][::-1]
+    top_indices = term_scores.argsort()[-num_top_terms:][::-1]
     top_terms = [
         {'term': idx_to_term[i], 'score': float(term_scores[i]), 'rank': rank + 1}
         for rank, i in enumerate(top_indices)
@@ -179,6 +180,7 @@ def infer_tfidf(
     texts: List[str],
     tfidf_id: int,
     preloaded_vectorizer: Optional[TfidfVectorizer] = None,
+    num_top_terms: int = 50,
 ) -> Dict[str, Any]:
     """
     Inferencia TF-IDF usando numpy puro (sin TfidfVectorizer.transform).
@@ -215,7 +217,7 @@ def infer_tfidf(
     tfidf_matrix = tfidf_matrix / row_norms
 
     tfidf_scores = tfidf_matrix.sum(axis=0)
-    top_indices = tfidf_scores.argsort()[-50:][::-1]
+    top_indices = tfidf_scores.argsort()[-num_top_terms:][::-1]
     top_terms = [
         {'term': terms[i], 'score': round(float(tfidf_scores[i]), 4), 'rank': rank + 1}
         for rank, i in enumerate(top_indices)
@@ -383,19 +385,21 @@ def preprocess_for_inference(
     lemmatize: bool = True,
     language: str = 'en',
     nlp=None,
+    strip_references: bool = True,
+    min_word_length: int = 2,
 ) -> str:
     """
     Preprocesamiento completo para texto extraído de PDFs nuevos.
 
     Replica el pipeline del corpus:
-      1. Eliminar sección de referencias/bibliografía
+      1. Eliminar sección de referencias/bibliografía (si strip_references=True)
       2. Eliminar URLs, emails, DOIs, ISBNs, citas en brackets
       3. Eliminar números de páginas y citas parentéticas
       4. Convertir a minúsculas
       5. Eliminar caracteres no alfabéticos
       6. Lematizar con spaCy (si disponible)
       7. Aplicar stopwords (EXTRA + NLTK + custom del dataset)
-      8. Eliminar palabras de 1 carácter
+      8. Eliminar palabras más cortas que min_word_length
 
     Args:
         text: Texto crudo extraído del PDF
@@ -404,12 +408,15 @@ def preprocess_for_inference(
         language: Código de idioma para spaCy ('en' o 'es')
         nlp: Instancia de spaCy ya cargada. Pasar para evitar recargar el modelo
              por cada documento. Si None, carga internamente (fallback).
+        strip_references: Si eliminar sección de referencias/bibliografía al final.
+        min_word_length: Longitud mínima de palabras a conservar (default 2).
     """
     if not text or not text.strip():
         return ''
 
-    # 1. Truncar sección de referencias
-    text = _strip_references_section(text)
+    # 1. Truncar sección de referencias (condicional)
+    if strip_references:
+        text = _strip_references_section(text)
 
     # 2–3. Eliminar URLs, emails, DOIs, citas, etc.
     text = _RE_URL.sub(' ', text)
@@ -437,11 +444,222 @@ def preprocess_for_inference(
         words = [w for w in words if w not in stopwords]
         text = ' '.join(words)
 
-    # 8. Eliminar palabras de 1 carácter y normalizar espacios
-    text = _RE_SHORT_WORDS.sub(' ', text)
+    # 8. Eliminar palabras más cortas que min_word_length y normalizar espacios
+    if min_word_length > 1:
+        re_short = re.compile(r'\b[a-zA-Z]{1,' + str(min_word_length - 1) + r'}\b')
+        text = re_short.sub(' ', text)
     text = _RE_MULTI_SPACE.sub(' ', text).strip()
 
     return text
+
+
+def infer_ner(
+    texts: List[str],
+    ner_id: int,
+    entity_types: Optional[List[str]] = None,
+) -> Dict[str, Any]:
+    """
+    Inferencia NER usando spaCy con el modelo de referencia del corpus.
+
+    Carga el modelo spaCy pre-entrenado (sin artefactos joblib),
+    extrae entidades nombradas y filtra por tipo según la configuración.
+
+    Args:
+        texts: Textos extraídos de PDFs (pueden ser raw, no preprocesados).
+        ner_id: ID del análisis NER de referencia (para obtener spacy_model y entity types).
+        entity_types: Tipos de entidades a extraer. Si vacío, hereda del NER de referencia.
+
+    Returns:
+        entity_distribution, top_entities_by_type, document_entities,
+        total_entities_found, unique_entities_count.
+    """
+    try:
+        import spacy
+    except ImportError:
+        raise RuntimeError("spaCy no está instalado. Instala con: pip install spacy")
+
+    from apps.ner_analysis.models import NerAnalysis
+
+    ner = NerAnalysis.objects.get(id=ner_id)
+    model_name = ner.spacy_model or 'en_core_web_sm'
+
+    # Tipos de entidades: parámetro > heredar del NER de referencia
+    active_types: Set[str] = set()
+    if entity_types:
+        active_types = set(entity_types)
+    elif ner.selected_entities:
+        active_types = set(ner.selected_entities)
+
+    try:
+        nlp = spacy.load(model_name)
+    except Exception as e:
+        raise RuntimeError(f"No se pudo cargar modelo spaCy '{model_name}': {e}")
+
+    entity_counts: Dict[str, Dict[str, int]] = {}  # tipo -> {texto: count}
+    document_entities = []
+    total = 0
+
+    for idx, text in enumerate(texts):
+        if not text or not text.strip():
+            document_entities.append({'document_index': idx, 'entities': []})
+            continue
+
+        chunk = text[:100_000]  # limitar para evitar OOM
+        doc_nlp = nlp(chunk)
+
+        doc_ents = []
+        for ent in doc_nlp.ents:
+            if active_types and ent.label_ not in active_types:
+                continue
+            ent_text = ent.text.strip()
+            if not ent_text:
+                continue
+            ent_type = ent.label_
+
+            if ent_type not in entity_counts:
+                entity_counts[ent_type] = {}
+            entity_counts[ent_type][ent_text] = entity_counts[ent_type].get(ent_text, 0) + 1
+            doc_ents.append({'text': ent_text, 'type': ent_type})
+            total += 1
+
+        document_entities.append({'document_index': idx, 'entities': doc_ents})
+
+    # Top entidades por tipo (max 20)
+    top_entities_by_type: Dict[str, List[Dict]] = {}
+    for ent_type, counts in entity_counts.items():
+        sorted_ents = sorted(counts.items(), key=lambda x: x[1], reverse=True)
+        top_entities_by_type[ent_type] = [
+            {'text': t, 'count': c}
+            for t, c in sorted_ents[:20]
+        ]
+
+    # Distribución por tipo
+    entity_distribution = []
+    for ent_type, counts in entity_counts.items():
+        type_total = sum(counts.values())
+        entity_distribution.append({
+            'type': ent_type,
+            'count': type_total,
+            'unique_entities': len(counts),
+            'percentage': round(type_total / total * 100, 1) if total > 0 else 0.0,
+        })
+    entity_distribution.sort(key=lambda x: x['count'], reverse=True)
+
+    unique_total = sum(len(counts) for counts in entity_counts.values())
+
+    return {
+        'entity_distribution': entity_distribution,
+        'top_entities_by_type': top_entities_by_type,
+        'document_entities': document_entities,
+        'total_entities_found': total,
+        'unique_entities_count': unique_total,
+        'entity_types_used': sorted(active_types) if active_types else [],
+        'reference_ner_id': ner_id,
+        'reference_ner_name': ner.name,
+        'spacy_model': model_name,
+    }
+
+
+def infer_bertopic_similarity(
+    texts: List[str],
+    bertopic_id: int,
+) -> Dict[str, Any]:
+    """
+    Inferencia BERTopic por similitud de palabras clave (no UMAP/HDBSCAN nativo).
+
+    Los artefactos UMAP/HDBSCAN no se almacenan en DB, por lo que la asignación
+    de tópicos se realiza por solapamiento de tokens con las palabras representativas
+    de cada tópico entrenado en el corpus.
+
+    Args:
+        texts: Textos preprocesados.
+        bertopic_id: ID del análisis BERTopic de referencia.
+
+    Returns:
+        document_assignments, topic_distribution, method="keyword_similarity".
+    """
+    from apps.bertopic.models import BERTopicAnalysis
+
+    bt = BERTopicAnalysis.objects.get(id=bertopic_id)
+    topics = bt.topics or []
+
+    if not topics:
+        raise ValueError(f"BERTopic #{bertopic_id} no tiene tópicos disponibles.")
+
+    # Construir conjuntos de palabras por tópico (excluir outlier -1)
+    topic_wordsets: Dict[int, Set[str]] = {}
+    for topic in topics:
+        tid = topic.get('topic_id', -1)
+        if tid == -1:
+            continue
+        words = {w['word'].lower() for w in topic.get('words', []) if w.get('word')}
+        if words:
+            topic_wordsets[tid] = words
+
+    if not topic_wordsets:
+        raise ValueError(f"BERTopic #{bertopic_id} no tiene tópicos válidos (solo outliers).")
+
+    topic_labels = {
+        t['topic_id']: t.get('topic_label', f'Tópico {t["topic_id"]}')
+        for t in topics
+    }
+
+    document_assignments = []
+    topic_doc_counts: Dict[int, int] = {}
+
+    for idx, text in enumerate(texts):
+        tokens = set(text.lower().split()) if text else set()
+
+        scores: Dict[int, float] = {}
+        for tid, words in topic_wordsets.items():
+            overlap = len(tokens & words)
+            scores[tid] = overlap / len(words) if words else 0.0
+
+        if scores and max(scores.values()) > 0:
+            dominant = max(scores, key=lambda k: scores[k])
+        else:
+            dominant = -1  # outlier si no hay solapamiento
+
+        topic_doc_counts[dominant] = topic_doc_counts.get(dominant, 0) + 1
+
+        sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:3]
+        document_assignments.append({
+            'document_index': idx,
+            'dominant_topic': dominant,
+            'dominant_topic_label': topic_labels.get(dominant, f'Tópico {dominant}'),
+            'similarity_score': round(scores.get(dominant, 0.0), 4),
+            'top_topics': [
+                {
+                    'topic_id': tid,
+                    'topic_label': topic_labels.get(tid, f'Tópico {tid}'),
+                    'similarity_score': round(score, 4),
+                }
+                for tid, score in sorted_scores
+            ],
+        })
+
+    n_docs = len(texts)
+    topic_distribution = []
+    for tid, count in sorted(topic_doc_counts.items()):
+        topic_distribution.append({
+            'topic_id': tid,
+            'topic_label': topic_labels.get(tid, f'Tópico {tid}'),
+            'document_count': count,
+            'percentage': round(count / n_docs * 100, 1) if n_docs > 0 else 0.0,
+        })
+
+    return {
+        'document_assignments': document_assignments,
+        'topic_distribution': topic_distribution,
+        'total_documents': n_docs,
+        'method': 'keyword_similarity',
+        'method_note': (
+            'Asignación por solapamiento de tokens con palabras representativas '
+            'de cada tópico. No utiliza UMAP/HDBSCAN nativo.'
+        ),
+        'reference_bertopic_id': bertopic_id,
+        'reference_bertopic_name': bt.name,
+    }
 
 
 def load_spacy_model(language: str = 'en'):
