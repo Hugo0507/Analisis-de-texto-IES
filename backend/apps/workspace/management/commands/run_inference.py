@@ -14,6 +14,14 @@ from apps.workspace.models import Workspace, WorkspaceDocument
 
 logger = logging.getLogger(__name__)
 
+# Parámetros de inferencia por defecto (coinciden con DEFAULT_INFERENCE_PARAMS en views.py)
+_DEFAULT_PARAMS = {
+    'num_top_terms': 50,
+    'strip_references': True,
+    'min_word_length': 2,
+    'ner_entity_types': [],
+}
+
 
 class Command(BaseCommand):
     help = 'Ejecutar inferencia de workspace en proceso aislado'
@@ -39,18 +47,30 @@ class Command(BaseCommand):
 
     def _run(self, workspace_id: str):
         from apps.workspace.inference import (
-            infer_bow, infer_tfidf, infer_topics,
-            preprocess_for_inference, get_inference_stopwords,
-            preload_inference_artifacts,
+            infer_bow, infer_tfidf, infer_topics, infer_ner,
+            infer_bertopic_similarity, preprocess_for_inference,
+            get_inference_stopwords, preload_inference_artifacts,
         )
 
         workspace = Workspace.objects.prefetch_related('documents').get(id=workspace_id)
         docs = workspace.documents.all()
         total_docs = docs.count()
 
-        # Obtener stopwords y idioma del corpus
+        # Leer parámetros de inferencia con fallback a defaults
+        raw_params = workspace.inference_params or {}
+        params = {**_DEFAULT_PARAMS, **raw_params}
+        num_top_terms: int = int(params.get('num_top_terms', 50))
+        strip_references: bool = bool(params.get('strip_references', True))
+        min_word_length: int = int(params.get('min_word_length', 2))
+        ner_entity_types: list = params.get('ner_entity_types', [])
+
+        # Obtener stopwords del corpus y fusionar con custom_stopwords del workspace
         dataset_id = workspace.dataset_id
         stopwords = get_inference_stopwords(dataset_id=dataset_id)
+        custom_sw = workspace.custom_stopwords or []
+        if custom_sw:
+            stopwords = stopwords | {w.strip().lower() for w in custom_sw if w.strip()}
+            logger.info(f"[WS {workspace_id}] +{len(custom_sw)} custom stopwords fusionadas")
 
         from apps.data_preparation.models import DataPreparation
         prep = DataPreparation.objects.filter(
@@ -61,11 +81,12 @@ class Command(BaseCommand):
 
         logger.info(
             f"[WS {workspace_id}] Preprocesamiento con {len(stopwords)} stopwords, "
-            f"idioma='{corpus_language}', lematización=False (desactivada para rendimiento en producción)"
+            f"idioma='{corpus_language}', strip_references={strip_references}, "
+            f"min_word_length={min_word_length}, num_top_terms={num_top_terms}, "
+            f"lematización=False"
         )
 
-        # ── PASO 0: Pre-cargar artefactos ML ────────────────────────────
-        # Carga todos los artefactos sklearn/joblib antes del procesamiento.
+        # ── PASO 0: Pre-cargar artefactos ML (3%) ───────────────────────
         logger.info(f"[WS {workspace_id}] Pre-cargando artefactos ML...")
         workspace.progress_percentage = 3
         workspace.save()
@@ -102,6 +123,8 @@ class Command(BaseCommand):
                     stopwords=stopwords,
                     lemmatize=False,
                     language=corpus_language,
+                    strip_references=strip_references,
+                    min_word_length=min_word_length,
                 )
                 clean_token_count = len(preprocessed.split()) if preprocessed else 0
 
@@ -122,7 +145,6 @@ class Command(BaseCommand):
                 preprocessing_stats['documents_failed'] += 1
                 logger.warning(f"[WS {workspace_id}] Error en doc {doc.id}: {e}")
 
-            # Actualizar progreso por documento: de 5% a 20%
             progress = 5 + int((i + 1) / total_docs * 15) if total_docs > 0 else 20
             workspace.progress_percentage = progress
             workspace.save()
@@ -136,9 +158,10 @@ class Command(BaseCommand):
         workspace.progress_percentage = 30
         workspace.save()
 
-        # Verificar si quedan textos válidos
         valid_docs = workspace.documents.filter(status=WorkspaceDocument.STATUS_READY)
         valid_texts = [d.preprocessed_text for d in valid_docs if d.preprocessed_text]
+        # Textos raw (sin preprocesar) para NER — preservar entidades originales
+        valid_raw_texts = [d.extracted_text for d in valid_docs if d.extracted_text]
 
         if not valid_texts:
             raise ValueError(
@@ -149,39 +172,49 @@ class Command(BaseCommand):
         workspace.progress_percentage = 40
         workspace.save()
 
-        # ── PASO 3: Inferencia BoW (40–60%) ──────────────────────────
+        # ── PASO 3: Inferencia BoW (40–55%) ──────────────────────────
         results = {}
 
         if workspace.bow_id:
             logger.info(f"[WS {workspace_id}] Inferencia BoW con modelo {workspace.bow_id}...")
             try:
-                results['bow'] = infer_bow(valid_texts, workspace.bow_id)
+                results['bow'] = infer_bow(
+                    valid_texts, workspace.bow_id,
+                    num_top_terms=num_top_terms,
+                )
             except Exception as e:
                 logger.warning(f"[WS {workspace_id}] Error inferencia BoW: {e}")
                 results['bow'] = {'error': str(e)}
-            workspace.progress_percentage = 60
+            workspace.progress_percentage = 55
             workspace.save()
 
-        # ── PASO 4: Inferencia TF-IDF (60–80%) ─────────────────────
+        # ── PASO 4: Inferencia TF-IDF (55–65%) ─────────────────────
         if workspace.tfidf_id:
             logger.info(f"[WS {workspace_id}] Inferencia TF-IDF con modelo {workspace.tfidf_id}...")
             try:
-                results['tfidf'] = infer_tfidf(valid_texts, workspace.tfidf_id)
+                results['tfidf'] = infer_tfidf(
+                    valid_texts, workspace.tfidf_id,
+                    num_top_terms=num_top_terms,
+                )
             except Exception as e:
                 logger.warning(f"[WS {workspace_id}] Error inferencia TF-IDF: {e}")
                 results['tfidf'] = {'error': str(e)}
-            workspace.progress_percentage = 80
+            workspace.progress_percentage = 65
             workspace.save()
 
-        # ── PASO 5: Inferencia Topic Model (80–100%) ───────────────
+        # ── PASO 5: Inferencia Topic Model (65–75%) ───────────────
         if workspace.topic_model_id:
             if 'topic_vectorizer' not in preloaded or 'topic_model' not in preloaded:
-                logger.warning(f"[WS {workspace_id}] Topic Model #{workspace.topic_model_id} omitido (sin artefacto).")
+                logger.warning(
+                    f"[WS {workspace_id}] Topic Model #{workspace.topic_model_id} omitido (sin artefacto)."
+                )
                 results['topics'] = {
                     'error': 'Artefacto no disponible. Re-ejecuta el análisis de Topic Modeling para regenerarlo.'
                 }
             else:
-                logger.info(f"[WS {workspace_id}] Inferencia temas con modelo {workspace.topic_model_id}...")
+                logger.info(
+                    f"[WS {workspace_id}] Inferencia temas con modelo {workspace.topic_model_id}..."
+                )
                 try:
                     results['topics'] = infer_topics(
                         valid_texts,
@@ -192,12 +225,44 @@ class Command(BaseCommand):
                 except Exception as e:
                     logger.warning(f"[WS {workspace_id}] Error inferencia temas: {e}")
                     results['topics'] = {'error': str(e)}
+            workspace.progress_percentage = 75
+            workspace.save()
+
+        # ── PASO 6: Inferencia NER (75–88%) ────────────────────────
+        if workspace.ner_id:
+            logger.info(f"[WS {workspace_id}] Inferencia NER con modelo {workspace.ner_id}...")
+            try:
+                results['ner'] = infer_ner(
+                    valid_raw_texts,
+                    workspace.ner_id,
+                    entity_types=ner_entity_types if ner_entity_types else None,
+                )
+            except Exception as e:
+                logger.warning(f"[WS {workspace_id}] Error inferencia NER: {e}")
+                results['ner'] = {'error': str(e)}
+            workspace.progress_percentage = 88
+            workspace.save()
+
+        # ── PASO 7: Inferencia BERTopic similarity (88–99%) ────────
+        if workspace.bertopic_id:
+            logger.info(
+                f"[WS {workspace_id}] Inferencia BERTopic similarity con modelo {workspace.bertopic_id}..."
+            )
+            try:
+                results['bertopic'] = infer_bertopic_similarity(
+                    valid_texts,
+                    workspace.bertopic_id,
+                )
+            except Exception as e:
+                logger.warning(f"[WS {workspace_id}] Error inferencia BERTopic: {e}")
+                results['bertopic'] = {'error': str(e)}
+            workspace.progress_percentage = 99
+            workspace.save()
 
         # ── Finalizar ──────────────────────────────────────────────
         results['document_count'] = len(valid_texts)
         results['preprocessing_stats'] = preprocessing_stats
 
-        # Documentos rechazados por idioma
         rejected_docs = workspace.documents.filter(
             status=WorkspaceDocument.STATUS_ERROR,
             detected_language__isnull=False,
@@ -290,8 +355,12 @@ def _validate_document_languages(workspace, docs):
                 f"(confianza: {confidence:.0%}), pero el corpus fue "
                 f"procesado en '{expected_lang}'."
             )
-            logger.info(f"[WS {workspace.id}] Doc {doc.id} rechazado: '{detected_lang}' != '{expected_lang}'")
+            logger.info(
+                f"[WS {workspace.id}] Doc {doc.id} rechazado: '{detected_lang}' != '{expected_lang}'"
+            )
         else:
-            logger.info(f"[WS {workspace.id}] Doc {doc.id} idioma OK: '{detected_lang}' (confianza: {confidence:.0%})")
+            logger.info(
+                f"[WS {workspace.id}] Doc {doc.id} idioma OK: '{detected_lang}' (confianza: {confidence:.0%})"
+            )
 
         doc.save()
