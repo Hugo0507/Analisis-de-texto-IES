@@ -249,6 +249,28 @@ def _mark_workspace_error(workspace_id: str, message: str):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+def workspace_corpus_stopwords(request):
+    """
+    Obtener las stopwords del corpus para un dataset dado (sin workspace previo).
+
+    Query params:
+        dataset_id (int): ID del dataset de referencia.
+    """
+    dataset_id_raw = request.query_params.get('dataset_id')
+    if not dataset_id_raw:
+        return Response({'error': 'dataset_id requerido.'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        dataset_id = int(dataset_id_raw)
+    except ValueError:
+        return Response({'error': 'dataset_id debe ser un entero.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    from apps.workspace.inference import get_inference_stopwords
+    corpus_stopwords = sorted(get_inference_stopwords(dataset_id=dataset_id))
+    return Response({'corpus_stopwords': corpus_stopwords})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def workspace_stopwords(request, workspace_id):
     """
     Obtener las stopwords activas del workspace.

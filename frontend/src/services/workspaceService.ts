@@ -94,11 +94,52 @@ export interface RejectedDocument {
   reason: string;
 }
 
+export interface NerEntityTypeDistribution {
+  type: string;
+  count: number;
+  unique_entities: number;
+  percentage: number;
+}
+
+export interface NerInferenceResult {
+  entity_distribution: NerEntityTypeDistribution[];
+  top_entities_by_type: Record<string, Array<{ text: string; count: number }>>;
+  document_entities: Array<{ document_index: number; entities: Array<{ text: string; type: string }> }>;
+  total_entities_found: number;
+  unique_entities_count: number;
+  entity_types_used: string[];
+  reference_ner_id: number;
+  reference_ner_name: string;
+  spacy_model: string;
+  error?: string;
+}
+
+export interface BertopicDocumentAssignment {
+  document_index: number;
+  dominant_topic: number;
+  dominant_topic_label: string;
+  similarity_score: number;
+  top_topics: Array<{ topic_id: number; topic_label: string; similarity_score: number }>;
+}
+
+export interface BertopicSimilarityResult {
+  document_assignments: BertopicDocumentAssignment[];
+  topic_distribution: Array<{ topic_id: number; topic_label: string; document_count: number; percentage: number }>;
+  total_documents: number;
+  method: string;
+  method_note: string;
+  reference_bertopic_id: number;
+  reference_bertopic_name: string;
+  error?: string;
+}
+
 export interface WorkspaceResults {
   document_count?: number;
   bow?: BowInferenceResult;
   tfidf?: TfidfInferenceResult;
   topics?: TopicInferenceResult;
+  ner?: NerInferenceResult;
+  bertopic?: BertopicSimilarityResult;
   preprocessing_stats?: PreprocessingStats;
   rejected_documents?: RejectedDocument[];
 }
@@ -110,6 +151,10 @@ export interface Workspace {
   bow_id: number | null;
   tfidf_id: number | null;
   topic_model_id: number | null;
+  ner_id: number | null;
+  bertopic_id: number | null;
+  custom_stopwords: string[];
+  inference_params: Record<string, unknown>;
   status: 'pending' | 'processing' | 'completed' | 'error';
   progress_percentage: number;
   error_message: string | null;
@@ -126,6 +171,9 @@ export interface CreateWorkspacePayload {
   bow_id?: number | null;
   tfidf_id?: number | null;
   topic_model_id?: number | null;
+  ner_id?: number | null;
+  bertopic_id?: number | null;
+  custom_stopwords?: string[];
 }
 
 // ── Service ───────────────────────────────────────────────────────────────────
@@ -164,6 +212,13 @@ const workspaceService = {
   async runInference(workspaceId: string): Promise<{ status: string; workspace_id: string }> {
     const res = await apiClient.post(`/workspace/${workspaceId}/run/`);
     return res.data;
+  },
+
+  async getCorpusStopwords(datasetId: number): Promise<string[]> {
+    const res = await apiClient.get<{ corpus_stopwords: string[] }>(
+      `/workspace/corpus-stopwords/?dataset_id=${datasetId}`
+    );
+    return res.data.corpus_stopwords;
   },
 };
 
