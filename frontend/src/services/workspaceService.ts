@@ -166,6 +166,12 @@ export interface Workspace {
   expires_at: string | null;
 }
 
+export interface ImportConfigResult {
+  workspace_id: string;
+  has_results: boolean;
+  warnings: string[];
+}
+
 export interface CreateWorkspacePayload {
   dataset: number;
   bow_id?: number | null;
@@ -233,6 +239,17 @@ const workspaceService = {
       `/workspace/corpus-stopwords/?dataset_id=${datasetId}`
     );
     return res.data.corpus_stopwords;
+  },
+
+  async importConfig(
+    datasetId: number,
+    config: Record<string, unknown>,
+  ): Promise<ImportConfigResult> {
+    const res = await apiClient.post<ImportConfigResult>('/workspace/import/', {
+      dataset_id: datasetId,
+      config,
+    });
+    return res.data;
   },
 
   async exportExcel(workspaceId: string, filename?: string): Promise<void> {
