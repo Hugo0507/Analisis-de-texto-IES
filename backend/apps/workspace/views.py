@@ -623,20 +623,20 @@ def _build_excel_bytes(workspace) -> bytes:
     _hdr(ws)
 
     meta = [
-        ('Workspace ID',        str(workspace.id)),
-        ('Dataset',             workspace.dataset.name),
-        ('Fecha análisis',      workspace.created_at.strftime('%Y-%m-%d %H:%M UTC')),
+        ('Workspace ID', str(workspace.id)),
+        ('Dataset', workspace.dataset.name),
+        ('Fecha análisis', workspace.created_at.strftime('%Y-%m-%d %H:%M UTC')),
         ('Documentos procesados', r.get('document_count', 0)),
-        ('Modelo BoW',          (r.get('bow') or {}).get('reference_bow_name', 'N/A')),
-        ('Modelo TF-IDF',       (r.get('tfidf') or {}).get('reference_tfidf_name', 'N/A')),
-        ('Modelo Topics',       (r.get('topics') or {}).get('reference_topic_model_name', 'N/A')),
-        ('Modelo NER',          (r.get('ner') or {}).get('reference_ner_name', 'N/A')),
-        ('Modelo BERTopic',     (r.get('bertopic') or {}).get('reference_bertopic_name', 'N/A')),
-        ('Top términos',        params.get('num_top_terms', 50)),
-        ('Long. mín. token',    params.get('min_word_length', 2)),
-        ('Cortar referencias',  'Sí' if params.get('strip_references', True) else 'No'),
-        ('Tipos NER',           ', '.join(params.get('ner_entity_types', [])) or 'Heredado del análisis'),
-        ('Stopwords propias',   ', '.join(workspace.custom_stopwords or []) or 'Ninguna'),
+        ('Modelo BoW', (r.get('bow') or {}).get('reference_bow_name', 'N/A')),
+        ('Modelo TF-IDF', (r.get('tfidf') or {}).get('reference_tfidf_name', 'N/A')),
+        ('Modelo Topics', (r.get('topics') or {}).get('reference_topic_model_name', 'N/A')),
+        ('Modelo NER', (r.get('ner') or {}).get('reference_ner_name', 'N/A')),
+        ('Modelo BERTopic', (r.get('bertopic') or {}).get('reference_bertopic_name', 'N/A')),
+        ('Top términos', params.get('num_top_terms', 50)),
+        ('Long. mín. token', params.get('min_word_length', 2)),
+        ('Cortar referencias', 'Sí' if params.get('strip_references', True) else 'No'),
+        ('Tipos NER', ', '.join(params.get('ner_entity_types', [])) or 'Heredado del análisis'),
+        ('Stopwords propias', ', '.join(workspace.custom_stopwords or []) or 'Ninguna'),
     ]
     for label, value in meta:
         ws.append([label, value])
