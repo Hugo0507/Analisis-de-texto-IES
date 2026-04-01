@@ -811,7 +811,8 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+      {/* ── Barra de acciones ── */}
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h3 className="text-lg font-semibold text-white">Resultados de inferencia</h3>
           <p className="text-sm text-slate-400 mt-0.5">
@@ -819,9 +820,28 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
             {' '}usando los modelos del corpus de referencia.
           </p>
         </div>
-        <button onClick={onReset} className="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium transition-colors shrink-0">
-          Nuevo análisis
-        </button>
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          <button
+            onClick={onReset}
+            className="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium transition-colors"
+          >
+            ← Nueva análisis
+          </button>
+          <button
+            disabled
+            title="Disponible en la próxima versión"
+            className="px-4 py-2 rounded-xl bg-slate-800/60 text-slate-500 text-xs font-medium cursor-not-allowed border border-slate-700/40"
+          >
+            ↓ Excel
+          </button>
+          <button
+            disabled
+            title="Disponible en la próxima versión"
+            className="px-4 py-2 rounded-xl bg-slate-800/60 text-slate-500 text-xs font-medium cursor-not-allowed border border-slate-700/40"
+          >
+            ↓ Config JSON
+          </button>
+        </div>
       </div>
 
       {/* Resumen interpretativo */}
@@ -1024,6 +1044,154 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
                             {typeof w === 'string' ? w : w.word}
                           </span>
                         ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </Section>
+      )}
+
+      {/* NER */}
+      {results.ner && !results.ner.error && (
+        <Section title={`NER — ${results.ner.reference_ner_name}`} color="#10b981">
+          {/* KPI row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+            {[
+              { label: 'Total entidades', value: results.ner.total_entities_found.toLocaleString(), color: 'text-emerald-400' },
+              { label: 'Entidades únicas', value: results.ner.unique_entities_count.toLocaleString(), color: 'text-white' },
+              { label: 'Tipos analizados', value: results.ner.entity_types_used.length.toString(), color: 'text-white' },
+              { label: 'Modelo spaCy', value: results.ner.spacy_model.replace('_', ' '), color: 'text-slate-300' },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="p-3 rounded-xl bg-slate-900/50 text-center">
+                <p className={`text-base font-bold ${color}`}>{value}</p>
+                <p className="text-xs text-slate-400 mt-0.5">{label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Distribución por tipo */}
+          {results.ner.entity_distribution.length > 0 && (
+            <div className="space-y-2 mb-5">
+              <p className="text-xs text-slate-400 font-medium mb-2">Distribución por tipo de entidad</p>
+              {results.ner.entity_distribution.map(item => {
+                const maxPct = results.ner!.entity_distribution[0]?.percentage || 1;
+                const barWidth = (item.percentage / maxPct) * 100;
+                return (
+                  <div key={item.type} className="flex items-center gap-3">
+                    <span className="text-xs text-slate-300 w-20 shrink-0 font-medium">{item.type}</span>
+                    <div className="flex-1 h-5 bg-slate-700/50 rounded overflow-hidden relative">
+                      <div
+                        className="h-full rounded transition-all"
+                        style={{ width: `${barWidth}%`, background: 'rgba(16,185,129,0.55)' }}
+                      />
+                      <span className="absolute inset-y-0 left-2 flex items-center text-xs text-white font-medium">
+                        {item.unique_entities} únicas · {item.count} ocurrencias
+                      </span>
+                    </div>
+                    <span className="text-xs text-emerald-300 font-mono w-10 text-right">{item.percentage.toFixed(1)}%</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Top entidades por tipo */}
+          {Object.keys(results.ner.top_entities_by_type).length > 0 && (
+            <div className="border-t border-slate-700/50 pt-4">
+              <p className="text-xs text-slate-400 font-medium mb-3">Top entidades por tipo</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {Object.entries(results.ner.top_entities_by_type).slice(0, 6).map(([type, entities]) => (
+                  <div key={type} className="p-3 rounded-xl bg-slate-900/50">
+                    <p className="text-xs font-semibold text-emerald-400 mb-2">{type}</p>
+                    <div className="space-y-1">
+                      {entities.slice(0, 5).map((e, i) => (
+                        <div key={i} className="flex items-center justify-between gap-1">
+                          <span className="text-xs text-slate-200 truncate">{e.text}</span>
+                          <span className="text-xs text-slate-500 shrink-0 font-mono">{e.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </Section>
+      )}
+
+      {/* BERTopic Similarity */}
+      {results.bertopic && !results.bertopic.error && (
+        <Section title={`BERTopic — ${results.bertopic.reference_bertopic_name}`} color="#0ea5e9">
+          {/* Badge de método */}
+          <div className="flex items-start gap-3 mb-5 p-3 rounded-xl bg-sky-500/10 border border-sky-500/20">
+            <span className="text-xs font-semibold text-sky-300 bg-sky-900/60 px-2 py-0.5 rounded-full shrink-0 border border-sky-700/50">
+              keyword matching
+            </span>
+            <p className="text-xs text-slate-400">{results.bertopic.method_note}</p>
+          </div>
+
+          {/* Distribución por tema */}
+          {results.bertopic.topic_distribution.length > 0 && (
+            <div className="space-y-2 mb-5">
+              <p className="text-xs text-slate-400 font-medium mb-2">
+                Distribución de documentos por tema ({results.bertopic.total_documents} docs)
+              </p>
+              {results.bertopic.topic_distribution.map(t => (
+                <div key={t.topic_id} className="flex items-center gap-3">
+                  <span className="text-xs text-slate-300 w-28 truncate shrink-0" title={t.topic_label}>
+                    {t.topic_label}
+                  </span>
+                  <div className="flex-1 h-5 bg-slate-700/50 rounded overflow-hidden relative">
+                    <div
+                      className="h-full rounded transition-all"
+                      style={{ width: `${Math.max(t.percentage, 3)}%`, background: 'rgba(14,165,233,0.55)' }}
+                    />
+                    {t.percentage >= 10 && (
+                      <span className="absolute inset-y-0 left-2 flex items-center text-xs text-white font-medium">
+                        {t.percentage}%
+                      </span>
+                    )}
+                  </div>
+                  {t.percentage < 10 && (
+                    <span className="text-xs text-sky-300 font-mono w-10 text-right">{t.percentage}%</span>
+                  )}
+                  {t.percentage >= 10 && (
+                    <span className="text-xs text-slate-500 w-10 text-right font-mono">{t.percentage}%</span>
+                  )}
+                  <span className="text-xs text-slate-500 w-6 text-right shrink-0">{t.document_count}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Asignaciones por documento */}
+          {results.bertopic.document_assignments.length > 0 && (
+            <div className="border-t border-slate-700/50 pt-4">
+              <p className="text-xs text-slate-400 font-medium mb-3">Asignación por documento</p>
+              <div className="space-y-1.5">
+                {results.bertopic.document_assignments.map((da) => {
+                  const simPct = Math.round(da.similarity_score * 100);
+                  return (
+                    <div key={da.document_index} className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-900/40 border border-slate-700/30">
+                      <span className="text-xs text-slate-500 w-5 text-right shrink-0 font-mono">
+                        {da.document_index + 1}
+                      </span>
+                      <span className="flex-1 text-xs text-white font-medium truncate" title={da.dominant_topic_label}>
+                        {da.dominant_topic_label}
+                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="w-16 h-1.5 bg-slate-700 rounded overflow-hidden">
+                          <div
+                            className="h-full rounded"
+                            style={{ width: `${simPct}%`, background: simPct >= 50 ? '#38bdf8' : simPct >= 25 ? '#7dd3fc' : '#475569' }}
+                          />
+                        </div>
+                        <span className={`text-xs font-mono w-8 text-right ${simPct >= 50 ? 'text-sky-300' : 'text-slate-500'}`}>
+                          {simPct}%
+                        </span>
                       </div>
                     </div>
                   );
