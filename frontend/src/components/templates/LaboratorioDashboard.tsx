@@ -275,14 +275,14 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext, onIm
   );
 
   if (loading) {
-    return <div className="text-slate-400 text-sm py-12 text-center">Cargando análisis disponibles…</div>;
+    return <div className="text-slate-300 text-sm py-12 text-center">Cargando análisis disponibles…</div>;
   }
 
   return (
     <div className="space-y-8">
       <div>
         <h3 className="text-lg font-semibold text-white mb-1">Configurar sesión de análisis</h3>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-slate-300">
           Selecciona los modelos de referencia y personaliza las stopwords antes de subir los documentos.
         </p>
       </div>
@@ -459,12 +459,12 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext, onIm
         <div className="space-y-3">
 
           {/* Fila: num_top_terms + min_word_length */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
               <label className="block text-sm font-semibold text-white mb-1">
                 Términos a mostrar
               </label>
-              <p className="text-xs text-slate-400 mb-2">Top N en BoW / TF-IDF</p>
+              <p className="text-xs text-slate-300 mb-2">Top N en BoW / TF-IDF</p>
               <input
                 type="number"
                 min={10}
@@ -480,7 +480,7 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext, onIm
               <label className="block text-sm font-semibold text-white mb-1">
                 Long. mínima de token
               </label>
-              <p className="text-xs text-slate-400 mb-2">Filtrar palabras cortas</p>
+              <p className="text-xs text-slate-300 mb-2">Filtrar palabras cortas</p>
               <input
                 type="number"
                 min={1}
@@ -497,7 +497,7 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext, onIm
           <div className="flex items-start justify-between gap-4 p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
             <div>
               <p className="text-sm font-semibold text-white">Cortar sección de referencias</p>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-300 mt-0.5">
                 Elimina automáticamente la bibliografía al final del PDF antes de analizar
               </p>
             </div>
@@ -515,7 +515,7 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext, onIm
           {selectedNer != null && (
             <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
               <p className="text-sm font-semibold text-white mb-1">Tipos de entidad NER</p>
-              <p className="text-xs text-slate-400 mb-3">
+              <p className="text-xs text-slate-300 mb-3">
                 Selecciona qué tipos de entidad extraer. Por defecto hereda la configuración del análisis NER seleccionado.
               </p>
               <div className="flex flex-wrap gap-2">
@@ -565,7 +565,7 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext, onIm
               ...(selectedNer != null ? { ner_entity_types: nerEntityTypes } : {}),
             },
           })}
-          className="px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
+          className="px-6 py-2.5 min-h-[44px] rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2 focus:ring-offset-slate-900"
         >
           Continuar →
         </button>
@@ -582,7 +582,7 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext, onIm
         <button
           onClick={() => { setImportError(null); configImportRef.current?.click(); }}
           disabled={importLoading}
-          className="w-full px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-600/60 text-slate-300 text-sm font-medium transition-colors flex items-center justify-center gap-2"
+          className="w-full px-4 py-2.5 min-h-[44px] rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-600/60 text-slate-300 text-sm font-medium transition-colors flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-900"
         >
           {importLoading ? (
             <>
@@ -677,7 +677,7 @@ const UploadStage: React.FC<UploadStageProps> = ({ workspaceId, onNext, onBack }
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-white mb-1">Sube los documentos a analizar</h3>
-        <p className="text-sm text-slate-400">Solo archivos PDF · Máximo 50 MB por archivo</p>
+        <p className="text-sm text-slate-300">Solo archivos PDF · Máximo 50 MB por archivo</p>
       </div>
 
       {/* Drop zone */}
@@ -721,13 +721,16 @@ const UploadStage: React.FC<UploadStageProps> = ({ workspaceId, onNext, onBack }
       )}
 
       <div className="flex gap-3 pt-2">
-        <button onClick={onBack} className="px-4 py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium transition-colors">
+        <button
+          onClick={onBack}
+          className="px-4 py-2.5 min-h-[44px] rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+        >
           ← Atrás
         </button>
         <button
           disabled={doneCount === 0 || uploading}
           onClick={onNext}
-          className="px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
+          className="px-6 py-2.5 min-h-[44px] rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2 focus:ring-offset-slate-900"
         >
           {doneCount === 0 ? 'Sube al menos un PDF' : `Analizar ${doneCount} documento${doneCount !== 1 ? 's' : ''} →`}
         </button>
@@ -747,9 +750,21 @@ interface ProcessingStageProps {
 const POLL_INTERVAL_MS = 2500;
 const MAX_POLL_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutos
 
+// Pasos del pipeline de inferencia (umbral superior de cada paso)
+const PIPELINE_STEPS = [
+  { label: 'Extrayendo texto de los PDFs',   maxPct: 20  },
+  { label: 'Validando idioma',               maxPct: 30  },
+  { label: 'Preparando inferencia',          maxPct: 40  },
+  { label: 'Bolsa de Palabras',              maxPct: 55  },
+  { label: 'TF-IDF',                         maxPct: 65  },
+  { label: 'Asignando temas',               maxPct: 75  },
+  { label: 'Entidades NER',                  maxPct: 88  },
+  { label: 'Similitud BERTopic',             maxPct: 99  },
+  { label: 'Completado',                     maxPct: 100 },
+];
+
 const ProcessingStage: React.FC<ProcessingStageProps> = ({ workspaceId, onDone, onError }) => {
   const [progress, setProgress] = useState(0);
-  const [statusMsg, setStatusMsg] = useState('Iniciando inferencia…');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -782,16 +797,6 @@ const ProcessingStage: React.FC<ProcessingStageProps> = ({ workspaceId, onDone, 
         const ws = await workspaceService.getWorkspace(workspaceId);
         setProgress(ws.progress_percentage);
 
-        if (ws.progress_percentage < 20) setStatusMsg('Extrayendo texto de los PDFs…');
-        else if (ws.progress_percentage < 30) setStatusMsg('Validando idioma de los documentos…');
-        else if (ws.progress_percentage < 40) setStatusMsg('Preparando inferencia…');
-        else if (ws.progress_percentage < 55) setStatusMsg('Aplicando Bolsa de Palabras…');
-        else if (ws.progress_percentage < 65) setStatusMsg('Calculando TF-IDF…');
-        else if (ws.progress_percentage < 75) setStatusMsg('Asignando temas…');
-        else if (ws.progress_percentage < 88) setStatusMsg('Extrayendo entidades (NER)…');
-        else if (ws.progress_percentage < 99) setStatusMsg('Calculando similitud BERTopic…');
-        else setStatusMsg('Completado.');
-
         if (ws.status === 'completed') {
           if (intervalRef.current) clearInterval(intervalRef.current);
           onDone(ws);
@@ -814,37 +819,91 @@ const ProcessingStage: React.FC<ProcessingStageProps> = ({ workspaceId, onDone, 
     return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
   };
 
+  // Determinar qué paso está activo según el progreso actual
+  const activeStepIdx = PIPELINE_STEPS.findIndex(s => progress < s.maxPct);
+
   return (
-    <div className="py-12 flex flex-col items-center gap-6">
-      <div className="relative w-24 h-24">
-        <svg className="w-24 h-24 -rotate-90" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="42" fill="none" stroke="#1e293b" strokeWidth="8" />
-          <circle
-            cx="50" cy="50" r="42" fill="none"
-            stroke={errorMsg ? '#ef4444' : '#8b5cf6'} strokeWidth="8"
-            strokeLinecap="round"
-            strokeDasharray={`${2 * Math.PI * 42}`}
-            strokeDashoffset={`${2 * Math.PI * 42 * (1 - progress / 100)}`}
-            style={{ transition: 'stroke-dashoffset 0.4s ease' }}
-          />
-        </svg>
-        <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-white">{progress}%</span>
-      </div>
-      <div className="text-center max-w-md">
+    <div className="py-8 flex flex-col sm:flex-row items-center sm:items-start gap-8 sm:gap-10 justify-center">
+
+      {/* Círculo de progreso */}
+      <div className="flex flex-col items-center gap-3 shrink-0">
+        <div className="relative w-24 h-24">
+          <svg className="w-24 h-24 -rotate-90" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="42" fill="none" stroke="#1e293b" strokeWidth="8" />
+            <circle
+              cx="50" cy="50" r="42" fill="none"
+              stroke={errorMsg ? '#ef4444' : '#8b5cf6'} strokeWidth="8"
+              strokeLinecap="round"
+              strokeDasharray={`${2 * Math.PI * 42}`}
+              strokeDashoffset={`${2 * Math.PI * 42 * (1 - progress / 100)}`}
+              style={{ transition: 'stroke-dashoffset 0.4s ease' }}
+            />
+          </svg>
+          <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-white">
+            {progress}%
+          </span>
+        </div>
+
         {errorMsg ? (
-          <>
-            <p className="text-red-400 font-semibold">Error en la inferencia</p>
-            <p className="text-red-300/80 text-sm mt-1">{errorMsg}</p>
-          </>
+          <div className="text-center max-w-[200px]">
+            <p className="text-red-400 font-semibold text-sm">Error en la inferencia</p>
+            <p className="text-red-300 text-xs mt-1">{errorMsg}</p>
+          </div>
         ) : (
-          <>
-            <p className="text-white font-semibold">{statusMsg}</p>
-            <p className="text-slate-400 text-sm mt-1">
-              Los modelos del corpus analizan los nuevos documentos… ({formatElapsed(elapsed)})
-            </p>
-          </>
+          <p className="text-slate-400 text-xs text-center">
+            {formatElapsed(elapsed)}
+          </p>
         )}
       </div>
+
+      {/* Pasos del pipeline */}
+      {!errorMsg && (
+        <div className="w-full sm:w-auto space-y-2 max-w-xs">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+            Pipeline de inferencia
+          </p>
+          {PIPELINE_STEPS.map((step, i) => {
+            const done   = progress >= step.maxPct;
+            const active = !done && i === activeStepIdx;
+            return (
+              <div key={i} className="flex items-center gap-3">
+                {/* Indicador */}
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all ${
+                  done   ? 'bg-emerald-500/20 border border-emerald-500/60' :
+                  active ? 'bg-violet-500/20 border border-violet-400'      :
+                           'bg-slate-800 border border-slate-700'
+                }`}>
+                  {done ? (
+                    <svg className="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : active ? (
+                    <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
+                  ) : (
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-600" />
+                  )}
+                </div>
+                {/* Label */}
+                <span className={`text-sm transition-colors ${
+                  done   ? 'text-emerald-400' :
+                  active ? 'text-white font-medium' :
+                           'text-slate-500'
+                }`}>
+                  {step.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Mensaje de error expandido en mobile */}
+      {errorMsg && (
+        <div className="w-full max-w-sm sm:hidden p-4 rounded-xl bg-red-500/10 border border-red-500/30">
+          <p className="text-red-400 font-semibold text-sm">Error en la inferencia</p>
+          <p className="text-red-300 text-sm mt-1">{errorMsg}</p>
+        </div>
+      )}
     </div>
   );
 };
@@ -933,7 +992,7 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h3 className="text-lg font-semibold text-white">Resultados de inferencia</h3>
-          <p className="text-sm text-slate-400 mt-0.5">
+          <p className="text-sm text-slate-300 mt-0.5">
             {results.document_count ?? 0} documento{(results.document_count ?? 0) !== 1 ? 's' : ''} analizado{(results.document_count ?? 0) !== 1 ? 's' : ''}
             {' '}usando los modelos del corpus de referencia.
           </p>
@@ -941,21 +1000,21 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
           <button
             onClick={onReset}
-            className="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium transition-colors"
+            className="px-4 py-2 min-h-[44px] rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-900"
           >
             ← Nueva análisis
           </button>
           <button
             onClick={handleExportExcel}
             disabled={downloading.excel}
-            className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium transition-colors"
+            className="px-4 py-2 min-h-[44px] rounded-xl bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-slate-900"
           >
             {downloading.excel ? '…' : '↓ Excel'}
           </button>
           <button
             onClick={handleExportConfig}
             disabled={downloading.config}
-            className="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium transition-colors"
+            className="px-4 py-2 min-h-[44px] rounded-xl bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-900"
           >
             {downloading.config ? '…' : '↓ Config JSON'}
           </button>
@@ -974,19 +1033,19 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/40 text-center">
             <p className="text-lg font-bold text-emerald-400">{stats.total_clean_tokens.toLocaleString()}</p>
-            <p className="text-xs text-slate-400 mt-0.5">Tokens útiles</p>
+            <p className="text-xs text-slate-300 mt-0.5">Tokens útiles</p>
           </div>
           <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/40 text-center">
             <p className="text-lg font-bold text-slate-300">{stats.total_raw_tokens.toLocaleString()}</p>
-            <p className="text-xs text-slate-400 mt-0.5">Tokens extraídos</p>
+            <p className="text-xs text-slate-300 mt-0.5">Tokens extraídos</p>
           </div>
           <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/40 text-center">
             <p className="text-lg font-bold text-amber-400">{noisePercent}%</p>
-            <p className="text-xs text-slate-400 mt-0.5">Ruido filtrado</p>
+            <p className="text-xs text-slate-300 mt-0.5">Ruido filtrado</p>
           </div>
           <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/40 text-center">
             <p className="text-lg font-bold text-white">{stats.documents_processed}</p>
-            <p className="text-xs text-slate-400 mt-0.5">Docs procesados</p>
+            <p className="text-xs text-slate-300 mt-0.5">Docs procesados</p>
           </div>
         </div>
       )}
@@ -1002,7 +1061,7 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
               <div key={i} className="flex items-center gap-2 text-xs">
                 <span className="text-amber-400 font-medium truncate max-w-[200px]">{d.filename}</span>
                 <span className="text-slate-500">—</span>
-                <span className="text-slate-400">
+                <span className="text-slate-300">
                   detectado: <span className="text-white font-medium">{d.detected_language}</span>
                   {' '}(esperado: {d.expected_language}, confianza: {(d.confidence * 100).toFixed(0)}%)
                 </span>
@@ -1024,12 +1083,12 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
             ].map(({ label, value }) => (
               <div key={label} className="p-3 rounded-xl bg-slate-900/50 text-center">
                 <p className="text-lg font-bold text-white">{value}</p>
-                <p className="text-xs text-slate-400 mt-0.5">{label}</p>
+                <p className="text-xs text-slate-300 mt-0.5">{label}</p>
               </div>
             ))}
           </div>
           <div className="space-y-1.5">
-            <p className="text-xs text-slate-400 font-medium mb-2">Top 15 términos por frecuencia</p>
+            <p className="text-xs text-slate-300 font-medium mb-2">Top 15 términos por frecuencia</p>
             {results.bow.top_terms.slice(0, 15).map((t, i) => {
               const maxScore = results.bow!.top_terms[0]?.score || 1;
               const pct = (t.score / maxScore) * 100;
@@ -1065,12 +1124,12 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
             ].map(({ label, value }) => (
               <div key={label} className="p-3 rounded-xl bg-slate-900/50 text-center">
                 <p className="text-lg font-bold text-white">{value}</p>
-                <p className="text-xs text-slate-400 mt-0.5">{label}</p>
+                <p className="text-xs text-slate-300 mt-0.5">{label}</p>
               </div>
             ))}
           </div>
           <div className="space-y-1.5">
-            <p className="text-xs text-slate-400 font-medium mb-2">Top 15 términos por TF-IDF</p>
+            <p className="text-xs text-slate-300 font-medium mb-2">Top 15 términos por TF-IDF</p>
             {results.tfidf.top_terms.slice(0, 15).map((t, i) => {
               const maxScore = results.tfidf!.top_terms[0]?.score || 1;
               const pct = (t.score / maxScore) * 100;
@@ -1107,7 +1166,7 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
         <Section title={`Modelado de Temas — ${results.topics.algorithm.toUpperCase()}`} color="#f59e0b">
           {/* Distribución de temas dominantes */}
           <div className="space-y-3 mb-6">
-            <p className="text-xs text-slate-400 font-medium">Distribución de temas dominantes en los nuevos documentos</p>
+            <p className="text-xs text-slate-300 font-medium">Distribución de temas dominantes en los nuevos documentos</p>
             {results.topics.topic_distribution.map(t => (
               <div key={t.topic_id} className="flex items-center gap-3">
                 <span className="text-xs text-slate-400 w-24 truncate shrink-0" title={t.topic_label || `Tema ${t.topic_id}`}>
@@ -1134,7 +1193,7 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
           {/* Afinidad completa: Heatmap de todos los temas */}
           {results.topics.all_topics_affinity && results.topics.all_topics_affinity.length > 0 && (
             <div className="space-y-3 pt-4 border-t border-slate-700/50">
-              <p className="text-xs text-slate-400 font-medium">Afinidad promedio con todos los temas del corpus</p>
+              <p className="text-xs text-slate-300 font-medium">Afinidad promedio con todos los temas del corpus</p>
               <div className="grid gap-2">
                 {results.topics.all_topics_affinity.map(a => {
                   const maxWeight = results.topics!.all_topics_affinity[0]?.weight || 1;
@@ -1185,7 +1244,7 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
             ].map(({ label, value, color }) => (
               <div key={label} className="p-3 rounded-xl bg-slate-900/50 text-center">
                 <p className={`text-base font-bold ${color}`}>{value}</p>
-                <p className="text-xs text-slate-400 mt-0.5">{label}</p>
+                <p className="text-xs text-slate-300 mt-0.5">{label}</p>
               </div>
             ))}
           </div>
@@ -1193,7 +1252,7 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
           {/* Distribución por tipo */}
           {results.ner.entity_distribution.length > 0 && (
             <div className="space-y-2 mb-5">
-              <p className="text-xs text-slate-400 font-medium mb-2">Distribución por tipo de entidad</p>
+              <p className="text-xs text-slate-300 font-medium mb-2">Distribución por tipo de entidad</p>
               {results.ner.entity_distribution.map(item => {
                 const maxPct = results.ner!.entity_distribution[0]?.percentage || 1;
                 const barWidth = (item.percentage / maxPct) * 100;
@@ -1219,7 +1278,7 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
           {/* Top entidades por tipo */}
           {Object.keys(results.ner.top_entities_by_type).length > 0 && (
             <div className="border-t border-slate-700/50 pt-4">
-              <p className="text-xs text-slate-400 font-medium mb-3">Top entidades por tipo</p>
+              <p className="text-xs text-slate-300 font-medium mb-3">Top entidades por tipo</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {Object.entries(results.ner.top_entities_by_type).slice(0, 6).map(([type, entities]) => (
                   <div key={type} className="p-3 rounded-xl bg-slate-900/50">
@@ -1254,7 +1313,7 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
           {/* Distribución por tema */}
           {results.bertopic.topic_distribution.length > 0 && (
             <div className="space-y-2 mb-5">
-              <p className="text-xs text-slate-400 font-medium mb-2">
+              <p className="text-xs text-slate-300 font-medium mb-2">
                 Distribución de documentos por tema ({results.bertopic.total_documents} docs)
               </p>
               {results.bertopic.topic_distribution.map(t => (
@@ -1288,7 +1347,7 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
           {/* Asignaciones por documento */}
           {results.bertopic.document_assignments.length > 0 && (
             <div className="border-t border-slate-700/50 pt-4">
-              <p className="text-xs text-slate-400 font-medium mb-3">Asignación por documento</p>
+              <p className="text-xs text-slate-300 font-medium mb-3">Asignación por documento</p>
               <div className="space-y-1.5">
                 {results.bertopic.document_assignments.map((da) => {
                   const simPct = Math.round(da.similarity_score * 100);
@@ -1357,7 +1416,7 @@ const ImportDecisionModal: React.FC<ImportDecisionProps> = ({
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-base font-semibold text-white">Configuración importada</h3>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-300 mt-0.5">
             Se creó un nuevo workspace con la configuración guardada.
           </p>
         </div>
