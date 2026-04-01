@@ -179,7 +179,7 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext, onIm
 
   const addCustomStopword = () => {
     const w = newWord.trim().toLowerCase();
-    if (w && !customStopwords.includes(w) && !corpusStopwords.includes(w)) {
+    if (w && !customStopwords.includes(w)) {
       setCustomStopwords(prev => [...prev, w].sort());
     }
     setNewWord('');
@@ -200,7 +200,7 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext, onIm
         .map(l => l.trim().toLowerCase())
         .filter(l => l && !l.startsWith('#'));
       setCustomStopwords(prev => {
-        const combined = new Set([...prev, ...words.filter(w => !corpusStopwords.includes(w))]);
+        const combined = new Set([...prev, ...words]);
         return [...combined].sort();
       });
     };
