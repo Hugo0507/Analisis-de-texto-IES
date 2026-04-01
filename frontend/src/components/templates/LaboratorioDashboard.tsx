@@ -28,6 +28,7 @@ interface AnalysisOption {
   id: number;
   name: string;
   label?: string;
+  selectedEntities?: string[];
 }
 
 // ── Stage indicator ───────────────────────────────────────────────────────────
@@ -99,6 +100,13 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext }) =>
   const [newWord, setNewWord] = useState('');
   const stopwordImportRef = useRef<HTMLInputElement>(null);
 
+  // Sección C — parámetros de inferencia
+  const ALL_NER_TYPES = ['PERSON', 'ORG', 'GPE', 'DATE', 'LOC', 'FAC', 'NORP', 'PRODUCT', 'EVENT'];
+  const [numTopTerms, setNumTopTerms] = useState(50);
+  const [minWordLength, setMinWordLength] = useState(2);
+  const [stripReferences, setStripReferences] = useState(true);
+  const [nerEntityTypes, setNerEntityTypes] = useState<string[]>(ALL_NER_TYPES);
+
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -127,7 +135,7 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext }) =>
         setBowOptions(bows.map((a: any) => ({ id: a.id, name: a.name })));
         setTfidfOptions(tfidfs.map((a: any) => ({ id: a.id, name: a.name })));
         setTopicOptions(topics.map((a: any) => ({ id: a.id, name: `${a.name} (${a.algorithm_display})` })));
-        setNerOptions(ners.map((a: any) => ({ id: a.id, name: `${a.name} (${a.spacy_model_label || a.spacy_model})` })));
+        setNerOptions(ners.map((a: any) => ({ id: a.id, name: `${a.name} (${a.spacy_model_label || a.spacy_model})`, selectedEntities: a.selected_entities || [] })));
         setBertopicOptions(bertopics.map((a: any) => ({ id: a.id, name: `${a.name} (${a.num_topics_found ?? '?'} tópicos)` })));
 
         if (bows.length > 0) setSelectedBow(bows[0].id);
@@ -148,6 +156,19 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext }) =>
     };
     load();
   }, [datasetId]);
+
+  // Hereda entity types del NER de referencia al seleccionarlo
+  useEffect(() => {
+    if (selectedNer != null) {
+      const opt = nerOptions.find(o => o.id === selectedNer);
+      if (opt?.selectedEntities && opt.selectedEntities.length > 0) {
+        setNerEntityTypes(opt.selectedEntities);
+      }
+    } else {
+      setNerEntityTypes(ALL_NER_TYPES);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedNer, nerOptions]);
 
   const addCustomStopword = () => {
     const w = newWord.trim().toLowerCase();
@@ -387,9 +408,106 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext }) =>
         </p>
       </div>
 
+      {/* ── Sección C: Parámetros ── */}
+      <div>
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+          C — Parámetros de inferencia
+        </p>
+        <div className="space-y-3">
+
+          {/* Fila: num_top_terms + min_word_length */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
+              <label className="block text-sm font-semibold text-white mb-1">
+                Términos a mostrar
+              </label>
+              <p className="text-xs text-slate-400 mb-2">Top N en BoW / TF-IDF</p>
+              <input
+                type="number"
+                min={10}
+                max={200}
+                value={numTopTerms}
+                onChange={e => setNumTopTerms(Math.min(200, Math.max(10, Number(e.target.value))))}
+                className="w-full text-sm bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+              />
+              <p className="text-xs text-slate-500 mt-1">Rango: 10 – 200</p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
+              <label className="block text-sm font-semibold text-white mb-1">
+                Long. mínima de token
+              </label>
+              <p className="text-xs text-slate-400 mb-2">Filtrar palabras cortas</p>
+              <input
+                type="number"
+                min={1}
+                max={5}
+                value={minWordLength}
+                onChange={e => setMinWordLength(Math.min(5, Math.max(1, Number(e.target.value))))}
+                className="w-full text-sm bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+              />
+              <p className="text-xs text-slate-500 mt-1">Rango: 1 – 5 caracteres</p>
+            </div>
+          </div>
+
+          {/* strip_references toggle */}
+          <div className="flex items-start justify-between gap-4 p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
+            <div>
+              <p className="text-sm font-semibold text-white">Cortar sección de referencias</p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Elimina automáticamente la bibliografía al final del PDF antes de analizar
+              </p>
+            </div>
+            <button
+              onClick={() => setStripReferences(v => !v)}
+              className={`relative shrink-0 w-11 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${stripReferences ? 'bg-violet-600' : 'bg-slate-700'}`}
+              role="switch"
+              aria-checked={stripReferences}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${stripReferences ? 'translate-x-5' : 'translate-x-0'}`} />
+            </button>
+          </div>
+
+          {/* ner_entity_types checkboxes — solo visible si hay NER seleccionado */}
+          {selectedNer != null && (
+            <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
+              <p className="text-sm font-semibold text-white mb-1">Tipos de entidad NER</p>
+              <p className="text-xs text-slate-400 mb-3">
+                Selecciona qué tipos de entidad extraer. Por defecto hereda la configuración del análisis NER seleccionado.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {ALL_NER_TYPES.map(type => {
+                  const active = nerEntityTypes.includes(type);
+                  return (
+                    <button
+                      key={type}
+                      onClick={() => setNerEntityTypes(prev =>
+                        active
+                          ? prev.filter(t => t !== type)
+                          : [...prev, type]
+                      )}
+                      className={`min-h-[36px] px-3 py-1 rounded-lg text-xs font-semibold border transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-slate-900 ${
+                        active
+                          ? 'bg-emerald-900/50 text-emerald-300 border-emerald-700/60'
+                          : 'bg-slate-900/60 text-slate-500 border-slate-700/50'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  );
+                })}
+              </div>
+              {nerEntityTypes.length === 0 && (
+                <p className="text-xs text-amber-400 mt-2">Selecciona al menos un tipo de entidad.</p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="pt-2">
         <button
-          disabled={!canContinue}
+          disabled={!canContinue || (selectedNer != null && nerEntityTypes.length === 0)}
           onClick={() => onNext({
             bow_id: selectedBow,
             tfidf_id: selectedTfidf,
@@ -397,6 +515,12 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext }) =>
             ner_id: selectedNer,
             bertopic_id: selectedBertopic,
             custom_stopwords: customStopwords,
+            inference_params: {
+              num_top_terms: numTopTerms,
+              min_word_length: minWordLength,
+              strip_references: stripReferences,
+              ...(selectedNer != null ? { ner_entity_types: nerEntityTypes } : {}),
+            },
           })}
           className="px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors"
         >

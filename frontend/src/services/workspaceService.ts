@@ -174,6 +174,7 @@ export interface CreateWorkspacePayload {
   ner_id?: number | null;
   bertopic_id?: number | null;
   custom_stopwords?: string[];
+  inference_params?: Record<string, unknown>;
 }
 
 // ── Service ───────────────────────────────────────────────────────────────────
