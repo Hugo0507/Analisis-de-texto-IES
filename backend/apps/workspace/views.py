@@ -401,6 +401,107 @@ def workspace_stopwords_import(request, workspace_id):
     })
 
 
+# ── Import ───────────────────────────────────────────────────────────────────
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def workspace_import_config(request):
+    """
+    Crear un workspace a partir de una configuración exportada.
+
+    Body JSON:
+        dataset_id  (int)  — Dataset de referencia para el nuevo workspace.
+        config      (dict) — JSON exportado con workspace_export_config.
+
+    Devuelve:
+        workspace_id  (str)  — UUID del nuevo workspace creado.
+        has_results   (bool) — True si el config incluía resultados previos
+                               y el workspace fue creado en estado 'completed'.
+        warnings      (list) — Mensajes por modelos que ya no existen en DB.
+    """
+    dataset_id = request.data.get('dataset_id')
+    config     = request.data.get('config')
+
+    if not dataset_id:
+        return Response({'error': 'dataset_id es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
+    if not isinstance(config, dict):
+        return Response({'error': 'config debe ser un objeto JSON válido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Validar que el dataset existe
+    from apps.datasets.models import Dataset
+    try:
+        dataset = Dataset.objects.get(id=dataset_id)
+    except Dataset.DoesNotExist:
+        return Response({'error': f'Dataset {dataset_id} no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Extraer modelos del config
+    models_cfg = config.get('models') or {}
+
+    warnings = []
+    resolved = {
+        'bow_id':         None,
+        'tfidf_id':       None,
+        'topic_model_id': None,
+        'ner_id':         None,
+        'bertopic_id':    None,
+    }
+
+    # Validar existencia de cada modelo en DB
+    _MODEL_CHECKS = [
+        ('bow',         'bow_id',         'apps.bag_of_words.models',  'BagOfWords',      'BoW'),
+        ('tfidf',       'tfidf_id',       'apps.tfidf_analysis.models','TfIdfAnalysis',   'TF-IDF'),
+        ('topic_model', 'topic_model_id', 'apps.topic_modeling.models','TopicModeling',   'Topic Model'),
+        ('ner',         'ner_id',         'apps.ner_analysis.models',  'NerAnalysis',     'NER'),
+        ('bertopic',    'bertopic_id',    'apps.bertopic.models',      'BERTopicAnalysis','BERTopic'),
+    ]
+
+    for cfg_key, field, module_path, class_name, label in _MODEL_CHECKS:
+        entry = models_cfg.get(cfg_key)
+        if not entry or entry.get('id') is None:
+            continue  # modelo no seleccionado en el config original → se omite
+        model_id = entry['id']
+        try:
+            import importlib
+            mod = importlib.import_module(module_path)
+            cls = getattr(mod, class_name)
+            cls.objects.get(id=model_id)
+            resolved[field] = model_id
+        except Exception:
+            model_name = entry.get('name') or f'#{model_id}'
+            warnings.append(f'{label} "{model_name}" (id={model_id}) ya no existe en la DB.')
+
+    # Determinar si el config trae resultados previos
+    results_data = config.get('results') or {}
+    has_results  = bool(results_data)
+
+    # Crear workspace
+    ws_kwargs = {
+        'created_by':      request.user,
+        'dataset':         dataset,
+        'custom_stopwords': config.get('custom_stopwords') or [],
+        'inference_params': config.get('inference_params') or {},
+        **resolved,
+    }
+
+    if has_results:
+        ws_kwargs['results']             = results_data
+        ws_kwargs['status']              = Workspace.STATUS_COMPLETED
+        ws_kwargs['progress_percentage'] = 100
+
+    workspace = Workspace.objects.create(**ws_kwargs)
+
+    logger.info(
+        f"[WS {workspace.id}] Creado por import_config "
+        f"(dataset={dataset_id}, has_results={has_results}, warnings={len(warnings)})"
+    )
+
+    return Response({
+        'workspace_id': str(workspace.id),
+        'has_results':  has_results,
+        'warnings':     warnings,
+    }, status=status.HTTP_201_CREATED)
+
+
 # ── Export ────────────────────────────────────────────────────────────────────
 
 @api_view(['GET'])
