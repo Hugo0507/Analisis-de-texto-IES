@@ -766,6 +766,32 @@ interface ResultsStageProps {
 
 const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
   const { results } = workspace;
+  const [downloading, setDownloading] = useState<{ excel: boolean; config: boolean }>({
+    excel: false,
+    config: false,
+  });
+
+  const handleExportExcel = async () => {
+    setDownloading(d => ({ ...d, excel: true }));
+    try {
+      await workspaceService.exportExcel(workspace.id);
+    } catch {
+      // Silencioso — el botón vuelve a estar disponible
+    } finally {
+      setDownloading(d => ({ ...d, excel: false }));
+    }
+  };
+
+  const handleExportConfig = async () => {
+    setDownloading(d => ({ ...d, config: true }));
+    try {
+      await workspaceService.exportConfig(workspace.id);
+    } catch {
+      // Silencioso
+    } finally {
+      setDownloading(d => ({ ...d, config: false }));
+    }
+  };
 
   const Section: React.FC<{ title: string; color: string; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, color, children, defaultOpen = true }) => {
     const [open, setOpen] = useState(defaultOpen);
@@ -828,18 +854,18 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
             ← Nueva análisis
           </button>
           <button
-            disabled
-            title="Disponible en la próxima versión"
-            className="px-4 py-2 rounded-xl bg-slate-800/60 text-slate-500 text-xs font-medium cursor-not-allowed border border-slate-700/40"
+            onClick={handleExportExcel}
+            disabled={downloading.excel}
+            className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium transition-colors"
           >
-            ↓ Excel
+            {downloading.excel ? '…' : '↓ Excel'}
           </button>
           <button
-            disabled
-            title="Disponible en la próxima versión"
-            className="px-4 py-2 rounded-xl bg-slate-800/60 text-slate-500 text-xs font-medium cursor-not-allowed border border-slate-700/40"
+            onClick={handleExportConfig}
+            disabled={downloading.config}
+            className="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium transition-colors"
           >
-            ↓ Config JSON
+            {downloading.config ? '…' : '↓ Config JSON'}
           </button>
         </div>
       </div>

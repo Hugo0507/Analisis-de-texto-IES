@@ -12,11 +12,14 @@ Arquitectura de procesos:
       de 5 minutos, marca el workspace como error automáticamente.
 """
 
+import io
+import json
 import logging
 import subprocess
 import sys
 import threading
 
+from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.parsers import MultiPartParser
@@ -396,3 +399,320 @@ def workspace_stopwords_import(request, workspace_id):
         'imported_count': len(imported),
         'imported_words': sorted(imported),
     })
+
+
+# ── Export ────────────────────────────────────────────────────────────────────
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def workspace_export_excel(request, workspace_id):
+    """
+    Exportar resultados del workspace como archivo Excel (.xlsx).
+
+    Hojas generadas:
+      1. Metadatos  — configuración de la sesión
+      2. BoW        — top términos (si se ejecutó)
+      3. TF-IDF     — top términos (si se ejecutó)
+      4. Temas      — distribución + afinidad (si se ejecutó)
+      5. NER        — distribución + top entidades (si se ejecutó)
+      6. BERTopic   — distribución + asignaciones (si se ejecutó)
+    """
+    try:
+        workspace = Workspace.objects.select_related('dataset').get(
+            id=workspace_id, created_by=request.user
+        )
+    except Workspace.DoesNotExist:
+        return Response({'error': 'Workspace no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if workspace.status != Workspace.STATUS_COMPLETED:
+        return Response(
+            {'error': 'El workspace aún no está completado.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        xlsx_bytes = _build_excel_bytes(workspace)
+    except ImportError:
+        return Response(
+            {'error': 'openpyxl no está instalado en este entorno.'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+    except Exception as exc:
+        logger.exception(f"[WS {workspace_id}] Error generando Excel: {exc}")
+        return Response(
+            {'error': f'Error generando el Excel: {exc}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    date_str = workspace.created_at.strftime('%Y%m%d')
+    dataset_slug = workspace.dataset.name[:30].replace(' ', '_')
+    filename = f"lab_{dataset_slug}_{date_str}.xlsx"
+
+    response = HttpResponse(
+        xlsx_bytes,
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def workspace_export_config(request, workspace_id):
+    """
+    Exportar configuración + resultados del workspace como JSON.
+
+    El JSON incluye modelos seleccionados, stopwords, parámetros y
+    resultados completos. Puede reimportarse para recrear la sesión.
+    """
+    try:
+        workspace = Workspace.objects.select_related('dataset').get(
+            id=workspace_id, created_by=request.user
+        )
+    except Workspace.DoesNotExist:
+        return Response({'error': 'Workspace no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if workspace.status != Workspace.STATUS_COMPLETED:
+        return Response(
+            {'error': 'El workspace aún no está completado.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    config = _build_config_dict(workspace)
+    json_bytes = json.dumps(config, ensure_ascii=False, indent=2).encode('utf-8')
+
+    date_str = workspace.created_at.strftime('%Y%m%d')
+    dataset_slug = workspace.dataset.name[:30].replace(' ', '_')
+    filename = f"lab_config_{dataset_slug}_{date_str}.json"
+
+    response = HttpResponse(json_bytes, content_type='application/json; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+
+# ── Export helpers ─────────────────────────────────────────────────────────────
+
+def _build_excel_bytes(workspace) -> bytes:
+    """Construye el workbook Excel y devuelve los bytes crudos."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill
+
+    results = workspace.results or {}
+
+    HEADER_FONT = Font(bold=True, color='FFFFFF')
+    HEADER_FILL = PatternFill(fill_type='solid', fgColor='334155')
+    TITLE_FONT  = Font(bold=True, size=11)
+
+    def _hdr(sheet):
+        """Aplica estilo de cabecera a la última fila escrita."""
+        for cell in sheet[sheet.max_row]:
+            cell.font = HEADER_FONT
+            cell.fill = HEADER_FILL
+
+    wb = Workbook()
+
+    # ── Hoja 1: Metadatos ────────────────────────────────────────────────
+    ws = wb.active
+    ws.title = 'Metadatos'
+
+    params = workspace.inference_params or {}
+    r = results
+
+    ws.append(['Campo', 'Valor'])
+    _hdr(ws)
+
+    meta = [
+        ('Workspace ID',        str(workspace.id)),
+        ('Dataset',             workspace.dataset.name),
+        ('Fecha análisis',      workspace.created_at.strftime('%Y-%m-%d %H:%M UTC')),
+        ('Documentos procesados', r.get('document_count', 0)),
+        ('Modelo BoW',          (r.get('bow') or {}).get('reference_bow_name', 'N/A')),
+        ('Modelo TF-IDF',       (r.get('tfidf') or {}).get('reference_tfidf_name', 'N/A')),
+        ('Modelo Topics',       (r.get('topics') or {}).get('reference_topic_model_name', 'N/A')),
+        ('Modelo NER',          (r.get('ner') or {}).get('reference_ner_name', 'N/A')),
+        ('Modelo BERTopic',     (r.get('bertopic') or {}).get('reference_bertopic_name', 'N/A')),
+        ('Top términos',        params.get('num_top_terms', 50)),
+        ('Long. mín. token',    params.get('min_word_length', 2)),
+        ('Cortar referencias',  'Sí' if params.get('strip_references', True) else 'No'),
+        ('Tipos NER',           ', '.join(params.get('ner_entity_types', [])) or 'Heredado del análisis'),
+        ('Stopwords propias',   ', '.join(workspace.custom_stopwords or []) or 'Ninguna'),
+    ]
+    for label, value in meta:
+        ws.append([label, value])
+        ws.cell(row=ws.max_row, column=1).font = Font(bold=True)
+
+    ws.column_dimensions['A'].width = 25
+    ws.column_dimensions['B'].width = 55
+
+    # ── Hoja 2: BoW ─────────────────────────────────────────────────────
+    bow = results.get('bow') or {}
+    if bow and not bow.get('error') and bow.get('top_terms'):
+        ws2 = wb.create_sheet('BoW — Top Términos')
+        ws2.append(['#', 'Término', 'Frecuencia'])
+        _hdr(ws2)
+        for t in bow['top_terms']:
+            ws2.append([t.get('rank', ''), t.get('term', ''), int(t.get('score', 0))])
+        ws2.column_dimensions['A'].width = 5
+        ws2.column_dimensions['B'].width = 28
+        ws2.column_dimensions['C'].width = 14
+
+    # ── Hoja 3: TF-IDF ──────────────────────────────────────────────────
+    tfidf = results.get('tfidf') or {}
+    if tfidf and not tfidf.get('error') and tfidf.get('top_terms'):
+        ws3 = wb.create_sheet('TF-IDF — Top Términos')
+        ws3.append(['#', 'Término', 'Peso TF-IDF'])
+        _hdr(ws3)
+        for t in tfidf['top_terms']:
+            ws3.append([t.get('rank', ''), t.get('term', ''), round(float(t.get('score', 0)), 4)])
+        ws3.column_dimensions['A'].width = 5
+        ws3.column_dimensions['B'].width = 28
+        ws3.column_dimensions['C'].width = 14
+
+    # ── Hoja 4: Temas ────────────────────────────────────────────────────
+    topics = results.get('topics') or {}
+    if topics and not topics.get('error'):
+        ws4 = wb.create_sheet('Temas')
+
+        ws4.append(['Distribución de temas en documentos nuevos'])
+        ws4.cell(row=ws4.max_row, column=1).font = TITLE_FONT
+        ws4.append(['Tema', 'N° Documentos', '%'])
+        _hdr(ws4)
+        for t in (topics.get('topic_distribution') or []):
+            ws4.append([
+                t.get('topic_label', f"Tema {t.get('topic_id')}"),
+                t.get('document_count', 0),
+                t.get('percentage', 0),
+            ])
+
+        if topics.get('all_topics_affinity'):
+            ws4.append([])
+            ws4.append(['Afinidad promedio con todos los temas del corpus'])
+            ws4.cell(row=ws4.max_row, column=1).font = TITLE_FONT
+            ws4.append(['Tema', 'Peso', '%', 'Top palabras'])
+            _hdr(ws4)
+            for a in topics['all_topics_affinity']:
+                words = a.get('top_words', [])
+                words_str = ', '.join(
+                    w.get('word', str(w)) if isinstance(w, dict) else str(w)
+                    for w in words[:5]
+                )
+                ws4.append([
+                    a.get('topic_label', f"Tema {a.get('topic_id')}"),
+                    round(float(a.get('weight', 0)), 4),
+                    a.get('percentage', 0),
+                    words_str,
+                ])
+
+        ws4.column_dimensions['A'].width = 32
+        ws4.column_dimensions['B'].width = 14
+        ws4.column_dimensions['C'].width = 8
+        ws4.column_dimensions['D'].width = 42
+
+    # ── Hoja 5: NER ──────────────────────────────────────────────────────
+    ner = results.get('ner') or {}
+    if ner and not ner.get('error'):
+        ws5 = wb.create_sheet('NER — Entidades')
+
+        ws5.append(['Distribución por tipo de entidad'])
+        ws5.cell(row=ws5.max_row, column=1).font = TITLE_FONT
+        ws5.append(['Tipo', 'Total ocurrencias', 'Entidades únicas', '%'])
+        _hdr(ws5)
+        for item in (ner.get('entity_distribution') or []):
+            ws5.append([
+                item.get('type', ''),
+                item.get('count', 0),
+                item.get('unique_entities', 0),
+                round(float(item.get('percentage', 0)), 1),
+            ])
+
+        top_by_type = ner.get('top_entities_by_type') or {}
+        if top_by_type:
+            ws5.append([])
+            ws5.append(['Top entidades por tipo'])
+            ws5.cell(row=ws5.max_row, column=1).font = TITLE_FONT
+            ws5.append(['Tipo', 'Entidad', 'Frecuencia'])
+            _hdr(ws5)
+            for etype, entities in top_by_type.items():
+                for e in (entities or []):
+                    ws5.append([etype, e.get('text', ''), e.get('count', 0)])
+
+        ws5.column_dimensions['A'].width = 16
+        ws5.column_dimensions['B'].width = 32
+        ws5.column_dimensions['C'].width = 18
+        ws5.column_dimensions['D'].width = 8
+
+    # ── Hoja 6: BERTopic ─────────────────────────────────────────────────
+    bert = results.get('bertopic') or {}
+    if bert and not bert.get('error'):
+        ws6 = wb.create_sheet('BERTopic — Similitud')
+
+        method_note = bert.get('method_note', '')
+        ws6.append([f"Método: {bert.get('method', 'keyword_similarity')}  —  {method_note}"])
+        ws6.cell(row=1, column=1).font = Font(italic=True, color='888888')
+        ws6.append([])
+
+        ws6.append(['Distribución de documentos por tema'])
+        ws6.cell(row=ws6.max_row, column=1).font = TITLE_FONT
+        ws6.append(['Tema', 'N° Documentos', '%'])
+        _hdr(ws6)
+        for t in (bert.get('topic_distribution') or []):
+            ws6.append([
+                t.get('topic_label', f"Tema {t.get('topic_id')}"),
+                t.get('document_count', 0),
+                t.get('percentage', 0),
+            ])
+
+        assignments = bert.get('document_assignments') or []
+        if assignments:
+            ws6.append([])
+            ws6.append(['Asignación por documento'])
+            ws6.cell(row=ws6.max_row, column=1).font = TITLE_FONT
+            ws6.append(['# Doc', 'Tema dominante', 'Similitud (%)'])
+            _hdr(ws6)
+            for da in assignments:
+                ws6.append([
+                    da.get('document_index', 0) + 1,
+                    da.get('dominant_topic_label', ''),
+                    round(float(da.get('similarity_score', 0)) * 100, 1),
+                ])
+
+        ws6.column_dimensions['A'].width = 8
+        ws6.column_dimensions['B'].width = 35
+        ws6.column_dimensions['C'].width = 15
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return buf.getvalue()
+
+
+def _build_config_dict(workspace) -> dict:
+    """Construye el diccionario de configuración exportable."""
+    results = workspace.results or {}
+    bow_r    = results.get('bow') or {}
+    tfidf_r  = results.get('tfidf') or {}
+    topics_r = results.get('topics') or {}
+    ner_r    = results.get('ner') or {}
+    bert_r   = results.get('bertopic') or {}
+
+    def _model_entry(ws_id, name_key, result_dict):
+        if ws_id is None:
+            return None
+        return {'id': ws_id, 'name': result_dict.get(name_key)}
+
+    return {
+        'schema_version': '1.0',
+        'created_at': workspace.created_at.isoformat(),
+        'workspace_id': str(workspace.id),
+        'dataset_name': workspace.dataset.name,
+        'models': {
+            'bow':         _model_entry(workspace.bow_id,          'reference_bow_name',         bow_r),
+            'tfidf':       _model_entry(workspace.tfidf_id,        'reference_tfidf_name',       tfidf_r),
+            'topic_model': _model_entry(workspace.topic_model_id,  'reference_topic_model_name', topics_r),
+            'ner':         _model_entry(workspace.ner_id,          'reference_ner_name',         ner_r),
+            'bertopic':    _model_entry(workspace.bertopic_id,     'reference_bertopic_name',    bert_r),
+        },
+        'custom_stopwords': workspace.custom_stopwords or [],
+        'inference_params': workspace.inference_params or {},
+        'results': results,
+    }

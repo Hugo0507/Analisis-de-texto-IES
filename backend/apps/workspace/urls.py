@@ -15,4 +15,7 @@ urlpatterns = [
     path('workspace/<uuid:workspace_id>/stopwords/', views.workspace_stopwords, name='workspace-stopwords'),
     path('workspace/<uuid:workspace_id>/stopwords/update/', views.workspace_stopwords_update, name='workspace-stopwords-update'),
     path('workspace/<uuid:workspace_id>/stopwords/import/', views.workspace_stopwords_import, name='workspace-stopwords-import'),
+    # Export
+    path('workspace/<uuid:workspace_id>/export/excel/', views.workspace_export_excel, name='workspace-export-excel'),
+    path('workspace/<uuid:workspace_id>/export/config/', views.workspace_export_config, name='workspace-export-config'),
 ]
