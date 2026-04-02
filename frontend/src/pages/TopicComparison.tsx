@@ -2,8 +2,8 @@
  * TopicComparison
  *
  * Benchmark de modelos de topic modeling: LDA, NMF, LSA, pLSA, BERTopic.
- * Muestra métricas comparativas y destaca el mejor modelo.
- * Llama a /api/v1/analysis/topics/compare/
+ * Muestra métricas comparativas de modelos entrenados y destaca el mejor modelo.
+ * Lee directamente de los modelos completados en topic-modeling y bertopic.
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -14,10 +14,23 @@ import {
   Info,
   AlertTriangle,
 } from 'lucide-react';
-import analysisService from '../services/analysisService';
-import type { CompareModelsResponse } from '../services/analysisService';
+import topicModelingService from '../services/topicModelingService';
+import { bertopicService } from '../services/bertopicService';
+import type { TopicModelingListItem } from '../services/topicModelingService';
+import type { BERTopicListItem } from '../services/bertopicService';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
+
+// ── Types ────────────────────────────────────────────────────────────────────
+
+interface ModelEntry {
+  n_topics: number;
+  coherence: number;
+  perplexity?: number;
+  reconstruction_error?: number;
+  name: string;
+  id: number;
+}
 
 // ── Model display metadata ────────────────────────────────────────────────────
 
@@ -69,40 +82,95 @@ const MetricBar: React.FC<MetricBarProps> = ({ label, value, max, barColor, isBe
   );
 };
 
+// ── Helper: build benchmark data from completed models ────────────────────────
+
+function buildBenchmarkData(
+  tmModels: TopicModelingListItem[],
+  btModels: BERTopicListItem[],
+): { models: Record<string, ModelEntry>; best_model: string | null } {
+  const completed = tmModels.filter((m) => m.status === 'completed' && m.coherence_score != null);
+  const completedBt = btModels.filter((m) => m.status === 'completed' && m.coherence_score != null);
+
+  const models: Record<string, ModelEntry> = {};
+
+  // For each algorithm, pick the model with the highest coherence
+  const byAlgorithm: Record<string, TopicModelingListItem[]> = {};
+  for (const m of completed) {
+    const algo = m.algorithm.toLowerCase();
+    if (!byAlgorithm[algo]) byAlgorithm[algo] = [];
+    byAlgorithm[algo].push(m);
+  }
+
+  for (const [algo, group] of Object.entries(byAlgorithm)) {
+    const best = group.reduce((a, b) =>
+      (a.coherence_score ?? 0) >= (b.coherence_score ?? 0) ? a : b
+    );
+    models[algo] = {
+      n_topics: best.num_topics,
+      coherence: best.coherence_score ?? 0,
+      perplexity: algo === 'lda' ? (best as any).perplexity_score ?? undefined : undefined,
+      name: best.name,
+      id: best.id,
+    };
+  }
+
+  // BERTopic — pick best by coherence
+  if (completedBt.length > 0) {
+    const bestBt = completedBt.reduce((a, b) =>
+      (a.coherence_score ?? 0) >= (b.coherence_score ?? 0) ? a : b
+    );
+    models['bertopic'] = {
+      n_topics: bestBt.num_topics_found,
+      coherence: bestBt.coherence_score ?? 0,
+      name: bestBt.name,
+      id: bestBt.id,
+    };
+  }
+
+  // Determine best model by coherence
+  const entries = Object.entries(models);
+  const best_model = entries.length > 0
+    ? entries.reduce((a, b) => (a[1].coherence >= b[1].coherence ? a : b))[0]
+    : null;
+
+  return { models, best_model };
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export const TopicComparison: React.FC = () => {
   const { showError } = useToast();
 
-  const [data, setData] = useState<CompareModelsResponse | null>(null);
+  const [models, setModels] = useState<Record<string, ModelEntry>>({});
+  const [bestModel, setBestModel] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [nTopics, setNTopics] = useState(10);
 
-  const load = useCallback(async (topics: number) => {
+  const load = useCallback(async () => {
     setIsLoading(true);
     try {
-      const result = await analysisService.compareModels(topics);
-      if (result.success) setData(result);
+      const [tmList, btList] = await Promise.all([
+        topicModelingService.getTopicModelings(),
+        bertopicService.getBERTopicAnalyses(),
+      ]);
+      const data = buildBenchmarkData(tmList, btList);
+      setModels(data.models);
+      setBestModel(data.best_model);
     } catch (err: any) {
-      const msg: string = err.response?.data?.error ?? err.message ?? '';
-      if (!msg.toLowerCase().includes('no model')) {
-        showError('Error al cargar la comparación: ' + msg);
-      }
+      showError('Error al cargar modelos: ' + (err.message ?? ''));
     } finally {
       setIsLoading(false);
     }
   }, [showError]);
 
   useEffect(() => {
-    load(nTopics);
-  }, [load, nTopics]);
+    load();
+  }, [load]);
 
   // ── Compute max values for bar charts ─────────────────────────────────────
 
-  const models = data ? Object.entries(data.models) : [];
-  const maxCoherence = Math.max(...models.map(([, m]) => m.coherence ?? 0), 0.001);
-  const maxPerplexity = Math.max(...models.map(([, m]) => m.perplexity ?? 0), 0.001);
-  const maxReconError = Math.max(...models.map(([, m]) => m.reconstruction_error ?? 0), 0.001);
+  const entries = Object.entries(models);
+  const maxCoherence = Math.max(...entries.map(([, m]) => m.coherence ?? 0), 0.001);
+  const maxPerplexity = Math.max(...entries.map(([, m]) => m.perplexity ?? 0), 0.001);
 
   if (isLoading) {
     return (
@@ -120,31 +188,15 @@ export const TopicComparison: React.FC = () => {
         <div className="flex items-center justify-between px-4 sm:px-8 py-4">
           <div className="flex items-center gap-3 min-w-0">
             <BarChart2 className="w-5 h-5 text-gray-700 shrink-0" />
-            <h1 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">Benchmark de Modelos de Tópicos</h1>
+            <h1 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">Benchmark de Modelos de Temas</h1>
           </div>
-          <div className="flex items-center gap-3 shrink-0 ml-4">
-            {/* N-topics selector */}
-            <div className="flex items-center gap-2">
-              <label htmlFor="n-topics" className="text-xs text-slate-500 hidden sm:inline">N temas</label>
-              <select
-                id="n-topics"
-                value={nTopics}
-                onChange={(e) => setNTopics(Number(e.target.value))}
-                className="border border-slate-300 rounded-lg px-2 py-1.5 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
-              >
-                {[5, 8, 10, 12, 15, 20].map((n) => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
-            </div>
-            <button
-              onClick={() => load(nTopics)}
-              className="p-2 sm:p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400"
-              title="Actualizar benchmark"
-            >
-              <RefreshCw className="w-4 h-4 text-gray-700" />
-            </button>
-          </div>
+          <button
+            onClick={load}
+            className="p-2 sm:p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400"
+            title="Actualizar benchmark"
+          >
+            <RefreshCw className="w-4 h-4 text-gray-700" />
+          </button>
         </div>
       </div>
 
@@ -154,37 +206,37 @@ export const TopicComparison: React.FC = () => {
         <div className="flex gap-2.5 text-sm text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
           <Info className="w-4 h-4 shrink-0 mt-0.5 text-slate-400" />
           <span className="leading-relaxed">
-            Comparación de métricas para LDA, NMF, LSA, pLSA y BERTopic con <strong>{nTopics} temas</strong>.
-            La coherencia es la métrica principal: valores más altos indican temas más interpretables.
-            El mejor modelo se resalta en verde.
+            Comparación automática de los mejores modelos entrenados para LDA, NMF, LSA, pLSA y BERTopic.
+            Se selecciona el modelo con mayor coherencia de cada algoritmo.
+            El mejor modelo global se resalta en verde.
           </span>
         </div>
 
-        {!data || models.length === 0 ? (
+        {entries.length === 0 ? (
           <div className="bg-white p-8 sm:p-10 text-center" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
             <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="w-8 h-8 text-amber-500" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Sin modelos entrenados</h3>
             <p className="text-sm text-gray-600 max-w-md mx-auto">
-              Entrena al menos un modelo de Modelado de Temas (LDA, NMF, LSA o pLSA) desde la sección de Modelado
-              para ver la comparación de benchmarks.
+              Entrena al menos un modelo de Modelado de Temas (LDA, NMF, LSA o pLSA) o BERTopic
+              desde la sección de Modelado para ver la comparación de benchmarks.
             </p>
           </div>
         ) : (
           <>
             {/* Mejor modelo destacado */}
-            {data.best_model && (
-              <div className={`border rounded-xl p-4 sm:p-5 ${modelMeta(data.best_model).bg}`}>
+            {bestModel && (
+              <div className={`border rounded-xl p-4 sm:p-5 ${modelMeta(bestModel).bg}`}>
                 <div className="flex items-center gap-3">
                   <Trophy className="w-6 h-6 text-emerald-500 shrink-0" />
                   <div>
                     <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Mejor modelo</p>
-                    <p className={`text-xl font-bold ${modelMeta(data.best_model).color}`}>
-                      {modelMeta(data.best_model).label}
+                    <p className={`text-xl font-bold ${modelMeta(bestModel).color}`}>
+                      {modelMeta(bestModel).label}
                     </p>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Coherencia: {fmt(data.models[data.best_model]?.coherence)}
+                      Coherencia: {fmt(models[bestModel]?.coherence)} — {models[bestModel]?.name}
                     </p>
                   </div>
                 </div>
@@ -199,17 +251,17 @@ export const TopicComparison: React.FC = () => {
                   <thead>
                     <tr className="border-b border-slate-100">
                       <th className="text-left text-xs font-medium text-slate-500 py-2 pr-4">Modelo</th>
+                      <th className="text-left text-xs font-medium text-slate-500 py-2 pr-4">Nombre</th>
                       <th className="text-right text-xs font-medium text-slate-500 py-2 pr-4">N Temas</th>
                       <th className="text-right text-xs font-medium text-slate-500 py-2 pr-4">Coherencia</th>
                       <th className="text-right text-xs font-medium text-slate-500 py-2 pr-4">Perplejidad</th>
-                      <th className="text-right text-xs font-medium text-slate-500 py-2 pr-4">Error Reconstrucción</th>
                       <th className="text-center text-xs font-medium text-slate-500 py-2">Mejor</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {models.map(([key, model]) => {
+                    {entries.map(([key, model]) => {
                       const meta = modelMeta(key);
-                      const isBest = data.best_model === key;
+                      const isBest = bestModel === key;
                       return (
                         <tr key={key} className={`hover:bg-slate-50 ${isBest ? 'bg-emerald-50/50' : ''}`}>
                           <td className="py-3 pr-4">
@@ -217,15 +269,15 @@ export const TopicComparison: React.FC = () => {
                               {meta.label}
                             </span>
                           </td>
+                          <td className="py-3 pr-4 text-sm text-slate-600 max-w-[200px] truncate">
+                            {model.name}
+                          </td>
                           <td className="py-3 pr-4 text-right font-mono text-slate-600 text-sm">{model.n_topics}</td>
                           <td className={`py-3 pr-4 text-right font-mono text-sm font-semibold ${isBest ? 'text-emerald-700' : 'text-slate-700'}`}>
                             {fmt(model.coherence)}
                           </td>
                           <td className="py-3 pr-4 text-right font-mono text-slate-600 text-sm">
                             {model.perplexity != null ? model.perplexity.toFixed(2) : '—'}
-                          </td>
-                          <td className="py-3 pr-4 text-right font-mono text-slate-600 text-sm">
-                            {model.reconstruction_error != null ? model.reconstruction_error.toFixed(2) : '—'}
                           </td>
                           <td className="py-3 text-center">
                             {isBest ? (
@@ -250,7 +302,7 @@ export const TopicComparison: React.FC = () => {
                 El verde indica el mejor modelo.
               </p>
               <div className="space-y-2">
-                {models
+                {entries
                   .sort(([, a], [, b]) => (b.coherence ?? 0) - (a.coherence ?? 0))
                   .map(([key, model]) => (
                     <MetricBar
@@ -259,21 +311,21 @@ export const TopicComparison: React.FC = () => {
                       value={model.coherence}
                       max={maxCoherence}
                       barColor={modelMeta(key).bar}
-                      isBest={data.best_model === key}
+                      isBest={bestModel === key}
                     />
                   ))}
               </div>
             </div>
 
             {/* Perplejidad (solo si hay datos) */}
-            {models.some(([, m]) => m.perplexity != null) && (
+            {entries.some(([, m]) => m.perplexity != null) && (
               <div className="bg-white p-5 sm:p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
                 <h2 className="text-base font-semibold text-slate-800 mb-1">Perplejidad por modelo</h2>
                 <p className="text-xs text-slate-400 mb-4">
                   Solo disponible para LDA. Valores más bajos indican mejor ajuste al corpus.
                 </p>
                 <div className="space-y-2">
-                  {models
+                  {entries
                     .filter(([, m]) => m.perplexity != null)
                     .sort(([, a], [, b]) => (b.perplexity ?? 0) - (a.perplexity ?? 0))
                     .map(([key, model]) => (
@@ -282,31 +334,6 @@ export const TopicComparison: React.FC = () => {
                         label={modelMeta(key).label}
                         value={model.perplexity}
                         max={maxPerplexity}
-                        barColor={modelMeta(key).bar}
-                        isBest={false}
-                      />
-                    ))}
-                </div>
-              </div>
-            )}
-
-            {/* Error de reconstrucción (solo si hay datos) */}
-            {models.some(([, m]) => m.reconstruction_error != null) && (
-              <div className="bg-white p-5 sm:p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-                <h2 className="text-base font-semibold text-slate-800 mb-1">Error de reconstrucción</h2>
-                <p className="text-xs text-slate-400 mb-4">
-                  Disponible para NMF, LSA y pLSA. Valores más bajos indican mejor factorización.
-                </p>
-                <div className="space-y-2">
-                  {models
-                    .filter(([, m]) => m.reconstruction_error != null)
-                    .sort(([, a], [, b]) => (b.reconstruction_error ?? 0) - (a.reconstruction_error ?? 0))
-                    .map(([key, model]) => (
-                      <MetricBar
-                        key={key}
-                        label={modelMeta(key).label}
-                        value={model.reconstruction_error}
-                        max={maxReconError}
                         barColor={modelMeta(key).bar}
                         isBest={false}
                       />
