@@ -82,7 +82,11 @@ export const BERTopicView: React.FC = () => {
     setProjectionsLoading(true);
     try {
       const data = await bertopicService.getProjections(analysisId);
-      setProjections(data);
+      // Only set projections if the response has actual arrays (models before H2 return {})
+      if (data && Array.isArray(data.pca) && Array.isArray(data.umap)) {
+        setProjections(data);
+      }
+      // else leave as null → shows "no disponibles" message
     } catch {
       // Projections may not exist for older analyses — fail silently
     } finally {

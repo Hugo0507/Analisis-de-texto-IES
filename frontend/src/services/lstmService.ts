@@ -107,8 +107,9 @@ export interface LstmProgress {
 
 const lstmService = {
   async list(): Promise<LstmListItem[]> {
-    const res = await apiClient.get<LstmListItem[]>('/lstm-analysis/');
-    return res.data;
+    const res = await apiClient.get('/lstm-analysis/');
+    // DRF pagination returns { count, next, previous, results: [...] }
+    return res.data.results ?? res.data;
   },
 
   async getById(id: number): Promise<LstmAnalysis> {
