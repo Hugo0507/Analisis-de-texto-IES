@@ -11,7 +11,7 @@
  *   4. Resultados  — visualizar BoW, TF-IDF y Tópicos comparables con el corpus
  */
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useFilter } from '../../contexts/FilterContext';
 import workspaceService, {
   Workspace,
@@ -931,6 +931,104 @@ const ProcessingStage: React.FC<ProcessingStageProps> = ({ workspaceId, onDone, 
   );
 };
 
+// ── BoW Word Cloud ─────────────────────────────────────────────────────────────
+
+const BOW_CLOUD_W = 660;
+const BOW_CLOUD_H = 300;
+
+/** Color semántico por frecuencia relativa: naranja (alta) → amarillo → cyan → violeta (baja) */
+const bowCloudColor = (ratio: number): string => {
+  if (ratio >= 0.75) return '#f97316'; // naranja  — muy frecuente
+  if (ratio >= 0.50) return '#eab308'; // amarillo — frecuente
+  if (ratio >= 0.25) return '#22d3ee'; // cyan     — media
+  return '#a78bfa';                    // violeta  — menos frecuente
+};
+
+const BoWWordCloud: React.FC<{ terms: Array<{ term: string; score: number }>; maxWords?: number }> = ({
+  terms,
+  maxWords = 60,
+}) => {
+  const layout = useMemo(() => {
+    if (!terms.length) return [];
+    const words  = terms.slice(0, maxWords);
+    const maxVal = words[0]?.score || 1;
+    const minVal = words[words.length - 1]?.score || 0;
+    const range  = maxVal - minVal || 1;
+    const fs = (v: number) => Math.round(11 + ((v - minVal) / range) * 29);
+    type Box = { x1: number; y1: number; x2: number; y2: number };
+    const placed: Box[] = [];
+    const hits = (x1: number, y1: number, x2: number, y2: number) =>
+      placed.some(p => x1 < p.x2 + 5 && x2 > p.x1 - 5 && y1 < p.y2 + 3 && y2 > p.y1 - 3);
+    return words.map((word) => {
+      const size = fs(word.score);
+      const ww = word.term.length * size * 0.57;
+      const wh = size * 1.25;
+      let fx = BOW_CLOUD_W / 2 - ww / 2;
+      let fy = BOW_CLOUD_H / 2 - wh / 2;
+      for (let s = 0; s < 700; s++) {
+        const x = BOW_CLOUD_W / 2 + s * 1.05 * Math.cos(s * 0.48) - ww / 2;
+        const y = BOW_CLOUD_H / 2 + s * 0.62 * Math.sin(s * 0.48) - wh / 2;
+        if (x < 4 || x + ww > BOW_CLOUD_W - 4 || y < 4 || y + wh > BOW_CLOUD_H - 4) continue;
+        if (!hits(x, y, x + ww, y + wh)) { fx = x; fy = y; break; }
+      }
+      placed.push({ x1: fx, y1: fy, x2: fx + ww, y2: fy + wh });
+      const ratio = (word.score - minVal) / range;
+      return { word, fx, fy, size, ratio } as {
+        word: { term: string; score: number };
+        fx: number; fy: number; size: number; ratio: number;
+      };
+    });
+  }, [terms, maxWords]);
+
+  if (!layout.length) return null;
+  return (
+    <svg viewBox={`0 0 ${BOW_CLOUD_W} ${BOW_CLOUD_H}`} className="w-full" style={{ minHeight: '240px' }}>
+      {layout.map(({ word, fx, fy, size, ratio }) => (
+        <text
+          key={word.term}
+          x={fx} y={fy + size}
+          fontSize={size}
+          fontFamily="ui-sans-serif, system-ui, sans-serif"
+          fontWeight={ratio > 0.6 ? 700 : ratio > 0.3 ? 600 : 400}
+          fill={bowCloudColor(ratio)}
+          fillOpacity={0.52 + ratio * 0.48}
+          style={{ cursor: 'default' }}
+        >
+          <title>{word.term}: {word.score.toFixed(0)} ocurrencias</title>
+          {word.term}
+        </text>
+      ))}
+    </svg>
+  );
+};
+
+// ── NER entity-type color map ──────────────────────────────────────────────────
+// Colores fijos por tipo: el analista aprende la asociación tipo → color.
+
+const NER_TYPE_COLORS: Record<string, string> = {
+  PERSON:   'rgba(96,165,250,0.85)',   // blue-400
+  PER:      'rgba(96,165,250,0.85)',
+  ORG:      'rgba(251,146,60,0.85)',   // orange-400
+  GPE:      'rgba(74,222,128,0.85)',   // green-400
+  DATE:     'rgba(192,132,252,0.85)',  // purple-400
+  LOC:      'rgba(45,212,191,0.85)',   // teal-400
+  FAC:      'rgba(251,191,36,0.85)',   // amber-400
+  NORP:     'rgba(244,114,182,0.85)',  // pink-400
+  PRODUCT:  'rgba(56,189,248,0.85)',   // sky-400
+  EVENT:    'rgba(245,158,11,0.85)',   // amber-500
+  MONEY:    'rgba(163,230,53,0.85)',   // lime-400
+  TIME:     'rgba(232,121,249,0.85)',  // fuchsia-400
+  PERCENT:  'rgba(52,211,153,0.85)',   // emerald-400
+  CARDINAL: 'rgba(148,163,184,0.85)', // slate-400
+  ORDINAL:  'rgba(100,116,139,0.85)', // slate-500
+  QUANTITY: 'rgba(34,211,238,0.85)',  // cyan-400
+  WORK_OF_ART: 'rgba(248,113,113,0.85)', // red-400
+  LAW:      'rgba(167,139,250,0.85)', // violet-400
+  LANGUAGE: 'rgba(94,234,212,0.85)',  // teal-300
+};
+const getNerChartColor = (type: string): string =>
+  NER_TYPE_COLORS[type.toUpperCase()] ?? 'rgba(148,163,184,0.85)';
+
 // ── Stage 4: Results ──────────────────────────────────────────────────────────
 
 interface ResultsStageProps {
@@ -1110,29 +1208,32 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
               </div>
             ))}
           </div>
-          {/* Nube de palabras */}
+          {/* Nube de palabras — SVG espiral, colores por frecuencia */}
           <div className="mb-5 p-4 rounded-xl bg-slate-900/40 border border-violet-800/20">
-            <p className="text-xs text-slate-400 font-medium mb-3">
-              Nube de palabras — top {Math.min(results.bow!.top_terms.length, 60)} términos
-            </p>
-            <div className="flex flex-wrap gap-x-3 gap-y-2 justify-center items-center min-h-[100px] py-2">
-              {results.bow!.top_terms.slice(0, 60).map((t) => {
-                const maxScore = results.bow!.top_terms[0]?.score || 1;
-                const ratio = t.score / maxScore;
-                const size = Math.round(11 + ratio * 22);
-                const opacity = 0.45 + ratio * 0.55;
-                return (
-                  <span
-                    key={t.term}
-                    title={`${t.term}: ${t.score.toFixed(0)} ocurrencias`}
-                    style={{ fontSize: `${size}px`, opacity, lineHeight: 1.3 }}
-                    className="text-violet-300 font-medium cursor-default select-none hover:opacity-100 hover:text-violet-100 transition-all"
-                  >
-                    {t.term}
-                  </span>
-                );
-              })}
+            <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+              <p className="text-xs text-slate-400 font-medium">
+                Nube de palabras — top {Math.min(results.bow!.top_terms.length, 60)} términos
+              </p>
+              <div className="flex items-center gap-3 text-xs text-slate-500">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#f97316' }} />
+                  Alta
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#eab308' }} />
+                  Media-alta
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#22d3ee' }} />
+                  Media
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#a78bfa' }} />
+                  Baja
+                </span>
+              </div>
             </div>
+            <BoWWordCloud terms={results.bow!.top_terms} maxWords={60} />
           </div>
           <div className="space-y-1.5">
             <p className="text-xs text-slate-300 font-medium mb-2">Top 15 términos por frecuencia</p>
@@ -1394,17 +1495,7 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
                     labels: results.ner!.entity_distribution.map(e => e.type),
                     datasets: [{
                       data: results.ner!.entity_distribution.map(e => e.count),
-                      backgroundColor: [
-                        'rgba(16,185,129,0.82)',
-                        'rgba(52,211,153,0.82)',
-                        'rgba(5,150,105,0.82)',
-                        'rgba(4,120,87,0.82)',
-                        'rgba(6,78,59,0.82)',
-                        'rgba(34,197,94,0.82)',
-                        'rgba(74,222,128,0.82)',
-                        'rgba(134,239,172,0.82)',
-                        'rgba(167,243,208,0.82)',
-                      ],
+                      backgroundColor: results.ner!.entity_distribution.map(e => getNerChartColor(e.type)),
                       borderColor: 'rgba(15,23,42,0.6)',
                       borderWidth: 2,
                     }],
@@ -1416,10 +1507,32 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
                     plugins: {
                       legend: {
                         position: 'right',
-                        labels: { color: '#cbd5e1', font: { size: 10 }, boxWidth: 12, padding: 6 },
+                        labels: {
+                          color: '#cbd5e1',
+                          font: { size: 10 },
+                          boxWidth: 12,
+                          padding: 6,
+                          generateLabels: (chart) => {
+                            const ds = chart.data.datasets[0];
+                            return (chart.data.labels as string[]).map((label, i) => ({
+                              text: label,
+                              fillStyle: (ds.backgroundColor as string[])[i],
+                              strokeStyle: 'rgba(15,23,42,0.6)',
+                              lineWidth: 1,
+                              hidden: false,
+                              index: i,
+                            }));
+                          },
+                        },
                       },
                       tooltip: {
-                        callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.raw} ocurrencias` },
+                        callbacks: {
+                          label: (ctx) => ` ${ctx.label}: ${ctx.raw} ocurrencias`,
+                          labelColor: (ctx) => ({
+                            borderColor: 'transparent',
+                            backgroundColor: getNerChartColor(results.ner!.entity_distribution[ctx.dataIndex]?.type ?? ''),
+                          }),
+                        },
                       },
                     },
                   }}
