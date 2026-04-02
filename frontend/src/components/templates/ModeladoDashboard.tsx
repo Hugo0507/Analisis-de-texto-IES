@@ -10,9 +10,11 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardGrid, MetricCardDark, DonutChartViz } from '../organisms';
 import { ChartCard } from '../molecules';
+import { ScatterPlotProjection } from '../organisms/ScatterPlotProjection';
 import dashboardService from '../../services/dashboardService';
 import type { ModelingDashboardData } from '../../services/dashboardService';
 import { useFilter } from '../../contexts/FilterContext';
+import type { Projections2D } from '../../services/bertopicService';
 
 // ---------------------------------------------------------------------------
 // Color helpers & constants
@@ -860,6 +862,37 @@ export const ModeladoDashboard: React.FC = () => {
               </div>
             </ChartCard>
           )}
+
+          {/* Science Map — UMAP projection */}
+          {(() => {
+            const proj = data.selectedBertopic!.projections_2d as Projections2D | null | Record<string, never>;
+            const umapPoints = (proj as Projections2D)?.umap;
+            if (!umapPoints || umapPoints.length === 0) return null;
+            return (
+              <ChartCard
+                title="Mapa de Ciencia del Corpus"
+                subtitle="Proyección UMAP — cada punto es un documento"
+                accentColor="amber"
+                size="lg"
+                icon={
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                }
+              >
+                <div className="px-2 pb-2">
+                  <p className="text-xs text-slate-400 mb-3">
+                    Los documentos cercanos tratan temas similares. El color indica el tema dominante asignado.
+                  </p>
+                  <ScatterPlotProjection
+                    projections={proj as Projections2D}
+                    fixedMethod="umap"
+                    dark
+                  />
+                </div>
+              </ChartCard>
+            );
+          })()}
         </>
       )}
     </div>

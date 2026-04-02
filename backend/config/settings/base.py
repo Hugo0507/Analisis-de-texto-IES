@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'apps.ner_analysis',
     'apps.topic_modeling',
     'apps.bertopic',
+    'apps.lstm_analysis',
     'apps.analysis',
     'apps.pipeline',
     'apps.infrastructure',
