@@ -19,6 +19,31 @@ import workspaceService, {
   ImportConfigResult,
 } from '../../services/workspaceService';
 import dashboardService from '../../services/dashboardService';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  RadialLinearScale,
+  Tooltip as ChartTooltip,
+  Legend,
+} from 'chart.js';
+import { Doughnut, Bar, Scatter } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  RadialLinearScale,
+  ChartTooltip,
+  Legend,
+);
 
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -1085,6 +1110,30 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
               </div>
             ))}
           </div>
+          {/* Nube de palabras */}
+          <div className="mb-5 p-4 rounded-xl bg-slate-900/40 border border-violet-800/20">
+            <p className="text-xs text-slate-400 font-medium mb-3">
+              Nube de palabras — top {Math.min(results.bow!.top_terms.length, 60)} términos
+            </p>
+            <div className="flex flex-wrap gap-x-3 gap-y-2 justify-center items-center min-h-[100px] py-2">
+              {results.bow!.top_terms.slice(0, 60).map((t) => {
+                const maxScore = results.bow!.top_terms[0]?.score || 1;
+                const ratio = t.score / maxScore;
+                const size = Math.round(11 + ratio * 22);
+                const opacity = 0.45 + ratio * 0.55;
+                return (
+                  <span
+                    key={t.term}
+                    title={`${t.term}: ${t.score.toFixed(0)} ocurrencias`}
+                    style={{ fontSize: `${size}px`, opacity, lineHeight: 1.3 }}
+                    className="text-violet-300 font-medium cursor-default select-none hover:opacity-100 hover:text-violet-100 transition-all"
+                  >
+                    {t.term}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
           <div className="space-y-1.5">
             <p className="text-xs text-slate-300 font-medium mb-2">Top 15 términos por frecuencia</p>
             {results.bow.top_terms.slice(0, 15).map((t, i) => {
@@ -1126,6 +1175,52 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
               </div>
             ))}
           </div>
+          {/* Scatter: rango vs. peso TF-IDF */}
+          <div className="mb-5 p-3 rounded-xl bg-slate-900/40 border border-cyan-800/20" style={{ height: 260 }}>
+            <p className="text-xs text-slate-400 font-medium mb-2">Rango vs. peso TF-IDF (scatter)</p>
+            <div style={{ height: 210 }}>
+              <Scatter
+                data={{
+                  datasets: [{
+                    label: 'TF-IDF',
+                    data: results.tfidf!.top_terms.map((t, i) => ({ x: i + 1, y: t.score })),
+                    backgroundColor: 'rgba(6,182,212,0.75)',
+                    pointRadius: 5,
+                    pointHoverRadius: 8,
+                    pointBorderColor: 'transparent',
+                  }],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                      callbacks: {
+                        label: (ctx) => {
+                          const idx = ctx.dataIndex;
+                          const term = results.tfidf!.top_terms[idx]?.term ?? '';
+                          return ` ${term}: ${(ctx.parsed.y as number).toFixed(4)}`;
+                        },
+                      },
+                    },
+                  },
+                  scales: {
+                    x: {
+                      title: { display: true, text: 'Rango', color: '#94a3b8', font: { size: 10 } },
+                      ticks: { color: '#94a3b8', font: { size: 10 } },
+                      grid: { color: 'rgba(148,163,184,0.08)' },
+                    },
+                    y: {
+                      title: { display: true, text: 'Peso TF-IDF', color: '#94a3b8', font: { size: 10 } },
+                      ticks: { color: '#94a3b8', font: { size: 10 } },
+                      grid: { color: 'rgba(148,163,184,0.08)' },
+                    },
+                  },
+                }}
+              />
+            </div>
+          </div>
           <div className="space-y-1.5">
             <p className="text-xs text-slate-300 font-medium mb-2">Top 15 términos por TF-IDF</p>
             {results.tfidf.top_terms.slice(0, 15).map((t, i) => {
@@ -1162,6 +1257,48 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
       {/* Topics */}
       {results.topics && !results.topics.error && (
         <Section title={`Modelado de Temas — ${results.topics.algorithm.toUpperCase()}`} color="#f59e0b">
+          {/* Donut: distribución de temas dominantes */}
+          {results.topics!.topic_distribution.length > 0 && (
+            <div className="mb-5 p-3 rounded-xl bg-slate-900/40 border border-amber-800/20" style={{ height: 260 }}>
+              <p className="text-xs text-slate-400 font-medium mb-2">Distribución de temas (% documentos)</p>
+              <div style={{ height: 210 }}>
+                <Doughnut
+                  data={{
+                    labels: results.topics!.topic_distribution.map(t => t.topic_label || `Tema ${t.topic_id}`),
+                    datasets: [{
+                      data: results.topics!.topic_distribution.map(t => t.percentage),
+                      backgroundColor: [
+                        'rgba(245,158,11,0.82)',
+                        'rgba(251,191,36,0.82)',
+                        'rgba(217,119,6,0.82)',
+                        'rgba(180,83,9,0.82)',
+                        'rgba(161,98,7,0.82)',
+                        'rgba(120,53,15,0.82)',
+                        'rgba(234,88,12,0.82)',
+                        'rgba(194,65,12,0.82)',
+                      ],
+                      borderColor: 'rgba(15,23,42,0.6)',
+                      borderWidth: 2,
+                    }],
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '58%',
+                    plugins: {
+                      legend: {
+                        position: 'right',
+                        labels: { color: '#cbd5e1', font: { size: 10 }, boxWidth: 12, padding: 6 },
+                      },
+                      tooltip: {
+                        callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.raw}%` },
+                      },
+                    },
+                  }}
+                />
+              </div>
+            </div>
+          )}
           {/* Distribución de temas dominantes */}
           <div className="space-y-3 mb-6">
             <p className="text-xs text-slate-300 font-medium">Distribución de temas dominantes en los nuevos documentos</p>
@@ -1247,6 +1384,49 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
             ))}
           </div>
 
+          {/* Donut: distribución por tipo de entidad */}
+          {results.ner!.entity_distribution.length > 0 && (
+            <div className="mb-5 p-3 rounded-xl bg-slate-900/40 border border-emerald-800/20" style={{ height: 260 }}>
+              <p className="text-xs text-slate-400 font-medium mb-2">Distribución por tipo de entidad</p>
+              <div style={{ height: 210 }}>
+                <Doughnut
+                  data={{
+                    labels: results.ner!.entity_distribution.map(e => e.type),
+                    datasets: [{
+                      data: results.ner!.entity_distribution.map(e => e.count),
+                      backgroundColor: [
+                        'rgba(16,185,129,0.82)',
+                        'rgba(52,211,153,0.82)',
+                        'rgba(5,150,105,0.82)',
+                        'rgba(4,120,87,0.82)',
+                        'rgba(6,78,59,0.82)',
+                        'rgba(34,197,94,0.82)',
+                        'rgba(74,222,128,0.82)',
+                        'rgba(134,239,172,0.82)',
+                        'rgba(167,243,208,0.82)',
+                      ],
+                      borderColor: 'rgba(15,23,42,0.6)',
+                      borderWidth: 2,
+                    }],
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '58%',
+                    plugins: {
+                      legend: {
+                        position: 'right',
+                        labels: { color: '#cbd5e1', font: { size: 10 }, boxWidth: 12, padding: 6 },
+                      },
+                      tooltip: {
+                        callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.raw} ocurrencias` },
+                      },
+                    },
+                  }}
+                />
+              </div>
+            </div>
+          )}
           {/* Distribución por tipo */}
           {results.ner.entity_distribution.length > 0 && (
             <div className="space-y-2 mb-5">
@@ -1308,6 +1488,51 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
             <p className="text-xs text-slate-400">{results.bertopic.method_note}</p>
           </div>
 
+          {/* Horizontal bar: distribución de documentos por tema */}
+          {results.bertopic!.topic_distribution.length > 0 && (
+            <div
+              className="mb-5 p-3 rounded-xl bg-slate-900/40 border border-sky-800/20"
+              style={{ height: Math.max(180, results.bertopic!.topic_distribution.length * 38 + 50) }}
+            >
+              <p className="text-xs text-slate-400 font-medium mb-2">Documentos por tema (BERTopic)</p>
+              <div style={{ height: Math.max(140, results.bertopic!.topic_distribution.length * 38) }}>
+                <Bar
+                  data={{
+                    labels: results.bertopic!.topic_distribution.map(t => t.topic_label),
+                    datasets: [{
+                      label: 'Documentos',
+                      data: results.bertopic!.topic_distribution.map(t => t.document_count),
+                      backgroundColor: 'rgba(14,165,233,0.72)',
+                      borderColor: 'rgba(56,189,248,0.9)',
+                      borderWidth: 1,
+                      borderRadius: 4,
+                    }],
+                  }}
+                  options={{
+                    indexAxis: 'y' as const,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: { display: false },
+                      tooltip: {
+                        callbacks: { label: (ctx) => ` ${ctx.raw} documento${(ctx.raw as number) !== 1 ? 's' : ''}` },
+                      },
+                    },
+                    scales: {
+                      x: {
+                        ticks: { color: '#94a3b8', font: { size: 10 } },
+                        grid: { color: 'rgba(148,163,184,0.08)' },
+                      },
+                      y: {
+                        ticks: { color: '#cbd5e1', font: { size: 10 } },
+                        grid: { display: false },
+                      },
+                    },
+                  }}
+                />
+              </div>
+            </div>
+          )}
           {/* Distribución por tema */}
           {results.bertopic.topic_distribution.length > 0 && (
             <div className="space-y-2 mb-5">
