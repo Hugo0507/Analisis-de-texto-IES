@@ -56,6 +56,7 @@ class BERTopicAnalysis(models.Model):
     STAGE_CLUSTERING = 'clustering'
     STAGE_EXTRACTING_TOPICS = 'extracting_topics'
     STAGE_CALCULATING_COHERENCE = 'calculating_coherence'
+    STAGE_COMPUTING_PROJECTIONS = 'computing_projections'
     STAGE_SAVING_RESULTS = 'saving_results'
     STAGE_COMPLETED = 'completed'
     STAGE_CHOICES = [
@@ -65,8 +66,9 @@ class BERTopicAnalysis(models.Model):
         (STAGE_GENERATING_EMBEDDINGS, 'Generando embeddings'),
         (STAGE_REDUCING_DIMENSIONS, 'Reduciendo dimensionalidad (UMAP)'),
         (STAGE_CLUSTERING, 'Clustering (HDBSCAN)'),
-        (STAGE_EXTRACTING_TOPICS, 'Extrayendo tópicos'),
+        (STAGE_EXTRACTING_TOPICS, 'Extrayendo temas'),
         (STAGE_CALCULATING_COHERENCE, 'Calculando coherencia'),
+        (STAGE_COMPUTING_PROJECTIONS, 'Calculando proyecciones 2D'),
         (STAGE_SAVING_RESULTS, 'Guardando resultados'),
         (STAGE_COMPLETED, 'Completado'),
     ]
@@ -246,6 +248,12 @@ class BERTopicAnalysis(models.Model):
         default=dict,
         verbose_name='Tamaños de tópicos',
         help_text='Número de documentos por tópico (incluyendo outliers)'
+    )
+    projections_2d = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Proyecciones 2D',
+        help_text='Coordenadas PCA, t-SNE y UMAP por documento para visualización'
     )
 
     # ============================================================
