@@ -18,9 +18,10 @@ import {
   ChartOptions,
 } from 'chart.js';
 import bertopicService from '../services/bertopicService';
-import type { BERTopicAnalysis } from '../services/bertopicService';
+import type { BERTopicAnalysis, Projections2D } from '../services/bertopicService';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
+import { ScatterPlotProjection } from '../components/organisms/ScatterPlotProjection';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Tooltip, Legend);
@@ -33,6 +34,8 @@ export const BERTopicView: React.FC = () => {
   const [analysis, setAnalysis] = useState<BERTopicAnalysis | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTopic, setSelectedTopic] = useState<number>(0);
+  const [projections, setProjections] = useState<Projections2D | null>(null);
+  const [projectionsLoading, setProjectionsLoading] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -62,11 +65,28 @@ export const BERTopicView: React.FC = () => {
       if (data.topics && data.topics.length > 0) {
         setSelectedTopic(data.topics[0].topic_id);
       }
+
+      // Load projections if completed
+      if (data.status === 'completed') {
+        loadProjections(data.id);
+      }
     } catch (error: any) {
       showError('Error al cargar análisis: ' + (error.response?.data?.error || error.message));
       navigate('/admin/modelado/bertopic');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadProjections = async (analysisId: number) => {
+    setProjectionsLoading(true);
+    try {
+      const data = await bertopicService.getProjections(analysisId);
+      setProjections(data);
+    } catch {
+      // Projections may not exist for older analyses — fail silently
+    } finally {
+      setProjectionsLoading(false);
     }
   };
 
@@ -457,6 +477,27 @@ export const BERTopicView: React.FC = () => {
                       <p className="text-sm text-gray-800">{dt.text_preview}...</p>
                     </div>
                   ))}
+              </div>
+            )}
+          </div>
+
+          {/* Proyección de Documentos */}
+          <div className="bg-white p-6" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
+            <h2 className="text-lg font-semibold text-gray-900 mb-1">Proyección de Documentos</h2>
+            <p className="text-xs text-gray-400 mb-4">
+              Visualización 2D de los embeddings — cada punto es un documento, el color indica el tema asignado
+            </p>
+            {projectionsLoading ? (
+              <div className="flex items-center gap-3 py-10 justify-center text-gray-400 text-sm">
+                <Spinner size="sm" />
+                Calculando proyecciones...
+              </div>
+            ) : projections && (projections.umap.length > 0 || projections.pca.length > 0) ? (
+              <ScatterPlotProjection projections={projections} />
+            ) : (
+              <div className="flex items-center justify-center py-10 text-gray-400 text-sm">
+                Las proyecciones no están disponibles para este análisis.
+                Vuelve a ejecutar el análisis para generarlas.
               </div>
             )}
           </div>

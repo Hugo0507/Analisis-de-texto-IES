@@ -136,6 +136,21 @@ class BERTopicViewSet(viewsets.ModelViewSet):
         serializer = StatsSerializer(data)
         return Response(serializer.data)
 
+    @action(detail=True, methods=['get'])
+    def projections(self, request, pk=None):
+        """
+        Obtener proyecciones 2D (PCA, t-SNE, UMAP) del análisis.
+
+        GET /bertopic/{id}/projections/
+        """
+        bertopic = self.get_object()
+        if bertopic.status != BERTopicAnalysis.STATUS_COMPLETED:
+            return Response(
+                {'error': 'Las proyecciones solo están disponibles cuando el análisis está completado'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return Response({'projections_2d': bertopic.projections_2d or {}})
+
     @action(detail=False, methods=['get'])
     def embedding_models(self, request):
         """

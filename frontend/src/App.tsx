@@ -55,6 +55,9 @@ import { TopicModelingView } from './pages/TopicModelingView';
 import { BERTopicList } from './pages/BERTopicList';
 import { BERTopicCreate } from './pages/BERTopicCreate';
 import { BERTopicView } from './pages/BERTopicView';
+import { LstmAnalysisList } from './pages/LstmAnalysisList';
+import { LstmAnalysisCreate } from './pages/LstmAnalysisCreate';
+import { LstmAnalysisView } from './pages/LstmAnalysisView';
 import { OAuthCallback } from './pages/OAuthCallback';
 
 function App() {
@@ -133,6 +136,9 @@ function App() {
               <Route path="bertopic" element={<BERTopicList />} />
               <Route path="bertopic/nuevo" element={<BERTopicCreate />} />
               <Route path="bertopic/:id" element={<BERTopicView />} />
+              <Route path="lstm" element={<LstmAnalysisList />} />
+              <Route path="lstm/nuevo" element={<LstmAnalysisCreate />} />
+              <Route path="lstm/:id" element={<LstmAnalysisView />} />
             </Route>
 
             {/* Protected Admin Analysis Routes (LOGIN REQUIRED) */}

@@ -155,22 +155,33 @@ def process_bertopic_analysis(bertopic_id: int):
         logger.info(f"✅ [BERTopic] Tópicos extraídos: {len(topics_data['topics'])}")
 
         # ============================================================
-        # STAGE 7: CALCULATING COHERENCE (90%)
+        # STAGE 7: CALCULATING COHERENCE (85%)
         # ============================================================
-        logger.info(f"📈 [BERTopic] Etapa 7/9: Calculando coherencia...")
+        logger.info(f"📈 [BERTopic] Etapa 7/10: Calculando coherencia...")
         bertopic.current_stage = BERTopicAnalysis.STAGE_CALCULATING_COHERENCE
-        bertopic.progress_percentage = 90
+        bertopic.progress_percentage = 85
         bertopic.save()
 
         coherence_score = calculate_coherence(texts, topics_data['topics'])
         logger.info(f"✅ [BERTopic] Coherencia C_V: {coherence_score:.4f}")
 
         # ============================================================
-        # STAGE 8: SAVING RESULTS (95%)
+        # STAGE 8: COMPUTING PROJECTIONS (92%)
         # ============================================================
-        logger.info(f"💾 [BERTopic] Etapa 8/9: Guardando resultados...")
+        logger.info(f"🗺️ [BERTopic] Etapa 8/10: Calculando proyecciones 2D...")
+        bertopic.current_stage = BERTopicAnalysis.STAGE_COMPUTING_PROJECTIONS
+        bertopic.progress_percentage = 92
+        bertopic.save()
+
+        projections_2d = compute_projections_2d(embeddings, cluster_labels, topics_data['topics'])
+        logger.info(f"✅ [BERTopic] Proyecciones 2D calculadas")
+
+        # ============================================================
+        # STAGE 9: SAVING RESULTS (97%)
+        # ============================================================
+        logger.info(f"💾 [BERTopic] Etapa 9/10: Guardando resultados...")
         bertopic.current_stage = BERTopicAnalysis.STAGE_SAVING_RESULTS
-        bertopic.progress_percentage = 95
+        bertopic.progress_percentage = 97
         bertopic.save()
 
         # Guardar todos los resultados
@@ -185,6 +196,7 @@ def process_bertopic_analysis(bertopic_id: int):
             bertopic.document_topics = topics_data['document_topics']
             bertopic.topic_distribution = topics_data['topic_distribution']
             bertopic.topic_sizes = topics_data['topic_sizes']
+            bertopic.projections_2d = projections_2d
 
             # Calcular vocabulario
             all_words = set()
@@ -472,6 +484,84 @@ def extract_topics(bertopic, texts: List[str], cluster_labels: np.ndarray) -> Di
         'topic_distribution': topic_distribution,
         'topic_sizes': topic_sizes
     }
+
+
+def compute_projections_2d(
+    embeddings: np.ndarray,
+    cluster_labels: np.ndarray,
+    topics: List[Dict],
+) -> Dict[str, Any]:
+    """
+    Calcular proyecciones 2D (PCA, t-SNE, UMAP) de los embeddings para visualización.
+
+    Args:
+        embeddings: Embeddings BERT (n_docs x embedding_dim)
+        cluster_labels: Labels de clusters por documento
+        topics: Lista de tópicos extraídos (para obtener topic_label)
+
+    Returns:
+        Diccionario con claves 'pca', 'tsne', 'umap', cada una lista de puntos
+        {x, y, topic_id, topic_label}
+    """
+    from sklearn.decomposition import PCA
+    from sklearn.manifold import TSNE
+    from umap import UMAP
+
+    n_docs = len(embeddings)
+    random_state = 42
+
+    # Mapa topic_id → topic_label
+    label_map: Dict[int, str] = {t['topic_id']: t['topic_label'] for t in topics}
+    label_map[-1] = 'Outliers'
+
+    def _build_points(coords: np.ndarray) -> List[Dict]:
+        points = []
+        for i in range(n_docs):
+            topic_id = int(cluster_labels[i])
+            points.append({
+                'x': round(float(coords[i, 0]), 4),
+                'y': round(float(coords[i, 1]), 4),
+                'topic_id': topic_id,
+                'topic_label': label_map.get(topic_id, f'Tema {topic_id}'),
+            })
+        return points
+
+    result: Dict[str, Any] = {}
+
+    # ── PCA ──────────────────────────────────────────────────────
+    try:
+        pca = PCA(n_components=2, random_state=random_state)
+        pca_coords = pca.fit_transform(embeddings)
+        result['pca'] = _build_points(pca_coords)
+        logger.info(f"✅ [BERTopic] PCA 2D calculado (varianza explicada: {pca.explained_variance_ratio_.sum():.2%})")
+    except Exception as e:
+        logger.warning(f"⚠️ [BERTopic] Error en PCA: {e}")
+        result['pca'] = []
+
+    # ── t-SNE ─────────────────────────────────────────────────────
+    try:
+        perplexity = min(30, max(5, n_docs // 4))
+        tsne = TSNE(n_components=2, perplexity=perplexity, random_state=random_state, n_jobs=1)
+        tsne_coords = tsne.fit_transform(embeddings)
+        result['tsne'] = _build_points(tsne_coords)
+        logger.info(f"✅ [BERTopic] t-SNE 2D calculado")
+    except Exception as e:
+        logger.warning(f"⚠️ [BERTopic] Error en t-SNE: {e}")
+        result['tsne'] = []
+
+    # ── UMAP ─────────────────────────────────────────────────────
+    try:
+        n_neighbors = min(15, max(2, n_docs - 1))
+        umap_2d = UMAP(n_components=2, n_neighbors=n_neighbors, min_dist=0.1,
+                       metric='cosine', random_state=random_state)
+        umap_coords = umap_2d.fit_transform(embeddings)
+        result['umap'] = _build_points(umap_coords)
+        logger.info(f"✅ [BERTopic] UMAP 2D calculado")
+    except Exception as e:
+        logger.warning(f"⚠️ [BERTopic] Error en UMAP 2D: {e}")
+        result['umap'] = []
+
+    return result
 
 
 def calculate_coherence(texts: List[str], topics: List[Dict]) -> float:

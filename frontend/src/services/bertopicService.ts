@@ -80,6 +80,25 @@ export interface TopicSizes {
 }
 
 /**
+ * Punto de proyección 2D
+ */
+export interface ProjectionPoint {
+  x: number;
+  y: number;
+  topic_id: number;
+  topic_label: string;
+}
+
+/**
+ * Proyecciones 2D del análisis
+ */
+export interface Projections2D {
+  pca: ProjectionPoint[];
+  tsne: ProjectionPoint[];
+  umap: ProjectionPoint[];
+}
+
+/**
  * Item de lista de análisis BERTopic (resumen)
  */
 export interface BERTopicListItem {
@@ -149,6 +168,7 @@ export interface BERTopicAnalysis {
   document_topics: DocumentTopic[];
   topic_distribution: TopicDistribution[];
   topic_sizes: TopicSizes;
+  projections_2d: Projections2D | null;
 
   // Timestamps
   created_at: string;
@@ -273,6 +293,14 @@ export const bertopicService = {
   getEmbeddingModels: async (): Promise<EmbeddingModelsResponse> => {
     const response = await apiClient.get('/bertopic/embedding_models/');
     return response.data;
+  },
+
+  /**
+   * Obtener proyecciones 2D (PCA, t-SNE, UMAP) del análisis
+   */
+  getProjections: async (id: number): Promise<Projections2D> => {
+    const response = await apiClient.get(`/bertopic/${id}/projections/`);
+    return response.data.projections_2d;
   },
 };
 
