@@ -136,6 +136,7 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataPreparat
   // Import config JSON
   const configImportRef = useRef<HTMLInputElement>(null);
   const [importWarnings, setImportWarnings] = useState<string[]>([]);
+  const [importSuccess, setImportSuccess] = useState(false);
 
 
   // Sección C — parámetros de inferencia
@@ -256,6 +257,7 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataPreparat
     if (!file) return;
     e.target.value = '';
     setImportWarnings([]);
+    setImportSuccess(false);
 
     const reader = new FileReader();
     reader.onload = (ev) => {
@@ -310,6 +312,7 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataPreparat
       }
 
       setImportWarnings(warns);
+      setImportSuccess(true);
     };
     reader.readAsText(file);
   };
@@ -377,17 +380,29 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataPreparat
           className="hidden"
           onChange={handleConfigImport}
         />
+        {importSuccess && importWarnings.length === 0 && (
+          <p className="mt-2 text-xs text-emerald-400 flex items-center gap-1.5">
+            <span>&#10003;</span>
+            <span>Configuración aplicada — modelos, stopwords y parámetros restaurados.</span>
+          </p>
+        )}
         {importWarnings.length > 0 && (
           <div className="mt-2 space-y-1">
+            {importSuccess && (
+              <p className="text-xs text-emerald-400 flex items-center gap-1.5 mb-1">
+                <span>&#10003;</span>
+                <span>Configuración aplicada con advertencias:</span>
+              </p>
+            )}
             {importWarnings.map((w, i) => (
               <p key={i} className="text-xs text-amber-400 flex items-start gap-1.5">
-                <span className="shrink-0 mt-0.5">⚠</span>
+                <span className="shrink-0 mt-0.5">&#9888;</span>
                 <span>{w}</span>
               </p>
             ))}
           </div>
         )}
-        {importWarnings.length === 0 && (
+        {!importSuccess && importWarnings.length === 0 && (
           <p className="mt-1.5 text-xs text-slate-600">
             Carga un JSON exportado previamente para restaurar modelos, parámetros y stopwords.
           </p>
