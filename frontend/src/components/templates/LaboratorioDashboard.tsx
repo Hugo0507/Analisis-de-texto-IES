@@ -14,6 +14,7 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import publicWorkspaceService, {
   Workspace,
+  WorkspaceResults,
   CreatePublicWorkspacePayload,
 } from '../../services/publicWorkspaceService';
 import publicDatasetsService from '../../services/publicDatasetsService';
@@ -110,9 +111,10 @@ interface ConfigureStageProps {
   datasetId: number;
   dataPreparationName: string | null;
   onNext: (payload: Omit<CreatePublicWorkspacePayload, 'dataset_id'>) => void;
+  onViewImportedResults: (ws: Workspace) => void;
 }
 
-const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataPreparationName, onNext }) => {
+const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataPreparationName, onNext, onViewImportedResults }) => {
   // Sección A — modelos
   const [bowOptions, setBowOptions] = useState<AnalysisOption[]>([]);
   const [tfidfOptions, setTfidfOptions] = useState<AnalysisOption[]>([]);
@@ -137,6 +139,7 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataPreparat
   const configImportRef = useRef<HTMLInputElement>(null);
   const [importWarnings, setImportWarnings] = useState<string[]>([]);
   const [importSuccess, setImportSuccess] = useState(false);
+  const [importedWorkspace, setImportedWorkspace] = useState<Workspace | null>(null);
 
 
   // Sección C — parámetros de inferencia
@@ -204,6 +207,13 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataPreparat
       }
     };
     load();
+  }, [datasetId, dataPreparationName]);
+
+  // Limpiar workspace importado al cambiar dataset/DataPrep
+  useEffect(() => {
+    setImportedWorkspace(null);
+    setImportSuccess(false);
+    setImportWarnings([]);
   }, [datasetId, dataPreparationName]);
 
   // Hereda entity types del NER de referencia al seleccionarlo
@@ -313,6 +323,36 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataPreparat
 
       setImportWarnings(warns);
       setImportSuccess(true);
+
+      // Build in-memory workspace if the JSON has results — enables "Ver resultados anteriores"
+      const rawResults = parsed.results as Record<string, unknown> | undefined;
+      const hasResults = rawResults && (rawResults.bow || rawResults.tfidf || rawResults.topics || rawResults.ner || rawResults.bertopic);
+      if (hasResults) {
+        const r = rawResults as unknown as WorkspaceResults;
+        setImportedWorkspace({
+          id: (parsed.workspace_id as string) || 'imported',
+          dataset: datasetId,
+          dataset_name: (parsed.dataset_name as string) || '',
+          bow_id: models.bow?.id ?? null,
+          tfidf_id: models.tfidf?.id ?? null,
+          topic_model_id: models.topic_model?.id ?? null,
+          ner_id: models.ner?.id ?? null,
+          bertopic_id: models.bertopic?.id ?? null,
+          custom_stopwords: (parsed.custom_stopwords as string[]) || [],
+          inference_params: (parsed.inference_params as Record<string, unknown>) || {},
+          status: 'completed',
+          progress_percentage: 100,
+          error_message: null,
+          results: r,
+          documents: [],
+          document_count: r.document_count ?? 0,
+          created_at: (parsed.created_at as string) || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          expires_at: null,
+        });
+      } else {
+        setImportedWorkspace(null);
+      }
     };
     reader.readAsText(file);
   };
@@ -401,6 +441,18 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataPreparat
               </p>
             ))}
           </div>
+        )}
+        {importSuccess && importedWorkspace && (
+          <button
+            type="button"
+            onClick={() => onViewImportedResults(importedWorkspace)}
+            className="mt-3 w-full px-4 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold transition-colors text-left focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+          >
+            <span className="block">Ver resultados anteriores</span>
+            <span className="block text-xs text-violet-300 font-normal mt-0.5">
+              Muestra los resultados guardados en el JSON, sin re-ejecutar
+            </span>
+          </button>
         )}
         {!importSuccess && importWarnings.length === 0 && (
           <p className="mt-1.5 text-xs text-slate-600">
@@ -1087,9 +1139,10 @@ const getNerChartColor = (type: string): string =>
 interface ResultsStageProps {
   workspace: Workspace;
   onReset: () => void;
+  isImported?: boolean;
 }
 
-const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
+const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, isImported = false }) => {
   const { results } = workspace;
   const [downloading, setDownloading] = useState<{ excel: boolean; config: boolean }>({
     excel: false,
@@ -1178,13 +1231,15 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
           >
             ← Nueva análisis
           </button>
-          <button
-            onClick={handleExportExcel}
-            disabled={downloading.excel}
-            className="px-4 py-2 min-h-[44px] rounded-xl bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-slate-900"
-          >
-            {downloading.excel ? '…' : '↓ Excel'}
-          </button>
+          {!isImported && (
+            <button
+              onClick={handleExportExcel}
+              disabled={downloading.excel}
+              className="px-4 py-2 min-h-[44px] rounded-xl bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+            >
+              {downloading.excel ? '…' : '↓ Excel'}
+            </button>
+          )}
           <button
             onClick={handleExportConfig}
             disabled={downloading.config}
@@ -1788,6 +1843,7 @@ export const LaboratorioDashboard: React.FC = () => {
   const [stage, setStage] = useState<Stage>('configure');
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isImportedView, setIsImportedView] = useState(false);
 
   // ── Dataset + DataPreparation selectors (B1) ──────────────────────────────
   const [datasets, setDatasets] = useState<DatasetListItem[]>([]);
@@ -1818,6 +1874,12 @@ export const LaboratorioDashboard: React.FC = () => {
 
   const selectedDataPrepName = dataPreparations.find((d) => d.id === selectedDataPrepId)?.name ?? null;
 
+  const handleViewImportedResults = useCallback((ws: Workspace) => {
+    setWorkspace(ws);
+    setIsImportedView(true);
+    setStage('results');
+  }, []);
+
   const handleConfigure = useCallback(async (modelConfig: Omit<CreatePublicWorkspacePayload, 'dataset_id'>) => {
     if (!selectedDatasetId) return;
     setError(null);
@@ -1836,12 +1898,14 @@ export const LaboratorioDashboard: React.FC = () => {
 
   const handleProcessingDone = useCallback((ws: Workspace) => {
     setWorkspace(ws);
+    setIsImportedView(false);
     setStage('results');
   }, []);
 
   const handleReset = useCallback(() => {
     setWorkspace(null);
     setError(null);
+    setIsImportedView(false);
     setStage('configure');
   }, []);
 
@@ -1923,6 +1987,7 @@ export const LaboratorioDashboard: React.FC = () => {
             datasetId={selectedDatasetId}
             dataPreparationName={selectedDataPrepName}
             onNext={handleConfigure}
+            onViewImportedResults={handleViewImportedResults}
           />
         )}
         {stage === 'configure' && !selectedDatasetId && (
@@ -1939,7 +2004,7 @@ export const LaboratorioDashboard: React.FC = () => {
           />
         )}
         {stage === 'results' && workspace && (
-          <ResultsStage workspace={workspace} onReset={handleReset} />
+          <ResultsStage workspace={workspace} onReset={handleReset} isImported={isImportedView} />
         )}
       </div>
     </div>
