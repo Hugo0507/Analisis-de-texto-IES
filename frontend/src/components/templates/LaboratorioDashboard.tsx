@@ -133,6 +133,10 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataPreparat
   const [newWord, setNewWord] = useState('');
   const stopwordImportRef = useRef<HTMLInputElement>(null);
 
+  // Import config JSON
+  const configImportRef = useRef<HTMLInputElement>(null);
+  const [importWarnings, setImportWarnings] = useState<string[]>([]);
+
 
   // Sección C — parámetros de inferencia
   const ALL_NER_TYPES = ['PERSON', 'ORG', 'GPE', 'DATE', 'LOC', 'FAC', 'NORP', 'PRODUCT', 'EVENT'];
@@ -246,6 +250,70 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataPreparat
     e.target.value = '';
   };
 
+  // Importar config JSON localmente (sin backend autenticado)
+  const handleConfigImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setImportWarnings([]);
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      let parsed: Record<string, unknown>;
+      try {
+        parsed = JSON.parse(ev.target?.result as string);
+      } catch {
+        setImportWarnings(['El archivo no es un JSON válido.']);
+        return;
+      }
+      if (!parsed.schema_version || !parsed.models) {
+        setImportWarnings(['El archivo no parece ser una configuración exportada del Laboratorio.']);
+        return;
+      }
+
+      const models = parsed.models as Record<string, { id: number | null; name: string | null } | null>;
+      const warns: string[] = [];
+
+      const applyModel = (
+        field: string,
+        options: AnalysisOption[],
+        setter: (v: number | null) => void,
+        label: string,
+      ) => {
+        const entry = models[field];
+        if (!entry?.id) return;
+        const found = options.find((o) => o.id === entry.id);
+        if (found) {
+          setter(entry.id);
+        } else {
+          warns.push(`${label} "${entry.name ?? entry.id}" no encontrado en el dataset actual.`);
+        }
+      };
+
+      applyModel('bow',         bowOptions,      setSelectedBow,      'BoW');
+      applyModel('tfidf',       tfidfOptions,    setSelectedTfidf,    'TF-IDF');
+      applyModel('topic_model', topicOptions,    setSelectedTopic,    'Modelo de temas');
+      applyModel('ner',         nerOptions,      setSelectedNer,      'NER');
+      applyModel('bertopic',    bertopicOptions, setSelectedBertopic, 'BERTopic');
+
+      // Restore stopwords and inference params
+      const sw = parsed.custom_stopwords as string[] | undefined;
+      if (Array.isArray(sw) && sw.length > 0) {
+        setCustomStopwords(sw.slice().sort());
+      }
+      const params = parsed.inference_params as Record<string, unknown> | undefined;
+      if (params) {
+        if (typeof params.num_top_terms === 'number') setNumTopTerms(params.num_top_terms);
+        if (typeof params.min_word_length === 'number') setMinWordLength(params.min_word_length);
+        if (typeof params.strip_references === 'boolean') setStripReferences(params.strip_references);
+        if (Array.isArray(params.ner_entity_types)) setNerEntityTypes(params.ner_entity_types as string[]);
+      }
+
+      setImportWarnings(warns);
+    };
+    reader.readAsText(file);
+  };
+
   const canContinue = selectedBow != null || selectedTfidf != null || selectedTopic != null;
 
   const SelectRow: React.FC<{
@@ -287,6 +355,43 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataPreparat
         <p className="text-sm text-slate-300">
           Selecciona los modelos de referencia y personaliza las stopwords antes de subir los documentos.
         </p>
+      </div>
+
+      {/* ── Cargar configuración guardada ── */}
+      <div>
+        <button
+          type="button"
+          disabled={loading}
+          onClick={() => { setImportWarnings([]); configImportRef.current?.click(); }}
+          className="w-full px-4 py-2.5 min-h-[44px] rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-600/60 text-slate-300 text-sm font-medium transition-colors flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Cargar configuración guardada (.json)
+        </button>
+        <input
+          ref={configImportRef}
+          type="file"
+          accept=".json"
+          className="hidden"
+          onChange={handleConfigImport}
+        />
+        {importWarnings.length > 0 && (
+          <div className="mt-2 space-y-1">
+            {importWarnings.map((w, i) => (
+              <p key={i} className="text-xs text-amber-400 flex items-start gap-1.5">
+                <span className="shrink-0 mt-0.5">⚠</span>
+                <span>{w}</span>
+              </p>
+            ))}
+          </div>
+        )}
+        {importWarnings.length === 0 && (
+          <p className="mt-1.5 text-xs text-slate-600">
+            Carga un JSON exportado previamente para restaurar modelos, parámetros y stopwords.
+          </p>
+        )}
       </div>
 
       {/* ── Sección A: Modelos ── */}
