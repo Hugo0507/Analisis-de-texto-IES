@@ -1466,9 +1466,9 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, isImpor
       {/* Topics */}
       {results.topics && !results.topics.error && (
         <Section title={`Modelado de Temas — ${results.topics.algorithm.toUpperCase()}`} color="#f59e0b">
-          {/* Donut: distribución de temas dominantes */}
-          {results.topics!.topic_distribution.filter(t => t.percentage > 0).length > 0 && (() => {
-            const visibleTopics = results.topics!.topic_distribution.filter(t => t.percentage > 0);
+          {/* Donut: afinidad promedio por tema (usa all_topics_affinity, no topic_distribution) */}
+          {results.topics!.all_topics_affinity && results.topics!.all_topics_affinity.filter(a => a.percentage > 0).length > 0 && (() => {
+            const visibleTopics = results.topics!.all_topics_affinity.filter(a => a.percentage > 0);
             const PALETTE = [
               'rgba(245,158,11,0.85)', 'rgba(251,191,36,0.85)', 'rgba(217,119,6,0.85)',
               'rgba(234,88,12,0.85)',  'rgba(180,83,9,0.85)',   'rgba(239,68,68,0.85)',
@@ -1480,13 +1480,13 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, isImpor
             const colors = visibleTopics.map((_, i) => PALETTE[i % PALETTE.length]);
             return (
               <div className="mb-5 p-3 rounded-xl bg-slate-900/40 border border-amber-800/20" style={{ height: 260 }}>
-                <p className="text-xs text-slate-400 font-medium mb-2">Distribución de temas (% documentos)</p>
+                <p className="text-xs text-slate-400 font-medium mb-2">Afinidad promedio por tema (%)</p>
                 <div style={{ height: 210 }}>
                   <Doughnut
                     data={{
-                      labels: visibleTopics.map(t => t.topic_label || `Tema ${t.topic_id}`),
+                      labels: visibleTopics.map(a => a.topic_label || `Tema ${a.topic_id}`),
                       datasets: [{
-                        data: visibleTopics.map(t => t.percentage),
+                        data: visibleTopics.map(a => a.percentage),
                         backgroundColor: colors,
                         borderColor: 'rgba(15,23,42,0.6)',
                         borderWidth: 2,
