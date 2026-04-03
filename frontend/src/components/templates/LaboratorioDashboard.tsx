@@ -12,13 +12,19 @@
  */
 
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { useFilter } from '../../contexts/FilterContext';
-import workspaceService, {
+import publicWorkspaceService, {
   Workspace,
-  CreateWorkspacePayload,
-  ImportConfigResult,
-} from '../../services/workspaceService';
-import dashboardService from '../../services/dashboardService';
+  CreatePublicWorkspacePayload,
+} from '../../services/publicWorkspaceService';
+import publicDatasetsService from '../../services/publicDatasetsService';
+import publicDataPreparationService from '../../services/publicDataPreparationService';
+import publicBagOfWordsService from '../../services/publicBagOfWordsService';
+import publicTfIdfAnalysisService from '../../services/publicTfidfAnalysisService';
+import publicTopicModelingService from '../../services/publicTopicModelingService';
+import publicNerAnalysisService from '../../services/publicNerAnalysisService';
+import publicBertopicService from '../../services/publicBertopicService';
+import type { DatasetListItem } from '../../services/datasetsService';
+import type { DataPreparationListItem } from '../../services/dataPreparationService';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -102,11 +108,11 @@ const StageIndicator: React.FC<{ current: Stage }> = ({ current }) => {
 
 interface ConfigureStageProps {
   datasetId: number;
-  onNext: (payload: Omit<CreateWorkspacePayload, 'dataset'>) => void;
-  onImport: (result: ImportConfigResult & { workspace: Workspace }) => void;
+  dataPreparationName: string | null;
+  onNext: (payload: Omit<CreatePublicWorkspacePayload, 'dataset_id'>) => void;
 }
 
-const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext, onImport }) => {
+const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataPreparationName, onNext }) => {
   // Sección A — modelos
   const [bowOptions, setBowOptions] = useState<AnalysisOption[]>([]);
   const [tfidfOptions, setTfidfOptions] = useState<AnalysisOption[]>([]);
@@ -127,10 +133,6 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext, onIm
   const [newWord, setNewWord] = useState('');
   const stopwordImportRef = useRef<HTMLInputElement>(null);
 
-  // Import config
-  const configImportRef = useRef<HTMLInputElement>(null);
-  const [importLoading, setImportLoading] = useState(false);
-  const [importError, setImportError]     = useState<string | null>(null);
 
   // Sección C — parámetros de inferencia
   const ALL_NER_TYPES = ['PERSON', 'ORG', 'GPE', 'DATE', 'LOC', 'FAC', 'NORP', 'PRODUCT', 'EVENT'];
@@ -143,32 +145,42 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext, onIm
     const load = async () => {
       setLoading(true);
       try {
-        const [data, modelingData] = await Promise.all([
-          dashboardService.getVectorizationData(datasetId),
-          dashboardService.getModelingData(datasetId),
+        const [allBows, allTfidfs, allTopics, allNers, allBertopics] = await Promise.all([
+          publicBagOfWordsService.getBagOfWords(datasetId),
+          publicTfIdfAnalysisService.getTfIdfAnalyses(datasetId),
+          publicTopicModelingService.getTopicModelings(datasetId),
+          publicNerAnalysisService.getNerAnalyses(datasetId),
+          publicBertopicService.getBERTopicAnalyses(datasetId),
         ]);
 
-        const bows = (data.bowAnalyses || [])
-          .filter((a) => a.status === 'completed' && a.has_artifact)
+        // Filter by completion and optionally by DataPreparation name (B4)
+        const matchDP = (sourceName: string, srcType: string) => {
+          if (!dataPreparationName) return true;
+          if (srcType === 'dataset') return true;
+          return sourceName === dataPreparationName;
+        };
+
+        const bows = allBows
+          .filter((a) => a.status === 'completed' && a.has_artifact && (!dataPreparationName || a.data_preparation_name === dataPreparationName))
           .sort((a, b) => a.name.localeCompare(b.name));
-        const tfidfs = (data.tfidfAnalyses || [])
-          .filter((a) => a.status === 'completed' && a.has_artifact)
+        const tfidfs = allTfidfs
+          .filter((a) => a.status === 'completed' && a.has_artifact && matchDP(a.source_name, a.source_type))
           .sort((a, b) => a.name.localeCompare(b.name));
-        const topics = (modelingData.topicModelingAnalyses || [])
-          .filter((a: any) => a.status === 'completed' && a.has_artifact)
-          .sort((a: any, b: any) => a.name.localeCompare(b.name));
-        const ners = (modelingData.nerAnalyses || [])
-          .filter((a) => a.status === 'completed')
+        const topics = allTopics
+          .filter((a) => a.status === 'completed' && a.has_artifact && matchDP(a.source_name, a.source_type))
           .sort((a, b) => a.name.localeCompare(b.name));
-        const bertopics = (modelingData.bertopicAnalyses || [])
-          .filter((a) => a.status === 'completed')
+        const ners = allNers
+          .filter((a) => a.status === 'completed' && matchDP(a.source_name, a.source_type))
+          .sort((a, b) => a.name.localeCompare(b.name));
+        const bertopics = allBertopics
+          .filter((a) => a.status === 'completed' && matchDP(a.source_name, a.source_type))
           .sort((a, b) => a.name.localeCompare(b.name));
 
-        setBowOptions(bows.map((a: any) => ({ id: a.id, name: a.name })));
-        setTfidfOptions(tfidfs.map((a: any) => ({ id: a.id, name: a.name })));
-        setTopicOptions(topics.map((a: any) => ({ id: a.id, name: `${a.name} (${a.algorithm_display})` })));
-        setNerOptions(ners.map((a: any) => ({ id: a.id, name: `${a.name} (${a.spacy_model_label || a.spacy_model})`, selectedEntities: a.selected_entities || [] })));
-        setBertopicOptions(bertopics.map((a: any) => ({ id: a.id, name: `${a.name} (${a.num_topics_found ?? '?'} tópicos)` })));
+        setBowOptions(bows.map((a) => ({ id: a.id, name: a.name })));
+        setTfidfOptions(tfidfs.map((a) => ({ id: a.id, name: a.name })));
+        setTopicOptions(topics.map((a) => ({ id: a.id, name: `${a.name} (${a.algorithm_display})` })));
+        setNerOptions(ners.map((a) => ({ id: a.id, name: `${a.name} (${a.spacy_model_label || a.spacy_model})`, selectedEntities: [] })));
+        setBertopicOptions(bertopics.map((a) => ({ id: a.id, name: `${a.name} (${a.num_topics_found ?? '?'} tópicos)` })));
 
         if (bows.length > 0) setSelectedBow(bows[0].id);
         if (tfidfs.length > 0) setSelectedTfidf(tfidfs[0].id);
@@ -180,14 +192,14 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext, onIm
       }
 
       try {
-        const sw = await workspaceService.getCorpusStopwords(datasetId);
+        const sw = await publicWorkspaceService.getCorpusStopwords(datasetId);
         setCorpusStopwords(sw);
       } catch {
         // No crítico — se omite si falla
       }
     };
     load();
-  }, [datasetId]);
+  }, [datasetId, dataPreparationName]);
 
   // Hereda entity types del NER de referencia al seleccionarlo
   useEffect(() => {
@@ -234,42 +246,6 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext, onIm
     e.target.value = '';
   };
 
-  const handleConfigImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    e.target.value = '';
-    setImportError(null);
-
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      let parsed: Record<string, unknown>;
-      try {
-        parsed = JSON.parse(ev.target?.result as string);
-      } catch {
-        setImportError('El archivo no es un JSON válido.');
-        return;
-      }
-      if (!parsed.schema_version || !parsed.models) {
-        setImportError('El archivo no parece ser una configuración exportada del Laboratorio.');
-        return;
-      }
-
-      setImportLoading(true);
-      try {
-        const result = await workspaceService.importConfig(datasetId, parsed);
-        const workspace = await workspaceService.getWorkspace(result.workspace_id);
-        onImport({ ...result, workspace });
-      } catch (err: any) {
-        setImportError(
-          err?.response?.data?.error || err?.message || 'Error al importar la configuración.'
-        );
-      } finally {
-        setImportLoading(false);
-      }
-    };
-    reader.readAsText(file);
-  };
-
   const canContinue = selectedBow != null || selectedTfidf != null || selectedTopic != null;
 
   const SelectRow: React.FC<{
@@ -310,49 +286,6 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, onNext, onIm
         <h3 className="text-lg font-semibold text-white mb-1">Configurar sesión de análisis</h3>
         <p className="text-sm text-slate-300">
           Selecciona los modelos de referencia y personaliza las stopwords antes de subir los documentos.
-        </p>
-      </div>
-
-      {/* ── Cargar configuración guardada ── */}
-      <div>
-        <button
-          type="button"
-          onClick={() => { setImportError(null); configImportRef.current?.click(); }}
-          disabled={importLoading}
-          className="w-full px-4 py-2.5 min-h-[44px] rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-600/60 text-slate-300 text-sm font-medium transition-colors flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-900"
-        >
-          {importLoading ? (
-            <>
-              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-              Importando…
-            </>
-          ) : (
-            <>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              Cargar configuración guardada (.json)
-            </>
-          )}
-        </button>
-        <input
-          ref={configImportRef}
-          type="file"
-          accept=".json"
-          className="hidden"
-          onChange={handleConfigImport}
-        />
-        {importError && (
-          <p className="mt-2 text-xs text-red-400 flex items-start gap-1.5">
-            <span className="shrink-0 mt-0.5">⚠</span>
-            <span>{importError}</span>
-          </p>
-        )}
-        <p className="mt-1.5 text-xs text-slate-600">
-          Carga un JSON exportado previamente para restaurar modelos, parámetros y stopwords.
         </p>
       </div>
 
@@ -678,7 +611,7 @@ const UploadStage: React.FC<UploadStageProps> = ({ workspaceId, onNext, onBack }
       setUploading(true);
 
       try {
-        await workspaceService.uploadDocument(workspaceId, file);
+        await publicWorkspaceService.uploadDocument(workspaceId, file);
         setFiles(prev => prev.map((f, i) => i === prev.length - 1 ? { ...f, status: 'done' } : f));
       } catch (err: any) {
         const msg = err?.response?.data?.file?.[0] || err?.message || 'Error al subir.';
@@ -795,7 +728,7 @@ const ProcessingStage: React.FC<ProcessingStageProps> = ({ workspaceId, onDone, 
 
   useEffect(() => {
     // Kick off inference
-    workspaceService.runInference(workspaceId).catch(() => {
+    publicWorkspaceService.runInference(workspaceId).catch(() => {
       setErrorMsg('No se pudo iniciar la inferencia. Intenta de nuevo.');
       onError();
     });
@@ -817,7 +750,7 @@ const ProcessingStage: React.FC<ProcessingStageProps> = ({ workspaceId, onDone, 
       }
 
       try {
-        const ws = await workspaceService.getWorkspace(workspaceId);
+        const ws = await publicWorkspaceService.getWorkspace(workspaceId);
         setProgress(ws.progress_percentage);
 
         if (ws.status === 'completed') {
@@ -1046,7 +979,7 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
   const handleExportExcel = async () => {
     setDownloading(d => ({ ...d, excel: true }));
     try {
-      await workspaceService.exportExcel(workspace.id);
+      await publicWorkspaceService.exportExcel(workspace.id);
     } catch {
       // Silencioso — el botón vuelve a estar disponible
     } finally {
@@ -1057,7 +990,7 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
   const handleExportConfig = async () => {
     setDownloading(d => ({ ...d, config: true }));
     try {
-      await workspaceService.exportConfig(workspace.id);
+      await publicWorkspaceService.exportConfig(workspace.id);
     } catch {
       // Silencioso
     } finally {
@@ -1731,133 +1664,51 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset }) => {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-// ── Import Decision Modal ─────────────────────────────────────────────────────
-
-interface ImportDecisionProps {
-  result: ImportConfigResult & { workspace: Workspace };
-  onViewResults: () => void;
-  onRerun: () => void;
-  onCancel: () => void;
-}
-
-const ImportDecisionModal: React.FC<ImportDecisionProps> = ({
-  result,
-  onViewResults,
-  onRerun,
-  onCancel,
-}) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-    <div className="w-full max-w-md bg-slate-900 border border-slate-700/60 rounded-2xl p-6 shadow-2xl space-y-5">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-base font-semibold text-white">Configuración importada</h3>
-          <p className="text-xs text-slate-300 mt-0.5">
-            Se creó un nuevo workspace con la configuración guardada.
-          </p>
-        </div>
-        <button
-          onClick={onCancel}
-          className="text-slate-500 hover:text-slate-300 transition-colors text-lg leading-none shrink-0"
-          aria-label="Cerrar"
-        >
-          ×
-        </button>
-      </div>
-
-      {/* Warnings */}
-      {result.warnings.length > 0 && (
-        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 space-y-1.5">
-          <p className="text-xs font-semibold text-amber-300">
-            {result.warnings.length} modelo{result.warnings.length !== 1 ? 's' : ''} no encontrado{result.warnings.length !== 1 ? 's' : ''}
-          </p>
-          {result.warnings.map((w, i) => (
-            <p key={i} className="text-xs text-amber-200/80 flex items-start gap-1.5">
-              <span className="shrink-0 mt-0.5">·</span>
-              <span>{w}</span>
-            </p>
-          ))}
-          <p className="text-xs text-slate-500 pt-1">
-            Los modelos disponibles se mantienen; los faltantes se omitirán.
-          </p>
-        </div>
-      )}
-
-      {/* Sin warnings */}
-      {result.warnings.length === 0 && (
-        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25">
-          <p className="text-xs text-emerald-300">Todos los modelos del config están disponibles.</p>
-        </div>
-      )}
-
-      {/* Opciones */}
-      <div className="space-y-2">
-        {result.has_results && (
-          <button
-            onClick={onViewResults}
-            className="w-full px-4 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold transition-colors text-left"
-          >
-            <span className="block">Ver resultados anteriores</span>
-            <span className="block text-xs text-violet-300 font-normal mt-0.5">
-              Muestra los resultados guardados en el config, sin re-ejecutar
-            </span>
-          </button>
-        )}
-        <button
-          onClick={onRerun}
-          className="w-full px-4 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold transition-colors text-left"
-        >
-          <span className="block">{result.has_results ? 'Re-ejecutar con esta configuración' : 'Continuar → subir documentos'}</span>
-          <span className="block text-xs text-slate-400 font-normal mt-0.5">
-            Sube nuevos PDFs y ejecuta el análisis con los modelos del config
-          </span>
-        </button>
-      </div>
-    </div>
-  </div>
-);
-
-
-// ── Main Component ────────────────────────────────────────────────────────────
-
 export const LaboratorioDashboard: React.FC = () => {
-  const { filters } = useFilter();
   const [stage, setStage] = useState<Stage>('configure');
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [importDecision, setImportDecision] = useState<(ImportConfigResult & { workspace: Workspace }) | null>(null);
 
-  const datasetId = filters.selectedDatasetId;
+  // ── Dataset + DataPreparation selectors (B1) ──────────────────────────────
+  const [datasets, setDatasets] = useState<DatasetListItem[]>([]);
+  const [dataPreparations, setDataPreparations] = useState<DataPreparationListItem[]>([]);
+  const [selectedDatasetId, setSelectedDatasetId] = useState<number | null>(null);
+  const [selectedDataPrepId, setSelectedDataPrepId] = useState<number | null>(null);
+  const [selectorsLoading, setSelectorsLoading] = useState(true);
 
-  const handleConfigure = useCallback(async (modelConfig: Omit<CreateWorkspacePayload, 'dataset'>) => {
-    if (!datasetId) return;
+  // Load datasets on mount
+  useEffect(() => {
+    publicDatasetsService.getDatasets().then((list) => {
+      const completed = list.filter((d) => d.status === 'completed');
+      setDatasets(completed);
+      if (completed.length > 0) setSelectedDatasetId(completed[0].id);
+      setSelectorsLoading(false);
+    }).catch(() => setSelectorsLoading(false));
+  }, []);
+
+  // Load data preparations when dataset changes
+  useEffect(() => {
+    if (!selectedDatasetId) { setDataPreparations([]); setSelectedDataPrepId(null); return; }
+    publicDataPreparationService.getPreparations(selectedDatasetId).then((list) => {
+      const completed = list.filter((d) => d.status === 'completed');
+      setDataPreparations(completed);
+      setSelectedDataPrepId(completed.length > 0 ? completed[0].id : null);
+    }).catch(() => { setDataPreparations([]); setSelectedDataPrepId(null); });
+  }, [selectedDatasetId]);
+
+  const selectedDataPrepName = dataPreparations.find((d) => d.id === selectedDataPrepId)?.name ?? null;
+
+  const handleConfigure = useCallback(async (modelConfig: Omit<CreatePublicWorkspacePayload, 'dataset_id'>) => {
+    if (!selectedDatasetId) return;
     setError(null);
     try {
-      const ws = await workspaceService.createWorkspace({ dataset: datasetId, ...modelConfig });
+      const ws = await publicWorkspaceService.createWorkspace({ dataset_id: selectedDatasetId, ...modelConfig });
       setWorkspace(ws);
       setStage('upload');
     } catch (err: any) {
       setError(err?.response?.data?.detail || err?.message || 'Error al crear el workspace.');
     }
-  }, [datasetId]);
-
-  const handleImport = useCallback((result: ImportConfigResult & { workspace: Workspace }) => {
-    setImportDecision(result);
-  }, []);
-
-  const handleImportViewResults = useCallback(() => {
-    if (!importDecision) return;
-    setWorkspace(importDecision.workspace);
-    setStage('results');
-    setImportDecision(null);
-  }, [importDecision]);
-
-  const handleImportRerun = useCallback(() => {
-    if (!importDecision) return;
-    setWorkspace(importDecision.workspace);
-    setStage('upload');
-    setImportDecision(null);
-  }, [importDecision]);
+  }, [selectedDatasetId]);
 
   const handleUploadDone = useCallback(() => {
     setStage('processing');
@@ -1874,29 +1725,8 @@ export const LaboratorioDashboard: React.FC = () => {
     setStage('configure');
   }, []);
 
-  if (!datasetId) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 text-center">
-        <svg className="w-12 h-12 text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-        </svg>
-        <p className="text-slate-400 text-sm">Selecciona un dataset para usar el Laboratorio.</p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      {/* Import decision modal */}
-      {importDecision && (
-        <ImportDecisionModal
-          result={importDecision}
-          onViewResults={handleImportViewResults}
-          onRerun={handleImportRerun}
-          onCancel={() => setImportDecision(null)}
-        />
-      )}
-
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold text-white">Laboratorio</h2>
@@ -1905,6 +1735,55 @@ export const LaboratorioDashboard: React.FC = () => {
           sin reentrenamiento — los resultados son comparables con el corpus original.
         </p>
       </div>
+
+      {/* ── Dataset + DataPreparation selectors (B1) ── */}
+      {stage === 'configure' && (
+        <div className="p-4 rounded-2xl bg-slate-800/40 border border-slate-700/50 space-y-3">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Seleccionar corpus</p>
+          {selectorsLoading ? (
+            <p className="text-xs text-slate-500">Cargando datasets…</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Dataset</label>
+                {datasets.length === 0 ? (
+                  <p className="text-xs text-amber-400">No hay datasets completados.</p>
+                ) : (
+                  <select
+                    value={selectedDatasetId ?? ''}
+                    onChange={(e) => {
+                      setSelectedDatasetId(Number(e.target.value));
+                      setStage('configure');
+                      setWorkspace(null);
+                    }}
+                    className="w-full text-xs bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  >
+                    {datasets.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  </select>
+                )}
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Preprocesamiento</label>
+                {dataPreparations.length === 0 ? (
+                  <p className="text-xs text-slate-500 italic">Sin preprocesamiento completado.</p>
+                ) : (
+                  <select
+                    value={selectedDataPrepId ?? ''}
+                    onChange={(e) => {
+                      setSelectedDataPrepId(e.target.value ? Number(e.target.value) : null);
+                      setWorkspace(null);
+                    }}
+                    className="w-full text-xs bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  >
+                    <option value="">(todos)</option>
+                    {dataPreparations.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  </select>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Stage indicator */}
       <StageIndicator current={stage} />
@@ -1919,8 +1798,15 @@ export const LaboratorioDashboard: React.FC = () => {
 
       {/* Stage content */}
       <div className="p-6 rounded-2xl bg-slate-800/30 border border-slate-700/50">
-        {stage === 'configure' && (
-          <ConfigureStage datasetId={datasetId} onNext={handleConfigure} onImport={handleImport} />
+        {stage === 'configure' && selectedDatasetId && (
+          <ConfigureStage
+            datasetId={selectedDatasetId}
+            dataPreparationName={selectedDataPrepName}
+            onNext={handleConfigure}
+          />
+        )}
+        {stage === 'configure' && !selectedDatasetId && (
+          <p className="text-slate-400 text-sm text-center py-8">Selecciona un dataset para continuar.</p>
         )}
         {stage === 'upload' && workspace && (
           <UploadStage workspaceId={workspace.id} onNext={handleUploadDone} onBack={handleReset} />

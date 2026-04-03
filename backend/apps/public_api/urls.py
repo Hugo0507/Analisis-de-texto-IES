@@ -16,6 +16,8 @@ from .views import (
     PublicNerAnalysisViewSet,
     PublicTopicModelingViewSet,
     PublicBERTopicViewSet,
+    PublicWorkspaceViewSet,
+    public_corpus_stopwords,
 )
 
 router = DefaultRouter()
@@ -27,7 +29,9 @@ router.register(r'tfidf-analysis', PublicTfIdfAnalysisViewSet, basename='public-
 router.register(r'ner-analysis', PublicNerAnalysisViewSet, basename='public-ner-analysis')
 router.register(r'topic-modeling', PublicTopicModelingViewSet, basename='public-topic-modeling')
 router.register(r'bertopic', PublicBERTopicViewSet, basename='public-bertopic')
+router.register(r'workspace', PublicWorkspaceViewSet, basename='public-workspace')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('corpus-stopwords/', public_corpus_stopwords, name='public-corpus-stopwords'),
 ]
