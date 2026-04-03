@@ -1467,47 +1467,50 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, isImpor
       {results.topics && !results.topics.error && (
         <Section title={`Modelado de Temas — ${results.topics.algorithm.toUpperCase()}`} color="#f59e0b">
           {/* Donut: distribución de temas dominantes */}
-          {results.topics!.topic_distribution.length > 0 && (
-            <div className="mb-5 p-3 rounded-xl bg-slate-900/40 border border-amber-800/20" style={{ height: 260 }}>
-              <p className="text-xs text-slate-400 font-medium mb-2">Distribución de temas (% documentos)</p>
-              <div style={{ height: 210 }}>
-                <Doughnut
-                  data={{
-                    labels: results.topics!.topic_distribution.map(t => t.topic_label || `Tema ${t.topic_id}`),
-                    datasets: [{
-                      data: results.topics!.topic_distribution.map(t => t.percentage),
-                      backgroundColor: [
-                        'rgba(245,158,11,0.82)',
-                        'rgba(251,191,36,0.82)',
-                        'rgba(217,119,6,0.82)',
-                        'rgba(180,83,9,0.82)',
-                        'rgba(161,98,7,0.82)',
-                        'rgba(120,53,15,0.82)',
-                        'rgba(234,88,12,0.82)',
-                        'rgba(194,65,12,0.82)',
-                      ],
-                      borderColor: 'rgba(15,23,42,0.6)',
-                      borderWidth: 2,
-                    }],
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '58%',
-                    plugins: {
-                      legend: {
-                        position: 'right',
-                        labels: { color: '#cbd5e1', font: { size: 10 }, boxWidth: 12, padding: 6 },
+          {results.topics!.topic_distribution.filter(t => t.percentage > 0).length > 0 && (() => {
+            const visibleTopics = results.topics!.topic_distribution.filter(t => t.percentage > 0);
+            const PALETTE = [
+              'rgba(245,158,11,0.85)', 'rgba(251,191,36,0.85)', 'rgba(217,119,6,0.85)',
+              'rgba(234,88,12,0.85)',  'rgba(180,83,9,0.85)',   'rgba(239,68,68,0.85)',
+              'rgba(161,98,7,0.85)',   'rgba(194,65,12,0.85)',  'rgba(253,186,116,0.85)',
+              'rgba(252,211,77,0.85)', 'rgba(167,243,208,0.75)','rgba(110,231,183,0.75)',
+              'rgba(147,197,253,0.75)','rgba(196,181,253,0.75)','rgba(249,168,212,0.75)',
+              'rgba(134,239,172,0.75)',
+            ];
+            const colors = visibleTopics.map((_, i) => PALETTE[i % PALETTE.length]);
+            return (
+              <div className="mb-5 p-3 rounded-xl bg-slate-900/40 border border-amber-800/20" style={{ height: 260 }}>
+                <p className="text-xs text-slate-400 font-medium mb-2">Distribución de temas (% documentos)</p>
+                <div style={{ height: 210 }}>
+                  <Doughnut
+                    data={{
+                      labels: visibleTopics.map(t => t.topic_label || `Tema ${t.topic_id}`),
+                      datasets: [{
+                        data: visibleTopics.map(t => t.percentage),
+                        backgroundColor: colors,
+                        borderColor: 'rgba(15,23,42,0.6)',
+                        borderWidth: 2,
+                      }],
+                    }}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      cutout: '58%',
+                      plugins: {
+                        legend: {
+                          position: 'right',
+                          labels: { color: '#cbd5e1', font: { size: 10 }, boxWidth: 12, padding: 6 },
+                        },
+                        tooltip: {
+                          callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.raw}%` },
+                        },
                       },
-                      tooltip: {
-                        callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.raw}%` },
-                      },
-                    },
-                  }}
-                />
+                    }}
+                  />
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
           {/* Distribución de temas dominantes */}
           <div className="space-y-3 mb-6">
             <p className="text-xs text-slate-300 font-medium">Distribución de temas dominantes en los nuevos documentos</p>
@@ -1791,28 +1794,37 @@ const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, isImpor
           {/* Asignaciones por documento */}
           {results.bertopic.document_assignments.length > 0 && (
             <div className="border-t border-slate-700/50 pt-4">
-              <p className="text-xs text-slate-300 font-medium mb-3">Asignación por documento</p>
-              <div className="space-y-1.5">
+              <p className="text-xs text-slate-300 font-medium mb-3">Similitud por documento (temas con similitud &gt; 0)</p>
+              <div className="space-y-3">
                 {results.bertopic.document_assignments.map((da) => {
-                  const simPct = Math.round(da.similarity_score * 100);
+                  const relevantTopics = (da.top_topics ?? [])
+                    .filter(t => t.similarity_score > 0)
+                    .sort((a, b) => b.similarity_score - a.similarity_score);
+                  if (relevantTopics.length === 0) return null;
                   return (
-                    <div key={da.document_index} className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-900/40 border border-slate-700/30">
-                      <span className="text-xs text-slate-500 w-5 text-right shrink-0 font-mono">
-                        {da.document_index + 1}
-                      </span>
-                      <span className="flex-1 text-xs text-white font-medium truncate" title={da.dominant_topic_label}>
-                        {da.dominant_topic_label}
-                      </span>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <div className="w-16 h-1.5 bg-slate-700 rounded overflow-hidden">
-                          <div
-                            className="h-full rounded"
-                            style={{ width: `${simPct}%`, background: simPct >= 50 ? '#38bdf8' : simPct >= 25 ? '#7dd3fc' : '#475569' }}
-                          />
-                        </div>
-                        <span className={`text-xs font-mono w-8 text-right ${simPct >= 50 ? 'text-sky-300' : 'text-slate-500'}`}>
-                          {simPct}%
-                        </span>
+                    <div key={da.document_index} className="p-3 rounded-xl bg-slate-900/40 border border-slate-700/30">
+                      <p className="text-xs text-slate-500 font-mono mb-2">Doc {da.document_index + 1}</p>
+                      <div className="space-y-1.5">
+                        {relevantTopics.map((t) => {
+                          const simPct = Math.round(t.similarity_score * 100);
+                          const isDominant = t.topic_id === da.dominant_topic;
+                          return (
+                            <div key={t.topic_id} className="flex items-center gap-2">
+                              <span className={`text-xs w-28 truncate shrink-0 ${isDominant ? 'text-sky-300 font-semibold' : 'text-slate-400'}`} title={t.topic_label}>
+                                {t.topic_label}
+                              </span>
+                              <div className="flex-1 h-2 bg-slate-700 rounded overflow-hidden">
+                                <div
+                                  className="h-full rounded"
+                                  style={{ width: `${simPct}%`, background: isDominant ? '#38bdf8' : simPct >= 25 ? '#7dd3fc' : '#475569' }}
+                                />
+                              </div>
+                              <span className={`text-xs font-mono w-8 text-right shrink-0 ${isDominant ? 'text-sky-300' : 'text-slate-500'}`}>
+                                {simPct}%
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   );
