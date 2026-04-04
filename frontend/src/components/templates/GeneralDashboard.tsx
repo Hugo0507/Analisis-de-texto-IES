@@ -17,6 +17,7 @@ import { useFilter } from '../../contexts/FilterContext';
 import { LANGUAGE_NAMES } from '../../services/dataPreparationService';
 import type { TopicModeling, TopicModelingListItem } from '../../services/topicModelingService';
 import type { BERTopicAnalysis, BERTopicListItem } from '../../services/bertopicService';
+import type { ExecutiveSummary } from '../../services/publicTopicModelingService';
 
 // ─── Factor categories (OE3 framework) ───────────────────────────────────────
 
@@ -573,6 +574,58 @@ const ScienceMap: React.FC<ScienceMapProps> = ({ topics, docTopics, highlightCat
   const hasLda      = topics.some(t => t.source === 'lda');
   const hasBertopic = topics.some(t => t.source === 'bertopic');
 
+  // BE-8: Export Science Map as SVG
+  const exportSvg = () => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const clone = svg.cloneNode(true) as SVGSVGElement;
+
+    // Set full-canvas viewBox for export
+    clone.setAttribute('viewBox', `0 0 ${CANVAS_W} ${CANVAS_H}`);
+    clone.setAttribute('width', String(CANVAS_W));
+    clone.setAttribute('height', String(CANVAS_H));
+    clone.removeAttribute('class');
+    clone.setAttribute('style', 'background:#0f172a;font-family:ui-sans-serif,system-ui,sans-serif;');
+
+    // Add full background
+    const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bg.setAttribute('x', '0'); bg.setAttribute('y', '0');
+    bg.setAttribute('width', String(CANVAS_W)); bg.setAttribute('height', String(CANVAS_H));
+    bg.setAttribute('fill', '#0f172a');
+    clone.insertBefore(bg, clone.firstChild);
+
+    // Add legend block at bottom-left
+    const legendGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    const legendY = CANVAS_H - 10;
+    const legendX = 20;
+    FACTOR_CATEGORIES.forEach((cat, i) => {
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      const cx = legendX + i * 205;
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', String(cx)); circle.setAttribute('cy', String(legendY - 5));
+      circle.setAttribute('r', '6'); circle.setAttribute('fill', cat.color);
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', String(cx + 10)); text.setAttribute('y', String(legendY - 1));
+      text.setAttribute('fill', '#cbd5e1'); text.setAttribute('font-size', '10');
+      text.textContent = cat.label;
+      g.appendChild(circle); g.appendChild(text);
+      legendGroup.appendChild(g);
+    });
+    clone.appendChild(legendGroup);
+
+    const serializer = new XMLSerializer();
+    const svgString = '<?xml version="1.0" encoding="UTF-8"?>\n' + serializer.serializeToString(clone);
+    const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'science-map-td-ies.svg';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div ref={containerRef} className="relative select-none" style={{ minHeight: 420 }}>
 
@@ -598,6 +651,12 @@ const ScienceMap: React.FC<ScienceMapProps> = ({ topics, docTopics, highlightCat
           className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800 border border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </button>
+        <button onClick={exportSvg} title="Exportar como SVG"
+          className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800 border border-slate-600 text-slate-300 hover:text-cyan-400 hover:bg-slate-700 transition-colors">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
         </button>
       </div>
@@ -1564,6 +1623,9 @@ export const GeneralDashboard: React.FC = () => {
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string | null>(null);
   const [clusterTabs, setClusterTabs] = useState<Record<number, ClusterTab>>({});
+  const [executiveSummary, setExecutiveSummary] = useState<ExecutiveSummary | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
 
   const { filters, setSelectedTopicModel, setSelectedBertopic } = useFilter();
 
@@ -1792,6 +1854,81 @@ export const GeneralDashboard: React.FC = () => {
                 bertopic={bertopic}
                 datasetName={datasetName}
               />
+            )}
+            {/* TRANS-2: PDF Report Export */}
+            {enrichedTopics.length > 0 && (
+              <button
+                onClick={async () => {
+                  // Ensure executive summary is loaded
+                  let summary = executiveSummary;
+                  if (!summary && topicModel) {
+                    try { summary = await publicTopicModelingService.getExecutiveSummary(topicModel.id); setExecutiveSummary(summary); } catch { /* ok */ }
+                  }
+                  const date = new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+                  const cats = FACTOR_CATEGORIES.map(fc => {
+                    const catTopics = enrichedTopics.filter(t => t.categoryId === fc.id);
+                    const terms = catTopics.flatMap(t => (t.words || []).slice(0, 3).map(w => w.word || w)).join(', ');
+                    return `<tr><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0;color:${fc.color};font-weight:600;">${fc.label}</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0;">${catTopics.length} tópicos</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0;font-size:12px;color:#64748b;">${terms}</td></tr>`;
+                  }).join('');
+                  const topicRows = enrichedTopics.slice(0, 20).map(t => {
+                    const wordsStr = (t.words || []).slice(0, 7).map(w => w.word || w).join(', ');
+                    const cat = FACTOR_CATEGORIES.find(fc => fc.id === t.categoryId);
+                    return `<tr><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;font-weight:600;font-size:13px;">${t.label || `Tópico ${t.id}`}</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;color:${cat?.color || '#94a3b8'};">${cat?.shortLabel || t.categoryId}</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#64748b;">${wordsStr}</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;text-align:center;">${t.numDocuments}</td></tr>`;
+                  }).join('');
+                  const summaryHtml = summary
+                    ? summary.summary_paragraphs.map(p => `<p style="margin:8px 0;line-height:1.6;font-size:13px;">${p.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>`).join('')
+                    : '';
+                  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Reporte — ${datasetName}</title><style>
+                    body{font-family:system-ui,sans-serif;margin:0;padding:24px;color:#1e293b;background:#fff;}
+                    h1{font-size:22px;color:#0f172a;margin:0 0 4px;}
+                    h2{font-size:16px;color:#0f172a;margin:20px 0 8px;border-bottom:2px solid #e2e8f0;padding-bottom:6px;}
+                    h3{font-size:14px;color:#334155;margin:12px 0 6px;}
+                    table{width:100%;border-collapse:collapse;margin:8px 0;}
+                    th{background:#f8fafc;padding:8px 12px;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#64748b;border-bottom:2px solid #e2e8f0;}
+                    .header{border-bottom:3px solid #0891b2;padding-bottom:12px;margin-bottom:20px;}
+                    .meta{color:#64748b;font-size:13px;margin:4px 0;}
+                    .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:12px 0;}
+                    .kpi{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;text-align:center;}
+                    .kpi-val{font-size:20px;font-weight:700;color:#0891b2;}
+                    .kpi-lbl{font-size:11px;color:#64748b;margin-top:2px;}
+                    .summary-box{background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:14px;margin:12px 0;}
+                    @media print{body{padding:12px;}.no-print{display:none!important;}}
+                  </style></head><body>
+                    <div class="header">
+                      <h1>Reporte de Análisis — ${datasetName}</h1>
+                      <p class="meta">Generado: ${date}</p>
+                      <p class="meta">Algoritmo: ${topicModel?.algorithm_display ?? topicModel?.algorithm ?? 'BERTopic'} · ${totalTopics} tópicos · ${totalDocs.toLocaleString()} documentos</p>
+                    </div>
+                    <div class="kpi-grid">
+                      <div class="kpi"><div class="kpi-val">${totalTopics}</div><div class="kpi-lbl">Tópicos</div></div>
+                      <div class="kpi"><div class="kpi-val">${totalDocs.toLocaleString()}</div><div class="kpi-lbl">Documentos</div></div>
+                      <div class="kpi"><div class="kpi-val">${summary?.oe3_coverage ?? '—'}/6</div><div class="kpi-lbl">Cobertura OE3</div></div>
+                      <div class="kpi"><div class="kpi-val">${(topicModel?.coherence_score ?? null) != null ? (topicModel!.coherence_score!).toFixed(3) : '—'}</div><div class="kpi-lbl">Coherencia</div></div>
+                    </div>
+                    ${summaryHtml ? `<h2>Resumen Ejecutivo</h2><div class="summary-box">${summaryHtml}</div>` : ''}
+                    <h2>Distribución por Factor OE3</h2>
+                    <table><thead><tr><th>Categoría</th><th>Tópicos</th><th>Términos representativos</th></tr></thead><tbody>${cats}</tbody></table>
+                    <h2>Tópicos Identificados${enrichedTopics.length > 20 ? ' (primeros 20)' : ''}</h2>
+                    <table><thead><tr><th>Tópico</th><th>Categoría</th><th>Palabras clave</th><th>Docs</th></tr></thead><tbody>${topicRows}</tbody></table>
+                    <h2>Metodología</h2>
+                    <p style="font-size:13px;color:#475569;line-height:1.6;">Los temas se extraen mediante modelos de modelado de temas (LDA / NMF / LSA) y BERTopic aplicados al corpus preprocesado. La clasificación en categorías factoriales se realiza automáticamente por coincidencia semántica con los descriptores del marco OE3.</p>
+                  </body></html>`;
+                  const win = window.open('', '_blank');
+                  if (win) {
+                    win.document.write(html);
+                    win.document.close();
+                    win.focus();
+                    setTimeout(() => win.print(), 800);
+                  }
+                }}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-cyan-300 hover:text-cyan-200 text-sm font-semibold transition-all"
+                title="Exportar reporte como PDF"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                PDF
+              </button>
             )}
           </div>
         </div>
@@ -2122,6 +2259,98 @@ export const GeneralDashboard: React.FC = () => {
           </ChartCard>
         );
       })()}
+
+      {/* ── BE-7: Resumen Ejecutivo ── */}
+      {topicModel && (
+        <div className="rounded-xl bg-slate-800/60 border border-slate-700/50">
+          <button
+            onClick={async () => {
+              if (!showSummary) {
+                setShowSummary(true);
+                if (!executiveSummary) {
+                  setSummaryLoading(true);
+                  try {
+                    const s = await publicTopicModelingService.getExecutiveSummary(topicModel.id);
+                    setExecutiveSummary(s);
+                  } catch { /* silent */ }
+                  finally { setSummaryLoading(false); }
+                }
+              } else {
+                setShowSummary(false);
+              }
+            }}
+            className="w-full flex items-center justify-between px-5 py-3.5 text-left"
+          >
+            <div className="flex items-center gap-3">
+              <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="text-sm font-semibold text-white">Resumen Ejecutivo</span>
+              <span className="text-xs text-slate-400">Generado automáticamente desde el modelo de tópicos</span>
+            </div>
+            <svg className={`w-4 h-4 text-slate-400 transition-transform ${showSummary ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {showSummary && (
+            <div className="px-5 pb-5 border-t border-slate-700/40">
+              {summaryLoading ? (
+                <div className="flex items-center gap-3 py-6 text-slate-400">
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                  Generando resumen ejecutivo...
+                </div>
+              ) : !executiveSummary ? (
+                <p className="py-4 text-slate-500 text-sm">No se pudo generar el resumen.</p>
+              ) : (
+                <div className="pt-4 space-y-3">
+                  {/* Stats bar */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    {[
+                      { label: 'Tópicos', value: executiveSummary.n_topics, color: 'text-cyan-400' },
+                      { label: 'Documentos', value: executiveSummary.n_docs.toLocaleString(), color: 'text-emerald-400' },
+                      { label: 'Cobertura OE3', value: `${executiveSummary.oe3_coverage}/6`, color: 'text-violet-400' },
+                      { label: 'Coherencia', value: executiveSummary.coherence_score != null ? executiveSummary.coherence_score.toFixed(3) : '—', color: (executiveSummary.coherence_score ?? 0) >= 0.5 ? 'text-emerald-400' : (executiveSummary.coherence_score ?? 0) >= 0.3 ? 'text-amber-400' : 'text-rose-400' },
+                    ].map(s => (
+                      <div key={s.label} className="text-center p-3 rounded-lg bg-slate-800/60 border border-slate-700/40">
+                        <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
+                        <p className="text-xs text-slate-400 mt-0.5">{s.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Paragraphs */}
+                  {executiveSummary.summary_paragraphs.map((p, i) => (
+                    <p key={i} className="text-sm text-slate-300 leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: p.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>') }}
+                    />
+                  ))}
+                  {/* Category distribution */}
+                  {executiveSummary.category_distribution.length > 0 && (
+                    <div className="mt-4 pt-3 border-t border-slate-700/40">
+                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Distribución por categoría OE3</p>
+                      <div className="space-y-1.5">
+                        {executiveSummary.category_distribution.map(c => {
+                          const pct = Math.round(c.count / executiveSummary.n_topics * 100);
+                          const catColor = FACTOR_CATEGORIES.find(fc => fc.id === c.id)?.color || '#94a3b8';
+                          return (
+                            <div key={c.id} className="flex items-center gap-3">
+                              <span className="text-xs text-slate-400 w-40 truncate">{c.label}</span>
+                              <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
+                                <div className="h-2 rounded-full" style={{ width: `${pct}%`, backgroundColor: catColor }} />
+                              </div>
+                              <span className="text-xs font-mono text-slate-300 w-6 text-right">{c.count}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Methodology Footer — bg sólido, texto legible ── */}
       <div className="p-5 rounded-xl bg-slate-800 border border-slate-600">

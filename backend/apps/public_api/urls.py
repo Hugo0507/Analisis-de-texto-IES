@@ -9,6 +9,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     PublicDatasetViewSet,
+    PublicDocumentViewSet,
     PublicDataPreparationViewSet,
     PublicBagOfWordsViewSet,
     PublicNgramAnalysisViewSet,
@@ -22,6 +23,7 @@ from .views import (
 
 router = DefaultRouter()
 router.register(r'datasets', PublicDatasetViewSet, basename='public-dataset')
+router.register(r'documents', PublicDocumentViewSet, basename='public-document')
 router.register(r'data-preparation', PublicDataPreparationViewSet, basename='public-data-preparation')
 router.register(r'bag-of-words', PublicBagOfWordsViewSet, basename='public-bag-of-words')
 router.register(r'ngram-analysis', PublicNgramAnalysisViewSet, basename='public-ngram-analysis')

@@ -20,6 +20,8 @@ import { useFilter } from '../../contexts/FilterContext';
 import type { BagOfWords } from '../../services/bagOfWordsService';
 import type { NgramAnalysis } from '../../services/ngramAnalysisService';
 import type { TfIdfAnalysis } from '../../services/tfidfAnalysisService';
+import publicTfidfAnalysisService from '../../services/publicTfidfAnalysisService';
+import type { DocTermMatrix } from '../../services/publicTfidfAnalysisService';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -767,12 +769,15 @@ interface VocabularyTableProps {
   tfidfScores?: Record<string, number>;
   onTermClick?: (term: string, freq: number) => void;
   selectedTerm?: string | null;
+  compareTerms?: string[];
+  onCompareToggle?: (term: string) => void;
 }
 
 const VOCAB_PER_PAGE = 50;
 
 const VocabularyTable: React.FC<VocabularyTableProps> = ({
   vocabulary, idfValues = {}, tfidfScores = {}, onTermClick, selectedTerm,
+  compareTerms = [], onCompareToggle,
 }) => {
   const [search, setSearch]     = useState('');
   const [page, setPage]         = useState(1);
@@ -851,22 +856,24 @@ const VocabularyTable: React.FC<VocabularyTableProps> = ({
                 </th>
               ))}
               <th className="w-20 px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Peso</th>
+              {onCompareToggle && <th className="w-10 px-2 py-2.5" title="Comparar términos" />}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {paginated.map(row => {
               const isSelected = selectedTerm === row.term;
+              const isCompared = compareTerms.includes(row.term);
               const maxFreq = allTerms[0]?.freq || 1;
               const pct = (row.freq / maxFreq) * 100;
               const freqDisplay = Number.isInteger(row.freq) ? row.freq.toLocaleString() : row.freq.toFixed(2);
               return (
                 <tr key={row.term}
                   onClick={() => onTermClick?.(row.term, row.freq)}
-                  className={`cursor-pointer transition-colors ${isSelected ? 'bg-blue-50 border-l-2 border-l-blue-500' : 'hover:bg-gray-50'}`}
+                  className={`cursor-pointer transition-colors ${isCompared ? 'bg-violet-50/60' : isSelected ? 'bg-blue-50 border-l-2 border-l-blue-500' : 'hover:bg-gray-50'}`}
                 >
                   <td className="px-3 py-2 text-gray-400 text-xs font-mono">{row.rank}</td>
                   <td className="px-3 py-2">
-                    <span className={`font-semibold text-sm ${isSelected ? 'text-blue-700' : 'text-gray-800'}`}>{row.term}</span>
+                    <span className={`font-semibold text-sm ${isCompared ? 'text-violet-700' : isSelected ? 'text-blue-700' : 'text-gray-800'}`}>{row.term}</span>
                   </td>
                   <td className="px-3 py-2">
                     <span className="text-blue-600 font-mono text-xs font-semibold">{freqDisplay}</span>
@@ -878,6 +885,19 @@ const VocabularyTable: React.FC<VocabularyTableProps> = ({
                       <div className={`h-2 rounded-full transition-all ${isSelected ? 'bg-blue-500' : 'bg-cyan-400'}`} style={{ width: `${pct}%` }} />
                     </div>
                   </td>
+                  {onCompareToggle && (
+                    <td className="px-2 py-2" onClick={e => { e.stopPropagation(); onCompareToggle(row.term); }}>
+                      <button
+                        title={isCompared ? 'Quitar de comparación' : compareTerms.length >= 3 ? 'Máximo 3 términos' : 'Agregar a comparación'}
+                        disabled={!isCompared && compareTerms.length >= 3}
+                        className={`w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold transition-colors ${
+                          isCompared ? 'bg-violet-500 text-white' : 'bg-gray-100 text-gray-400 hover:bg-violet-100 hover:text-violet-600 disabled:opacity-30'
+                        }`}
+                      >
+                        {isCompared ? '✓' : '+'}
+                      </button>
+                    </td>
+                  )}
                 </tr>
               );
             })}
@@ -1332,6 +1352,11 @@ export const VectorizacionDashboard: React.FC = () => {
   const [activeNgramConfig, setActiveNgramConfig] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<'analysis' | 'compare' | 'heatmap' | 'cooccurrence' | 'zipf'>('analysis');
   const [idfRange, setIdfRange] = useState<[number, number]>([0, 1]);
+  const [heatmapMode, setHeatmapMode] = useState<'metrics' | 'docterm'>('metrics');
+  const [docTermMatrix, setDocTermMatrix] = useState<DocTermMatrix | null>(null);
+  const [docTermLoading, setDocTermLoading] = useState(false);
+  const [compareTerms, setCompareTerms] = useState<string[]>([]);
+  const [showComparator, setShowComparator] = useState(false);
   const { filters, setSelectedBow, setSelectedNgram, setSelectedTfidf } = useFilter();
 
   useEffect(() => {
@@ -1349,6 +1374,10 @@ export const VectorizacionDashboard: React.FC = () => {
     setActiveNgramConfig(null);
     setActiveSection('analysis');
     setIdfRange([0, 1]);
+    setHeatmapMode('metrics');
+    setDocTermMatrix(null);
+    setCompareTerms([]);
+    setShowComparator(false);
   }, [filters.selectedDatasetId]);
 
   const fetchData = async (
@@ -1388,6 +1417,23 @@ export const VectorizacionDashboard: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  // ── VIZ-3: Fetch doc-term matrix when heatmap section is active in docterm mode ──
+  useEffect(() => {
+    if (activeSection !== 'heatmap' || heatmapMode !== 'docterm') return;
+    const tfidfId = filters.selectedTfidfId ?? data?.selectedTfidf?.id;
+    if (!tfidfId || docTermMatrix) return;
+    setDocTermLoading(true);
+    publicTfidfAnalysisService.getDocTermMatrix(tfidfId)
+      .then(m => setDocTermMatrix(m))
+      .catch(err => console.error('Doc-term matrix fetch error:', err))
+      .finally(() => setDocTermLoading(false));
+  }, [activeSection, heatmapMode, filters.selectedTfidfId, data?.selectedTfidf?.id, docTermMatrix]);
+
+  // Reset doc-term matrix when TF-IDF selection changes
+  useEffect(() => {
+    setDocTermMatrix(null);
+  }, [filters.selectedTfidfId]);
 
   // ── N-gram configurations ──
   const ngramConfigs = useMemo(() => {
@@ -1966,6 +2012,10 @@ export const VectorizacionDashboard: React.FC = () => {
                 tfidfScores={tfidfScoresMap}
                 onTermClick={handleVocabTableClick}
                 selectedTerm={selectedTerm?.text ?? null}
+                compareTerms={compareTerms}
+                onCompareToggle={term => {
+                  setCompareTerms(prev => prev.includes(term) ? prev.filter(t => t !== term) : prev.length < 3 ? [...prev, term] : prev);
+                }}
               />
             </div>
           )}
@@ -2192,28 +2242,104 @@ export const VectorizacionDashboard: React.FC = () => {
       {/* ═══════════════ HEATMAP section ═══════════════ */}
       {activeSection === 'heatmap' && (
         <ChartCard
-          title="Heatmap Documento × Término"
-          subtitle={`Top ${heatmapData[0]?.data.length || 0} términos × métricas normalizadas (0–100) — haz clic en una celda para analizar el término`}
+          title={heatmapMode === 'metrics' ? 'Heatmap Métricas × Término' : 'Heatmap Documento × Término'}
+          subtitle={
+            heatmapMode === 'metrics'
+              ? `Top ${heatmapData[0]?.data.length || 0} términos × métricas normalizadas (0–100) — haz clic en una celda para analizar el término`
+              : `Top ${docTermMatrix?.top_docs.length || 0} documentos × ${docTermMatrix?.top_terms.length || 0} términos — scores TF-IDF`
+          }
           accentColor="blue"
           size="xl"
           downloadable
           icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>}
-          onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId, filters.selectedBowId, filters.selectedNgramId, filters.selectedTfidfId)}
-          isLoading={isLoading}
+          onRefreshClick={() => {
+            if (heatmapMode === 'docterm') setDocTermMatrix(null);
+            else filters.selectedDatasetId && fetchData(filters.selectedDatasetId, filters.selectedBowId, filters.selectedNgramId, filters.selectedTfidfId);
+          }}
+          isLoading={isLoading || docTermLoading}
         >
-          <TermHeatmap
-            data={heatmapData}
-            onTermClick={termText => {
-              const bow = data?.selectedBow?.top_terms?.find(t => t.term === termText);
-              const term = buildTerm(termText, 'tfidf', bow?.score, bow?.rank);
-              setSelectedTerm(prev => prev?.text === termText ? null : term);
-            }}
-          />
-          <div className="mt-3 pt-3 border-t border-slate-700/40 grid grid-cols-3 gap-4 text-xs text-slate-400">
-            <div><span className="font-medium text-slate-300">BoW Freq</span><p className="mt-0.5">Frecuencia total del término en el corpus, normalizada.</p></div>
-            <div><span className="font-medium text-slate-300">IDF</span><p className="mt-0.5">Especificidad del término. Alto = aparece en pocos documentos.</p></div>
-            <div><span className="font-medium text-slate-300">TF-IDF</span><p className="mt-0.5">Score combinado. Alto = frecuente y específico a la vez.</p></div>
+          {/* Mode toggle */}
+          <div className="flex gap-1.5 mb-4">
+            {(['metrics', 'docterm'] as const).map(m => (
+              <button
+                key={m}
+                onClick={() => setHeatmapMode(m)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  heatmapMode === m
+                    ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
+                    : 'text-slate-400 hover:text-slate-200 border border-transparent'
+                }`}
+              >
+                {m === 'metrics' ? 'Métricas × Términos' : 'Documentos × Términos'}
+              </button>
+            ))}
           </div>
+
+          {heatmapMode === 'metrics' && (
+            <>
+              <TermHeatmap
+                data={heatmapData}
+                onTermClick={termText => {
+                  const bow = data?.selectedBow?.top_terms?.find(t => t.term === termText);
+                  const term = buildTerm(termText, 'tfidf', bow?.score, bow?.rank);
+                  setSelectedTerm(prev => prev?.text === termText ? null : term);
+                }}
+              />
+              <div className="mt-3 pt-3 border-t border-slate-700/40 grid grid-cols-3 gap-4 text-xs text-slate-400">
+                <div><span className="font-medium text-slate-300">BoW Freq</span><p className="mt-0.5">Frecuencia total del término en el corpus, normalizada.</p></div>
+                <div><span className="font-medium text-slate-300">IDF</span><p className="mt-0.5">Especificidad del término. Alto = aparece en pocos documentos.</p></div>
+                <div><span className="font-medium text-slate-300">TF-IDF</span><p className="mt-0.5">Score combinado. Alto = frecuente y específico a la vez.</p></div>
+              </div>
+            </>
+          )}
+
+          {heatmapMode === 'docterm' && (() => {
+            if (docTermLoading) return (
+              <div className="flex items-center justify-center h-[300px] gap-3 text-slate-400">
+                <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                Calculando submatriz doc-término...
+              </div>
+            );
+            if (!docTermMatrix) return (
+              <div className="flex items-center justify-center h-[220px] text-slate-500 text-sm">
+                {filters.selectedTfidfId || data?.selectedTfidf?.id
+                  ? 'No se pudo cargar la submatriz. Verifica que el análisis TF-IDF tenga artefacto serializado.'
+                  : 'Selecciona un análisis TF-IDF para ver la submatriz documento × término.'}
+              </div>
+            );
+            const h = Math.max(280, docTermMatrix.matrix.length * 38 + 100);
+            return (
+              <div style={{ height: `${h}px` }}>
+                <ResponsiveHeatMap
+                  data={docTermMatrix.matrix as any}
+                  margin={{ top: 40, right: 30, bottom: 80, left: 200 }}
+                  valueFormat=">-.3f"
+                  axisTop={{
+                    tickSize: 5, tickPadding: 5, tickRotation: -45,
+                    legend: `Top ${docTermMatrix.top_terms.length} términos (por TF-IDF promedio)`, legendOffset: -36,
+                  } as any}
+                  axisLeft={{ tickSize: 5, tickPadding: 5, tickRotation: 0 } as any}
+                  colors={{ type: 'sequential', scheme: 'purples' } as any}
+                  emptyColor="#1e293b"
+                  borderRadius={3}
+                  borderWidth={1}
+                  borderColor={{ from: 'color', modifiers: [['darker', 0.5]] } as any}
+                  enableLabels={false}
+                  legends={[{
+                    anchor: 'bottom', translateX: 0, translateY: 72,
+                    length: 240, thickness: 8, direction: 'row',
+                    tickPosition: 'after', tickSize: 3, tickSpacing: 4, tickOverlap: false,
+                    title: 'Score TF-IDF →', titleAlign: 'start', titleOffset: 4,
+                  }] as any}
+                  theme={{
+                    text: { fill: '#94a3b8', fontSize: 11 },
+                    axis: { ticks: { text: { fill: '#64748b' } } },
+                    tooltip: { container: { background: '#1e293b', color: '#f8fafc', fontSize: 12, borderRadius: '8px', border: '1px solid #334155' } },
+                  }}
+                />
+              </div>
+            );
+          })()}
         </ChartCard>
       )}
 
@@ -2331,6 +2457,116 @@ export const VectorizacionDashboard: React.FC = () => {
               </p>
             </div>
           </ChartCard>
+        );
+      })()}
+
+      {/* ── TRANS-4: Floating Compare Badge ── */}
+      {compareTerms.length > 0 && !showComparator && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 bg-slate-800 border border-violet-500/40 rounded-2xl px-4 py-2.5 shadow-2xl">
+          <div className="flex gap-1.5">
+            {compareTerms.map(t => (
+              <span key={t} className="px-2.5 py-1 rounded-lg bg-violet-500/20 text-violet-300 text-xs font-semibold border border-violet-500/30">{t}</span>
+            ))}
+          </div>
+          <button
+            onClick={() => setShowComparator(true)}
+            className="px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold transition-colors"
+          >
+            Comparar →
+          </button>
+          <button
+            onClick={() => setCompareTerms([])}
+            className="p-1 text-slate-500 hover:text-white transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+      )}
+
+      {/* ── TRANS-4: Term Comparator Panel ── */}
+      {showComparator && compareTerms.length > 0 && (() => {
+        const bowVocab     = Object.keys(idfFilteredVocab).length > 0 ? idfFilteredVocab : Object.fromEntries((data?.selectedBow?.top_terms || []).map(t => [t.term, t.score]));
+        const allTermsData = Object.entries(bowVocab).sort((a, b) => b[1] - a[1]).map(([term, freq], i) => ({ term, freq, rank: i + 1 }));
+        const maxFreq      = allTermsData[0]?.freq || 1;
+        const termData     = compareTerms.map(t => {
+          const entry = allTermsData.find(x => x.term === t);
+          return {
+            term: t,
+            freq: entry?.freq ?? 0,
+            rank: entry?.rank ?? '—',
+            idf: idfValues[t] ?? null,
+            tfidf: tfidfScoresMap[t] ?? null,
+            pct: ((entry?.freq ?? 0) / maxFreq) * 100,
+          };
+        });
+        const metrics = [
+          { key: 'freq',  label: 'Frecuencia (BoW)', color: 'text-cyan-400',    fmt: (v: number | null) => v != null ? v.toLocaleString() : '—' },
+          { key: 'rank',  label: 'Rango',            color: 'text-slate-300',   fmt: (v: number | null) => v != null ? `#${v}` : '—' },
+          { key: 'idf',   label: 'IDF',              color: 'text-violet-400',  fmt: (v: number | null) => v != null ? v.toFixed(4) : '—' },
+          { key: 'tfidf', label: 'TF-IDF Score',     color: 'text-emerald-400', fmt: (v: number | null) => v != null ? v.toFixed(4) : '—' },
+        ] as const;
+        return (
+          <>
+            <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setShowComparator(false)} />
+            <div className="fixed inset-x-4 bottom-4 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[700px] z-50 bg-slate-900 rounded-2xl border border-violet-500/30 shadow-2xl">
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-700/60">
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Comparador de Términos</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">{compareTerms.length} términos seleccionados</p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setCompareTerms([]); setShowComparator(false); }}
+                    className="text-xs text-slate-400 hover:text-rose-400 transition-colors px-2 py-1"
+                  >Limpiar</button>
+                  <button onClick={() => setShowComparator(false)} className="p-1.5 text-slate-500 hover:text-white">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-700/40">
+                      <th className="text-left px-5 py-2.5 text-xs text-slate-500 font-medium uppercase tracking-wider w-32">Métrica</th>
+                      {termData.map(td => (
+                        <th key={td.term} className="text-center px-4 py-2.5 text-xs font-bold text-violet-300 bg-violet-500/5">{td.term}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-700/30">
+                    {metrics.map(m => (
+                      <tr key={m.key} className="hover:bg-slate-800/30">
+                        <td className="px-5 py-2.5 text-xs text-slate-400 font-medium">{m.label}</td>
+                        {termData.map(td => {
+                          const raw = td[m.key as keyof typeof td] as number | null | string;
+                          const val = typeof raw === 'number' ? raw : null;
+                          const display = m.fmt(val);
+                          return (
+                            <td key={td.term} className={`text-center px-4 py-2.5 font-mono text-sm font-semibold ${m.color}`}>
+                              {display}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                    {/* Frequency bar row */}
+                    <tr className="hover:bg-slate-800/30">
+                      <td className="px-5 py-2.5 text-xs text-slate-400 font-medium">Frecuencia relativa</td>
+                      {termData.map(td => (
+                        <td key={td.term} className="px-4 py-2.5">
+                          <div className="h-2 w-full bg-slate-700 rounded-full overflow-hidden">
+                            <div className="h-2 bg-violet-500 rounded-full transition-all" style={{ width: `${td.pct}%` }} />
+                          </div>
+                          <p className="text-xs text-slate-500 text-center mt-1">{td.pct.toFixed(1)}%</p>
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
         );
       })()}
 
