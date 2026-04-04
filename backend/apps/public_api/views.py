@@ -418,7 +418,7 @@ class PublicTfIdfAnalysisViewSet(viewsets.ReadOnlyModelViewSet):
             return Response({'error': 'Artefacto del vectorizador no disponible'}, status=status.HTTP_404_NOT_FOUND)
 
         top_terms = min(int(request.query_params.get('top_terms', 15)), 30)
-        top_docs  = min(int(request.query_params.get('top_docs', 15)), 30)
+        top_docs = min(int(request.query_params.get('top_docs', 15)), 30)
 
         # Determine file_ids from the source
         source_type = tfidf_analysis.source_type
@@ -462,7 +462,7 @@ class PublicTfIdfAnalysisViewSet(viewsets.ReadOnlyModelViewSet):
         feature_names = vectorizer.get_feature_names_out()
 
         top_terms = min(top_terms, X.shape[1])
-        top_docs  = min(top_docs, X.shape[0])
+        top_docs = min(top_docs, X.shape[0])
 
         # Select top terms by average TF-IDF score across all docs
         avg_scores = np.asarray(X.mean(axis=0)).flatten()
@@ -595,12 +595,12 @@ class PublicTopicModelingViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = _Det(tm)
         classifications = serializer.get_topic_classifications(tm)
 
-        topics      = tm.topics or []
-        n_topics    = len(topics)
-        n_docs      = tm.documents_processed or 0
-        coherence   = tm.coherence_score
-        perplexity  = tm.perplexity_score
-        algorithm   = tm.get_algorithm_display()
+        topics = tm.topics or []
+        n_topics = len(topics)
+        n_docs = tm.documents_processed or 0
+        coherence = tm.coherence_score
+        perplexity = tm.perplexity_score
+        algorithm = tm.get_algorithm_display()
 
         # Count topics per OE3 category
         cat_counts: dict = {}
@@ -613,14 +613,14 @@ class PublicTopicModelingViewSet(viewsets.ReadOnlyModelViewSet):
 
         # Sort by count
         sorted_cats = sorted(cat_counts.items(), key=lambda x: x[1]['count'], reverse=True)
-        n_covered   = len(sorted_cats)
+        n_covered = len(sorted_cats)
 
         # Top terms across all topics (by weight)
         term_weights: dict = {}
         for t in topics:
             for w in (t.get('words') or [])[:5]:
                 word = w.get('word', '')
-                wt   = float(w.get('weight', 0))
+                wt = float(w.get('weight', 0))
                 term_weights[word] = term_weights.get(word, 0) + wt
         top_terms = sorted(term_weights.items(), key=lambda x: x[1], reverse=True)[:10]
         top_terms_str = ', '.join(f'"{t[0]}"' for t in top_terms)
