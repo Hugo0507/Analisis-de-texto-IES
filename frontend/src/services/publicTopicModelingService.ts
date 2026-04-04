@@ -16,6 +16,28 @@ export interface CoherenceComparisonItem {
   algorithm: string;
 }
 
+export interface TopicClassification {
+  topic_id: number;
+  primary_category: string;
+  primary_category_label: string;
+  secondary_category: string | null;
+  confidence_score: number;
+  matched_keywords: string[];
+}
+
+export interface ExecutiveSummary {
+  model_name: string;
+  algorithm: string;
+  n_topics: number;
+  n_docs: number;
+  coherence_score: number | null;
+  perplexity_score: number | null;
+  oe3_coverage: number;
+  category_distribution: Array<{ id: string; label: string; count: number }>;
+  summary_paragraphs: string[];
+  summary_markdown: string;
+}
+
 class PublicTopicModelingService {
   async getTopicModelings(datasetId?: number): Promise<TopicModelingListItem[]> {
     const params = datasetId ? { dataset_id: datasetId } : {};
@@ -31,6 +53,11 @@ class PublicTopicModelingService {
   async getCoherenceComparison(datasetId?: number): Promise<CoherenceComparisonItem[]> {
     const params = datasetId ? { dataset_id: datasetId } : {};
     const response = await publicApiClient.get('/topic-modeling/coherence_comparison/', { params });
+    return response.data;
+  }
+
+  async getExecutiveSummary(topicModelingId: number): Promise<ExecutiveSummary> {
+    const response = await publicApiClient.get(`/topic-modeling/${topicModelingId}/executive-summary/`);
     return response.data;
   }
 }

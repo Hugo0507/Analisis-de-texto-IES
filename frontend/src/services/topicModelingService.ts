@@ -146,6 +146,16 @@ export interface TopicModeling {
     size: number;
   }> | null;
 
+  // BE-6: OE3 classification with confidence scores
+  topic_classifications: Array<{
+    topic_id: number;
+    primary_category: string;
+    primary_category_label: string;
+    secondary_category: string | null;
+    confidence_score: number;
+    matched_keywords: string[];
+  }> | null;
+
   // Timestamps
   created_at: string;
   updated_at: string;
