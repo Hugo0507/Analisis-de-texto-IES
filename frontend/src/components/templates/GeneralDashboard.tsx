@@ -324,6 +324,7 @@ const PANEL_H_SELECTED = 390;
 interface ScienceMapProps {
   topics: EnrichedTopic[];
   docTopics: DocumentTopicItem[];
+  highlightCategory?: string | null;
 }
 
 // ── TopicPanel: panel flotante sobre el contenedor del mapa ──────────────────
@@ -432,7 +433,7 @@ const TopicPanel: React.FC<TopicPanelProps> = ({
 
 // ── ScienceMap: mapa SVG con pan + zoom ──────────────────────────────────────
 
-const ScienceMap: React.FC<ScienceMapProps> = ({ topics, docTopics }) => {
+const ScienceMap: React.FC<ScienceMapProps> = ({ topics, docTopics, highlightCategory }) => {
   const svgRef       = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -690,6 +691,7 @@ const ScienceMap: React.FC<ScienceMapProps> = ({ topics, docTopics }) => {
             const isHov = hoveredId  === topic.id;
             const isSel = selectedId === topic.id;
             const active = isHov || isSel;
+            const isDimmed = highlightCategory != null && topic.categoryId !== highlightCategory;
             // Radio: 17–28px según número de documentos
             const r = Math.max(17, Math.min(28, 17 + (topic.numDocuments / totalDocWeight) * 100));
             // Etiquetas: top 2 palabras del clúster
@@ -702,7 +704,7 @@ const ScienceMap: React.FC<ScienceMapProps> = ({ topics, docTopics }) => {
             const srcColor  = topic.source === 'lda' ? '#10b981' : '#8b5cf6';
 
             return (
-              <g key={`topic-${topic.id}`} style={{ cursor: 'pointer' }}
+              <g key={`topic-${topic.id}`} style={{ cursor: 'pointer', opacity: isDimmed ? 0.12 : 1, transition: 'opacity 0.2s' }}
                 onMouseEnter={() => setHoveredId(topic.id)}
                 onMouseLeave={() => setHoveredId(null)}
                 onClick={(e) => { e.stopPropagation(); setSelectedId(prev => prev === topic.id ? null : topic.id); }}
@@ -785,9 +787,11 @@ interface CategoryCardProps {
   docTopics: DocumentTopicItem[];
   expanded: boolean;
   onToggle: () => void;
+  isFilterActive: boolean;
+  onFilterClick: () => void;
 }
 
-const CategoryCard: React.FC<CategoryCardProps> = ({ cat, topics, docTopics, expanded, onToggle }) => {
+const CategoryCard: React.FC<CategoryCardProps> = ({ cat, topics, docTopics, expanded, onToggle, isFilterActive, onFilterClick }) => {
   const topTerms = Array.from(
     new Set(topics.flatMap(t => t.words.slice(0, 4).map(w => w.word)))
   ).slice(0, 8);
@@ -816,15 +820,31 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ cat, topics, docTopics, exp
 
   return (
     // bg-slate-800 sólido — contraste predecible para todos los textos interiores
-    <div className={`rounded-xl border ${cat.borderClass} ${cat.bgClass} transition-all duration-200`}>
+    <div className={`rounded-xl border ${isFilterActive ? `${cat.borderClass} ring-2 ring-offset-2 ring-offset-slate-900` : cat.borderClass} ${cat.bgClass} transition-all duration-200`}
+      style={isFilterActive ? { outlineColor: cat.color } : undefined}>
       {/* Card header */}
       <div className="p-5">
         <div className="flex items-start justify-between mb-4">
-          {/* Icono de categoría — 40px, color semántico, border visible */}
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${cat.badgeClass}`}>
-            {cat.icon}
-          </div>
+          {/* Icono de categoría — 40px, color semántico, border visible + filtro */}
+          <button
+            onClick={onFilterClick}
+            title={isFilterActive ? 'Quitar filtro de categoría' : `Filtrar mapa por: ${cat.label}`}
+            className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${cat.badgeClass} hover:opacity-75 transition-opacity cursor-pointer`}
+          >
+            {isFilterActive ? (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              cat.icon
+            )}
+          </button>
           <div className="flex items-center gap-2">
+            {isFilterActive && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white font-semibold border border-white/20 animate-pulse">
+                Filtro activo
+              </span>
+            )}
             {topics.length > 0 && (
               // Badge de conteo — text-sm (14px) + color semántico de categoría
               <span className={`text-sm px-2.5 py-1 rounded-full font-semibold ${cat.badgeClass}`}>
@@ -1540,6 +1560,7 @@ export const GeneralDashboard: React.FC = () => {
 
   // Interaction state
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState<string | null>(null);
   const [clusterTabs, setClusterTabs] = useState<Record<number, ClusterTab>>({});
 
   const { filters, setSelectedTopicModel, setSelectedBertopic } = useFilter();
@@ -1834,6 +1855,36 @@ export const GeneralDashboard: React.FC = () => {
         prepSummary={prepSummary}
       />
 
+      {/* ── Category Filter Indicator ── */}
+      {activeCategoryFilter && (() => {
+        const cat = CAT_BY_ID[activeCategoryFilter];
+        const catTopics = topicsByCategory[activeCategoryFilter] ?? [];
+        const catDocs = catTopics.reduce((s, t) => s + t.numDocuments, 0);
+        return cat ? (
+          <div className="flex items-center justify-between px-4 py-2.5 rounded-xl border"
+            style={{ borderColor: `${cat.color}40`, backgroundColor: `${cat.color}10` }}>
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: cat.color }} />
+              <span className="text-sm font-medium text-white">
+                Filtro activo: <span style={{ color: cat.color }}>{cat.label}</span>
+              </span>
+              <span className="text-xs text-slate-400">
+                · {catTopics.length} tema{catTopics.length !== 1 ? 's' : ''} · {catDocs} docs
+              </span>
+            </div>
+            <button
+              onClick={() => setActiveCategoryFilter(null)}
+              className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-slate-300 bg-slate-700/50 rounded-lg hover:bg-slate-600/50 transition-colors"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Limpiar filtro
+            </button>
+          </div>
+        ) : null;
+      })()}
+
       {/* ── Knowledge Map ── */}
       <ChartCard
         title="Mapa de Conocimiento"
@@ -1856,6 +1907,7 @@ export const GeneralDashboard: React.FC = () => {
             key={`${topicModel?.id ?? 0}-${bertopic?.id ?? 0}`}
             topics={enrichedTopics}
             docTopics={docTopics}
+            highlightCategory={activeCategoryFilter}
           />
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -1890,16 +1942,25 @@ export const GeneralDashboard: React.FC = () => {
               docTopics={docTopics}
               expanded={expandedCategoryId === cat.id}
               onToggle={() => setExpandedCategoryId(prev => prev === cat.id ? null : cat.id)}
+              isFilterActive={activeCategoryFilter === cat.id}
+              onFilterClick={() => setActiveCategoryFilter(prev => prev === cat.id ? null : cat.id)}
             />
           ))}
         </div>
       </div>
 
       {/* ── Cluster Detail ── */}
-      {enrichedTopics.length > 0 && (
+      {enrichedTopics.length > 0 && (() => {
+        const visibleTopics = activeCategoryFilter
+          ? enrichedTopics.filter(t => t.categoryId === activeCategoryFilter)
+          : enrichedTopics;
+        const clusterSubtitle = activeCategoryFilter
+          ? `${visibleTopics.length} clústeres de "${CAT_BY_ID[activeCategoryFilter]?.shortLabel ?? activeCategoryFilter}" — selecciona una pestaña para ver términos, documentos o detalles`
+          : `${enrichedTopics.length} clústeres extraídos del corpus — selecciona una pestaña para ver términos, documentos o detalles`;
+        return (
         <ChartCard
           title="Clústeres Temáticos Identificados"
-          subtitle={`${enrichedTopics.length} clústeres extraídos del corpus — selecciona una pestaña para ver términos, documentos o detalles`}
+          subtitle={clusterSubtitle}
           accentColor="purple"
           size="md"
           icon={
@@ -1910,7 +1971,7 @@ export const GeneralDashboard: React.FC = () => {
           }
         >
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-1">
-            {enrichedTopics.map(topic => (
+            {visibleTopics.map(topic => (
               <ClusterCard
                 key={topic.id}
                 topic={topic}
@@ -1921,7 +1982,8 @@ export const GeneralDashboard: React.FC = () => {
             ))}
           </div>
         </ChartCard>
-      )}
+        );
+      })()}
 
       {/* ── Methodology Footer — bg sólido, texto legible ── */}
       <div className="p-5 rounded-xl bg-slate-800 border border-slate-600">

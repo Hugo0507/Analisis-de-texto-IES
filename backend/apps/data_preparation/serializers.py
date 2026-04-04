@@ -6,7 +6,7 @@ Serializers para la preparación de datos NLP.
 
 from rest_framework import serializers
 from .models import DataPreparation
-from apps.datasets.models import Dataset
+from apps.datasets.models import Dataset, DatasetFile
 
 
 class DatasetBasicSerializer(serializers.ModelSerializer):
@@ -62,6 +62,8 @@ class DataPreparationDetailSerializer(serializers.ModelSerializer):
     dataset = DatasetBasicSerializer(read_only=True)
     created_by_email = serializers.EmailField(source='created_by.email', read_only=True)
     current_stage_label = serializers.SerializerMethodField()
+    total_tokens = serializers.SerializerMethodField()
+    avg_tokens_per_doc = serializers.SerializerMethodField()
 
     class Meta:
         model = DataPreparation
@@ -101,6 +103,8 @@ class DataPreparationDetailSerializer(serializers.ModelSerializer):
             'files_processed',
             'files_omitted',
             'duplicates_removed',
+            'total_tokens',
+            'avg_tokens_per_doc',
 
             # Metadatos
             'processing_started_at',
@@ -138,6 +142,30 @@ class DataPreparationDetailSerializer(serializers.ModelSerializer):
 
         stage_labels = dict(DataPreparation.STAGE_CHOICES)
         return stage_labels.get(obj.current_stage, obj.current_stage)
+
+    def _get_token_counts(self, obj):
+        """Calcular total y promedio de tokens desde los archivos procesados."""
+        file_ids = obj.processed_file_ids or []
+        if not file_ids:
+            return 0, 0
+        files = DatasetFile.objects.filter(id__in=file_ids).only('preprocessed_text')
+        total = 0
+        count = 0
+        for f in files:
+            text = f.preprocessed_text or ''
+            if text.strip():
+                total += len(text.split())
+                count += 1
+        avg = round(total / count) if count > 0 else 0
+        return total, avg
+
+    def get_total_tokens(self, obj):
+        total, _ = self._get_token_counts(obj)
+        return total
+
+    def get_avg_tokens_per_doc(self, obj):
+        _, avg = self._get_token_counts(obj)
+        return avg
 
 
 class DataPreparationCreateSerializer(serializers.ModelSerializer):
