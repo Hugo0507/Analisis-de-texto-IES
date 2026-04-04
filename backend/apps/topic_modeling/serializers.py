@@ -150,7 +150,6 @@ class TopicModelingDetailSerializer(serializers.ModelSerializer):
             })
         return result
 
-
     # ── BE-6: OE3 Factor Category Classification ──────────────────────────────
 
     # OE3 keyword lexicon (mirrors GeneralDashboard.tsx FACTOR_CATEGORIES)
