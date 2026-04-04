@@ -30,3 +30,5 @@ export type { MultiSelectProps, MultiSelectOption } from './MultiSelect';
 
 export { Autocomplete } from './Autocomplete';
 export type { AutocompleteProps, AutocompleteOption } from './Autocomplete';
+
+export { ContextTooltip } from './ContextTooltip';

@@ -46,6 +46,7 @@ class TopicModelingDetailSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     current_stage_display = serializers.CharField(source='get_current_stage_display', read_only=True)
     created_by_username = serializers.CharField(source='created_by.username', read_only=True)
+    pca_projection = serializers.SerializerMethodField()
 
     class Meta:
         model = TopicModeling
@@ -70,9 +71,80 @@ class TopicModelingDetailSerializer(serializers.ModelSerializer):
             # Resultados detallados
             'topics', 'document_topics', 'topic_distribution',
 
+            # PCA projection
+            'pca_projection',
+
             # Timestamps
             'created_at', 'updated_at', 'processing_started_at', 'processing_completed_at'
         ]
+
+    def get_pca_projection(self, obj):
+        """2D PCA of topic word-weight vectors using pure Python power iteration."""
+        import math
+        topics = obj.topics or []
+        if len(topics) < 2:
+            return []
+
+        # Build word vocab
+        vocab = {}
+        for t in topics:
+            for w in (t.get('words') or []):
+                word = w.get('word', '')
+                if word and word not in vocab:
+                    vocab[word] = len(vocab)
+
+        if not vocab:
+            return []
+
+        n, d = len(topics), len(vocab)
+
+        # Build matrix rows (topics × words)
+        M = []
+        for t in topics:
+            row = [0.0] * d
+            for w in (t.get('words') or []):
+                idx = vocab.get(w.get('word', ''))
+                if idx is not None:
+                    row[idx] = float(w.get('weight', 0))
+            M.append(row)
+
+        # Center columns
+        means = [sum(M[i][j] for i in range(n)) / n for j in range(d)]
+        C = [[M[i][j] - means[j] for j in range(d)] for i in range(n)]
+
+        # Gram matrix n×n (small: 5–30 topics)
+        G = [[sum(C[i][k] * C[j][k] for k in range(d)) for j in range(n)] for i in range(n)]
+
+        # Power iteration for 2 principal components
+        vecs = []
+        for _ in range(2):
+            v = [1.0 / math.sqrt(n)] * n
+            for __ in range(100):
+                v2 = [sum(G[i][j] * v[j] for j in range(n)) for i in range(n)]
+                norm = math.sqrt(sum(x * x for x in v2)) or 1e-10
+                v = [x / norm for x in v2]
+            ev = sum(sum(G[i][j] * v[j] for j in range(n)) * v[i] for i in range(n))
+            vecs.append(v)
+            G = [[G[i][j] - ev * v[i] * v[j] for j in range(n)] for i in range(n)]
+
+        pc1, pc2 = vecs
+        doc_counts = {}
+        for doc in (obj.document_topics or []):
+            dt = doc.get('dominant_topic')
+            if dt is not None:
+                doc_counts[dt] = doc_counts.get(dt, 0) + 1
+
+        result = []
+        for i, t in enumerate(topics):
+            tid = t.get('topic_id', i)
+            result.append({
+                'topic_id': tid,
+                'label': t.get('topic_label') or t.get('label') or f'Tópico {i + 1}',
+                'x': round(pc1[i], 4),
+                'y': round(pc2[i], 4),
+                'size': doc_counts.get(tid, 1),
+            })
+        return result
 
 
 class TopicModelingCreateSerializer(serializers.ModelSerializer):

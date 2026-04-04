@@ -1330,7 +1330,8 @@ export const VectorizacionDashboard: React.FC = () => {
   const [showExportModal, setShowExportModal] = useState(false);
   const [vocabView, setVocabView]     = useState<'cloud' | 'table'>('cloud');
   const [activeNgramConfig, setActiveNgramConfig] = useState<string | null>(null);
-  const [activeSection, setActiveSection] = useState<'analysis' | 'compare' | 'heatmap' | 'cooccurrence'>('analysis');
+  const [activeSection, setActiveSection] = useState<'analysis' | 'compare' | 'heatmap' | 'cooccurrence' | 'zipf'>('analysis');
+  const [idfRange, setIdfRange] = useState<[number, number]>([0, 1]);
   const { filters, setSelectedBow, setSelectedNgram, setSelectedTfidf } = useFilter();
 
   useEffect(() => {
@@ -1347,6 +1348,7 @@ export const VectorizacionDashboard: React.FC = () => {
     setVocabView('cloud');
     setActiveNgramConfig(null);
     setActiveSection('analysis');
+    setIdfRange([0, 1]);
   }, [filters.selectedDatasetId]);
 
   const fetchData = async (
@@ -1371,6 +1373,13 @@ export const VectorizacionDashboard: React.FC = () => {
       if (!tfidfId) {
         const first = result.tfidfAnalyses.find(a => a.status === 'completed');
         if (first) setSelectedTfidf(first.id);
+      }
+      // Initialize IDF range slider from actual IDF bounds
+      const idfVals = Object.values(result.selectedTfidf?.idf_vector?.idf_values || {});
+      if (idfVals.length > 0) {
+        const mn = Math.floor(Math.min(...idfVals) * 100) / 100;
+        const mx = Math.ceil(Math.max(...idfVals) * 100) / 100;
+        setIdfRange([mn, mx]);
       }
     } catch (err) {
       setError('Error al cargar los datos de vectorización');
@@ -1495,6 +1504,41 @@ export const VectorizacionDashboard: React.FC = () => {
   // ── Max scores ──
   const maxBowScore   = useMemo(() => Math.max(...(data?.selectedBow?.top_terms?.map(t => t.score) || [0])), [data]);
   const maxTfidfScore = useMemo(() => Math.max(...(data?.tfidfTopTerms?.map(t => t.score)         || [0])), [data]);
+
+  // ── VIZ-2: Zipf data (rank vs frequency, log-log) ──
+  const zipfData = useMemo(() => {
+    const vocab = data?.selectedBow?.vocabulary;
+    if (!vocab || Object.keys(vocab).length === 0) {
+      const topTerms = data?.selectedBow?.top_terms || [];
+      if (topTerms.length === 0) return [];
+      return topTerms.slice(0, 200).map((t, i) => ({ rank: i + 1, freq: t.score }));
+    }
+    return Object.entries(vocab)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 300)
+      .map(([, freq], i) => ({ rank: i + 1, freq }));
+  }, [data?.selectedBow]);
+
+  // ── TRANS-5: IDF bounds for range slider ──
+  const idfBounds = useMemo(() => {
+    const vals = Object.values(idfValues);
+    if (vals.length === 0) return { min: 0, max: 1, step: 0.01 };
+    const mn = Math.floor(Math.min(...vals) * 100) / 100;
+    const mx = Math.ceil(Math.max(...vals) * 100) / 100;
+    return { min: mn, max: mx, step: Math.round(((mx - mn) / 100) * 100) / 100 || 0.01 };
+  }, [idfValues]);
+
+  // ── TRANS-5: filtered vocabulary by IDF range ──
+  const idfFilteredVocab = useMemo(() => {
+    if (Object.keys(idfValues).length === 0) return fullVocabulary;
+    const [lo, hi] = idfRange;
+    const filtered: Record<string, number> = {};
+    Object.entries(fullVocabulary).forEach(([term, freq]) => {
+      const idf = idfValues[term];
+      if (idf === undefined || (idf >= lo && idf <= hi)) filtered[term] = freq;
+    });
+    return filtered;
+  }, [fullVocabulary, idfValues, idfRange]);
 
   // ── Term selection handler ──
   const buildTerm = useCallback((text: string, source: SelectedTerm['source'], bowScore?: number, bowRank?: number): SelectedTerm => {
@@ -1822,6 +1866,15 @@ export const VectorizacionDashboard: React.FC = () => {
             dotActive: 'bg-emerald-400',
             dotInactive: 'bg-slate-600',
           },
+          {
+            key: 'zipf',
+            label: 'Ley de Zipf',
+            icon: 'M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z',
+            activeClass: 'bg-rose-500/20 text-rose-100 border-rose-500/60 shadow-[0_0_14px_rgba(244,63,94,0.2)]',
+            inactiveClass: 'text-slate-400 border-slate-700/50 hover:text-rose-300 hover:bg-rose-500/10 hover:border-rose-500/30',
+            dotActive: 'bg-rose-400',
+            dotInactive: 'bg-slate-600',
+          },
         ] as const).map(tab => {
           const isActive = activeSection === tab.key;
           return (
@@ -1880,8 +1933,35 @@ export const VectorizacionDashboard: React.FC = () => {
             </div>
           ) : (
             <div className="p-1">
+              {/* TRANS-5: IDF range filter */}
+              {Object.keys(idfValues).length > 0 && (
+                <div className="flex items-center gap-3 mb-3 px-1 py-2 rounded-lg bg-slate-800/40 border border-slate-700/40">
+                  <span className="text-xs text-slate-400 whitespace-nowrap font-medium shrink-0">Filtrar IDF:</span>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="text-xs text-slate-500 w-10 text-right shrink-0">{idfRange[0].toFixed(2)}</span>
+                    <input
+                      type="range" min={idfBounds.min} max={idfBounds.max} step={idfBounds.step}
+                      value={idfRange[0]}
+                      onChange={e => setIdfRange([Math.min(Number(e.target.value), idfRange[1] - idfBounds.step), idfRange[1]])}
+                      className="flex-1 h-1.5 accent-blue-500"
+                    />
+                    <input
+                      type="range" min={idfBounds.min} max={idfBounds.max} step={idfBounds.step}
+                      value={idfRange[1]}
+                      onChange={e => setIdfRange([idfRange[0], Math.max(Number(e.target.value), idfRange[0] + idfBounds.step)])}
+                      className="flex-1 h-1.5 accent-blue-500"
+                    />
+                    <span className="text-xs text-slate-500 w-10 shrink-0">{idfRange[1].toFixed(2)}</span>
+                  </div>
+                  <button
+                    onClick={() => setIdfRange([idfBounds.min, idfBounds.max])}
+                    className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded hover:bg-slate-700/50 transition-colors shrink-0"
+                  >Reset</button>
+                  <span className="text-xs text-blue-400 shrink-0">{Object.keys(idfFilteredVocab).length} términos</span>
+                </div>
+              )}
               <VocabularyTable
-                vocabulary={Object.keys(fullVocabulary).length > 0 ? fullVocabulary : Object.fromEntries((data?.selectedBow?.top_terms || []).map(t => [t.term, t.score]))}
+                vocabulary={Object.keys(idfFilteredVocab).length > 0 ? idfFilteredVocab : Object.fromEntries((data?.selectedBow?.top_terms || []).map(t => [t.term, t.score]))}
                 idfValues={idfValues}
                 tfidfScores={tfidfScoresMap}
                 onTermClick={handleVocabTableClick}
@@ -2164,6 +2244,95 @@ export const VectorizacionDashboard: React.FC = () => {
           </div>
         </ChartCard>
       )}
+
+      {/* ═══════════════ ZIPF section (VIZ-2) ═══════════════ */}
+      {activeSection === 'zipf' && (() => {
+        if (zipfData.length < 5) return (
+          <div className="flex items-center justify-center h-[300px] text-slate-400 text-sm">
+            Se necesita un análisis BoW con vocabulario para generar la curva de Zipf
+          </div>
+        );
+        const logRanks = zipfData.map(d => Math.log10(d.rank));
+        const logFreqs = zipfData.map(d => Math.log10(Math.max(d.freq, 1)));
+        const maxLogR = Math.max(...logRanks);
+        const minLogF = Math.min(...logFreqs);
+        const maxLogF = Math.max(...logFreqs);
+        const W = 520, H = 300, PAD = { top: 20, right: 20, bottom: 50, left: 60 };
+        const chartW = W - PAD.left - PAD.right;
+        const chartH = H - PAD.top - PAD.bottom;
+        const sx = (r: number) => (r / maxLogR) * chartW;
+        const sy = (f: number) => chartH - ((f - minLogF) / (maxLogF - minLogF || 1)) * chartH;
+        const pathD = zipfData.map((_d, i) => `${i === 0 ? 'M' : 'L'}${sx(logRanks[i])},${sy(logFreqs[i])}`).join(' ');
+        // Ideal Zipf line: frequency ∝ 1/rank → log(freq) = log(C) - log(rank)
+        const idealD = [0, maxLogR].map((lr, i) => `${i === 0 ? 'M' : 'L'}${sx(lr)},${sy(maxLogF - lr)}`).join(' ');
+        const yTicks = [minLogF, (minLogF + maxLogF) / 2, maxLogF].map(v => ({
+          v, label: Math.round(10 ** v).toLocaleString(), y: sy(v),
+        }));
+        const xTicks = [0, maxLogR / 3, (2 * maxLogR) / 3, maxLogR].map(v => ({
+          v, label: Math.round(10 ** v), x: sx(v),
+        }));
+        return (
+          <ChartCard
+            title="Distribución de Frecuencias — Ley de Zipf"
+            subtitle={`Gráfico log-log: rango vs frecuencia — ${zipfData.length} términos del vocabulario BoW`}
+            accentColor="rose"
+            size="lg"
+            icon={
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+              </svg>
+            }
+          >
+            <div className="px-2 pb-2 overflow-x-auto">
+              <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ minHeight: `${H}px` }}>
+                <g transform={`translate(${PAD.left},${PAD.top})`}>
+                  {/* Grid lines */}
+                  {yTicks.map(t => (
+                    <g key={t.v}>
+                      <line x1={0} y1={t.y} x2={chartW} y2={t.y} stroke="#1e293b" strokeWidth={1} />
+                      <text x={-8} y={t.y + 4} textAnchor="end" fill="#64748b" fontSize={10}>{t.label}</text>
+                    </g>
+                  ))}
+                  {xTicks.map(t => (
+                    <g key={t.v}>
+                      <line x1={t.x} y1={0} x2={t.x} y2={chartH} stroke="#1e293b" strokeWidth={1} />
+                      <text x={t.x} y={chartH + 16} textAnchor="middle" fill="#64748b" fontSize={10}>{t.label}</text>
+                    </g>
+                  ))}
+                  {/* Axis labels */}
+                  <text x={chartW / 2} y={chartH + 36} textAnchor="middle" fill="#94a3b8" fontSize={11}>Rango (log)</text>
+                  <text x={-40} y={chartH / 2} textAnchor="middle" fill="#94a3b8" fontSize={11} transform={`rotate(-90,-40,${chartH / 2})`}>Frecuencia (log)</text>
+                  {/* Ideal Zipf reference line */}
+                  <path d={idealD} fill="none" stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="6,4" />
+                  {/* Actual data line */}
+                  <path d={pathD} fill="none" stroke="#f43f5e" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                  {/* Scatter dots (sample) */}
+                  {zipfData.filter((_, i) => i % 10 === 0).map((d, i) => (
+                    <circle key={i} cx={sx(logRanks[zipfData.indexOf(d)])} cy={sy(logFreqs[zipfData.indexOf(d)])} r={3} fill="#f43f5e" fillOpacity={0.7}>
+                      <title>"{d.rank}º" — {d.freq.toLocaleString()} apariciones</title>
+                    </circle>
+                  ))}
+                </g>
+              </svg>
+              <div className="flex gap-5 mt-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-0.5 bg-rose-500 rounded" />
+                  <span className="text-xs text-slate-400">Distribución real del corpus</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 border-t-2 border-amber-400 border-dashed" />
+                  <span className="text-xs text-slate-400">Ley de Zipf ideal (α=1)</span>
+                </div>
+              </div>
+              <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                La <strong className="text-slate-300">Ley de Zipf</strong> predice que en lenguaje natural, la frecuencia de una palabra es inversamente proporcional a su rango.
+                Si la curva real sigue la línea ideal, el corpus exhibe distribución léxica típica del lenguaje humano.
+                Desviaciones indican sesgo temático o corpus especializado.
+              </p>
+            </div>
+          </ChartCard>
+        );
+      })()}
 
       {/* ── WordDetailPanel ── */}
       {selectedTerm && (
