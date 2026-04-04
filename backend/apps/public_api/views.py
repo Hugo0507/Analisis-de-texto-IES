@@ -171,6 +171,56 @@ class PublicDatasetViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 # ============================================================
+# DOCUMENTS (Dataset Files) — preview endpoint
+# ============================================================
+
+class PublicDocumentViewSet(viewsets.ReadOnlyModelViewSet):
+    """Public read-only access to DatasetFile objects — used for document previews."""
+
+    permission_classes = [AllowAny]
+    pagination_class = None
+    queryset = DatasetFile.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        return Response([])  # list not exposed; use datasets/{id}/files/ instead
+
+    @action(detail=True, methods=['get'])
+    def preview(self, request, pk=None):
+        """
+        TRANS-6: Return a text preview of a processed document.
+
+        Query params:
+          chars (default 500, max 2000) — approximate character limit for the preview
+        """
+        doc = self.get_object()
+        chars = min(int(request.query_params.get('chars', 500)), 2000)
+
+        raw = doc.preprocessed_text or doc.txt_content or ''
+        # Split to words, take enough words to fill ~chars characters
+        words = raw.split()
+        preview_words = []
+        total = 0
+        for w in words:
+            if total + len(w) + 1 > chars:
+                break
+            preview_words.append(w)
+            total += len(w) + 1
+
+        return Response({
+            'id': doc.id,
+            'title': doc.bib_title or doc.original_filename,
+            'filename': doc.original_filename,
+            'bib_year': doc.bib_year,
+            'bib_authors': doc.bib_authors,
+            'language_code': doc.language_code,
+            'preview': ' '.join(preview_words),
+            'total_chars': len(raw),
+            'total_words': len(words),
+            'has_preprocessed': bool(doc.preprocessed_text),
+        })
+
+
+# ============================================================
 # DATA PREPARATION
 # ============================================================
 
@@ -343,6 +393,106 @@ class PublicTfIdfAnalysisViewSet(viewsets.ReadOnlyModelViewSet):
             'tfidf_matrix': tfidf_analysis.tfidf_matrix,
         })
 
+    @action(detail=True, methods=['get'], url_path='doc-term-matrix')
+    def doc_term_matrix(self, request, pk=None):
+        """
+        BE-2: Return a top N docs × top N terms TF-IDF submatrix.
+
+        Query params:
+          top_terms (default 15, max 30)
+          top_docs  (default 15, max 30)
+
+        Response:
+          { top_terms: string[], top_docs: string[],
+            matrix: [{ id: docName, data: [{x: term, y: score}] }] }
+        """
+        import io
+        import joblib
+        import numpy as np
+        from apps.datasets.models import DatasetFile
+
+        tfidf_analysis = self.get_object()
+        if tfidf_analysis.status != 'completed':
+            return Response({'error': 'El análisis debe estar completado'}, status=status.HTTP_400_BAD_REQUEST)
+        if not tfidf_analysis.vectorizer_artifact_bin:
+            return Response({'error': 'Artefacto del vectorizador no disponible'}, status=status.HTTP_404_NOT_FOUND)
+
+        top_terms = min(int(request.query_params.get('top_terms', 15)), 30)
+        top_docs  = min(int(request.query_params.get('top_docs', 15)), 30)
+
+        # Determine file_ids from the source
+        source_type = tfidf_analysis.source_type
+        file_ids = []
+        if source_type == 'data_preparation' and tfidf_analysis.data_preparation:
+            file_ids = tfidf_analysis.data_preparation.processed_file_ids or []
+        elif source_type == 'bag_of_words' and tfidf_analysis.bag_of_words:
+            prep = tfidf_analysis.bag_of_words.data_preparation
+            if prep:
+                file_ids = prep.processed_file_ids or []
+        elif tfidf_analysis.ngram_analysis:
+            prep = tfidf_analysis.ngram_analysis.data_preparation
+            if prep:
+                file_ids = prep.processed_file_ids or []
+
+        if not file_ids:
+            return Response({'error': 'No hay archivos procesados asociados'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Load files preserving order from file_ids
+        files_qs = DatasetFile.objects.filter(id__in=file_ids).only(
+            'id', 'preprocessed_text', 'bib_title', 'original_filename'
+        )
+        file_map = {f.id: f for f in files_qs}
+
+        texts, names = [], []
+        for fid in file_ids:
+            f = file_map.get(fid)
+            if f and f.preprocessed_text:
+                label = (f.bib_title or f.original_filename or f'Doc {fid}')[:35]
+                texts.append(f.preprocessed_text)
+                names.append(label)
+
+        if not texts:
+            return Response({'error': 'No hay textos preprocesados disponibles'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Load TF-IDF vectorizer from binary artifact
+        buf = io.BytesIO(bytes(tfidf_analysis.vectorizer_artifact_bin))
+        vectorizer = joblib.load(buf)
+
+        X = vectorizer.transform(texts)           # sparse (n_docs, n_vocab)
+        feature_names = vectorizer.get_feature_names_out()
+
+        top_terms = min(top_terms, X.shape[1])
+        top_docs  = min(top_docs, X.shape[0])
+
+        # Select top terms by average TF-IDF score across all docs
+        avg_scores = np.asarray(X.mean(axis=0)).flatten()
+        top_term_idx = avg_scores.argsort()[::-1][:top_terms]
+        top_term_names = [str(feature_names[i]) for i in top_term_idx]
+
+        # Select top docs by total TF-IDF score (most content-rich docs)
+        doc_scores = np.asarray(X.sum(axis=1)).flatten()
+        top_doc_idx = doc_scores.argsort()[::-1][:top_docs]
+
+        sub = X[top_doc_idx, :][:, top_term_idx].toarray()
+        selected_names = [names[i] for i in top_doc_idx]
+
+        matrix_rows = [
+            {
+                'id': selected_names[i],
+                'data': [
+                    {'x': top_term_names[j], 'y': round(float(sub[i, j]), 4)}
+                    for j in range(len(top_term_names))
+                ],
+            }
+            for i in range(len(selected_names))
+        ]
+
+        return Response({
+            'top_terms': top_term_names,
+            'top_docs': selected_names,
+            'matrix': matrix_rows,
+        })
+
 
 # ============================================================
 # NER ANALYSIS
@@ -426,6 +576,124 @@ class PublicTopicModelingViewSet(viewsets.ReadOnlyModelViewSet):
             }
             for tm in qs
         ])
+
+    @action(detail=True, methods=['get'], url_path='executive-summary')
+    def executive_summary(self, request, pk=None):
+        """
+        BE-7: Generate a template-based executive summary for a topic modeling result.
+
+        Uses BE-6 classification data (topic_classifications) to produce structured
+        paragraphs describing the corpus, topics, OE3 coverage, and quality indicators.
+        """
+        from apps.topic_modeling.serializers import TopicModelingDetailSerializer as _Det
+
+        tm = self.get_object()
+        if tm.status != 'completed':
+            return Response({'error': 'El análisis debe estar completado'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get topic classifications via the serializer method
+        serializer = _Det(tm)
+        classifications = serializer.get_topic_classifications(tm)
+
+        topics      = tm.topics or []
+        n_topics    = len(topics)
+        n_docs      = tm.documents_processed or 0
+        coherence   = tm.coherence_score
+        perplexity  = tm.perplexity_score
+        algorithm   = tm.get_algorithm_display()
+
+        # Count topics per OE3 category
+        cat_counts: dict = {}
+        for cls in classifications:
+            cat = cls['primary_category']
+            cat_label = cls['primary_category_label']
+            if cat not in cat_counts:
+                cat_counts[cat] = {'count': 0, 'label': cat_label}
+            cat_counts[cat]['count'] += 1
+
+        # Sort by count
+        sorted_cats = sorted(cat_counts.items(), key=lambda x: x[1]['count'], reverse=True)
+        n_covered   = len(sorted_cats)
+
+        # Top terms across all topics (by weight)
+        term_weights: dict = {}
+        for t in topics:
+            for w in (t.get('words') or [])[:5]:
+                word = w.get('word', '')
+                wt   = float(w.get('weight', 0))
+                term_weights[word] = term_weights.get(word, 0) + wt
+        top_terms = sorted(term_weights.items(), key=lambda x: x[1], reverse=True)[:10]
+        top_terms_str = ', '.join(f'"{t[0]}"' for t in top_terms)
+
+        # Coherence quality label
+        if coherence is None:
+            quality_label = 'no disponible'
+        elif coherence >= 0.6:
+            quality_label = 'excelente (≥ 0.6)'
+        elif coherence >= 0.4:
+            quality_label = 'aceptable (0.4–0.6)'
+        else:
+            quality_label = 'mejorable (< 0.4)'
+
+        # Build narrative
+        paragraphs = []
+
+        # P1: Corpus and method overview
+        paragraphs.append(
+            f'El corpus analizado consta de {n_docs:,} documentos. Se aplicó el algoritmo '
+            f'**{algorithm}** con {n_topics} tópicos configurados.'
+        )
+
+        # P2: OE3 coverage
+        if sorted_cats:
+            dominant_cat = sorted_cats[0][1]['label']
+            dominant_count = sorted_cats[0][1]['count']
+            dominant_pct = round(dominant_count / max(1, n_topics) * 100)
+            paragraphs.append(
+                f'Los {n_topics} tópicos identificados cubren **{n_covered}/6 factores** del marco OE3. '
+                f'La categoría más representada es **{dominant_cat}** con {dominant_count} tópicos '
+                f'({dominant_pct}% del total). '
+                + ('Las demás categorías identificadas son: ' + ', '.join(f'{v["label"]} ({v["count"]})'
+                   for k, v in sorted_cats[1:]) + '.' if len(sorted_cats) > 1 else '')
+            )
+
+        # P3: Key terms
+        if top_terms_str:
+            paragraphs.append(
+                f'Los términos con mayor peso acumulado en todos los tópicos son: {top_terms_str}. '
+                'Estos términos reflejan los conceptos centrales de la transformación digital en IES '
+                'presentes en la literatura analizada.'
+            )
+
+        # P4: Quality indicators
+        quality_parts = [f'El score de coherencia promedio es **{coherence:.3f}** ({quality_label})' if coherence is not None else 'El score de coherencia no está disponible']
+        if perplexity is not None:
+            quality_parts.append(f'la perplejidad del modelo es **{perplexity:.1f}**')
+        paragraphs.append('. '.join(quality_parts) + '.')
+
+        # P5: Recommendation
+        if coherence is not None and coherence < 0.4:
+            paragraphs.append(
+                'ℹ️ **Recomendación:** Considera ajustar el número de tópicos o ampliar el corpus '
+                'para mejorar la coherencia del modelo. Un valor de coherencia < 0.4 puede indicar '
+                'que los tópicos se superponen semánticamente.'
+            )
+
+        return Response({
+            'model_name': tm.name,
+            'algorithm': algorithm,
+            'n_topics': n_topics,
+            'n_docs': n_docs,
+            'coherence_score': coherence,
+            'perplexity_score': perplexity,
+            'oe3_coverage': n_covered,
+            'category_distribution': [
+                {'id': k, 'label': v['label'], 'count': v['count']}
+                for k, v in sorted_cats
+            ],
+            'summary_paragraphs': paragraphs,
+            'summary_markdown': '\n\n'.join(paragraphs),
+        })
 
 
 # ============================================================
