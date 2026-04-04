@@ -112,6 +112,7 @@ interface StatPillProps {
   percent?: number;
   subtitle?: string;
   color: 'emerald' | 'rose' | 'amber' | 'blue' | 'violet';
+  tooltip?: string;
 }
 const colorMap: Record<StatPillProps['color'], { bg: string; text: string; bar: string; dot: string }> = {
   emerald: { bg: 'bg-emerald-50',  text: 'text-emerald-700', bar: 'bg-emerald-400', dot: 'bg-emerald-500' },
@@ -121,11 +122,18 @@ const colorMap: Record<StatPillProps['color'], { bg: string; text: string; bar: 
   violet:  { bg: 'bg-violet-50',   text: 'text-violet-700',  bar: 'bg-violet-400',  dot: 'bg-violet-500'  },
 };
 
-const StatPill: React.FC<StatPillProps> = ({ label, value, percent, subtitle, color }) => {
+const StatPill: React.FC<StatPillProps> = ({ label, value, percent, subtitle, color, tooltip }) => {
   const c = colorMap[color];
   return (
-    <div className={`flex-1 min-w-[120px] rounded-lg px-4 py-3 ${c.bg}`}>
-      <p className="text-xs font-medium text-gray-500 mb-1">{label}</p>
+    <div className={`flex-1 min-w-[120px] rounded-lg px-4 py-3 ${c.bg}`} title={tooltip}>
+      <div className="flex items-center gap-1 mb-1">
+        <p className="text-xs font-medium text-gray-500">{label}</p>
+        {tooltip && (
+          <svg className="w-3 h-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        )}
+      </div>
       <p className={`text-xl font-bold ${c.text}`}>{value}</p>
       {percent !== undefined && (
         <div className="mt-1.5">
@@ -622,6 +630,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
               value={prepMetrics.omitted}
               percent={prepMetrics.omittedPct}
               color="rose"
+              tooltip="Archivos no procesados: formatos no soportados (.exe, imágenes, etc.), archivos vacíos o documentos corruptos que no pudieron extraerse."
             />
             <StatPill
               label="Duplicados"
@@ -709,9 +718,13 @@ export const PreprocesamientoDashboard: React.FC = () => {
           accentColor="purple"
         />
         <MetricCardDark
-          title="Extensión Principal"
-          value={syncedMetrics.dominantExtension}
-          subtitle={crossFilter ? 'Más común (filtrado)' : 'Tipo más común'}
+          title="Total de Tokens"
+          value={data?.selectedPreparation?.total_tokens != null && data.selectedPreparation.total_tokens > 0
+            ? data.selectedPreparation.total_tokens.toLocaleString()
+            : syncedMetrics.dominantExtension}
+          subtitle={data?.selectedPreparation?.total_tokens != null && data.selectedPreparation.total_tokens > 0
+            ? `~${data.selectedPreparation.avg_tokens_per_doc.toLocaleString()} tokens/doc · corpus preprocesado`
+            : crossFilter ? 'Más común (filtrado)' : 'Ejecuta una preparación para ver tokens'}
           icon={<ExtensionIcon />}
           accentColor="amber"
         />
@@ -757,8 +770,8 @@ export const PreprocesamientoDashboard: React.FC = () => {
           value={metrics?.filesOmitted || 0}
           subtitle={
             prepMetrics
-              ? `${prepMetrics.omittedPct}% del total del dataset`
-              : 'No procesados (errores o incompatibles)'
+              ? `${prepMetrics.omittedPct}% — formatos no soportados, vacíos o corruptos`
+              : 'Formatos no soportados, archivos vacíos o corruptos'
           }
           icon={<SkipIcon />}
           accentColor="blue"
