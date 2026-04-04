@@ -263,6 +263,9 @@ export const ModeladoDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedEntityType, setSelectedEntityType] = useState<string | null>(null);
+  const [activeSubTab, setActiveSubTab] = useState<'ner' | 'topics' | 'bertopic'>('ner');
+  const [showAllTopics, setShowAllTopics] = useState(false);
+  const [showAllClusters, setShowAllClusters] = useState(false);
   const { filters, setSelectedNer, setSelectedTopicModel, setSelectedBertopic } = useFilter();
 
   // Reset entity type filter when the NER selection changes
@@ -550,10 +553,49 @@ export const ModeladoDashboard: React.FC = () => {
         />
       </DashboardGrid>
 
+      {/* ── Sub-tab navigation (QW-3) ── */}
+      <div className="flex gap-1 p-1 rounded-xl bg-slate-800/40 border border-slate-700/50">
+        {(
+          [
+            { id: 'ner',      label: 'NER',                count: data?.nerAnalyses?.length ?? 0,                  accentActive: 'bg-purple-500/20 text-white', dot: 'bg-purple-500/25 text-purple-300' },
+            { id: 'topics',   label: 'Modelado de Temas',  count: data?.topicModelingAnalyses?.length ?? 0,        accentActive: 'bg-emerald-500/20 text-white', dot: 'bg-emerald-500/25 text-emerald-300' },
+            { id: 'bertopic', label: 'BERTopic',           count: data?.bertopicAnalyses?.length ?? 0,             accentActive: 'bg-amber-500/20 text-white', dot: 'bg-amber-500/25 text-amber-300' },
+          ] as const
+        ).map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => { setActiveSubTab(tab.id); setShowAllTopics(false); setShowAllClusters(false); }}
+            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors min-h-[44px] ${
+              activeSubTab === tab.id
+                ? `${tab.accentActive} shadow-sm`
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/40'
+            }`}
+          >
+            {tab.label}
+            {tab.count > 0 && (
+              <span className={`text-xs px-1.5 py-0.5 rounded-full ${activeSubTab === tab.id ? tab.dot : 'bg-slate-700 text-slate-400'}`}>
+                {tab.count}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
       {/* ═══════════════════════════════════════════════════════
           NER SECTION
       ════════════════════════════════════════════════════════ */}
-      {data?.selectedNer && (
+      {activeSubTab === 'ner' && !data?.selectedNer && (
+        <div className="flex flex-col items-center justify-center py-12 rounded-xl bg-slate-800/30 border border-slate-700/50 text-center">
+          <div className="w-14 h-14 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-4">
+            <svg className="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+          </div>
+          <p className="text-slate-300 text-sm">Sin análisis NER para este dataset.</p>
+          <p className="text-slate-400 text-xs mt-1">Crea uno desde Administración › NER.</p>
+        </div>
+      )}
+      {activeSubTab === 'ner' && data?.selectedNer && (
         <>
           {/* NER Quality KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -696,7 +738,18 @@ export const ModeladoDashboard: React.FC = () => {
       {/* ═══════════════════════════════════════════════════════
           TOPIC MODELING SECTION
       ════════════════════════════════════════════════════════ */}
-      {data?.selectedTopicModeling && data.topics && data.topics.length > 0 && (
+      {activeSubTab === 'topics' && !data?.selectedTopicModeling && (
+        <div className="flex flex-col items-center justify-center py-12 rounded-xl bg-slate-800/30 border border-slate-700/50 text-center">
+          <div className="w-14 h-14 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-4">
+            <svg className="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+          </div>
+          <p className="text-slate-300 text-sm">Sin modelos de temas para este dataset.</p>
+          <p className="text-slate-400 text-xs mt-1">Crea uno desde Administración › Modelado de Temas.</p>
+        </div>
+      )}
+      {activeSubTab === 'topics' && data?.selectedTopicModeling && data.topics && data.topics.length > 0 && (
         <>
           {/* Topic Modeling Quality KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -745,7 +798,7 @@ export const ModeladoDashboard: React.FC = () => {
             isLoading={isLoading}
           >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
-              {data.topics.slice(0, 9).map((topic, i) => (
+              {data.topics.slice(0, showAllTopics ? data.topics.length : 9).map((topic, i) => (
                 <TopicCard
                   key={topic.id}
                   topic={topic}
@@ -753,6 +806,20 @@ export const ModeladoDashboard: React.FC = () => {
                 />
               ))}
             </div>
+            {data.topics.length > 9 && (
+              <div className="flex justify-center pt-1 pb-2">
+                <button
+                  onClick={() => setShowAllTopics(v => !v)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-lg hover:bg-emerald-500/20 transition-colors"
+                >
+                  {showAllTopics ? (
+                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>Ver menos</>
+                  ) : (
+                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>Ver todos los {data.topics.length} temas</>
+                  )}
+                </button>
+              </div>
+            )}
           </ChartCard>
 
           {/* Topic Distribution Donut */}
@@ -784,7 +851,18 @@ export const ModeladoDashboard: React.FC = () => {
       {/* ═══════════════════════════════════════════════════════
           BERTOPIC SECTION
       ════════════════════════════════════════════════════════ */}
-      {data?.selectedBertopic && data.bertopicClusters && data.bertopicClusters.length > 0 && (
+      {activeSubTab === 'bertopic' && !data?.selectedBertopic && (
+        <div className="flex flex-col items-center justify-center py-12 rounded-xl bg-slate-800/30 border border-slate-700/50 text-center">
+          <div className="w-14 h-14 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-4">
+            <svg className="w-7 h-7 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <p className="text-slate-300 text-sm">Sin análisis BERTopic para este dataset.</p>
+          <p className="text-slate-400 text-xs mt-1">Crea uno desde Administración › BERTopic.</p>
+        </div>
+      )}
+      {activeSubTab === 'bertopic' && data?.selectedBertopic && data.bertopicClusters && data.bertopicClusters.length > 0 && (
         <>
           {/* BERTopic Quality KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -831,10 +909,24 @@ export const ModeladoDashboard: React.FC = () => {
             isLoading={isLoading}
           >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
-              {data.bertopicClusters.slice(0, 9).map((cluster) => (
+              {data.bertopicClusters.slice(0, showAllClusters ? data.bertopicClusters.length : 9).map((cluster) => (
                 <BertopicClusterCard key={cluster.topicId} cluster={cluster} />
               ))}
             </div>
+            {data.bertopicClusters.length > 9 && (
+              <div className="flex justify-center pt-1 pb-2">
+                <button
+                  onClick={() => setShowAllClusters(v => !v)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-lg hover:bg-amber-500/20 transition-colors"
+                >
+                  {showAllClusters ? (
+                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>Ver menos</>
+                  ) : (
+                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>Ver todos los {data.bertopicClusters.length} clústeres</>
+                  )}
+                </button>
+              </div>
+            )}
           </ChartCard>
 
           {/* BERTopic Distribution Donut */}

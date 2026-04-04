@@ -39,6 +39,8 @@ export interface DataPreparation {
   files_processed: number;
   files_omitted: number;
   duplicates_removed: number;
+  total_tokens: number;
+  avg_tokens_per_doc: number;
 
   // Metadatos
   processing_started_at: string | null;
