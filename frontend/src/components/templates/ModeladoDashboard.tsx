@@ -275,6 +275,7 @@ export const ModeladoDashboard: React.FC = () => {
   const [showAllTopics, setShowAllTopics] = useState(false);
   const [showAllClusters, setShowAllClusters] = useState(false);
   const [coherenceComparison, setCoherenceComparison] = useState<CoherenceComparisonItem[]>([]);
+  const [pcaHovered, setPcaHovered] = useState<number | null>(null);
   const { filters, setSelectedNer, setSelectedTopicModel, setSelectedBertopic } = useFilter();
 
   // Reset entity type filter when the NER selection changes
@@ -331,6 +332,34 @@ export const ModeladoDashboard: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  // VIZ-4: NER co-occurrence network data (must be before early returns — hook rule)
+  const nerNetworkData = useMemo(() => {
+    const cooccs = data?.selectedNer?.cooccurrences || [];
+    if (cooccs.length === 0) return null;
+    const top = [...cooccs].sort((a, b) => b.cooccurrence_count - a.cooccurrence_count).slice(0, 25);
+    const nodeMap = new Map<string, { freq: number; label: string }>();
+    top.forEach(c => {
+      const e1 = c.entity1.text, e2 = c.entity2.text;
+      nodeMap.set(e1, { freq: (nodeMap.get(e1)?.freq || 0) + c.cooccurrence_count, label: c.entity1.label });
+      nodeMap.set(e2, { freq: (nodeMap.get(e2)?.freq || 0) + c.cooccurrence_count, label: c.entity2.label });
+    });
+    const maxFreq = Math.max(...Array.from(nodeMap.values()).map(v => v.freq)) || 1;
+    const maxCount = Math.max(...top.map(c => c.cooccurrence_count)) || 1;
+    const EC: Record<string, string> = { PERSON: '#3b82f6', ORG: '#10b981', GPE: '#f59e0b', LOC: '#8b5cf6', DATE: '#ec4899', default: '#64748b' };
+    const nodes = Array.from(nodeMap.entries()).map(([id, val]) => ({
+      id,
+      size: 8 + (val.freq / maxFreq) * 18,
+      color: EC[val.label] || EC.default,
+    }));
+    const links = top.map(c => ({
+      source: c.entity1.text,
+      target: c.entity2.text,
+      distance: 60 + (1 - c.cooccurrence_count / maxCount) * 70,
+      thickness: 1 + (c.cooccurrence_count / maxCount) * 4,
+    }));
+    return { nodes, links };
+  }, [data?.selectedNer?.cooccurrences]);
 
   // ------- Empty / loading / error states (unchanged) --------
 
@@ -437,34 +466,6 @@ export const ModeladoDashboard: React.FC = () => {
     label: t.topic_label || `Clúster ${t.topic_id}`,
     value: t.count,
   }));
-
-  // VIZ-4: NER co-occurrence network data
-  const nerNetworkData = useMemo(() => {
-    const cooccs = data?.selectedNer?.cooccurrences || [];
-    if (cooccs.length === 0) return null;
-    const top = [...cooccs].sort((a, b) => b.cooccurrence_count - a.cooccurrence_count).slice(0, 25);
-    const nodeMap = new Map<string, { freq: number; label: string }>();
-    top.forEach(c => {
-      const e1 = c.entity1.text, e2 = c.entity2.text;
-      nodeMap.set(e1, { freq: (nodeMap.get(e1)?.freq || 0) + c.cooccurrence_count, label: c.entity1.label });
-      nodeMap.set(e2, { freq: (nodeMap.get(e2)?.freq || 0) + c.cooccurrence_count, label: c.entity2.label });
-    });
-    const maxFreq = Math.max(...Array.from(nodeMap.values()).map(v => v.freq)) || 1;
-    const maxCount = Math.max(...top.map(c => c.cooccurrence_count)) || 1;
-    const EC: Record<string, string> = { PERSON: '#3b82f6', ORG: '#10b981', GPE: '#f59e0b', LOC: '#8b5cf6', DATE: '#ec4899', default: '#64748b' };
-    const nodes = Array.from(nodeMap.entries()).map(([id, val]) => ({
-      id,
-      size: 8 + (val.freq / maxFreq) * 18,
-      color: EC[val.label] || EC.default,
-    }));
-    const links = top.map(c => ({
-      source: c.entity1.text,
-      target: c.entity2.text,
-      distance: 60 + (1 - c.cooccurrence_count / maxCount) * 70,
-      thickness: 1 + (c.cooccurrence_count / maxCount) * 4,
-    }));
-    return { nodes, links };
-  }, [data?.selectedNer?.cooccurrences]);
 
   const bertopicDocsProcessed = data?.selectedBertopic?.documents_processed || 0;
 
@@ -1030,7 +1031,8 @@ export const ModeladoDashboard: React.FC = () => {
             const chartW = W - PAD * 2, chartH = H - PAD * 2;
             const maxSize = Math.max(...pts.map(p => p.size)) || 1;
             const COLORS = ['#10b981','#06b6d4','#8b5cf6','#f59e0b','#ec4899','#3b82f6','#2dd4bf','#f472b6','#a78bfa','#34d399'];
-            const [hovered, setHovered] = React.useState<number | null>(null);
+            const hovered = pcaHovered;
+            const setHovered = setPcaHovered;
             return (
               <ChartCard
                 title="Mapa de Distancia Inter-Tópicos (PCA)"
