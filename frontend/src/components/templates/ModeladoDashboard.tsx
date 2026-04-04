@@ -7,7 +7,8 @@
  * - BERTopic clusters with word weight bars, distribution donut, quality KPIs
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { ResponsiveNetwork } from '@nivo/network';
 import { DashboardGrid, MetricCardDark, DonutChartViz } from '../organisms';
 import { ChartCard } from '../molecules';
 import { ScatterPlotProjection } from '../organisms/ScatterPlotProjection';
@@ -15,6 +16,9 @@ import dashboardService from '../../services/dashboardService';
 import type { ModelingDashboardData } from '../../services/dashboardService';
 import { useFilter } from '../../contexts/FilterContext';
 import type { Projections2D } from '../../services/bertopicService';
+import publicTopicModelingService from '../../services/publicTopicModelingService';
+import type { CoherenceComparisonItem } from '../../services/publicTopicModelingService';
+import { ContextTooltip } from '../atoms';
 
 // ---------------------------------------------------------------------------
 // Color helpers & constants
@@ -69,11 +73,15 @@ interface CompactMetricProps {
   value: string | number;
   badge?: string;
   badgeClass?: string;
+  contextKey?: string;
 }
 
-const CompactMetric: React.FC<CompactMetricProps> = ({ label, value, badge, badgeClass }) => (
+const CompactMetric: React.FC<CompactMetricProps> = ({ label, value, badge, badgeClass, contextKey }) => (
   <div className="p-3 rounded-xl bg-slate-800/40 border border-slate-700/50">
-    <p className="text-xs text-slate-400 font-medium mb-1">{label}</p>
+    <div className="flex items-center gap-1 mb-1">
+      <p className="text-xs text-slate-400 font-medium">{label}</p>
+      {contextKey && <ContextTooltip contextKey={contextKey} />}
+    </div>
     <div className="flex items-center gap-2 flex-wrap">
       <span className="text-xl font-bold text-white">
         {typeof value === 'number' ? value.toLocaleString() : value}
@@ -266,6 +274,7 @@ export const ModeladoDashboard: React.FC = () => {
   const [activeSubTab, setActiveSubTab] = useState<'ner' | 'topics' | 'bertopic'>('ner');
   const [showAllTopics, setShowAllTopics] = useState(false);
   const [showAllClusters, setShowAllClusters] = useState(false);
+  const [coherenceComparison, setCoherenceComparison] = useState<CoherenceComparisonItem[]>([]);
   const { filters, setSelectedNer, setSelectedTopicModel, setSelectedBertopic } = useFilter();
 
   // Reset entity type filter when the NER selection changes
@@ -281,8 +290,12 @@ export const ModeladoDashboard: React.FC = () => {
         filters.selectedTopicModelId,
         filters.selectedBertopicId,
       );
+      publicTopicModelingService.getCoherenceComparison(filters.selectedDatasetId)
+        .then(setCoherenceComparison)
+        .catch(() => setCoherenceComparison([]));
     } else {
       setData(null);
+      setCoherenceComparison([]);
       setIsLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -424,6 +437,34 @@ export const ModeladoDashboard: React.FC = () => {
     label: t.topic_label || `Clúster ${t.topic_id}`,
     value: t.count,
   }));
+
+  // VIZ-4: NER co-occurrence network data
+  const nerNetworkData = useMemo(() => {
+    const cooccs = data?.selectedNer?.cooccurrences || [];
+    if (cooccs.length === 0) return null;
+    const top = [...cooccs].sort((a, b) => b.cooccurrence_count - a.cooccurrence_count).slice(0, 25);
+    const nodeMap = new Map<string, { freq: number; label: string }>();
+    top.forEach(c => {
+      const e1 = c.entity1.text, e2 = c.entity2.text;
+      nodeMap.set(e1, { freq: (nodeMap.get(e1)?.freq || 0) + c.cooccurrence_count, label: c.entity1.label });
+      nodeMap.set(e2, { freq: (nodeMap.get(e2)?.freq || 0) + c.cooccurrence_count, label: c.entity2.label });
+    });
+    const maxFreq = Math.max(...Array.from(nodeMap.values()).map(v => v.freq)) || 1;
+    const maxCount = Math.max(...top.map(c => c.cooccurrence_count)) || 1;
+    const EC: Record<string, string> = { PERSON: '#3b82f6', ORG: '#10b981', GPE: '#f59e0b', LOC: '#8b5cf6', DATE: '#ec4899', default: '#64748b' };
+    const nodes = Array.from(nodeMap.entries()).map(([id, val]) => ({
+      id,
+      size: 8 + (val.freq / maxFreq) * 18,
+      color: EC[val.label] || EC.default,
+    }));
+    const links = top.map(c => ({
+      source: c.entity1.text,
+      target: c.entity2.text,
+      distance: 60 + (1 - c.cooccurrence_count / maxCount) * 70,
+      thickness: 1 + (c.cooccurrence_count / maxCount) * 4,
+    }));
+    return { nodes, links };
+  }, [data?.selectedNer?.cooccurrences]);
 
   const bertopicDocsProcessed = data?.selectedBertopic?.documents_processed || 0;
 
@@ -708,7 +749,6 @@ export const ModeladoDashboard: React.FC = () => {
               }
             >
               <div className="p-2">
-                {/* Active filter badge + clear button */}
                 {selectedEntityType && (
                   <div className="flex items-center gap-2 mb-3">
                     <span className={`px-2 py-0.5 text-xs rounded border ${ENTITY_BADGE_COLORS[selectedEntityType] || ENTITY_BADGE_COLORS.default}`}>
@@ -729,6 +769,49 @@ export const ModeladoDashboard: React.FC = () => {
                   </div>
                 )}
                 <EntityFrequencyChart entities={filteredNerEntities} />
+              </div>
+            </ChartCard>
+          )}
+
+          {/* VIZ-4: NER Co-occurrence Network */}
+          {nerNetworkData && (
+            <ChartCard
+              title="Red de Co-ocurrencia de Entidades"
+              subtitle={`Top 25 pares — grosor del enlace proporcional a la frecuencia de co-ocurrencia`}
+              accentColor="blue"
+              size="lg"
+              icon={
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+              }
+            >
+              <div style={{ height: '380px' }}>
+                <ResponsiveNetwork
+                  data={nerNetworkData as any}
+                  margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
+                  linkDistance={(e: any) => e.distance}
+                  centeringStrength={0.3}
+                  repulsivity={6}
+                  nodeSize={(n: any) => n.size}
+                  activeNodeSize={(n: any) => n.size * 1.4}
+                  nodeColor={(n: any) => n.color}
+                  nodeBorderWidth={1}
+                  nodeBorderColor={{ from: 'color', modifiers: [['darker', 0.8]] } as any}
+                  linkThickness={(l: any) => l.thickness}
+                  motionConfig="gentle"
+                  theme={{
+                    tooltip: { container: { background: '#1e293b', color: '#f8fafc', fontSize: 12, borderRadius: '8px', border: '1px solid #334155' } },
+                  }}
+                />
+              </div>
+              <div className="flex flex-wrap gap-3 px-3 pb-3">
+                {Object.entries({ PERSON: '#3b82f6', ORG: '#10b981', GPE: '#f59e0b', LOC: '#8b5cf6', DATE: '#ec4899' }).map(([label, color]) => (
+                  <div key={label} className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+                    <span className="text-xs text-slate-400">{label}</span>
+                  </div>
+                ))}
               </div>
             </ChartCard>
           )}
@@ -768,6 +851,7 @@ export const ModeladoDashboard: React.FC = () => {
                 ? (data.selectedTopicModeling.coherence_score > 0.5 ? 'Buena' : data.selectedTopicModeling.coherence_score > 0.3 ? 'Media' : 'Baja')
                 : undefined}
               badgeClass={coherenceBadgeClass(data.selectedTopicModeling.coherence_score)}
+              contextKey="coherence_score"
             />
             {data.selectedTopicModeling.perplexity_score !== null && (
               <CompactMetric
@@ -845,6 +929,165 @@ export const ModeladoDashboard: React.FC = () => {
               </div>
             </ChartCard>
           )}
+
+          {/* VIZ-5: Coherence elbow plot */}
+          {coherenceComparison.filter(c => c.coherence_score !== null).length >= 2 && (() => {
+            const withScore = coherenceComparison.filter(c => c.coherence_score !== null);
+            const algorithms = [...new Set(withScore.map(c => c.algorithm))];
+            const ALG_COLORS: Record<string, string> = { lda: '#10b981', nmf: '#06b6d4', lsa: '#8b5cf6', plsa: '#f59e0b' };
+            const sorted = [...withScore].sort((a, b) => a.num_topics - b.num_topics);
+            const maxTopics = Math.max(...sorted.map(c => c.num_topics));
+            const minTopics = Math.min(...sorted.map(c => c.num_topics));
+            const maxScore = Math.max(...sorted.map(c => c.coherence_score!));
+            const minScore = Math.min(...sorted.map(c => c.coherence_score!));
+            const scoreRange = maxScore - minScore || 1;
+            const topicsRange = maxTopics - minTopics || 1;
+            const W = 480, H = 200, PAD = { top: 16, right: 16, bottom: 36, left: 50 };
+            const chartW = W - PAD.left - PAD.right;
+            const chartH = H - PAD.top - PAD.bottom;
+            const sx = (t: number) => ((t - minTopics) / topicsRange) * chartW;
+            const sy = (s: number) => chartH - ((s - minScore) / scoreRange) * chartH;
+            const currentId = data.selectedTopicModeling?.id;
+            return (
+              <ChartCard
+                title="Coherencia vs. Número de Tópicos"
+                subtitle="Curva del codo — compara todos los modelos del dataset"
+                accentColor="emerald"
+                size="md"
+                icon={
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                  </svg>
+                }
+              >
+                <div className="px-2 pb-2 overflow-x-auto">
+                  <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ minHeight: `${H}px` }}>
+                    <g transform={`translate(${PAD.left},${PAD.top})`}>
+                      {/* Y axis gridlines + labels */}
+                      {[0, 0.25, 0.5, 0.75, 1].map(t => {
+                        const scoreVal = minScore + t * scoreRange;
+                        const y = sy(scoreVal);
+                        return (
+                          <g key={t}>
+                            <line x1={0} y1={y} x2={chartW} y2={y} stroke="#334155" strokeWidth={1} strokeDasharray="4,3" />
+                            <text x={-6} y={y + 4} textAnchor="end" fill="#64748b" fontSize={10}>{scoreVal.toFixed(2)}</text>
+                          </g>
+                        );
+                      })}
+                      {/* X axis labels */}
+                      {[...new Set(sorted.map(c => c.num_topics))].map(nt => (
+                        <text key={nt} x={sx(nt)} y={chartH + 20} textAnchor="middle" fill="#64748b" fontSize={10}>{nt}</text>
+                      ))}
+                      <text x={chartW / 2} y={chartH + 34} textAnchor="middle" fill="#94a3b8" fontSize={10}>Nº tópicos</text>
+                      {/* Lines per algorithm */}
+                      {algorithms.map(alg => {
+                        const pts = sorted.filter(c => c.algorithm === alg);
+                        if (pts.length < 2) return null;
+                        const d = pts.map((c, i) => `${i === 0 ? 'M' : 'L'}${sx(c.num_topics)},${sy(c.coherence_score!)}`).join(' ');
+                        return <path key={alg} d={d} fill="none" stroke={ALG_COLORS[alg] || '#64748b'} strokeWidth={2} strokeLinecap="round" />;
+                      })}
+                      {/* Data points */}
+                      {sorted.map((c) => {
+                        const isCurrent = c.id === currentId;
+                        return (
+                          <g key={c.id}>
+                            <circle cx={sx(c.num_topics)} cy={sy(c.coherence_score!)} r={isCurrent ? 6 : 4}
+                              fill={isCurrent ? '#fff' : (ALG_COLORS[c.algorithm] || '#64748b')}
+                              stroke={ALG_COLORS[c.algorithm] || '#64748b'} strokeWidth={2}
+                            />
+                            {isCurrent && <circle cx={sx(c.num_topics)} cy={sy(c.coherence_score!)} r={10} fill="none" stroke="#fff" strokeWidth={1} strokeDasharray="3,2" />}
+                            <title>{c.name}: {c.num_topics} tópicos, coherencia {c.coherence_score?.toFixed(4)}</title>
+                          </g>
+                        );
+                      })}
+                    </g>
+                  </svg>
+                  <div className="flex flex-wrap gap-3 mt-1">
+                    {algorithms.map(alg => (
+                      <div key={alg} className="flex items-center gap-1.5">
+                        <div className="w-4 h-1.5 rounded" style={{ backgroundColor: ALG_COLORS[alg] || '#64748b' }} />
+                        <span className="text-xs text-slate-400 uppercase">{alg}</span>
+                      </div>
+                    ))}
+                    <div className="flex items-center gap-1.5 ml-2">
+                      <div className="w-3 h-3 rounded-full border-2 border-white bg-transparent" />
+                      <span className="text-xs text-slate-400">modelo activo</span>
+                    </div>
+                  </div>
+                </div>
+              </ChartCard>
+            );
+          })()}
+
+          {/* VIZ-6: PCA inter-topic distance map */}
+          {data.selectedTopicModeling?.pca_projection && data.selectedTopicModeling.pca_projection.length >= 2 && (() => {
+            const pts = data.selectedTopicModeling!.pca_projection!;
+            const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+            const xMin = Math.min(...xs), xMax = Math.max(...xs);
+            const yMin = Math.min(...ys), yMax = Math.max(...ys);
+            const xRange = xMax - xMin || 1, yRange = yMax - yMin || 1;
+            const W = 480, H = 280, PAD = 40;
+            const chartW = W - PAD * 2, chartH = H - PAD * 2;
+            const maxSize = Math.max(...pts.map(p => p.size)) || 1;
+            const COLORS = ['#10b981','#06b6d4','#8b5cf6','#f59e0b','#ec4899','#3b82f6','#2dd4bf','#f472b6','#a78bfa','#34d399'];
+            const [hovered, setHovered] = React.useState<number | null>(null);
+            return (
+              <ChartCard
+                title="Mapa de Distancia Inter-Tópicos (PCA)"
+                subtitle="Proyección 2D — tópicos cercanos comparten vocabulario"
+                accentColor="emerald"
+                size="lg"
+                icon={
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                }
+              >
+                <div className="relative px-2 pb-2">
+                  <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ minHeight: `${H}px` }}>
+                    <g transform={`translate(${PAD},${PAD})`}>
+                      {/* Grid */}
+                      {[-0.5, 0, 0.5].map(t => {
+                        const xv = xMin + (t + 0.5) * xRange;
+                        const yv = yMin + (t + 0.5) * yRange;
+                        const cx = ((xv - xMin) / xRange) * chartW;
+                        const cy = chartH - ((yv - yMin) / yRange) * chartH;
+                        return (
+                          <g key={t}>
+                            <line x1={cx} y1={0} x2={cx} y2={chartH} stroke="#1e293b" strokeWidth={1} />
+                            <line x1={0} y1={cy} x2={chartW} y2={cy} stroke="#1e293b" strokeWidth={1} />
+                          </g>
+                        );
+                      })}
+                      {/* Bubbles */}
+                      {pts.map((p, i) => {
+                        const cx = ((p.x - xMin) / xRange) * chartW;
+                        const cy = chartH - ((p.y - yMin) / yRange) * chartH;
+                        const r = 10 + (p.size / maxSize) * 16;
+                        const color = COLORS[i % COLORS.length];
+                        const isHov = hovered === i;
+                        return (
+                          <g key={p.topic_id} onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)} style={{ cursor: 'pointer' }}>
+                            <circle cx={cx} cy={cy} r={r} fill={color} fillOpacity={isHov ? 0.9 : 0.55} stroke={color} strokeWidth={isHov ? 2 : 1} />
+                            <text x={cx} y={cy + 4} textAnchor="middle" fill="#fff" fontSize={10} fontWeight="600" style={{ pointerEvents: 'none' }}>
+                              {p.topic_id + 1}
+                            </text>
+                          </g>
+                        );
+                      })}
+                    </g>
+                  </svg>
+                  {hovered !== null && (
+                    <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-slate-900 border border-slate-600/60 rounded-lg px-3 py-2 shadow-xl text-xs pointer-events-none z-10">
+                      <p className="font-bold text-white mb-0.5">{pts[hovered]?.label}</p>
+                      <p className="text-slate-400">{pts[hovered]?.size} documentos</p>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-slate-400 px-4 pb-3">El tamaño del círculo refleja el número de documentos. La posición refleja la similitud semántica calculada con PCA sobre los pesos de palabras.</p>
+              </ChartCard>
+            );
+          })()}
         </>
       )}
 

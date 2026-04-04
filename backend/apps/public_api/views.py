@@ -411,6 +411,22 @@ class PublicTopicModelingViewSet(viewsets.ReadOnlyModelViewSet):
             return TopicModelingListSerializer
         return TopicModelingDetailSerializer
 
+    @action(detail=False, methods=['get'])
+    def coherence_comparison(self, request):
+        """Get coherence scores for all completed topic modelings in a dataset."""
+        qs = self.get_queryset()
+        return Response([
+            {
+                'id': tm.id,
+                'name': tm.name,
+                'num_topics': tm.num_topics,
+                'coherence_score': tm.coherence_score,
+                'perplexity_score': tm.perplexity_score,
+                'algorithm': tm.algorithm,
+            }
+            for tm in qs
+        ])
+
 
 # ============================================================
 # BERTOPIC

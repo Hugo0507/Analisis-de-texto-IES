@@ -137,6 +137,15 @@ export interface TopicModeling {
   document_topics: DocumentTopic[];
   topic_distribution: TopicDistribution[];
 
+  // PCA projection (2D inter-topic distance map)
+  pca_projection: Array<{
+    topic_id: number;
+    label: string;
+    x: number;
+    y: number;
+    size: number;
+  }> | null;
+
   // Timestamps
   created_at: string;
   updated_at: string;
