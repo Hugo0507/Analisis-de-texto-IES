@@ -115,7 +115,7 @@ const TopicCard: React.FC<TopicCardProps> = ({ topic, accentColor }) => {
     <div className={`p-4 rounded-xl bg-gradient-to-br ${colors.gradient} border`}>
       <div className="flex items-center justify-between mb-3">
         <h4 className="text-sm font-medium text-white truncate pr-2">
-          {topic.label || `Tópico ${topic.id}`}
+          {topic.label || `Tema ${topic.id}`}
         </h4>
         <span className="text-xs text-slate-300 shrink-0">{topic.documentCount} docs</span>
       </div>
@@ -951,7 +951,7 @@ export const ModeladoDashboard: React.FC = () => {
             const currentId = data.selectedTopicModeling?.id;
             return (
               <ChartCard
-                title="Coherencia vs. Número de Tópicos"
+                title="Coherencia vs. Número de Temas"
                 subtitle="Curva del codo — compara todos los modelos del dataset"
                 accentColor="emerald"
                 size="md"
@@ -979,7 +979,7 @@ export const ModeladoDashboard: React.FC = () => {
                       {[...new Set(sorted.map(c => c.num_topics))].map(nt => (
                         <text key={nt} x={sx(nt)} y={chartH + 20} textAnchor="middle" fill="#64748b" fontSize={10}>{nt}</text>
                       ))}
-                      <text x={chartW / 2} y={chartH + 34} textAnchor="middle" fill="#94a3b8" fontSize={10}>Nº tópicos</text>
+                      <text x={chartW / 2} y={chartH + 34} textAnchor="middle" fill="#94a3b8" fontSize={10}>Nº temas</text>
                       {/* Lines per algorithm */}
                       {algorithms.map(alg => {
                         const pts = sorted.filter(c => c.algorithm === alg);
@@ -997,7 +997,7 @@ export const ModeladoDashboard: React.FC = () => {
                               stroke={ALG_COLORS[c.algorithm] || '#64748b'} strokeWidth={2}
                             />
                             {isCurrent && <circle cx={sx(c.num_topics)} cy={sy(c.coherence_score!)} r={10} fill="none" stroke="#fff" strokeWidth={1} strokeDasharray="3,2" />}
-                            <title>{c.name}: {c.num_topics} tópicos, coherencia {c.coherence_score?.toFixed(4)}</title>
+                            <title>{c.name}: {c.num_topics} temas, coherencia {c.coherence_score?.toFixed(4)}</title>
                           </g>
                         );
                       })}
@@ -1035,8 +1035,8 @@ export const ModeladoDashboard: React.FC = () => {
             const setHovered = setPcaHovered;
             return (
               <ChartCard
-                title="Mapa de Distancia Inter-Tópicos (PCA)"
-                subtitle="Proyección 2D — tópicos cercanos comparten vocabulario"
+                title="Mapa de Distancia Inter-Temas (PCA)"
+                subtitle="Proyección 2D — temas cercanos comparten vocabulario"
                 accentColor="emerald"
                 size="lg"
                 icon={

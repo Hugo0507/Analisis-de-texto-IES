@@ -164,10 +164,10 @@ class TopicModelingViewSet(viewsets.ModelViewSet):
                 'name': 'NMF',
                 'full_name': 'Non-negative Matrix Factorization',
                 'category': 'Non-Probabilistic',
-                'description': 'Factorización matricial no-negativa. Produce tópicos más interpretables '
+                'description': 'Factorización matricial no-negativa. Produce temas más interpretables '
                              'con componentes solo positivas.',
                 'pros': [
-                    'Tópicos altamente interpretables',
+                    'Temas altamente interpretables',
                     'Solo componentes no-negativas',
                     'Buen balance velocidad/calidad'
                 ],
@@ -183,7 +183,7 @@ class TopicModelingViewSet(viewsets.ModelViewSet):
                 'full_name': 'Probabilistic Latent Semantic Analysis',
                 'category': 'Probabilistic',
                 'description': 'Modelo probabilístico que asume una distribución multinomial. '
-                             'Permite calcular probabilidades de tópicos por documento.',
+                             'Permite calcular probabilidades de temas por documento.',
                 'pros': [
                     'Interpretación probabilística clara',
                     'Modela incertidumbre',
@@ -202,7 +202,7 @@ class TopicModelingViewSet(viewsets.ModelViewSet):
                 'full_name': 'Latent Dirichlet Allocation',
                 'category': 'Probabilistic',
                 'description': 'Modelo bayesiano generativo. El estándar de facto para topic modeling. '
-                             'Asume distribuciones Dirichlet para tópicos y palabras.',
+                             'Asume distribuciones Dirichlet para temas y palabras.',
                 'pros': [
                     'Más usado y estudiado',
                     'Generaliza a documentos nuevos',
@@ -212,7 +212,7 @@ class TopicModelingViewSet(viewsets.ModelViewSet):
                 'cons': [
                     'Más lento que LSA/NMF',
                     'Requiere tuning de hiperparámetros',
-                    'Sensible al número de tópicos'
+                    'Sensible al número de temas'
                 ],
                 'use_cases': 'Análisis de contenido profundo, descubrimiento de temas, investigación'
             }
