@@ -289,7 +289,7 @@ def infer_topics(
         corpus_topic = corpus_topics.get(topic_id, {})
         topic_distribution.append({
             'topic_id': topic_id,
-            'topic_label': corpus_topic.get('topic_label', f'Tópico {topic_id}'),
+            'topic_label': corpus_topic.get('topic_label', f'Tema {topic_id}'),
             'document_count': count,
             'percentage': round(count / len(texts) * 100, 1),
         })
@@ -304,7 +304,7 @@ def infer_topics(
         if weight > 0.001:  # Solo tópicos con afinidad mínima
             all_topics_affinity.append({
                 'topic_id': topic_id,
-                'topic_label': corpus_topic.get('topic_label', f'Tópico {topic_id}'),
+                'topic_label': corpus_topic.get('topic_label', f'Tema {topic_id}'),
                 'top_words': corpus_topic.get('top_words', [])[:10],
                 'weight': round(weight, 4),
                 'percentage': round(weight * 100, 1),
@@ -600,7 +600,7 @@ def infer_bertopic_similarity(
         raise ValueError(f"BERTopic #{bertopic_id} no tiene tópicos válidos (solo outliers).")
 
     topic_labels = {
-        t['topic_id']: t.get('topic_label', f'Tópico {t["topic_id"]}')
+        t['topic_id']: t.get('topic_label', f'Tema {t["topic_id"]}')
         for t in topics
     }
 
@@ -626,12 +626,12 @@ def infer_bertopic_similarity(
         document_assignments.append({
             'document_index': idx,
             'dominant_topic': dominant,
-            'dominant_topic_label': topic_labels.get(dominant, f'Tópico {dominant}'),
+            'dominant_topic_label': topic_labels.get(dominant, f'Tema {dominant}'),
             'similarity_score': round(scores.get(dominant, 0.0), 4),
             'top_topics': [
                 {
                     'topic_id': tid,
-                    'topic_label': topic_labels.get(tid, f'Tópico {tid}'),
+                    'topic_label': topic_labels.get(tid, f'Tema {tid}'),
                     'similarity_score': round(score, 4),
                 }
                 for tid, score in sorted_scores
@@ -643,7 +643,7 @@ def infer_bertopic_similarity(
     for tid, count in sorted(topic_doc_counts.items()):
         topic_distribution.append({
             'topic_id': tid,
-            'topic_label': topic_labels.get(tid, f'Tópico {tid}'),
+            'topic_label': topic_labels.get(tid, f'Tema {tid}'),
             'document_count': count,
             'percentage': round(count / n_docs * 100, 1) if n_docs > 0 else 0.0,
         })

@@ -35,13 +35,13 @@ export const IADashboard: React.FC = () => {
   const techniques = [
     {
       title: 'LDA — Latent Dirichlet Allocation',
-      desc: 'Modelo probabilístico generativo que asume que cada documento es una mezcla de tópicos y cada tópico es una distribución de palabras.',
+      desc: 'Modelo probabilístico generativo que asume que cada documento es una mezcla de temas y cada tema es una distribución de palabras.',
       badge: 'Bayesiano',
       badgeColor: 'bg-violet-500/20 text-violet-300 border-violet-500/30',
     },
     {
       title: 'NMF — Non-negative Matrix Factorization',
-      desc: 'Factorización de la matriz TF-IDF en componentes no negativos, produciendo tópicos con interpretabilidad alta.',
+      desc: 'Factorización de la matriz TF-IDF en componentes no negativos, produciendo temas con interpretabilidad alta.',
       badge: 'Algebraico',
       badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
     },
@@ -59,7 +59,7 @@ export const IADashboard: React.FC = () => {
     },
     {
       title: 'BERTopic',
-      desc: 'Pipeline moderno que combina embeddings de oraciones (sentence-transformers), reducción dimensional UMAP y clustering HDBSCAN para descubrir tópicos coherentes.',
+      desc: 'Pipeline moderno que combina embeddings de oraciones (sentence-transformers), reducción dimensional UMAP y clustering HDBSCAN para descubrir temas coherentes.',
       badge: 'Transformers',
       badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
     },
@@ -69,7 +69,7 @@ export const IADashboard: React.FC = () => {
     { step: '1', label: 'Embeddings', detail: 'sentence-transformers (paraphrase-multilingual-MiniLM-L12-v2)' },
     { step: '2', label: 'Reducción UMAP', detail: 'n_neighbors=15, n_components=5, métrica coseno' },
     { step: '3', label: 'Clustering HDBSCAN', detail: 'min_cluster_size=10, detección automática de outliers' },
-    { step: '4', label: 'Representación c-TF-IDF', detail: 'TF-IDF a nivel de tópico (class-based TF-IDF)' },
+    { step: '4', label: 'Representación c-TF-IDF', detail: 'TF-IDF a nivel de tema (class-based TF-IDF)' },
   ];
 
   return (
@@ -79,13 +79,13 @@ export const IADashboard: React.FC = () => {
       <div>
         <h2 className="text-2xl font-bold text-white">Análisis Inteligente</h2>
         <p className="text-slate-400 text-sm mt-1">
-          Técnicas de modelado de tópicos aplicadas al corpus de transformación digital en IES
+          Técnicas de modelado de temas aplicadas al corpus de transformación digital en IES
         </p>
       </div>
 
       {/* Técnicas de modelado */}
       <ChartCard
-        title="Técnicas de modelado de tópicos"
+        title="Técnicas de modelado de temas"
         subtitle="Algoritmos comparados para identificar temas en el corpus académico"
         accentColor="purple"
         size="lg"
@@ -143,7 +143,7 @@ export const IADashboard: React.FC = () => {
       >
         <div className="flex flex-wrap gap-2 p-2">
           {[
-            'Coherencia de tópicos (C_v)',
+            'Coherencia de temas (C_v)',
             'Perplejidad (LDA)',
             'Error de reconstrucción (NMF)',
             'Varianza explicada (LSA)',

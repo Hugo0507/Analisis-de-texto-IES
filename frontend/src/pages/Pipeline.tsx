@@ -93,7 +93,7 @@ const TopicCard: React.FC<{ topic: Record<string, unknown>; idx: number }> = ({ 
   const wordList = words.slice(0, 8).map(w => Array.isArray(w) ? w[0] : w);
   return (
     <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-      <p className="text-xs font-semibold text-amber-700 mb-1">Tópico {(topic.topic_number as number ?? idx) + 1}</p>
+      <p className="text-xs font-semibold text-amber-700 mb-1">Tema {(topic.topic_number as number ?? idx) + 1}</p>
       <div className="flex flex-wrap gap-1">
         {wordList.map((w, i) => (
           <span key={i} className="text-xs px-1.5 py-0.5 bg-white border border-amber-200 text-amber-800 rounded font-mono">{w}</span>
@@ -155,7 +155,7 @@ const StageResultPanel: React.FC<{ stageName: string; data: Record<string, unkno
       <div className="mt-3 space-y-3">
         <div className="flex flex-wrap gap-2">
           <ResultBadge label="Modelo" value={String(data.model_type ?? '').toUpperCase()} />
-          <ResultBadge label="Tópicos" value={fmt(data.n_topics)} />
+          <ResultBadge label="Temas" value={fmt(data.n_topics)} />
           {data.coherence != null && <ResultBadge label="Coherencia" value={fmt(data.coherence)} />}
           {data.perplexity != null && <ResultBadge label="Perplejidad" value={fmt(data.perplexity)} />}
           {data.reconstruction_error != null && <ResultBadge label="Error reconstrucción" value={fmt(data.reconstruction_error)} />}

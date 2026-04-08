@@ -591,7 +591,7 @@ export const TopicModelingCreate: React.FC = () => {
                     ) : (
                       <p className="text-xs text-gray-500 mt-2 italic">
                         ⚠️ Este parámetro solo aplica para algoritmos probabilísticos (PLSA/LDA).
-                        LSA y NMF no usan iteraciones, calculan tópicos directamente mediante descomposición matricial.
+                        LSA y NMF no usan iteraciones, calculan temas directamente mediante descomposición matricial.
                       </p>
                     )}
                   </div>

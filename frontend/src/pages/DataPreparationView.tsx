@@ -392,7 +392,7 @@ export const DataPreparationView: React.FC = () => {
                         {getLanguageName(preparation.predominant_language)} (
                         {preparation.predominant_language})
                       </strong>{' '}
-                      para garantizar la consistencia en el análisis de tópicos y lematización,
+                      para garantizar la consistencia en el análisis de temas y lematización,
                       dado que representa el{' '}
                       <strong>{preparation.predominant_language_percentage.toFixed(1)}%</strong>{' '}
                       del contenido.

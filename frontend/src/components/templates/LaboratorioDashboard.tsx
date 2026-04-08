@@ -190,7 +190,7 @@ const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataPreparat
         setTfidfOptions(tfidfs.map((a) => ({ id: a.id, name: a.name })));
         setTopicOptions(topics.map((a) => ({ id: a.id, name: `${a.name} (${a.algorithm_display})` })));
         setNerOptions(ners.map((a) => ({ id: a.id, name: `${a.name} (${a.spacy_model_label || a.spacy_model})`, selectedEntities: [] })));
-        setBertopicOptions(bertopics.map((a) => ({ id: a.id, name: `${a.name} (${a.num_topics_found ?? '?'} tópicos)` })));
+        setBertopicOptions(bertopics.map((a) => ({ id: a.id, name: `${a.name} (${a.num_topics_found ?? '?'} temas)` })));
 
         if (bows.length > 0) setSelectedBow(bows[0].id);
         if (tfidfs.length > 0) setSelectedTfidf(tfidfs[0].id);

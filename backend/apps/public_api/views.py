@@ -641,7 +641,7 @@ class PublicTopicModelingViewSet(viewsets.ReadOnlyModelViewSet):
         # P1: Corpus and method overview
         paragraphs.append(
             f'El corpus analizado consta de {n_docs:,} documentos. Se aplicó el algoritmo '
-            f'**{algorithm}** con {n_topics} tópicos configurados.'
+            f'**{algorithm}** con {n_topics} temas configurados.'
         )
 
         # P2: OE3 coverage
@@ -650,8 +650,8 @@ class PublicTopicModelingViewSet(viewsets.ReadOnlyModelViewSet):
             dominant_count = sorted_cats[0][1]['count']
             dominant_pct = round(dominant_count / max(1, n_topics) * 100)
             paragraphs.append(
-                f'Los {n_topics} tópicos identificados cubren **{n_covered}/6 factores** del marco OE3. '
-                f'La categoría más representada es **{dominant_cat}** con {dominant_count} tópicos '
+                f'Los {n_topics} temas identificados cubren **{n_covered}/6 factores** del marco OE3. '
+                f'La categoría más representada es **{dominant_cat}** con {dominant_count} temas '
                 f'({dominant_pct}% del total). '
                 + ('Las demás categorías identificadas son: ' + ', '.join(f'{v["label"]} ({v["count"]})'
                    for k, v in sorted_cats[1:]) + '.' if len(sorted_cats) > 1 else '')
@@ -660,7 +660,7 @@ class PublicTopicModelingViewSet(viewsets.ReadOnlyModelViewSet):
         # P3: Key terms
         if top_terms_str:
             paragraphs.append(
-                f'Los términos con mayor peso acumulado en todos los tópicos son: {top_terms_str}. '
+                f'Los términos con mayor peso acumulado en todos los temas son: {top_terms_str}. '
                 'Estos términos reflejan los conceptos centrales de la transformación digital en IES '
                 'presentes en la literatura analizada.'
             )
@@ -674,9 +674,9 @@ class PublicTopicModelingViewSet(viewsets.ReadOnlyModelViewSet):
         # P5: Recommendation
         if coherence is not None and coherence < 0.4:
             paragraphs.append(
-                'ℹ️ **Recomendación:** Considera ajustar el número de tópicos o ampliar el corpus '
+                'ℹ️ **Recomendación:** Considera ajustar el número de temas o ampliar el corpus '
                 'para mejorar la coherencia del modelo. Un valor de coherencia < 0.4 puede indicar '
-                'que los tópicos se superponen semánticamente.'
+                'que los temas se superponen semánticamente.'
             )
 
         return Response({
