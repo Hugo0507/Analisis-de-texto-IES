@@ -37,8 +37,8 @@ export const EDUCATIONAL_CONTEXT: Record<string, EducationalContextEntry> = {
   total_tokens: {
     title: 'Total de Tokens',
     explanation: 'Número total de palabras (tokens) en el corpus preprocesado, contando todas las ocurrencias.',
-    relevance: 'En análisis de TD en IES, un corpus con ≥100,000 tokens generalmente es suficiente para producir tópicos estadísticamente significativos con LDA o BERTopic.',
-    interpretation: 'Corpus pequeños (<10,000 tokens) pueden generar tópicos poco estables. Corpus muy grandes (>1M tokens) pueden requerir ajustes de min_df para filtrar ruido.',
+    relevance: 'En análisis de TD en IES, un corpus con ≥100,000 tokens generalmente es suficiente para producir temas estadísticamente significativos con LDA o BERTopic.',
+    interpretation: 'Corpus pequeños (<10,000 tokens) pueden generar temas poco estables. Corpus muy grandes (>1M tokens) pueden requerir ajustes de min_df para filtrar ruido.',
   },
 
   // ── Vectorization ───────────────────────────────────────────
@@ -56,15 +56,15 @@ export const EDUCATIONAL_CONTEXT: Record<string, EducationalContextEntry> = {
   },
   coherence_score: {
     title: 'Coherencia del Modelo (C_V)',
-    explanation: 'Métrica que evalúa qué tan semánticamente relacionadas están las palabras top de cada tópico extraído. Varía entre 0 y 1.',
-    relevance: 'En investigación sobre TD en IES, una coherencia alta (>0.5) indica que los tópicos identificados corresponden a conceptos reales y útiles para el análisis temático.',
-    interpretation: 'C_V > 0.6: tópicos excelentes. 0.4–0.6: aceptables. < 0.4: puede indicar demasiados o muy pocos tópicos, o corpus insuficiente.',
+    explanation: 'Métrica que evalúa qué tan semánticamente relacionadas están las palabras top de cada tema extraído. Varía entre 0 y 1.',
+    relevance: 'En investigación sobre TD en IES, una coherencia alta (>0.5) indica que los temas identificados corresponden a conceptos reales y útiles para el análisis temático.',
+    interpretation: 'C_V > 0.6: temas excelentes. 0.4–0.6: aceptables. < 0.4: puede indicar demasiados o muy pocos temas, o corpus insuficiente.',
   },
   perplexity_score: {
     title: 'Perplejidad (LDA)',
     explanation: 'Métrica de calidad del modelo LDA que mide qué tan bien predice nuevos documentos. Valores más bajos son mejores.',
     relevance: 'Útil para comparar distintas configuraciones de LDA en el mismo corpus de TD. No es comparable entre algoritmos diferentes (NMF, LSA).',
-    interpretation: 'La perplejidad sola no garantiza calidad interpretable: optimizar solo perplejidad puede producir tópicos con palabras semánticamente dispersas.',
+    interpretation: 'La perplejidad sola no garantiza calidad interpretable: optimizar solo perplejidad puede producir temas con palabras semánticamente dispersas.',
   },
   idf_value: {
     title: 'Valor IDF (Inverse Document Frequency)',
@@ -87,9 +87,9 @@ export const EDUCATIONAL_CONTEXT: Record<string, EducationalContextEntry> = {
     interpretation: 'Clústeres densos en la red indican grupos de entidades que forman un "ecosistema" temático dentro del corpus.',
   },
   pca_projection: {
-    title: 'Proyección PCA de Tópicos',
-    explanation: 'Reducción a 2 dimensiones del espacio de palabras de cada tópico usando Análisis de Componentes Principales.',
-    relevance: 'Permite visualizar qué tópicos del modelo comparten vocabulario similar, revelando redundancia o solapamiento temático en el análisis de TD.',
-    interpretation: 'Tópicos cercanos entre sí pueden ser candidatos para fusionarse (reducir k). Tópicos muy dispersos indican buena separación semántica.',
+    title: 'Proyección PCA de Temas',
+    explanation: 'Reducción a 2 dimensiones del espacio de palabras de cada tema usando Análisis de Componentes Principales.',
+    relevance: 'Permite visualizar qué temas del modelo comparten vocabulario similar, revelando redundancia o solapamiento temático en el análisis de TD.',
+    interpretation: 'Temas cercanos entre sí pueden ser candidatos para fusionarse (reducir k). Temas muy dispersos indican buena separación semántica.',
   },
 };

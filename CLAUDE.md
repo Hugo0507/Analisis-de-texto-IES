@@ -12,3 +12,6 @@ tareas pendientes, credenciales de DB, y notas operativas. Sin leerlo, trabajar�
 - Verificar TypeScript con `npx tsc --noEmit` antes de hacer push
 - Python en esta máquina: `C:/Python314/python.exe`
 - Para trabajo de UI/diseño usar la skill `ui-ux-pro-max`
+
+## Terminología
+- La palabra inglesa **"topic"** siempre se traduce como **"tema"** (plural: **"temas"**), **nunca** como "tópico" ni "tópicos". Esto aplica a todo el UI visible: labels, títulos de sección, tooltips, mensajes, placeholders, y textos de ayuda tanto en frontend como en templates de backend.

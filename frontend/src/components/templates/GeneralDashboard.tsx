@@ -275,7 +275,7 @@ function buildTopicsCSV(topics: EnrichedTopic[]): string {
 }
 
 function buildCategoryCSV(cat: FactorCategory, topics: EnrichedTopic[], docTopics: DocumentTopicItem[]): string {
-  const header = toCSVRow(['Categoría', 'Tópico', 'Términos', 'Documentos', 'Top Documentos']);
+  const header = toCSVRow(['Categoría', 'Tema', 'Términos', 'Documentos', 'Top Documentos']);
   const rows = topics.map(t => {
     const topDocs = docTopics
       .filter(d => (d.dominant_topic ?? d.topic_id) === t.id)
@@ -1188,7 +1188,7 @@ const ExportMenu: React.FC<ExportMenuProps> = ({ topics, topicsByCategory, docTo
     sections.push(`# Dataset: ${datasetName}`);
     sections.push(`# Fecha: ${new Date().toLocaleDateString('es-CO')}`);
     sections.push('');
-    sections.push('## TÓPICOS');
+    sections.push('## TEMAS');
     sections.push(buildTopicsCSV(topics));
     sections.push('');
     sections.push('## POR CATEGORÍA');
@@ -1868,12 +1868,12 @@ export const GeneralDashboard: React.FC = () => {
                   const cats = FACTOR_CATEGORIES.map(fc => {
                     const catTopics = enrichedTopics.filter(t => t.categoryId === fc.id);
                     const terms = catTopics.flatMap(t => (t.words || []).slice(0, 3).map(w => w.word || w)).join(', ');
-                    return `<tr><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0;color:${fc.color};font-weight:600;">${fc.label}</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0;">${catTopics.length} tópicos</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0;font-size:12px;color:#64748b;">${terms}</td></tr>`;
+                    return `<tr><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0;color:${fc.color};font-weight:600;">${fc.label}</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0;">${catTopics.length} temas</td><td style="padding:6px 12px;border-bottom:1px solid #e2e8f0;font-size:12px;color:#64748b;">${terms}</td></tr>`;
                   }).join('');
                   const topicRows = enrichedTopics.slice(0, 20).map(t => {
                     const wordsStr = (t.words || []).slice(0, 7).map(w => w.word || w).join(', ');
                     const cat = FACTOR_CATEGORIES.find(fc => fc.id === t.categoryId);
-                    return `<tr><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;font-weight:600;font-size:13px;">${t.label || `Tópico ${t.id}`}</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;color:${cat?.color || '#94a3b8'};">${cat?.shortLabel || t.categoryId}</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#64748b;">${wordsStr}</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;text-align:center;">${t.numDocuments}</td></tr>`;
+                    return `<tr><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;font-weight:600;font-size:13px;">${t.label || `Tema ${t.id}`}</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;color:${cat?.color || '#94a3b8'};">${cat?.shortLabel || t.categoryId}</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#64748b;">${wordsStr}</td><td style="padding:5px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;text-align:center;">${t.numDocuments}</td></tr>`;
                   }).join('');
                   const summaryHtml = summary
                     ? summary.summary_paragraphs.map(p => `<p style="margin:8px 0;line-height:1.6;font-size:13px;">${p.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>`).join('')
@@ -1897,19 +1897,19 @@ export const GeneralDashboard: React.FC = () => {
                     <div class="header">
                       <h1>Reporte de Análisis — ${datasetName}</h1>
                       <p class="meta">Generado: ${date}</p>
-                      <p class="meta">Algoritmo: ${topicModel?.algorithm_display ?? topicModel?.algorithm ?? 'BERTopic'} · ${totalTopics} tópicos · ${totalDocs.toLocaleString()} documentos</p>
+                      <p class="meta">Algoritmo: ${topicModel?.algorithm_display ?? topicModel?.algorithm ?? 'BERTopic'} · ${totalTopics} temas · ${totalDocs.toLocaleString()} documentos</p>
                     </div>
                     <div class="kpi-grid">
-                      <div class="kpi"><div class="kpi-val">${totalTopics}</div><div class="kpi-lbl">Tópicos</div></div>
+                      <div class="kpi"><div class="kpi-val">${totalTopics}</div><div class="kpi-lbl">Temas</div></div>
                       <div class="kpi"><div class="kpi-val">${totalDocs.toLocaleString()}</div><div class="kpi-lbl">Documentos</div></div>
                       <div class="kpi"><div class="kpi-val">${summary?.oe3_coverage ?? '—'}/6</div><div class="kpi-lbl">Cobertura OE3</div></div>
                       <div class="kpi"><div class="kpi-val">${(topicModel?.coherence_score ?? null) != null ? (topicModel!.coherence_score!).toFixed(3) : '—'}</div><div class="kpi-lbl">Coherencia</div></div>
                     </div>
                     ${summaryHtml ? `<h2>Resumen Ejecutivo</h2><div class="summary-box">${summaryHtml}</div>` : ''}
                     <h2>Distribución por Factor OE3</h2>
-                    <table><thead><tr><th>Categoría</th><th>Tópicos</th><th>Términos representativos</th></tr></thead><tbody>${cats}</tbody></table>
-                    <h2>Tópicos Identificados${enrichedTopics.length > 20 ? ' (primeros 20)' : ''}</h2>
-                    <table><thead><tr><th>Tópico</th><th>Categoría</th><th>Palabras clave</th><th>Docs</th></tr></thead><tbody>${topicRows}</tbody></table>
+                    <table><thead><tr><th>Categoría</th><th>Temas</th><th>Términos representativos</th></tr></thead><tbody>${cats}</tbody></table>
+                    <h2>Temas Identificados${enrichedTopics.length > 20 ? ' (primeros 20)' : ''}</h2>
+                    <table><thead><tr><th>Tema</th><th>Categoría</th><th>Palabras clave</th><th>Docs</th></tr></thead><tbody>${topicRows}</tbody></table>
                     <h2>Metodología</h2>
                     <p style="font-size:13px;color:#475569;line-height:1.6;">Los temas se extraen mediante modelos de modelado de temas (LDA / NMF / LSA) y BERTopic aplicados al corpus preprocesado. La clasificación en categorías factoriales se realiza automáticamente por coincidencia semántica con los descriptores del marco OE3.</p>
                   </body></html>`;
@@ -2139,7 +2139,7 @@ export const GeneralDashboard: React.FC = () => {
         const sankeyData = { nodes: [...topicNodes, ...filteredCatNodes], links };
         return (
           <ChartCard
-            title="Flujo Tópico → Categoría OE3"
+            title="Flujo Tema → Categoría OE3"
             subtitle="Sankey — cada banda muestra cómo los temas se asignan a las categorías del marco OE3"
             accentColor="purple"
             size="lg"
@@ -2195,16 +2195,16 @@ export const GeneralDashboard: React.FC = () => {
           const docCount = catTopics.reduce((s, t) => s + t.numDocuments, 0);
           return {
             category: cat.shortLabel,
-            'Nº Tópicos': catTopics.length,
+            'Nº Temas': catTopics.length,
             'Cobertura (docs)': docCount,
           };
         });
-        const hasData = catMetrics.some(m => m['Nº Tópicos'] > 0);
+        const hasData = catMetrics.some(m => m['Nº Temas'] > 0);
         if (!hasData) return null;
         return (
           <ChartCard
             title="Radar de Cobertura por Categoría"
-            subtitle="Comparativa de tópicos y documentos cubiertos por cada factor OE3"
+            subtitle="Comparativa de temas y documentos cubiertos por cada factor OE3"
             accentColor="cyan"
             size="md"
             icon={
@@ -2216,7 +2216,7 @@ export const GeneralDashboard: React.FC = () => {
             <div style={{ height: '340px' }}>
               <ResponsiveRadar
                 data={catMetrics as any}
-                keys={['Nº Tópicos', 'Cobertura (docs)']}
+                keys={['Nº Temas', 'Cobertura (docs)']}
                 indexBy="category"
                 maxValue="auto"
                 margin={{ top: 50, right: 80, bottom: 50, left: 80 }}
@@ -2286,7 +2286,7 @@ export const GeneralDashboard: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               <span className="text-sm font-semibold text-white">Resumen Ejecutivo</span>
-              <span className="text-xs text-slate-400">Generado automáticamente desde el modelo de tópicos</span>
+              <span className="text-xs text-slate-400">Generado automáticamente desde el modelo de temas</span>
             </div>
             <svg className={`w-4 h-4 text-slate-400 transition-transform ${showSummary ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -2307,7 +2307,7 @@ export const GeneralDashboard: React.FC = () => {
                   {/* Stats bar */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                     {[
-                      { label: 'Tópicos', value: executiveSummary.n_topics, color: 'text-cyan-400' },
+                      { label: 'Temas', value: executiveSummary.n_topics, color: 'text-cyan-400' },
                       { label: 'Documentos', value: executiveSummary.n_docs.toLocaleString(), color: 'text-emerald-400' },
                       { label: 'Cobertura OE3', value: `${executiveSummary.oe3_coverage}/6`, color: 'text-violet-400' },
                       { label: 'Coherencia', value: executiveSummary.coherence_score != null ? executiveSummary.coherence_score.toFixed(3) : '—', color: (executiveSummary.coherence_score ?? 0) >= 0.5 ? 'text-emerald-400' : (executiveSummary.coherence_score ?? 0) >= 0.3 ? 'text-amber-400' : 'text-rose-400' },

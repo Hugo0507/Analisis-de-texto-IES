@@ -143,7 +143,7 @@ class TopicModelingDetailSerializer(serializers.ModelSerializer):
             tid = t.get('topic_id', i)
             result.append({
                 'topic_id': tid,
-                'label': t.get('topic_label') or t.get('label') or f'Tópico {i + 1}',
+                'label': t.get('topic_label') or t.get('label') or f'Tema {i + 1}',
                 'x': round(pc1[i], 4),
                 'y': round(pc2[i], 4),
                 'size': doc_counts.get(tid, 1),
@@ -305,7 +305,7 @@ class TopicModelingCreateSerializer(serializers.ModelSerializer):
         num_topics = data.get('num_topics', 10)
         if num_topics < 2 or num_topics > 100:
             raise serializers.ValidationError({
-                'num_topics': 'El número de tópicos debe estar entre 2 y 100'
+                'num_topics': 'El número de temas debe estar entre 2 y 100'
             })
 
         # Validar número de palabras

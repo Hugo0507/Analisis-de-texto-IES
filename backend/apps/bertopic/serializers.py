@@ -125,7 +125,7 @@ class BERTopicCreateSerializer(serializers.ModelSerializer):
         nr_topics = data.get('nr_topics')
         if nr_topics is not None and (nr_topics < 2 or nr_topics > 100):
             raise serializers.ValidationError({
-                'nr_topics': 'El número de tópicos debe estar entre 2 y 100 o null para automático'
+                'nr_topics': 'El número de temas debe estar entre 2 y 100 o null para automático'
             })
 
         return data

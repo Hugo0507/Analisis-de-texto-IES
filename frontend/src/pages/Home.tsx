@@ -121,7 +121,7 @@ export const Home: React.FC = () => {
         />
 
         <MetricCard
-          title="Tópicos Identificados"
+          title="Temas Identificados"
           value={metrics.topicsAnalyzed}
           icon="🔍"
           variant="default"
