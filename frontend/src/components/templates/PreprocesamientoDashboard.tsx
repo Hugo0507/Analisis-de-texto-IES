@@ -85,11 +85,6 @@ const TrashIcon = () => (
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
   </svg>
 );
-const SearchIcon = () => (
-  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-  </svg>
-);
 const SkipIcon = () => (
   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
@@ -116,11 +111,11 @@ interface StatPillProps {
   tooltip?: string;
 }
 const colorMap: Record<StatPillProps['color'], { bg: string; text: string; bar: string; dot: string }> = {
-  emerald: { bg: 'bg-emerald-50',  text: 'text-emerald-700', bar: 'bg-emerald-400', dot: 'bg-emerald-500' },
-  rose:    { bg: 'bg-rose-50',     text: 'text-rose-700',    bar: 'bg-rose-400',    dot: 'bg-rose-500'    },
-  amber:   { bg: 'bg-amber-50',    text: 'text-amber-700',   bar: 'bg-amber-400',   dot: 'bg-amber-500'   },
-  blue:    { bg: 'bg-blue-50',     text: 'text-blue-700',    bar: 'bg-blue-400',    dot: 'bg-blue-500'    },
-  violet:  { bg: 'bg-violet-50',   text: 'text-violet-700',  bar: 'bg-violet-400',  dot: 'bg-violet-500'  },
+  emerald: { bg: 'bg-emerald-500/10 border border-emerald-500/20', text: 'text-emerald-400', bar: 'bg-emerald-500', dot: 'bg-emerald-500' },
+  rose:    { bg: 'bg-rose-500/10 border border-rose-500/20',       text: 'text-rose-400',    bar: 'bg-rose-500',    dot: 'bg-rose-500'    },
+  amber:   { bg: 'bg-amber-500/10 border border-amber-500/20',     text: 'text-amber-400',   bar: 'bg-amber-500',   dot: 'bg-amber-500'   },
+  blue:    { bg: 'bg-blue-500/10 border border-blue-500/20',       text: 'text-blue-400',    bar: 'bg-blue-500',    dot: 'bg-blue-500'    },
+  violet:  { bg: 'bg-violet-500/10 border border-violet-500/20',   text: 'text-violet-400',  bar: 'bg-violet-500',  dot: 'bg-violet-500'  },
 };
 
 const StatPill: React.FC<StatPillProps> = ({ label, value, percent, subtitle, color, tooltip }) => {
@@ -128,9 +123,9 @@ const StatPill: React.FC<StatPillProps> = ({ label, value, percent, subtitle, co
   return (
     <div className={`flex-1 min-w-[120px] rounded-lg px-4 py-3 ${c.bg}`} title={tooltip}>
       <div className="flex items-center gap-1 mb-1">
-        <p className="text-xs font-medium text-gray-500">{label}</p>
+        <p className="text-xs font-medium text-slate-400">{label}</p>
         {tooltip && (
-          <svg className="w-3 h-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3 h-3 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         )}
@@ -139,9 +134,9 @@ const StatPill: React.FC<StatPillProps> = ({ label, value, percent, subtitle, co
       {percent !== undefined && (
         <div className="mt-1.5">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-gray-400">{percent.toFixed(1)}% del total</span>
+            <span className="text-xs text-slate-500">{percent.toFixed(1)}% del total</span>
           </div>
-          <div className="h-1 w-full rounded-full bg-gray-200">
+          <div className="h-1 w-full rounded-full bg-slate-700">
             <div
               className={`h-1 rounded-full transition-all ${c.bar}`}
               style={{ width: `${Math.min(percent, 100)}%` }}
@@ -150,7 +145,7 @@ const StatPill: React.FC<StatPillProps> = ({ label, value, percent, subtitle, co
         </div>
       )}
       {subtitle && !percent && (
-        <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>
+        <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>
       )}
     </div>
   );
@@ -197,16 +192,16 @@ const DeleteModal: React.FC<DeleteModalProps> = ({ file, onConfirm, onCancel }) 
 
 // ─── Extension Badge ──────────────────────────────────────────────────────────
 const EXT_COLORS: Record<string, string> = {
-  pdf:  'bg-rose-100 text-rose-700',
-  txt:  'bg-blue-100 text-blue-700',
-  docx: 'bg-blue-100 text-blue-800',
-  xlsx: 'bg-green-100 text-green-700',
-  csv:  'bg-lime-100 text-lime-700',
-  json: 'bg-amber-100 text-amber-700',
-  xml:  'bg-violet-100 text-violet-700',
+  pdf:  'bg-rose-500/15 text-rose-400',
+  txt:  'bg-blue-500/15 text-blue-400',
+  docx: 'bg-blue-500/15 text-blue-400',
+  xlsx: 'bg-emerald-500/15 text-emerald-400',
+  csv:  'bg-lime-500/15 text-lime-400',
+  json: 'bg-amber-500/15 text-amber-400',
+  xml:  'bg-violet-500/15 text-violet-400',
 };
 const ExtBadge: React.FC<{ ext: string }> = ({ ext }) => (
-  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase ${EXT_COLORS[ext] || 'bg-gray-100 text-gray-600'}`}>
+  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase ${EXT_COLORS[ext] || 'bg-slate-700 text-slate-400'}`}>
     .{ext}
   </span>
 );
@@ -610,31 +605,31 @@ export const PreprocesamientoDashboard: React.FC = () => {
 
       {/* ── Preparation Summary Strip (moved to top) ── */}
       {data?.selectedPreparation && prepMetrics && (
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
+        <div className="bg-slate-800 border border-slate-700/60 rounded-xl">
           {/* Header row */}
-          <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
+          <div className="px-5 py-3 border-b border-slate-700/60 flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
-                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-7 h-7 rounded-lg bg-blue-500/15 flex items-center justify-center">
+                <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
               </div>
               <div>
-                <span className="text-sm font-semibold text-gray-900">{data.selectedPreparation.name}</span>
+                <span className="text-sm font-semibold text-white">{data.selectedPreparation.name}</span>
                 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${
                   data.selectedPreparation.status === 'completed'
-                    ? 'bg-emerald-100 text-emerald-700'
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
                     : data.selectedPreparation.status === 'processing'
-                    ? 'bg-amber-100 text-amber-700'
-                    : 'bg-gray-100 text-gray-600'
+                    ? 'bg-amber-500/15 text-amber-400 border border-amber-500/20'
+                    : 'bg-slate-700 text-slate-400'
                 }`}>
                   {data.selectedPreparation.status === 'completed' ? 'Completado'
                    : data.selectedPreparation.status === 'processing' ? 'Procesando' : data.selectedPreparation.status}
                 </span>
               </div>
             </div>
-            <p className="text-xs text-gray-400">
-              Total en dataset: <span className="font-semibold text-gray-600">{dataset?.total_files || 0} archivos</span>
+            <p className="text-xs text-slate-500">
+              Total en dataset: <span className="font-semibold text-slate-300">{dataset?.total_files || 0} archivos</span>
             </p>
           </div>
           {/* Stats pills */}
@@ -1051,17 +1046,17 @@ export const PreprocesamientoDashboard: React.FC = () => {
 
       {/* ── File List Section ── */}
       {data?.dataset?.files && data.dataset.files.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-slate-800 border border-slate-700/60 rounded-xl overflow-hidden">
           {/* Header */}
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+          <div className="px-5 py-4 border-b border-slate-700/60 flex items-center justify-between flex-wrap gap-3">
             <div>
-              <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                 </svg>
                 {crossFilter ? `Archivos — ${crossFilterLabel}` : 'Archivos del Dataset'}
               </h3>
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-xs text-slate-500 mt-0.5">
                 {displayedFiles.length} archivo{displayedFiles.length !== 1 ? 's' : ''}
                 {crossFilter && ` coinciden con el filtro`}
                 {fileSearch && ` · búsqueda: "${fileSearch}"`}
@@ -1071,14 +1066,16 @@ export const PreprocesamientoDashboard: React.FC = () => {
             {/* Search */}
             <div className="relative">
               <span className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                <SearchIcon />
+                <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
               </span>
               <input
                 type="text"
                 value={fileSearch}
                 onChange={e => { setFileSearch(e.target.value); setFilePage(1); }}
                 placeholder="Buscar archivo..."
-                className="pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-400 w-56"
+                className="pl-9 pr-3 py-2 text-sm border border-slate-600 rounded-lg bg-slate-700/50 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-400 w-56"
               />
             </div>
           </div>
@@ -1087,10 +1084,10 @@ export const PreprocesamientoDashboard: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50">
+                <tr className="border-b border-slate-700/60 bg-slate-900/40">
                   <th
                     onClick={() => handleSort('name')}
-                    className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                    className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider cursor-pointer hover:text-slate-200 select-none"
                   >
                     <span className="flex items-center gap-1">
                       Nombre del Archivo
@@ -1103,7 +1100,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
                   </th>
                   <th
                     onClick={() => handleSort('directory')}
-                    className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none hidden md:table-cell"
+                    className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider cursor-pointer hover:text-slate-200 select-none hidden md:table-cell"
                   >
                     <span className="flex items-center gap-1">
                       Directorio
@@ -1114,15 +1111,15 @@ export const PreprocesamientoDashboard: React.FC = () => {
                       )}
                     </span>
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider hidden sm:table-cell">
                     Tipo
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider hidden lg:table-cell">
                     Idioma
                   </th>
                   <th
                     onClick={() => handleSort('size')}
-                    className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none hidden lg:table-cell"
+                    className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider cursor-pointer hover:text-slate-200 select-none hidden lg:table-cell"
                   >
                     <span className="flex items-center gap-1">
                       Tamaño
@@ -1133,15 +1130,15 @@ export const PreprocesamientoDashboard: React.FC = () => {
                       )}
                     </span>
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">
                     Acciones
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-slate-700/40">
                 {paginatedFiles.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-gray-400 text-sm">
+                    <td colSpan={6} className="px-4 py-10 text-center text-slate-500 text-sm">
                       No se encontraron archivos
                       {fileSearch && ` para "${fileSearch}"`}
                     </td>
@@ -1152,36 +1149,36 @@ export const PreprocesamientoDashboard: React.FC = () => {
                   const lang = file.language_code ? getLanguageName(file.language_code) : '—';
                   const isEven = idx % 2 === 0;
                   return (
-                    <tr key={file.id} className={`hover:bg-blue-50/40 transition-colors ${isEven ? 'bg-white' : 'bg-gray-50/40'}`}>
+                    <tr key={file.id} className={`hover:bg-slate-700/30 transition-colors ${isEven ? '' : 'bg-slate-900/20'}`}>
                       {/* Filename */}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="w-7 h-7 rounded-lg bg-slate-700/60 flex items-center justify-center flex-shrink-0">
+                            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                             </svg>
                           </div>
                           <div className="min-w-0">
                             <p
-                              className="text-sm font-medium text-gray-900 truncate max-w-[200px] lg:max-w-[320px]"
+                              className="text-sm font-medium text-slate-200 truncate max-w-[200px] lg:max-w-[320px]"
                               title={file.original_filename}
                             >
                               {file.bib_title || file.original_filename}
                             </p>
                             {file.bib_title && (
-                              <p className="text-xs text-gray-400 truncate max-w-[200px]" title={file.original_filename}>
+                              <p className="text-xs text-slate-500 truncate max-w-[200px]" title={file.original_filename}>
                                 {file.original_filename}
                               </p>
                             )}
                             {file.bib_year && (
-                              <p className="text-xs text-gray-400">{file.bib_year}</p>
+                              <p className="text-xs text-slate-500">{file.bib_year}</p>
                             )}
                           </div>
                         </div>
                       </td>
                       {/* Directory */}
                       <td className="px-4 py-3 hidden md:table-cell">
-                        <span className="inline-flex items-center gap-1 text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded-md">
+                        <span className="inline-flex items-center gap-1 text-xs text-slate-400 bg-slate-700/60 px-2 py-0.5 rounded-md">
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                           </svg>
@@ -1195,16 +1192,16 @@ export const PreprocesamientoDashboard: React.FC = () => {
                       {/* Language */}
                       <td className="px-4 py-3 hidden lg:table-cell">
                         {file.language_code ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-violet-700 bg-violet-50 px-2 py-0.5 rounded-md font-medium">
+                          <span className="inline-flex items-center gap-1 text-xs text-violet-400 bg-violet-500/15 px-2 py-0.5 rounded-md font-medium">
                             {lang}
                           </span>
                         ) : (
-                          <span className="text-xs text-gray-400">—</span>
+                          <span className="text-xs text-slate-500">—</span>
                         )}
                       </td>
                       {/* Size */}
                       <td className="px-4 py-3 hidden lg:table-cell">
-                        <span className="text-xs text-gray-500">{formatFileSize(file.file_size_bytes)}</span>
+                        <span className="text-xs text-slate-400">{formatFileSize(file.file_size_bytes)}</span>
                       </td>
                       {/* Actions */}
                       <td className="px-4 py-3">
@@ -1213,7 +1210,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
                           <button
                             onClick={() => handlePreview(file)}
                             title="Vista previa del texto"
-                            className="p-1.5 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-blue-400 hover:bg-blue-500/15 transition-colors"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -1224,7 +1221,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
                           <button
                             onClick={() => handleDownload(file)}
                             title="Descargar PDF"
-                            className="p-1.5 rounded-lg text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/15 transition-colors"
                           >
                             <DownloadIcon />
                           </button>
@@ -1232,7 +1229,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
                           <button
                             onClick={() => handleDelete(file)}
                             title="Eliminar archivo"
-                            className="p-1.5 rounded-lg text-gray-500 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/15 transition-colors"
                           >
                             <TrashIcon />
                           </button>
@@ -1247,8 +1244,8 @@ export const PreprocesamientoDashboard: React.FC = () => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between flex-wrap gap-3 bg-gray-50">
-              <p className="text-xs text-gray-500">
+            <div className="px-5 py-3 border-t border-slate-700/60 flex items-center justify-between flex-wrap gap-3 bg-slate-900/40">
+              <p className="text-xs text-slate-500">
                 Mostrando {Math.min((filePage - 1) * FILES_PER_PAGE + 1, displayedFiles.length)}–
                 {Math.min(filePage * FILES_PER_PAGE, displayedFiles.length)} de {displayedFiles.length}
               </p>
@@ -1256,14 +1253,14 @@ export const PreprocesamientoDashboard: React.FC = () => {
                 <button
                   onClick={() => setFilePage(1)}
                   disabled={filePage === 1}
-                  className="px-2.5 py-1 text-xs rounded-md border border-gray-200 text-gray-600 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="px-2.5 py-1 text-xs rounded-md border border-slate-600 text-slate-400 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   «
                 </button>
                 <button
                   onClick={() => setFilePage(p => p - 1)}
                   disabled={filePage === 1}
-                  className="px-2.5 py-1 text-xs rounded-md border border-gray-200 text-gray-600 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="px-2.5 py-1 text-xs rounded-md border border-slate-600 text-slate-400 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   ‹
                 </button>
@@ -1277,7 +1274,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
                       className={`px-2.5 py-1 text-xs rounded-md border transition-colors ${
                         page === filePage
                           ? 'bg-emerald-500 border-emerald-500 text-white'
-                          : 'border-gray-200 text-gray-600 hover:bg-white'
+                          : 'border-slate-600 text-slate-400 hover:bg-slate-700'
                       }`}
                     >
                       {page}
@@ -1287,14 +1284,14 @@ export const PreprocesamientoDashboard: React.FC = () => {
                 <button
                   onClick={() => setFilePage(p => p + 1)}
                   disabled={filePage === totalPages}
-                  className="px-2.5 py-1 text-xs rounded-md border border-gray-200 text-gray-600 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="px-2.5 py-1 text-xs rounded-md border border-slate-600 text-slate-400 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   ›
                 </button>
                 <button
                   onClick={() => setFilePage(totalPages)}
                   disabled={filePage === totalPages}
-                  className="px-2.5 py-1 text-xs rounded-md border border-gray-200 text-gray-600 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="px-2.5 py-1 text-xs rounded-md border border-slate-600 text-slate-400 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   »
                 </button>
