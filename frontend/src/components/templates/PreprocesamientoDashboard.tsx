@@ -473,7 +473,6 @@ export const PreprocesamientoDashboard: React.FC = () => {
     const processed  = prep.files_processed     || 0;
     const omitted    = prep.files_omitted        || 0;
     const duplicates = prep.duplicates_removed   || 0;
-    const attempted  = processed + omitted + duplicates;
     return {
       processed,
       omitted,
@@ -481,10 +480,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
       processedPct:  Math.round((processed  / total) * 100),
       omittedPct:    Math.round((omitted    / total) * 100),
       duplicatesPct: Math.round((duplicates / total) * 100),
-      /** Cobertura: processed / total dataset files */
       coverage:      Math.round((processed / total) * 100),
-      /** Tasa de éxito: of the attempted files, how many were processed */
-      successRate:   attempted > 0 ? Math.round((processed / attempted) * 100) : 0,
     };
   }, [data]);
 
@@ -659,12 +655,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
               subtitle="archivos procesados / total"
               color="blue"
             />
-            <StatPill
-              label="Tasa de Éxito"
-              value={`${prepMetrics.successRate}%`}
-              subtitle="efectividad de la preparación"
-              color="violet"
-            />
+
           </div>
         </div>
       )}
