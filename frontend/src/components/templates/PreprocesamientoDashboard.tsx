@@ -21,6 +21,7 @@ import type { DatasetFile } from '../../services/datasetsService';
 import apiClient from '../../services/api';
 import publicApiClient from '../../services/publicApi';
 import { useToast } from '../../contexts/ToastContext';
+import { downloadBlob } from '../../utils/download';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const getLanguageName = (code: string): string =>
@@ -379,14 +380,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
     const url = file.download_url ?? `/api/v1/datasets/${data?.dataset?.id}/files/${file.id}/download/`;
     try {
       const response = await apiClient.get(url, { responseType: 'blob' });
-      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = file.original_filename || file.filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
+      downloadBlob(new Blob([response.data]), file.original_filename || file.filename);
     } catch (err: any) {
       let msg = err?.message || 'Error desconocido';
       // La respuesta viene como blob — hay que leerla como texto para obtener el JSON

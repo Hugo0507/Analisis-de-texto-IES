@@ -18,6 +18,7 @@ import { LANGUAGE_NAMES } from '../../services/dataPreparationService';
 import type { TopicModeling, TopicModelingListItem } from '../../services/topicModelingService';
 import type { BERTopicAnalysis, BERTopicListItem } from '../../services/bertopicService';
 import type { ExecutiveSummary } from '../../services/publicTopicModelingService';
+import { downloadFile, downloadBlob } from '../../utils/download';
 
 // ─── Factor categories (OE3 framework) ───────────────────────────────────────
 
@@ -241,19 +242,6 @@ function zoneBubblePositions(
 }
 
 // ─── Export utilities ─────────────────────────────────────────────────────────
-
-function triggerDownload(content: string, filename: string, mimeType: string) {
-  const bom = mimeType.includes('csv') ? '\uFEFF' : '';
-  const blob = new Blob([bom + content], { type: `${mimeType};charset=utf-8;` });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
 
 function toCSVRow(cells: (string | number)[]): string {
   return cells.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',');
@@ -616,14 +604,7 @@ const ScienceMap: React.FC<ScienceMapProps> = ({ topics, docTopics, highlightCat
     const serializer = new XMLSerializer();
     const svgString = '<?xml version="1.0" encoding="UTF-8"?>\n' + serializer.serializeToString(clone);
     const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'science-map-td-ies.svg';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, 'science-map-td-ies.svg');
   };
 
   return (
@@ -876,7 +857,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ cat, topics, docTopics, exp
 
   const handleDownload = useCallback(() => {
     const csv = buildCategoryCSV(cat, topics, docTopics);
-    triggerDownload(csv, `categoria_${cat.id}_${Date.now()}.csv`, 'text/csv');
+    downloadFile(csv, `categoria_${cat.id}_${Date.now()}.csv`, 'text/csv');
   }, [cat, topics, docTopics]);
 
   return (
@@ -1022,7 +1003,7 @@ const ClusterCard: React.FC<ClusterCardProps> = ({ topic, docTopics, activeTab, 
 
   const handleDownload = useCallback(() => {
     const csv = buildClusterCSV(topic, docTopics);
-    triggerDownload(csv, `cluster_${topic.id}_${topic.label.replace(/\s+/g, '_').slice(0, 30)}.csv`, 'text/csv');
+    downloadFile(csv, `cluster_${topic.id}_${topic.label.replace(/\s+/g, '_').slice(0, 30)}.csv`, 'text/csv');
   }, [topic, docTopics]);
 
   const tabs: Array<{ id: ClusterTab; label: string }> = [
@@ -1199,7 +1180,7 @@ const ExportMenu: React.FC<ExportMenuProps> = ({ topics, topicsByCategory, docTo
       sections.push(buildCategoryCSV(cat, catTopics, docTopics));
       sections.push('');
     }
-    triggerDownload(sections.join('\n'), `science_mapping_${datasetName.replace(/\s+/g, '_').slice(0, 30)}_${Date.now()}.csv`, 'text/csv');
+    downloadFile(sections.join('\n'), `science_mapping_${datasetName.replace(/\s+/g, '_').slice(0, 30)}_${Date.now()}.csv`, 'text/csv');
   };
 
   const exportJSON = () => {
@@ -1236,7 +1217,7 @@ const ExportMenu: React.FC<ExportMenuProps> = ({ topics, topicsByCategory, docTo
           .map(d => ({ name: d.document_name ?? `Doc ${d.document_id}`, weight: d.dominant_topic_weight ?? d.topic_weight })),
       })),
     };
-    triggerDownload(JSON.stringify(data, null, 2), `science_mapping_${datasetName.replace(/\s+/g, '_').slice(0, 30)}_${Date.now()}.json`, 'application/json');
+    downloadFile(JSON.stringify(data, null, 2), `science_mapping_${datasetName.replace(/\s+/g, '_').slice(0, 30)}_${Date.now()}.json`, 'application/json');
   };
 
   const exportTSV = () => {
@@ -1250,7 +1231,7 @@ const ExportMenu: React.FC<ExportMenuProps> = ({ topics, topicsByCategory, docTo
       t.numDocuments,
       ...t.words.slice(0, 10).map(w => `${w.word}(${(w.weight * 100).toFixed(1)}%)`),
     ].join('\t'));
-    triggerDownload([header, ...rows].join('\n'), `science_mapping_${datasetName.replace(/\s+/g, '_').slice(0, 30)}_${Date.now()}.tsv`, 'text/tab-separated-values');
+    downloadFile([header, ...rows].join('\n'), `science_mapping_${datasetName.replace(/\s+/g, '_').slice(0, 30)}_${Date.now()}.tsv`, 'text/tab-separated-values');
   };
 
   return (

@@ -5,6 +5,7 @@
  */
 
 import apiClient from './api';
+import { downloadBlob } from '../utils/download';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -185,17 +186,6 @@ export interface CreateWorkspacePayload {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function _triggerDownload(blob: Blob, filename: string): void {
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  window.URL.revokeObjectURL(url);
-}
-
 // ── Service ───────────────────────────────────────────────────────────────────
 
 const workspaceService = {
@@ -256,14 +246,14 @@ const workspaceService = {
     const res = await apiClient.get(`/workspace/${workspaceId}/export/excel/`, {
       responseType: 'blob',
     });
-    _triggerDownload(res.data, filename ?? `lab_results_${workspaceId.slice(0, 8)}.xlsx`);
+    downloadBlob(res.data, filename ?? `lab_results_${workspaceId.slice(0, 8)}.xlsx`);
   },
 
   async exportConfig(workspaceId: string, filename?: string): Promise<void> {
     const res = await apiClient.get(`/workspace/${workspaceId}/export/config/`, {
       responseType: 'blob',
     });
-    _triggerDownload(res.data, filename ?? `lab_config_${workspaceId.slice(0, 8)}.json`);
+    downloadBlob(res.data, filename ?? `lab_config_${workspaceId.slice(0, 8)}.json`);
   },
 };
 
