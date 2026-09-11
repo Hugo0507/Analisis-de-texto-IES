@@ -12,12 +12,9 @@ import { ResponsiveNetwork } from '@nivo/network';
 import { DashboardGrid, MetricCardDark, DonutChartViz } from '../organisms';
 import { ChartCard } from '../molecules';
 import { ScatterPlotProjection } from '../organisms/ScatterPlotProjection';
-import dashboardService from '../../services/dashboardService';
-import type { ModelingDashboardData } from '../../services/dashboardService';
 import { useFilter } from '../../contexts/FilterContext';
 import type { Projections2D } from '../../services/bertopicService';
-import publicTopicModelingService from '../../services/publicTopicModelingService';
-import type { CoherenceComparisonItem } from '../../services/publicTopicModelingService';
+import { useModelingData } from '../../hooks/useModelingData';
 import {
   CompactMetric,
   TopicCard,
@@ -35,71 +32,18 @@ import {
 // ---------------------------------------------------------------------------
 
 export const ModeladoDashboard: React.FC = () => {
-  const [data, setData] = useState<ModelingDashboardData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedEntityType, setSelectedEntityType] = useState<string | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<'ner' | 'topics' | 'bertopic'>('ner');
   const [showAllTopics, setShowAllTopics] = useState(false);
   const [showAllClusters, setShowAllClusters] = useState(false);
-  const [coherenceComparison, setCoherenceComparison] = useState<CoherenceComparisonItem[]>([]);
   const [pcaHovered, setPcaHovered] = useState<number | null>(null);
   const { filters, setSelectedNer, setSelectedTopicModel, setSelectedBertopic } = useFilter();
+  const { data, coherenceComparison, isLoading, error, refetch } = useModelingData();
 
   // Reset entity type filter when the NER selection changes
   useEffect(() => {
     setSelectedEntityType(null);
   }, [filters.selectedNerId, filters.selectedDatasetId]);
-
-  useEffect(() => {
-    if (filters.selectedDatasetId) {
-      fetchData(
-        filters.selectedDatasetId,
-        filters.selectedNerId,
-        filters.selectedTopicModelId,
-        filters.selectedBertopicId,
-      );
-      publicTopicModelingService.getCoherenceComparison(filters.selectedDatasetId)
-        .then(setCoherenceComparison)
-        .catch(() => setCoherenceComparison([]));
-    } else {
-      setData(null);
-      setCoherenceComparison([]);
-      setIsLoading(false);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.selectedDatasetId, filters.selectedNerId, filters.selectedTopicModelId, filters.selectedBertopicId]);
-
-  const fetchData = async (
-    datasetId: number,
-    nerId?: number | null,
-    topicId?: number | null,
-    bertopicId?: number | null,
-  ) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const result = await dashboardService.getModelingData(datasetId, nerId, topicId, bertopicId);
-      setData(result);
-      if (!nerId) {
-        const first = result.nerAnalyses.find(a => a.status === 'completed');
-        if (first) setSelectedNer(first.id);
-      }
-      if (!topicId) {
-        const first = result.topicModelingAnalyses.find(a => a.status === 'completed');
-        if (first) setSelectedTopicModel(first.id);
-      }
-      if (!bertopicId) {
-        const first = result.bertopicAnalyses.find(a => a.status === 'completed');
-        if (first) setSelectedBertopic(first.id);
-      }
-    } catch (err) {
-      setError('Error al cargar los datos de modelado');
-      console.error('Modeling dashboard fetch error:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // VIZ-4: NER co-occurrence network data (must be before early returns — hook rule)
   const nerNetworkData = useMemo(() => {
@@ -171,12 +115,7 @@ export const ModeladoDashboard: React.FC = () => {
           </div>
           <p className="text-slate-300 mb-4">{error}</p>
           <button
-            onClick={() => filters.selectedDatasetId && fetchData(
-              filters.selectedDatasetId,
-              filters.selectedNerId,
-              filters.selectedTopicModelId,
-              filters.selectedBertopicId,
-            )}
+            onClick={() => refetch()}
             className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all"
           >
             Reintentar
@@ -439,7 +378,7 @@ export const ModeladoDashboard: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
                 </svg>
               }
-              onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId, filters.selectedNerId, filters.selectedTopicModelId, filters.selectedBertopicId)}
+              onRefreshClick={() => refetch()}
               isLoading={isLoading}
             >
               <div className="h-[280px]">
@@ -647,7 +586,7 @@ export const ModeladoDashboard: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
               </svg>
             }
-            onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
+            onRefreshClick={() => refetch({ resetSelections: true })}
             isLoading={isLoading}
           >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
@@ -918,7 +857,7 @@ export const ModeladoDashboard: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             }
-            onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
+            onRefreshClick={() => refetch({ resetSelections: true })}
             isLoading={isLoading}
           >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
