@@ -8,8 +8,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart2, RefreshCw, Plus, Eye, Trash2, CheckCircle2, XCircle, Clock, Loader2 } from 'lucide-react';
-import analysisService from '../services/analysisService';
-import type { FactorRunListItem } from '../services/analysisService';
+import factorService from '../services/factorService';
+import type { FactorRunListItem } from '../services/factorService';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
 
@@ -51,7 +51,7 @@ export const FactorsList: React.FC = () => {
   const loadRuns = async () => {
     setIsLoading(true);
     try {
-      const data = await analysisService.listFactorRuns();
+      const data = await factorService.listFactorRuns();
       setRuns(data.runs ?? []);
     } catch (err: any) {
       showError('Error al cargar análisis: ' + (err.response?.data?.error ?? err.message));
@@ -63,7 +63,7 @@ export const FactorsList: React.FC = () => {
   const confirmDelete = async () => {
     if (!runToDelete) return;
     try {
-      await analysisService.deleteFactorRun(runToDelete.id);
+      await factorService.deleteFactorRun(runToDelete.id);
       showSuccess(`Análisis "${runToDelete.name}" eliminado`);
       setRunToDelete(null);
       await loadRuns();

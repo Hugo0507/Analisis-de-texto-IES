@@ -10,7 +10,7 @@ import {
   ArrowLeft, BarChart2, Layers, TrendingUp, Users, Database,
   CheckCircle2, ChevronDown, ChevronUp, Info,
 } from 'lucide-react';
-import analysisService from '../services/analysisService';
+import factorService from '../services/factorService';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
 
@@ -93,7 +93,7 @@ export const FactorsView: React.FC = () => {
     if (!id) return;
     setIsLoading(true);
     try {
-      const result = await analysisService.getFactorRun(Number(id));
+      const result = await factorService.getFactorRun(Number(id));
       if (result.success) {
         setData(result);
       } else {

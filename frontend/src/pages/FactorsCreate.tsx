@@ -11,8 +11,8 @@ import {
   ArrowLeft, Play, Plus, X, ChevronDown, ChevronUp,
   Info, Loader2, Database, Tag,
 } from 'lucide-react';
-import analysisService from '../services/analysisService';
-import type { FactorCatalogItem } from '../services/analysisService';
+import factorService from '../services/factorService';
+import type { FactorCatalogItem } from '../services/factorService';
 import dataPreparationService from '../services/dataPreparationService';
 import type { DataPreparationListItem } from '../services/dataPreparationService';
 import { Spinner } from '../components/atoms';
@@ -231,7 +231,7 @@ export const FactorsCreate: React.FC = () => {
     try {
       const [prepsData, factorsData] = await Promise.all([
         dataPreparationService.getPreparations(),
-        analysisService.listFactors(),
+        factorService.listFactors(),
       ]);
       setPreparations(prepsData.filter(p => p.status === 'completed'));
 
@@ -254,7 +254,7 @@ export const FactorsCreate: React.FC = () => {
   const seedAndReload = async () => {
     setIsSeeding(true);
     try {
-      await analysisService.seedFactors();
+      await factorService.seedFactors();
       showSuccess('Catálogo de factores inicializado');
       await loadData();
     } catch {
@@ -266,7 +266,7 @@ export const FactorsCreate: React.FC = () => {
 
   const handleAddFactor = async (data: { name: string; category: string; keywords: string[] }) => {
     try {
-      const result = await analysisService.createFactor(data);
+      const result = await factorService.createFactor(data);
       if (result.success) {
         showSuccess(`Factor "${data.name}" añadido`);
         setShowAddForm(false);
@@ -289,7 +289,7 @@ export const FactorsCreate: React.FC = () => {
 
   const handleDeleteFactor = async (id: number) => {
     try {
-      await analysisService.deleteFactor(id);
+      await factorService.deleteFactor(id);
       setFactors(prev => prev.filter(f => f.id !== id));
       showSuccess('Factor eliminado');
     } catch (err: any) {
@@ -304,7 +304,7 @@ export const FactorsCreate: React.FC = () => {
     }
     setIsRunning(true);
     try {
-      const result = await analysisService.createFactorRun({
+      const result = await factorService.createFactorRun({
         name: name.trim(),
         data_preparation_id: selectedPrep ?? null,
       });
