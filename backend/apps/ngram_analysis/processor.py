@@ -7,9 +7,9 @@ Procesamiento en background de análisis de múltiples configuraciones de N-gram
 import logging
 import threading
 from typing import List, Dict, Any, Tuple
-import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 from django.utils import timezone
+from apps.core.nlp.matrix_stats import calculate_sparsity, calculate_statistics
 
 logger = logging.getLogger(__name__)
 
@@ -218,74 +218,6 @@ def vectorize_texts(
     matrix = vectorizer.fit_transform(texts)
 
     return vectorizer, matrix
-
-
-def calculate_sparsity(matrix) -> float:
-    """
-    Calcular esparsidad de la matriz (porcentaje de ceros).
-
-    Args:
-        matrix: Matriz sparse o densa
-
-    Returns:
-        Porcentaje de ceros (0.0 a 1.0)
-    """
-    total_elements = int(matrix.shape[0]) * int(matrix.shape[1])
-    if total_elements == 0:
-        return 0.0
-
-    non_zero = matrix.nnz if hasattr(matrix, 'nnz') else int(np.count_nonzero(matrix))
-    zero_elements = total_elements - non_zero
-
-    return float(zero_elements / total_elements)
-
-
-def calculate_statistics(vectorizer, matrix) -> Dict[str, Any]:
-    """
-    Calcular estadísticas de la matriz documento-término.
-
-    Args:
-        vectorizer: Vectorizador CountVectorizer usado
-        matrix: Matriz documento-término
-
-    Returns:
-        Diccionario con estadísticas
-    """
-    feature_names = vectorizer.get_feature_names_out()
-
-    # Sumar frecuencias por columna (término)
-    term_scores = np.asarray(matrix.sum(axis=0)).flatten()
-
-    # Top términos (los 50 más frecuentes)
-    top_indices = term_scores.argsort()[-50:][::-1]
-    top_terms = [
-        {
-            'term': feature_names[i],
-            'score': float(term_scores[i]),
-            'rank': idx + 1
-        }
-        for idx, i in enumerate(top_indices)
-    ]
-
-    # Crear diccionario término -> score
-    term_score_dict = {
-        feature_names[i]: float(term_scores[i])
-        for i in range(len(feature_names))
-    }
-
-    # Promedio de términos únicos por documento
-    terms_per_doc = np.asarray((matrix > 0).sum(axis=1)).flatten()
-    avg_terms = float(np.mean(terms_per_doc))
-
-    # Total de ocurrencias
-    total_occurrences = int(np.sum(matrix))
-
-    return {
-        'top_terms': top_terms,
-        'term_scores': term_score_dict,
-        'avg_terms_per_doc': avg_terms,
-        'total_occurrences': total_occurrences,
-    }
 
 
 def calculate_comparisons(
