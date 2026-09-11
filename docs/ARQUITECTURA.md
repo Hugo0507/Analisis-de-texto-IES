@@ -116,6 +116,11 @@ src/
   layouts/       2    MainLayout (admin), CommandCenterLayout (dashboard público)
 ```
 
+Los componentes de cada dashboard viven en `components/organisms/<nombre>/`
+—`vectorizacion`, `general`, `laboratorio`, `preprocesamiento` y `modelado`—,
+47 archivos en total, y la obtención de datos en `hooks/useVectorizationData`,
+`usePreprocessingData` y `useModelingData`.
+
 ### Dos zonas
 
 - **`/dashboard/*`** — público, sin autenticación. Cinco dashboards que
@@ -133,16 +138,19 @@ Los servicios `public*` son envoltorios finos (24–66 líneas) sobre
 
 Registrada aquí para que sea visible, no para justificarla:
 
-- **Dashboards monolíticos.** Los cinco templates suman ~9.900 líneas, el 26%
-  del frontend. `VectorizacionDashboard.tsx` tiene 2.591 líneas y mezcla
-  obtención de datos, transformación, configuración de gráficos y layout. De
-  ahí salió el error de `react-hooks/rules-of-hooks` que tumbó tres
-  despliegues (ver commit `11bec48`).
+- **Dashboards aún grandes.** Los cinco templates bajaron de ~9.900 a ~4.400
+  líneas: sus componentes presentacionales viven en
+  `components/organisms/<dashboard>/` y su fetching en `hooks/use*Data.ts`.
+  Lo que queda dentro es JSX acoplado al estado local —la lista de archivos
+  de Preprocesamiento, las pestañas de Vectorización—, cuya extracción exige
+  diseñar interfaces de props, no solo mover código.
 - **Vistas extensas.** `analysis/views.py` (791 líneas) y `workspace/views.py`
   (819) siguen siendo archivos grandes. `public_api` ya se dividió por
   dominio, pero ninguna de las tres tiene `serializers.py` propio: la
   serialización va incrustada en las vistas.
-- **Sin tests en el frontend.** Dos archivos de test sobre 115.
+- **Pocos tests en el frontend.** Cuatro archivos de test: dos de componentes
+  triviales, más el contrato de los servicios de listado y las utilidades de
+  descarga. Los dashboards y las páginas siguen sin cobertura.
 - **Imports sin vigilancia.** `backend/.flake8` ignora `F401`, así que los
   imports sin usar no fallan en CI. Se detectan ejecutando `pyflakes`
   directamente.
