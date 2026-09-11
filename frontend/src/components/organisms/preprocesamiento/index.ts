@@ -8,3 +8,4 @@ export * from './types';
 export { StatPill } from './StatPill';
 export { DeleteModal } from './DeleteModal';
 export { ExtBadge } from './ExtBadge';
+export { FileListSection } from './FileListSection';
