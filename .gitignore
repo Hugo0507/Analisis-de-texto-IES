@@ -71,3 +71,12 @@ output/
 
 # Contexto local (no subir a git)
 CONTEXTO_LOCAL.md
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
+/graft-backend/
+/graft-frontend/
+/graft-viz/
+backend/graft/
+frontend/graft/
+.ignore
