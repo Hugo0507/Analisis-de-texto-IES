@@ -21,8 +21,8 @@ import {
   Download,
   Info,
 } from 'lucide-react';
-import analysisService from '../services/analysisService';
-import type { FactorAnalysisResponse, CooccurrenceGraphResponse } from '../services/analysisService';
+import factorService from '../services/factorService';
+import type { FactorAnalysisResponse, CooccurrenceGraphResponse } from '../services/factorService';
 import { FactorCooccurrenceGraph } from '../components/organisms/FactorCooccurrenceGraph';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
@@ -154,7 +154,7 @@ export const Factors: React.FC = () => {
 
   const loadStats = useCallback(async () => {
     try {
-      const data = await analysisService.getFactorStatistics();
+      const data = await factorService.getFactorStatistics();
       if (data.success) {
         setStats(data);
         setNoFactorsInDb(false);
@@ -171,7 +171,7 @@ export const Factors: React.FC = () => {
 
   const loadGraph = useCallback(async () => {
     try {
-      const data = await analysisService.getCooccurrenceGraph();
+      const data = await factorService.getCooccurrenceGraph();
       setGraphData(data);
     } catch {
       // El grafo es opcional; si falla no bloquea la página
@@ -188,7 +188,7 @@ export const Factors: React.FC = () => {
   const seedFactors = async () => {
     setIsSeeding(true);
     try {
-      await analysisService.seedFactors();
+      await factorService.seedFactors();
       showSuccess('Catálogo de factores inicializado correctamente');
       await loadStats();
     } catch {
@@ -201,7 +201,7 @@ export const Factors: React.FC = () => {
   const runAnalysis = async () => {
     setIsRunning(true);
     try {
-      const result = await analysisService.analyzeFactors({
+      const result = await factorService.analyzeFactors({
         normalize_by_length: true,
         use_cache: false,
       });
@@ -236,7 +236,7 @@ export const Factors: React.FC = () => {
   const refreshAnalysis = async () => {
     setIsRunning(true);
     try {
-      const result = await analysisService.analyzeFactors({
+      const result = await factorService.analyzeFactors({
         normalize_by_length: true,
         use_cache: false,
       });
@@ -255,7 +255,7 @@ export const Factors: React.FC = () => {
   const handleExportCsv = async () => {
     setIsExporting(true);
     try {
-      await analysisService.exportFactorsCSV();
+      await factorService.exportFactorsCSV();
       showSuccess('CSV exportado correctamente');
     } catch {
       showError('No se pudo exportar el CSV. Verifica que el análisis esté completado.');

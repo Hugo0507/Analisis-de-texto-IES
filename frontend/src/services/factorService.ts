@@ -100,7 +100,7 @@ export interface FactorAnalysisResponse {
   }>;
 }
 
-class AnalysisService {
+class FactorService {
   // ===== Bag of Words =====
 
   // ===== TF-IDF =====
@@ -184,5 +184,5 @@ class AnalysisService {
   }
 }
 
-const analysisService = new AnalysisService();
-export default analysisService;
+const factorService = new FactorService();
+export default factorService;
