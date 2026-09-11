@@ -55,8 +55,10 @@ forma dominante y la que siguen los desarrollos recientes. Cada app contiene
 
 **Apps sin lógica de análisis:**
 
-- `core` — `health_check`, `api_root` y el comando `ensuresuperuser`, que
-  `startup.sh` ejecuta al arrancar el contenedor.
+- `core` — `health_check`, `api_root`, el comando `ensuresuperuser` que
+  `startup.sh` ejecuta al arrancar el contenedor, y `nlp/matrix_stats.py`
+  con las estadísticas de matriz que comparten `bag_of_words` y
+  `ngram_analysis`.
 - `infrastructure` — lo externo: `DriveGateway` (OAuth2 con Google Drive) y
   `TripleLayerCacheService`.
 - `datasets` — gestión de corpus, extracción de metadatos bibliográficos.
@@ -89,7 +91,9 @@ las vistas, pero son el motor del pipeline.
 
 - **Administración** — bajo `/api/v1/`, requiere JWT. Una ruta por app.
 - **Pública** — bajo `/api/v1/public/`, `AllowAny`, solo lectura. Alimenta el
-  dashboard sin autenticación. Toda ella vive en `apps/public_api/views.py`.
+  dashboard sin autenticación. Son 36 rutas, repartidas en el paquete
+  `apps/public_api/views/`: `corpus`, `vectorization`, `modeling` y
+  `workspace`, con la paginación compartida en `base`.
 
 ### Caché en tres capas
 
@@ -134,12 +138,14 @@ Registrada aquí para que sea visible, no para justificarla:
   obtención de datos, transformación, configuración de gráficos y layout. De
   ahí salió el error de `react-hooks/rules-of-hooks` que tumbó tres
   despliegues (ver commit `11bec48`).
-- **Vistas extensas.** `public_api/views.py` concentra 971 líneas sin
-  `serializers.py` propio.
+- **Vistas extensas.** `analysis/views.py` (791 líneas) y `workspace/views.py`
+  (819) siguen siendo archivos grandes. `public_api` ya se dividió por
+  dominio, pero ninguna de las tres tiene `serializers.py` propio: la
+  serialización va incrustada en las vistas.
 - **Sin tests en el frontend.** Dos archivos de test sobre 115.
-- **Código duplicado.** `calculate_sparsity` y `calculate_statistics` están
-  copiadas entre `bag_of_words/processor.py` y `ngram_analysis/processor.py`,
-  con diferencias solo en comentarios.
+- **Imports sin vigilancia.** `backend/.flake8` ignora `F401`, así que los
+  imports sin usar no fallan en CI. Se detectan ejecutando `pyflakes`
+  directamente.
 - **Modelos huérfanos.** `Vocabulary`, `BowMatrix`, `TfidfMatrix`,
   `MatrixStorage`, `Topic` y `DocumentTopic` en `apps/analysis/models.py` solo
   se referencian desde el `admin.py` y los `serializers.py` de su propia app.
