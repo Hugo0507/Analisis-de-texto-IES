@@ -80,3 +80,8 @@ CONTEXTO_LOCAL.md
 backend/graft/
 frontend/graft/
 .ignore
+
+# Configuracion local de herramientas de asistencia (no se publica)
+CLAUDE.md
+.agents/
+.claude/
