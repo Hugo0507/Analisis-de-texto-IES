@@ -14,7 +14,6 @@ import { ResponsiveHeatMap } from '@nivo/heatmap';
 import { ResponsiveNetwork } from '@nivo/network';
 import { DashboardGrid } from '../organisms';
 import { ChartCard } from '../molecules';
-import dashboardService from '../../services/dashboardService';
 import type { VectorizationDashboardData } from '../../services/dashboardService';
 import { useFilter } from '../../contexts/FilterContext';
 import type { BagOfWords } from '../../services/bagOfWordsService';
@@ -23,6 +22,7 @@ import type { TfIdfAnalysis } from '../../services/tfidfAnalysisService';
 import publicTfidfAnalysisService from '../../services/publicTfidfAnalysisService';
 import type { DocTermMatrix } from '../../services/publicTfidfAnalysisService';
 import { downloadFile, buildCsv, escapeCsvField } from '../../utils/download';
+import { useVectorizationData } from '../../hooks/useVectorizationData';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1324,9 +1324,6 @@ const ComparacionView: React.FC<{
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export const VectorizacionDashboard: React.FC = () => {
-  const [data, setData]               = useState<VectorizationDashboardData | null>(null);
-  const [isLoading, setIsLoading]     = useState(true);
-  const [error, setError]             = useState<string | null>(null);
   const [selectedTerm, setSelectedTerm] = useState<SelectedTerm | null>(null);
   const [showExportModal, setShowExportModal] = useState(false);
   const [vocabView, setVocabView]     = useState<'cloud' | 'table'>('cloud');
@@ -1340,14 +1337,7 @@ export const VectorizacionDashboard: React.FC = () => {
   const [showComparator, setShowComparator] = useState(false);
   const { filters, setSelectedBow, setSelectedNgram, setSelectedTfidf } = useFilter();
 
-  useEffect(() => {
-    if (filters.selectedDatasetId) {
-      fetchData(filters.selectedDatasetId, filters.selectedBowId, filters.selectedNgramId, filters.selectedTfidfId);
-    } else {
-      setData(null); setIsLoading(false);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.selectedDatasetId, filters.selectedBowId, filters.selectedNgramId, filters.selectedTfidfId]);
+  const { data, isLoading, error, refetch } = useVectorizationData(setIdfRange);
 
   useEffect(() => {
     setSelectedTerm(null);
@@ -1360,44 +1350,6 @@ export const VectorizacionDashboard: React.FC = () => {
     setCompareTerms([]);
     setShowComparator(false);
   }, [filters.selectedDatasetId]);
-
-  const fetchData = async (
-    datasetId: number,
-    bowId?: number | null,
-    ngramId?: number | null,
-    tfidfId?: number | null,
-  ) => {
-    try {
-      setIsLoading(true); setError(null);
-      const result = await dashboardService.getVectorizationData(datasetId, bowId, ngramId, tfidfId);
-      setData(result);
-      // Auto-select first completed analysis alphabetically if no ID explicitly chosen
-      if (!bowId) {
-        const first = result.bowAnalyses.find(a => a.status === 'completed');
-        if (first) setSelectedBow(first.id);
-      }
-      if (!ngramId) {
-        const first = result.ngramAnalyses.find(a => a.status === 'completed');
-        if (first) setSelectedNgram(first.id);
-      }
-      if (!tfidfId) {
-        const first = result.tfidfAnalyses.find(a => a.status === 'completed');
-        if (first) setSelectedTfidf(first.id);
-      }
-      // Initialize IDF range slider from actual IDF bounds
-      const idfVals = Object.values(result.selectedTfidf?.idf_vector?.idf_values || {});
-      if (idfVals.length > 0) {
-        const mn = Math.floor(Math.min(...idfVals) * 100) / 100;
-        const mx = Math.ceil(Math.max(...idfVals) * 100) / 100;
-        setIdfRange([mn, mx]);
-      }
-    } catch (err) {
-      setError('Error al cargar los datos de vectorización');
-      console.error('Vectorization dashboard fetch error:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // ── VIZ-3: Fetch doc-term matrix when heatmap section is active in docterm mode ──
   useEffect(() => {
@@ -1653,12 +1605,7 @@ export const VectorizacionDashboard: React.FC = () => {
           </svg>
         </div>
         <p className="text-slate-300 mb-4">{error}</p>
-        <button onClick={() => filters.selectedDatasetId && fetchData(
-            filters.selectedDatasetId,
-            filters.selectedBowId,
-            filters.selectedNgramId,
-            filters.selectedTfidfId,
-          )}
+        <button onClick={() => refetch()}
           className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all">
           Reintentar
         </button>
@@ -1938,7 +1885,7 @@ export const VectorizacionDashboard: React.FC = () => {
           size="lg"
           icon={vocabView === 'cloud' ? <CloudIcon /> : <TableIcon />}
           downloadable={vocabView === 'cloud'}
-          onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId, filters.selectedBowId, filters.selectedNgramId, filters.selectedTfidfId)}
+          onRefreshClick={() => refetch()}
           isLoading={isLoading}
           headerExtra={
             <button
@@ -2015,7 +1962,7 @@ export const VectorizacionDashboard: React.FC = () => {
           size="lg"
           downloadable
           icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>}
-          onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId, filters.selectedBowId, filters.selectedNgramId, filters.selectedTfidfId)}
+          onRefreshClick={() => refetch()}
           isLoading={isLoading}
         >
           {/* Tabs por configuración */}
@@ -2061,7 +2008,7 @@ export const VectorizacionDashboard: React.FC = () => {
           size="lg"
           downloadable
           icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>}
-          onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId, filters.selectedBowId, filters.selectedNgramId, filters.selectedTfidfId)}
+          onRefreshClick={() => refetch()}
           isLoading={isLoading}
         >
           <div className="h-[300px] overflow-y-auto pr-1">
@@ -2091,7 +2038,7 @@ export const VectorizacionDashboard: React.FC = () => {
           size="lg"
           downloadable
           icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>}
-          onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId, filters.selectedBowId, filters.selectedNgramId, filters.selectedTfidfId)}
+          onRefreshClick={() => refetch()}
           isLoading={isLoading}
         >
           <div className="pt-2 pl-4">
@@ -2204,7 +2151,7 @@ export const VectorizacionDashboard: React.FC = () => {
             size="xl"
             downloadable
             icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>}
-            onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId, filters.selectedBowId, filters.selectedNgramId, filters.selectedTfidfId)}
+            onRefreshClick={() => refetch()}
             isLoading={isLoading}
           >
             <ComparacionView
@@ -2235,7 +2182,7 @@ export const VectorizacionDashboard: React.FC = () => {
           icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>}
           onRefreshClick={() => {
             if (heatmapMode === 'docterm') setDocTermMatrix(null);
-            else filters.selectedDatasetId && fetchData(filters.selectedDatasetId, filters.selectedBowId, filters.selectedNgramId, filters.selectedTfidfId);
+            else refetch();
           }}
           isLoading={isLoading || docTermLoading}
         >
@@ -2333,7 +2280,7 @@ export const VectorizacionDashboard: React.FC = () => {
           size="xl"
           downloadable
           icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
-          onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId, filters.selectedBowId, filters.selectedNgramId, filters.selectedTfidfId)}
+          onRefreshClick={() => refetch()}
           isLoading={isLoading}
         >
           <CooccurrenceGraph
