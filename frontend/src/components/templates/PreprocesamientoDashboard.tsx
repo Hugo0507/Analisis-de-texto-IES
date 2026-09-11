@@ -16,196 +16,31 @@ import { ChartCard } from '../molecules';
 import dashboardService from '../../services/dashboardService';
 import type { PreprocessingDashboardData } from '../../services/dashboardService';
 import { useFilter } from '../../contexts/FilterContext';
-import { LANGUAGE_NAMES } from '../../services/dataPreparationService';
 import type { DatasetFile } from '../../services/datasetsService';
 import apiClient from '../../services/api';
 import publicApiClient from '../../services/publicApi';
 import { useToast } from '../../contexts/ToastContext';
 import { downloadBlob } from '../../utils/download';
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
-const getLanguageName = (code: string): string =>
-  LANGUAGE_NAMES[code]?.name || code.toUpperCase();
-
-const formatFileSize = (bytes: number): string => {
-  if (!bytes || bytes < 0) return '0 B';
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-};
-
-const getFileExtension = (filename: string) =>
-  filename.split('.').pop()?.toLowerCase() || 'unknown';
-
-/**
- * FIX: Extract directory using directory_name first.
- * The backend groups files by directory_name in DirectoryStats,
- * so matching on directory_name avoids the directory_path root-split mismatch.
- */
-const getFileDirectory = (f: DatasetFile): string =>
-  f.directory_name || f.directory_path?.split('/').filter(Boolean)[0] || 'root';
-
-// ─── Icons ───────────────────────────────────────────────────────────────────
-const FileIcon = () => (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-  </svg>
-);
-const SizeIcon = () => (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-  </svg>
-);
-const CheckIcon = () => (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-);
-const DuplicateIcon = () => (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-  </svg>
-);
-const ExtensionIcon = () => (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-  </svg>
-);
-const LanguageIcon = () => (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-  </svg>
-);
-const DownloadIcon = () => (
-  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-  </svg>
-);
-const TrashIcon = () => (
-  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-  </svg>
-);
-const SkipIcon = () => (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-  </svg>
-);
-
-// ─── File Entry for cross-filtering ─────────────────────────────────────────
-interface FileEntry {
-  directory: string;
-  extension: string;
-  language: string | null;
-  size: number;
-}
-
-const FILES_PER_PAGE = 12;
-
-// ─── Stat Pill (compact preparation metric) ──────────────────────────────────
-interface StatPillProps {
-  label: string;
-  value: string | number;
-  percent?: number;
-  subtitle?: string;
-  color: 'emerald' | 'rose' | 'amber' | 'blue' | 'violet';
-  tooltip?: string;
-}
-const colorMap: Record<StatPillProps['color'], { bg: string; text: string; bar: string; dot: string }> = {
-  emerald: { bg: 'bg-emerald-500/10 border border-emerald-500/20', text: 'text-emerald-400', bar: 'bg-emerald-500', dot: 'bg-emerald-500' },
-  rose:    { bg: 'bg-rose-500/10 border border-rose-500/20',       text: 'text-rose-400',    bar: 'bg-rose-500',    dot: 'bg-rose-500'    },
-  amber:   { bg: 'bg-amber-500/10 border border-amber-500/20',     text: 'text-amber-400',   bar: 'bg-amber-500',   dot: 'bg-amber-500'   },
-  blue:    { bg: 'bg-blue-500/10 border border-blue-500/20',       text: 'text-blue-400',    bar: 'bg-blue-500',    dot: 'bg-blue-500'    },
-  violet:  { bg: 'bg-violet-500/10 border border-violet-500/20',   text: 'text-violet-400',  bar: 'bg-violet-500',  dot: 'bg-violet-500'  },
-};
-
-const StatPill: React.FC<StatPillProps> = ({ label, value, percent, subtitle, color, tooltip }) => {
-  const c = colorMap[color];
-  return (
-    <div className={`flex-1 min-w-[120px] rounded-lg px-4 py-3 ${c.bg}`} title={tooltip}>
-      <div className="flex items-center gap-1 mb-1">
-        <p className="text-xs font-medium text-slate-400">{label}</p>
-        {tooltip && (
-          <svg className="w-3 h-3 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        )}
-      </div>
-      <p className={`text-xl font-bold ${c.text}`}>{value}</p>
-      {percent !== undefined && (
-        <div className="mt-1.5">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-slate-500">{percent.toFixed(1)}% del total</span>
-          </div>
-          <div className="h-1 w-full rounded-full bg-slate-700">
-            <div
-              className={`h-1 rounded-full transition-all ${c.bar}`}
-              style={{ width: `${Math.min(percent, 100)}%` }}
-            />
-          </div>
-        </div>
-      )}
-      {subtitle && !percent && (
-        <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>
-      )}
-    </div>
-  );
-};
-
-// ─── Delete Confirmation Modal ────────────────────────────────────────────────
-interface DeleteModalProps {
-  file: DatasetFile;
-  onConfirm: () => void;
-  onCancel: () => void;
-}
-const DeleteModal: React.FC<DeleteModalProps> = ({ file, onConfirm, onCancel }) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-    <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 max-w-sm w-full mx-4">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center flex-shrink-0">
-          <TrashIcon />
-        </div>
-        <div>
-          <h3 className="text-base font-semibold text-gray-900">Eliminar archivo</h3>
-          <p className="text-xs text-gray-500">Esta acción no se puede deshacer</p>
-        </div>
-      </div>
-      <p className="text-sm text-gray-700 mb-5 bg-gray-50 rounded-lg p-3 font-mono break-all">
-        {file.original_filename}
-      </p>
-      <div className="flex gap-3">
-        <button
-          onClick={onCancel}
-          className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-        >
-          Cancelar
-        </button>
-        <button
-          onClick={onConfirm}
-          className="flex-1 px-4 py-2 text-sm font-medium text-white bg-rose-500 rounded-lg hover:bg-rose-600 transition-colors"
-        >
-          Eliminar
-        </button>
-      </div>
-    </div>
-  </div>
-);
-
-// ─── Extension Badge ──────────────────────────────────────────────────────────
-const EXT_COLORS: Record<string, string> = {
-  pdf:  'bg-rose-500/15 text-rose-400',
-  txt:  'bg-blue-500/15 text-blue-400',
-  docx: 'bg-blue-500/15 text-blue-400',
-  xlsx: 'bg-emerald-500/15 text-emerald-400',
-  csv:  'bg-lime-500/15 text-lime-400',
-  json: 'bg-amber-500/15 text-amber-400',
-  xml:  'bg-violet-500/15 text-violet-400',
-};
-const ExtBadge: React.FC<{ ext: string }> = ({ ext }) => (
-  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase ${EXT_COLORS[ext] || 'bg-slate-700 text-slate-400'}`}>
-    .{ext}
-  </span>
-);
+import {
+  StatPill,
+  DeleteModal,
+  ExtBadge,
+  FileIcon,
+  SizeIcon,
+  CheckIcon,
+  DuplicateIcon,
+  ExtensionIcon,
+  LanguageIcon,
+  DownloadIcon,
+  TrashIcon,
+  SkipIcon,
+  getLanguageName,
+  formatFileSize,
+  getFileExtension,
+  getFileDirectory,
+  FILES_PER_PAGE,
+} from '../organisms/preprocesamiento';
+import type { FileEntry } from '../organisms/preprocesamiento';
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export const PreprocesamientoDashboard: React.FC = () => {
