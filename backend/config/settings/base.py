@@ -34,7 +34,7 @@ INSTALLED_APPS = [
     'django_filters',
     'channels',
 
-    # Custom apps (Clean Architecture)
+    # Apps del proyecto (una por dominio o tecnica de analisis)
     'apps.core',
     'apps.users',
     'apps.documents',
