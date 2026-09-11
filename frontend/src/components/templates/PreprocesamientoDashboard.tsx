@@ -13,8 +13,6 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { DashboardGrid, MetricCardDark, DonutChartViz } from '../organisms';
 import type { DonutChartData } from '../organisms/DonutChartViz';
 import { ChartCard } from '../molecules';
-import dashboardService from '../../services/dashboardService';
-import type { PreprocessingDashboardData } from '../../services/dashboardService';
 import { useFilter } from '../../contexts/FilterContext';
 import type { DatasetFile } from '../../services/datasetsService';
 import apiClient from '../../services/api';
@@ -41,12 +39,11 @@ import {
   FILES_PER_PAGE,
 } from '../organisms/preprocesamiento';
 import type { FileEntry } from '../organisms/preprocesamiento';
+import { usePreprocessingData } from '../../hooks/usePreprocessingData';
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export const PreprocesamientoDashboard: React.FC = () => {
-  const [data, setData]               = useState<PreprocessingDashboardData | null>(null);
-  const [isLoading, setIsLoading]     = useState(true);
-  const [error, setError]             = useState<string | null>(null);
+  const { data, isLoading, error, refetch } = usePreprocessingData();
   const [crossFilter, setCrossFilterState] = useState<{ chartId: string; segmentId: string } | null>(null);
   const { filters, setSelectedPreparation } = useFilter();
   const { showError } = useToast();
@@ -72,25 +69,6 @@ export const PreprocesamientoDashboard: React.FC = () => {
 
   // Reset page when cross-filter changes
   useEffect(() => { setFilePage(1); }, [crossFilter]);
-
-  useEffect(() => {
-    if (filters.selectedDatasetId) fetchData(filters.selectedDatasetId);
-    else { setData(null); setIsLoading(false); }
-  }, [filters.selectedDatasetId]);
-
-  const fetchData = async (datasetId: number) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const result = await dashboardService.getPreprocessingData(datasetId);
-      setData(result);
-    } catch (err) {
-      setError('Error al cargar los datos del dataset');
-      console.error('Dashboard fetch error:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // ──────────────────────────────────────────────────────────────────────────
   // ORIGINAL DISTRIBUTIONS (always from backend)
@@ -252,7 +230,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
     console.info('Delete requested for file:', deleteTarget.id);
     setDeleteTarget(null);
     // Refresh data after delete
-    fetchData(data.dataset.id);
+    refetch();
   };
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -385,7 +363,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
           </div>
           <p className="text-gray-700 mb-4">{error}</p>
           <button
-            onClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
+            onClick={() => refetch()}
             className="px-4 py-2 text-sm font-medium text-white bg-emerald-500 rounded-lg hover:bg-emerald-600 transition-all"
           >
             Reintentar
@@ -627,7 +605,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
             </svg>
           }
           isActive={crossFilter?.chartId === 'directory-donut'}
-          onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
+          onRefreshClick={() => refetch()}
           isLoading={isLoading}
         >
           <div className="h-[260px]">
@@ -660,7 +638,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
             </svg>
           }
           isActive={crossFilter?.chartId === 'extension-donut'}
-          onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
+          onRefreshClick={() => refetch()}
           isLoading={isLoading}
         >
           <div className="h-[260px]">
@@ -693,7 +671,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
             </svg>
           }
           isActive={crossFilter?.chartId === 'languages-donut'}
-          onRefreshClick={() => filters.selectedDatasetId && fetchData(filters.selectedDatasetId)}
+          onRefreshClick={() => refetch()}
           isLoading={isLoading}
         >
           <div className="h-[260px]">
