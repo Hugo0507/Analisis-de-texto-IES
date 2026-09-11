@@ -22,6 +22,7 @@ import type { NgramAnalysis } from '../../services/ngramAnalysisService';
 import type { TfIdfAnalysis } from '../../services/tfidfAnalysisService';
 import publicTfidfAnalysisService from '../../services/publicTfidfAnalysisService';
 import type { DocTermMatrix } from '../../services/publicTfidfAnalysisService';
+import { downloadFile, buildCsv, escapeCsvField } from '../../utils/download';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,26 +70,6 @@ const getNgramLabel = ([min, max]: [number, number]): string => {
 };
 
 // ─── Export utilities (COMPLETE data) ────────────────────────────────────────
-
-const downloadFile = (content: string, filename: string, mimeType: string) => {
-  const BOM = mimeType.includes('csv') ? '\uFEFF' : '';
-  const blob = new Blob([BOM + content], { type: `${mimeType};charset=utf-8;` });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-};
-
-const escapeCsvField = (v: string | number): string => {
-  const s = String(v);
-  return s.includes(',') || s.includes('"') || s.includes('\n')
-    ? `"${s.replace(/"/g, '""')}"` : s;
-};
-
-const buildCsv = (headers: string[], rows: (string | number)[][]): string =>
-  [headers.map(escapeCsvField).join(','), ...rows.map(r => r.map(escapeCsvField).join(','))].join('\n');
 
 /** BoW: exports FULL vocabulary (all terms, not just top N) */
 const exportBowCompleteCsv = (bow: BagOfWords, analysisName: string) => {
