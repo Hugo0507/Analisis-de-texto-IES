@@ -4,7 +4,6 @@
  * Exports all page components for easy importing.
  */
 
-export { Home } from './Home';
 export { Login } from './Login';
 export { ForgotPassword } from './ForgotPassword';
 export { Pipeline } from './Pipeline';
@@ -12,7 +11,6 @@ export { BagOfWords } from './BagOfWords';
 export { TopicModeling } from './TopicModeling';
 export { Factors } from './Factors';
 export { Documents } from './Documents';
-export { Statistics } from './Statistics';
 export { Users } from './Users';
 export { UserCreate } from './UserCreate';
 export { UserDetail } from './UserDetail';
@@ -20,7 +18,6 @@ export { DatasetList } from './DatasetList';
 export { DatasetCreate } from './DatasetCreate';
 export { DatasetView } from './DatasetView';
 export { DatasetEdit } from './DatasetEdit';
-export { PreparacionDatos } from './PreparacionDatos';
 export { DataPreparationList } from './DataPreparationList';
 export { DataPreparationCreate } from './DataPreparationCreate';
 export { DataPreparationView } from './DataPreparationView';
