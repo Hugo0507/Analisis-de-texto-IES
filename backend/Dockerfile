@@ -46,10 +46,14 @@ COPY requirements.txt .
 RUN pip install --upgrade pip setuptools wheel
 
 # 2. Pre-requisitos de hdbscan con versiones fijas (debe ir antes que requirements.txt)
-RUN pip install --no-cache-dir cython==0.29.36 numpy scipy scikit-learn
+#    numpy se fija a 1.x: hdbscan 0.8.33 no compila contra numpy 2.x
+RUN pip install --no-cache-dir "cython<3.0.0" "setuptools<70.0.0" wheel numpy==1.26.2
 
 # 3. hdbscan aislado, sin interferencia del resto del requirements.txt
-RUN pip install --no-cache-dir hdbscan==0.8.33
+#    --no-build-isolation obliga a usar el cython/numpy instalados arriba en vez
+#    de un entorno aislado donde no los encuentra (misma receta que Dockerfile.hf)
+ENV CFLAGS="-Wno-error=incompatible-pointer-types"
+RUN pip install --no-cache-dir --no-build-isolation hdbscan==0.8.33
 
 # 4. Resto de dependencias
 RUN pip install --no-cache-dir -r requirements.txt
