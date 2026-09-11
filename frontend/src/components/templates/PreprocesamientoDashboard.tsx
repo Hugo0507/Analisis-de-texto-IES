@@ -10,9 +10,8 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { DashboardGrid, MetricCardDark, DonutChartViz } from '../organisms';
+import { DashboardGrid, MetricCardDark } from '../organisms';
 import type { DonutChartData } from '../organisms/DonutChartViz';
-import { ChartCard } from '../molecules';
 import { useFilter } from '../../contexts/FilterContext';
 import type { DatasetFile } from '../../services/datasetsService';
 import apiClient from '../../services/api';
@@ -23,16 +22,18 @@ import {
   StatPill,
   DeleteModal,
   FileListSection,
+  DocumentPreviewPanel,
+  DistributionCharts,
+  FileSizeHistogram,
+  TemporalAnalysis,
   FileIcon,
   SizeIcon,
   CheckIcon,
   DuplicateIcon,
   ExtensionIcon,
   LanguageIcon,
-  DownloadIcon,
   SkipIcon,
   getLanguageName,
-  formatFileSize,
   getFileExtension,
   getFileDirectory,
   FILES_PER_PAGE,
@@ -590,256 +591,28 @@ export const PreprocesamientoDashboard: React.FC = () => {
         />
       </DashboardGrid>
 
-      {/* ── Distribution Charts ── */}
-      <DashboardGrid columns={3} gap="lg">
-        {/* Directory Donut */}
-        <ChartCard
-          title="Distribución por Directorio"
-          subtitle="Archivos por carpeta"
-          accentColor="emerald"
-          size="lg"
-          icon={
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-            </svg>
-          }
-          isActive={crossFilter?.chartId === 'directory-donut'}
-          onRefreshClick={() => refetch()}
-          isLoading={isLoading}
-        >
-          <div className="h-[260px]">
-            {dirChartData.length > 0 ? (
-              <DonutChartViz
-                data={dirChartData}
-                chartId="directory-donut"
-                centerValue={dirCenter.centerValue}
-                centerLabel={dirCenter.centerLabel}
-                activeSegments={dirActiveSegments}
-                skipCrossFilter
-                onSegmentClick={handleSegmentClick('directory-donut')}
-                onClearFilter={clearFilter}
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-400">No hay datos de directorios</div>
-            )}
-          </div>
-        </ChartCard>
+      <DistributionCharts
+        data={data}
+        isLoading={isLoading}
+        refetch={refetch}
+        crossFilter={crossFilter}
+        clearFilter={clearFilter}
+        handleSegmentClick={handleSegmentClick}
+        dirChartData={dirChartData}
+        extChartData={extChartData}
+        langChartData={langChartData}
+        dirActiveSegments={dirActiveSegments}
+        extActiveSegments={extActiveSegments}
+        langActiveSegments={langActiveSegments}
+        dirCenter={dirCenter}
+        extCenter={extCenter}
+        langCenter={langCenter}
+        originalLangs={originalLangs}
+      />
 
-        {/* Extension Donut */}
-        <ChartCard
-          title="Distribución por Extensión"
-          subtitle="Tipos de archivo"
-          accentColor="cyan"
-          size="lg"
-          icon={
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-            </svg>
-          }
-          isActive={crossFilter?.chartId === 'extension-donut'}
-          onRefreshClick={() => refetch()}
-          isLoading={isLoading}
-        >
-          <div className="h-[260px]">
-            {extChartData.length > 0 ? (
-              <DonutChartViz
-                data={extChartData}
-                chartId="extension-donut"
-                centerValue={extCenter.centerValue}
-                centerLabel={extCenter.centerLabel}
-                activeSegments={extActiveSegments}
-                skipCrossFilter
-                onSegmentClick={handleSegmentClick('extension-donut')}
-                onClearFilter={clearFilter}
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-400">No hay datos de extensiones</div>
-            )}
-          </div>
-        </ChartCard>
+      <FileSizeHistogram data={data} />
 
-        {/* Language Donut — shows ALL detected languages */}
-        <ChartCard
-          title="Distribución de Idiomas"
-          subtitle={`Idiomas detectados${originalLangs.length > 0 ? ` · ${originalLangs.length} idioma${originalLangs.length !== 1 ? 's' : ''}` : ''}`}
-          accentColor="purple"
-          size="lg"
-          icon={
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-            </svg>
-          }
-          isActive={crossFilter?.chartId === 'languages-donut'}
-          onRefreshClick={() => refetch()}
-          isLoading={isLoading}
-        >
-          <div className="h-[260px]">
-            {langChartData.length > 0 ? (
-              <DonutChartViz
-                data={langChartData}
-                chartId="languages-donut"
-                centerValue={langCenter.centerValue}
-                centerLabel={langCenter.centerLabel}
-                activeSegments={langActiveSegments}
-                skipCrossFilter
-                onSegmentClick={handleSegmentClick('languages-donut')}
-                onClearFilter={clearFilter}
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-400 text-sm text-center px-4">
-                {data?.selectedPreparation ? 'No hay datos de idiomas detectados' : 'Ejecuta una preparación para detectar idiomas'}
-              </div>
-            )}
-          </div>
-        </ChartCard>
-      </DashboardGrid>
-
-      {/* ── VIZ-1: File Size Histogram ── */}
-      {data?.dataset?.files && data.dataset.files.length > 0 && (() => {
-        const BINS = [
-          { label: '0–10 KB',    min: 0,          max: 10 * 1024 },
-          { label: '10–50 KB',   min: 10 * 1024,  max: 50 * 1024 },
-          { label: '50–100 KB',  min: 50 * 1024,  max: 100 * 1024 },
-          { label: '100–500 KB', min: 100 * 1024, max: 500 * 1024 },
-          { label: '500 KB–1 MB', min: 500 * 1024, max: 1024 * 1024 },
-          { label: '1 MB+',      min: 1024 * 1024, max: Infinity },
-        ];
-        const counts = BINS.map(b =>
-          data.dataset!.files.filter(f => f.file_size_bytes >= b.min && f.file_size_bytes < b.max).length
-        );
-        const maxCount = Math.max(...counts, 1);
-        const totalWithSize = data.dataset!.files.filter(f => f.file_size_bytes > 0).length;
-        const avgBytes = totalWithSize > 0
-          ? data.dataset!.files.reduce((s, f) => s + (f.file_size_bytes || 0), 0) / totalWithSize
-          : 0;
-
-        return (
-          <ChartCard
-            title="Distribución de Tamaños de Archivos"
-            subtitle={`${totalWithSize} archivos · promedio ${formatFileSize(avgBytes)}`}
-            accentColor="cyan"
-            size="md"
-            icon={<SizeIcon />}
-          >
-            <div className="px-2 pb-2">
-              <div className="flex items-end gap-2 h-28 sm:h-36 pt-2">
-                {BINS.map((bin, i) => {
-                  const count = counts[i];
-                  const heightPct = (count / maxCount) * 100;
-                  const pct = totalWithSize > 0 ? ((count / totalWithSize) * 100).toFixed(1) : '0';
-                  return (
-                    <div key={bin.label} className="flex-1 flex flex-col items-center gap-1 min-w-0 group relative">
-                      <div
-                        className="w-full bg-cyan-400 rounded-t-sm transition-all duration-500 group-hover:bg-cyan-500"
-                        style={{ height: `${Math.max(heightPct, count > 0 ? 4 : 0)}%` }}
-                      />
-                      <div className="absolute bottom-full mb-1 hidden group-hover:flex flex-col items-center pointer-events-none z-10">
-                        <div className="bg-slate-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap">
-                          {bin.label}: {count} doc{count !== 1 ? 's' : ''} ({pct}%)
-                        </div>
-                        <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-800" />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="flex items-start gap-2 mt-1">
-                {BINS.map((bin, i) => (
-                  <div key={bin.label} className="flex-1 min-w-0 text-center">
-                    <span className="text-gray-400 block truncate" style={{ fontSize: '9px' }}>{bin.label}</span>
-                    {counts[i] > 0 && (
-                      <span className="text-cyan-500 font-semibold" style={{ fontSize: '9px' }}>{counts[i]}</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-              <div className="mt-3 flex flex-wrap gap-3 border-t border-gray-100 pt-3" style={{ fontSize: '11px' }}>
-                <span className="text-gray-500">
-                  Mín: <strong className="text-gray-700">{formatFileSize(Math.min(...data.dataset!.files.map(f => f.file_size_bytes || 0).filter(s => s > 0)))}</strong>
-                </span>
-                <span className="text-gray-500">
-                  Máx: <strong className="text-gray-700">{formatFileSize(Math.max(...data.dataset!.files.map(f => f.file_size_bytes || 0)))}</strong>
-                </span>
-                <span className="text-gray-500">
-                  Promedio: <strong className="text-gray-700">{formatFileSize(avgBytes)}</strong>
-                </span>
-              </div>
-            </div>
-          </ChartCard>
-        );
-      })()}
-
-      {/* ── Temporal Analysis Section ── */}
-      {data?.dataset?.files && data.dataset.files.some(f => f.bib_year) && (() => {
-        // Compute year distribution from bib_year field
-        const yearCounts: Record<number, number> = {};
-        data.dataset!.files.forEach(f => {
-          if (f.bib_year) yearCounts[f.bib_year] = (yearCounts[f.bib_year] ?? 0) + 1;
-        });
-        const sortedYears = Object.keys(yearCounts).map(Number).sort((a, b) => a - b);
-        const maxCount = Math.max(...Object.values(yearCounts), 1);
-
-        return (
-          <ChartCard
-            title="Distribución Temporal"
-            subtitle="Publicaciones por año (bib_year)"
-            accentColor="amber"
-            size="md"
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            }
-          >
-            <div className="px-2 pb-2">
-              {/* Bar chart */}
-              <div className="flex items-end gap-1 h-28 sm:h-36 pt-2">
-                {sortedYears.map(year => {
-                  const count = yearCounts[year];
-                  const heightPct = (count / maxCount) * 100;
-                  return (
-                    <div key={year} className="flex-1 flex flex-col items-center gap-1 min-w-0 group relative">
-                      <div
-                        className="w-full bg-amber-400 rounded-t-sm transition-all duration-500 group-hover:bg-amber-500"
-                        style={{ height: `${Math.max(heightPct, 4)}%` }}
-                      />
-                      {/* Tooltip */}
-                      <div className="absolute bottom-full mb-1 hidden group-hover:flex flex-col items-center pointer-events-none z-10">
-                        <div className="bg-slate-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap">
-                          {year}: {count} doc{count !== 1 ? 's' : ''}
-                        </div>
-                        <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-800" />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              {/* X-axis labels */}
-              <div className="flex items-start gap-1 mt-1">
-                {sortedYears.map(year => (
-                  <div key={year} className="flex-1 min-w-0 text-center">
-                    <span className="text-xs text-gray-400 block truncate" style={{ fontSize: sortedYears.length > 15 ? '9px' : '10px' }}>
-                      {year}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              {/* Summary */}
-              <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-500 border-t border-gray-100 pt-3">
-                <span>
-                  <strong className="text-gray-700">{sortedYears.length}</strong> años con publicaciones
-                </span>
-                <span>
-                  <strong className="text-gray-700">{sortedYears[0]}</strong> – <strong className="text-gray-700">{sortedYears[sortedYears.length - 1]}</strong> rango
-                </span>
-                <span>
-                  Pico: <strong className="text-gray-700">{sortedYears.find(y => yearCounts[y] === maxCount)}</strong> ({maxCount} docs)
-                </span>
-              </div>
-            </div>
-          </ChartCard>
-        );
-      })()}
+      <TemporalAnalysis data={data} />
 
       {/* ── Listado de archivos ── */}
       <FileListSection
@@ -861,96 +634,14 @@ export const PreprocesamientoDashboard: React.FC = () => {
         handleDelete={handleDelete}
       />
 
-      {/* ── Document Preview Panel (TRANS-6) ── */}
-      {previewFile && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
-            onClick={() => setPreviewFile(null)}
-          />
-          {/* Slide-in panel */}
-          <div className="fixed right-0 top-0 h-full z-50 w-full max-w-lg bg-slate-900 border-l border-slate-700/60 shadow-2xl flex flex-col">
-            {/* Header */}
-            <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-slate-700/60">
-              <div className="min-w-0">
-                <p className="text-xs font-medium text-blue-400 uppercase tracking-wider mb-1">Vista previa</p>
-                <h3 className="text-sm font-semibold text-white leading-snug truncate max-w-[340px]" title={previewFile.bib_title || previewFile.original_filename}>
-                  {previewFile.bib_title || previewFile.original_filename}
-                </h3>
-                <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1.5">
-                  {previewFile.bib_year && <span className="text-xs text-slate-400">{previewFile.bib_year}</span>}
-                  {previewFile.bib_authors && <span className="text-xs text-slate-500 truncate max-w-[300px]">{previewFile.bib_authors}</span>}
-                </div>
-              </div>
-              <button
-                onClick={() => setPreviewFile(null)}
-                className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-700 transition-colors shrink-0"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto px-5 py-4">
-              {previewLoading ? (
-                <div className="flex items-center gap-3 text-slate-400 py-8">
-                  <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                  </svg>
-                  Cargando texto preprocesado...
-                </div>
-              ) : !previewContent?.preview ? (
-                <div className="text-slate-500 text-sm py-8">
-                  No hay texto preprocesado disponible para este documento.
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center gap-3 mb-4 flex-wrap">
-                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium ${
-                      previewContent.has_preprocessed ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/15 text-amber-400 border border-amber-500/20'
-                    }`}>
-                      {previewContent.has_preprocessed ? '✓ Texto preprocesado' : '⚠ Texto sin procesar'}
-                    </span>
-                    <span className="text-xs text-slate-500">{previewContent.total_words.toLocaleString()} palabras en total</span>
-                  </div>
-                  <div className="rounded-xl bg-slate-800/60 border border-slate-700/40 p-4">
-                    <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap font-mono">
-                      {previewContent.preview}
-                      {previewContent.total_words > 120 && (
-                        <span className="text-slate-600"> […]</span>
-                      )}
-                    </p>
-                  </div>
-                  <p className="mt-3 text-xs text-slate-600 text-center">
-                    Mostrando ~120 primeras palabras del texto preprocesado
-                  </p>
-                </>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="px-5 py-3 border-t border-slate-700/60 flex gap-2">
-              <button
-                onClick={() => handleDownload(previewFile)}
-                className="flex-1 px-3 py-2 rounded-lg bg-slate-700/60 hover:bg-slate-700 text-slate-300 hover:text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
-              >
-                <DownloadIcon />
-                Descargar PDF
-              </button>
-              <button
-                onClick={() => setPreviewFile(null)}
-                className="px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/60 text-sm transition-colors"
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+      {/* ── Vista previa del documento ── */}
+      <DocumentPreviewPanel
+        previewFile={previewFile}
+        previewContent={previewContent}
+        previewLoading={previewLoading}
+        setPreviewFile={setPreviewFile}
+        handleDownload={handleDownload}
+      />
 
       {/* ── Delete Confirmation Modal ── */}
       {deleteTarget && (
