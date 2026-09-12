@@ -5,9 +5,7 @@ Contains models for:
 - Vocabulary: Términos únicos del corpus
 - BowMatrix: Matriz Bag of Words (frecuencias)
 - TfidfMatrix: Matriz TF-IDF (pesos)
-- MatrixStorage: Referencias a matrices grandes en Google Drive
 - Topic: Temas descubiertos (LDA, NMF, LSA, pLSA)
-- DocumentTopic: Relación documento-tema
 - Factor: Factores de transformación digital (8 categorías)
 - DocumentFactor: Relación documento-factor
 """
@@ -97,39 +95,6 @@ class TfidfMatrix(models.Model):
         return f"{self.document.filename} - {self.term.term}: {self.tfidf_score:.4f}"
 
 
-class MatrixStorage(models.Model):
-    """
-    Almacenamiento de referencias a matrices grandes.
-    Las matrices grandes (BoW, TF-IDF, PCA, etc.) se guardan en Google Drive como pickle.
-    Este modelo almacena solo los metadatos y la referencia.
-    """
-    MATRIX_TYPE_CHOICES = [
-        ('bow', 'Bag of Words'),
-        ('tfidf', 'TF-IDF'),
-        ('pca', 'PCA'),
-        ('tsne', 't-SNE'),
-        ('umap', 'UMAP'),
-    ]
-
-    matrix_type = models.CharField(max_length=20, choices=MATRIX_TYPE_CHOICES)
-    drive_file_id = models.CharField(max_length=255)
-    shape_rows = models.IntegerField()
-    shape_cols = models.IntegerField()
-    sparsity = models.FloatField(null=True, blank=True)
-    file_size_bytes = models.BigIntegerField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = 'matrix_storage'
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['matrix_type']),
-        ]
-
-    def __str__(self):
-        return f"{self.get_matrix_type_display()} - {self.shape_rows}x{self.shape_cols}"
-
-
 class Topic(models.Model):
     """
     Temas descubiertos por Topic Modeling.
@@ -158,37 +123,6 @@ class Topic(models.Model):
 
     def __str__(self):
         return f"{self.get_model_type_display()} - Tema {self.topic_number}"
-
-
-class DocumentTopic(models.Model):
-    """
-    Relación documento-tema.
-    Almacena la probabilidad de que un documento pertenezca a un tema.
-    """
-    document = models.ForeignKey(
-        DatasetFile,
-        on_delete=models.CASCADE,
-        related_name='topic_assignments'
-    )
-    topic = models.ForeignKey(
-        Topic,
-        on_delete=models.CASCADE,
-        related_name='document_assignments'
-    )
-    probability = models.FloatField(
-        help_text="Probabilidad de que el documento pertenezca a este tema (0-1)"
-    )
-
-    class Meta:
-        db_table = 'document_topics'
-        ordering = ['-probability']
-        indexes = [
-            models.Index(fields=['-probability']),
-            models.Index(fields=['document', 'topic']),
-        ]
-
-    def __str__(self):
-        return f"{self.document.filename} - {self.topic}: {self.probability:.4f}"
 
 
 class Factor(models.Model):
