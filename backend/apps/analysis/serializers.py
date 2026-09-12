@@ -5,9 +5,7 @@ Contains serializers for:
 - Vocabulary: Terminos del corpus
 - BowMatrix: Matriz Bag of Words
 - TfidfMatrix: Matriz TF-IDF
-- MatrixStorage: Referencias a matrices en Drive
 - Topic: Temas descubiertos
-- DocumentTopic: Relacien documento-tema
 - Factor: Factores de transformacien digital
 - DocumentFactor: Relacien documento-factor
 """
@@ -17,9 +15,7 @@ from .models import (
     Vocabulary,
     BowMatrix,
     TfidfMatrix,
-    MatrixStorage,
     Topic,
-    DocumentTopic,
     Factor,
     DocumentFactor,
 )
@@ -122,31 +118,6 @@ class TfidfMatrixSimpleSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
-class MatrixStorageSerializer(serializers.ModelSerializer):
-    """
-    Serializer para el modelo MatrixStorage.
-    """
-    matrix_type_display = serializers.CharField(
-        source='get_matrix_type_display',
-        read_only=True
-    )
-
-    class Meta:
-        model = MatrixStorage
-        fields = [
-            'id',
-            'matrix_type',
-            'matrix_type_display',
-            'drive_file_id',
-            'shape_rows',
-            'shape_cols',
-            'sparsity',
-            'file_size_bytes',
-            'created_at',
-        ]
-        read_only_fields = ['id', 'created_at']
-
-
 class TopicSerializer(serializers.ModelSerializer):
     """
     Serializer para el modelo Topic.
@@ -168,49 +139,6 @@ class TopicSerializer(serializers.ModelSerializer):
             'created_at',
         ]
         read_only_fields = ['id', 'created_at']
-
-
-class DocumentTopicSerializer(serializers.ModelSerializer):
-    """
-    Serializer para el modelo DocumentTopic.
-    Incluye datos anidados de documento y tema.
-    """
-    document = DocumentListSerializer(read_only=True)
-    topic = TopicSerializer(read_only=True)
-
-    class Meta:
-        model = DocumentTopic
-        fields = [
-            'id',
-            'document',
-            'topic',
-            'probability',
-        ]
-        read_only_fields = ['id']
-
-
-class DocumentTopicSimpleSerializer(serializers.ModelSerializer):
-    """
-    Serializer simple para DocumentTopic sin datos anidados.
-    """
-    document_filename = serializers.CharField(source='document.filename', read_only=True)
-    topic_display = serializers.SerializerMethodField()
-
-    class Meta:
-        model = DocumentTopic
-        fields = [
-            'id',
-            'document',
-            'document_filename',
-            'topic',
-            'topic_display',
-            'probability',
-        ]
-        read_only_fields = ['id']
-
-    def get_topic_display(self, obj):
-        """Retorna descripcien del tema."""
-        return f"{obj.topic.get_model_type_display()} - Tema {obj.topic.topic_number}"
 
 
 class FactorSerializer(serializers.ModelSerializer):

@@ -9,7 +9,7 @@ from typing import Any, Dict, List
 
 from apps.analysis.services.topic_modeling_service import TopicModelingService
 from apps.datasets.models import DatasetFile
-from apps.analysis.models import Topic, DocumentTopic
+from apps.analysis.models import Topic
 from apps.infrastructure.cache.triple_layer_cache import TripleLayerCacheService
 
 logger = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ class TrainTopicModelsUseCase:
     Orchestrates:
     - TopicModelingService (train LDA, NMF, LSA, pLSA)
     - Document model (get preprocessed texts)
-    - Topic and DocumentTopic models (save results)
+    - Topic model (save results)
     - TripleLayerCacheService (cache results)
     """
 

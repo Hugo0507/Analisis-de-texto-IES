@@ -8,9 +8,7 @@ from .models import (
     Vocabulary,
     BowMatrix,
     TfidfMatrix,
-    MatrixStorage,
     Topic,
-    DocumentTopic,
     Factor,
     DocumentFactor,
 )
@@ -84,65 +82,6 @@ class TfidfMatrixAdmin(admin.ModelAdmin):
     tfidf_score_formatted.short_description = 'TF-IDF Score'
 
 
-@admin.register(MatrixStorage)
-class MatrixStorageAdmin(admin.ModelAdmin):
-    """
-    Admin interface for MatrixStorage model.
-    """
-    list_display = (
-        'matrix_type_badge',
-        'shape_display',
-        'sparsity_formatted',
-        'file_size_display',
-        'created_at',
-    )
-    list_filter = ('matrix_type', 'created_at')
-    search_fields = ('drive_file_id',)
-    readonly_fields = ('created_at',)
-    ordering = ('-created_at',)
-    date_hierarchy = 'created_at'
-
-    def matrix_type_badge(self, obj):
-        """Badge colorido para tipo de matriz."""
-        colors = {
-            'bow': '#007BFF',
-            'tfidf': '#28A745',
-            'pca': '#FFC107',
-            'tsne': '#DC3545',
-            'umap': '#6F42C1',
-        }
-        return format_html(
-            '<span style="background-color: {}; color: white; padding: 3px 8px; border-radius: 3px; font-weight: bold;">{}</span>',
-            colors.get(obj.matrix_type, '#999'),
-            obj.get_matrix_type_display()
-        )
-    matrix_type_badge.short_description = 'Tipo de Matriz'
-
-    def shape_display(self, obj):
-        """Muestra dimensiones de la matriz."""
-        return f"{obj.shape_rows} e {obj.shape_cols}"
-    shape_display.short_description = 'Dimensiones'
-
-    def sparsity_formatted(self, obj):
-        """Muestra sparsity formateado."""
-        if obj.sparsity is not None:
-            return f"{obj.sparsity:.2%}"
-        return "N/A"
-    sparsity_formatted.short_description = 'Sparsity'
-
-    def file_size_display(self, obj):
-        """Muestra tamaeo de archivo legible."""
-        if not obj.file_size_bytes:
-            return "N/A"
-        size = obj.file_size_bytes
-        for unit in ['B', 'KB', 'MB', 'GB']:
-            if size < 1024.0:
-                return f"{size:.2f} {unit}"
-            size /= 1024.0
-        return f"{size:.2f} TB"
-    file_size_display.short_description = 'Tamaeo'
-
-
 @admin.register(Topic)
 class TopicAdmin(admin.ModelAdmin):
     """
@@ -198,36 +137,6 @@ class TopicAdmin(admin.ModelAdmin):
             return ", ".join(words)
         return str(obj.top_words)[:50]
     top_words_preview.short_description = 'Top Palabras'
-
-
-@admin.register(DocumentTopic)
-class DocumentTopicAdmin(admin.ModelAdmin):
-    """
-    Admin interface for DocumentTopic model.
-    """
-    list_display = ('document_short', 'topic_display', 'probability_formatted')
-    list_filter = ('topic__model_type',)
-    search_fields = ('document__filename',)
-    autocomplete_fields = ['document', 'topic']
-    ordering = ('-probability',)
-
-    def document_short(self, obj):
-        """Muestra filename truncado."""
-        filename = obj.document.filename
-        if len(filename) > 30:
-            return filename[:27] + '...'
-        return filename
-    document_short.short_description = 'Documento'
-
-    def topic_display(self, obj):
-        """Muestra tema."""
-        return f"{obj.topic.get_model_type_display()} - Tema {obj.topic.topic_number}"
-    topic_display.short_description = 'Tema'
-
-    def probability_formatted(self, obj):
-        """Muestra probabilidad formateada."""
-        return f"{obj.probability:.4f}"
-    probability_formatted.short_description = 'Probabilidad'
 
 
 @admin.register(Factor)
