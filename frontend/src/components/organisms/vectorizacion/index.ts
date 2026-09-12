@@ -18,6 +18,7 @@ export { ComparacionView } from './ComparacionView';
 export { WordDetailPanel } from './WordDetailPanel';
 export { ExportModal } from './ExportModal';
 export * from './exports';
+export { AnalysisSection } from './AnalysisSection';
 export { CompareSection } from './CompareSection';
 export { HeatmapSection } from './HeatmapSection';
 export { CooccurrenceSection } from './CooccurrenceSection';

@@ -10,25 +10,21 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { DashboardGrid } from '../organisms';
 import { ChartCard } from '../molecules';
 import { useFilter } from '../../contexts/FilterContext';
 import publicTfidfAnalysisService from '../../services/publicTfidfAnalysisService';
 import type { DocTermMatrix } from '../../services/publicTfidfAnalysisService';
 import { downloadFile, escapeCsvField } from '../../utils/download';
 import { useVectorizationData } from '../../hooks/useVectorizationData';
+import { useVocabularyView } from '../../hooks/useVocabularyView';
+import { useNgramConfigs } from '../../hooks/useNgramConfigs';
+import { useTermSelection } from '../../hooks/useTermSelection';
 import {
-  SimpleWordCloud,
-  VocabularyTable,
-  HorizontalBarChart,
-  TfIdfScatter,
   DownloadIcon,
   CloseIcon,
-  TableIcon,
-  CloudIcon,
   WordDetailPanel,
   ExportModal,
-  getNgramLabel,
+  AnalysisSection,
   CompareSection,
   HeatmapSection,
   CooccurrenceSection,
@@ -53,20 +49,31 @@ import type {
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export const VectorizacionDashboard: React.FC = () => {
-  const [selectedTerm, setSelectedTerm] = useState<SelectedTerm | null>(null);
   const [showExportModal, setShowExportModal] = useState(false);
-  const [vocabView, setVocabView]     = useState<'cloud' | 'table'>('cloud');
-  const [activeNgramConfig, setActiveNgramConfig] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<'analysis' | 'compare' | 'heatmap' | 'cooccurrence' | 'zipf'>('analysis');
-  const [idfRange, setIdfRange] = useState<[number, number]>([0, 1]);
   const [heatmapMode, setHeatmapMode] = useState<'metrics' | 'docterm'>('metrics');
   const [docTermMatrix, setDocTermMatrix] = useState<DocTermMatrix | null>(null);
   const [docTermLoading, setDocTermLoading] = useState(false);
-  const [compareTerms, setCompareTerms] = useState<string[]>([]);
   const [showComparator, setShowComparator] = useState(false);
   const { filters, setSelectedBow, setSelectedNgram, setSelectedTfidf } = useFilter();
 
-  const { data, isLoading, error, refetch } = useVectorizationData(setIdfRange);
+  const { data, isLoading, error, refetch } = useVectorizationData(
+    (range) => vocab.setIdfRange(range),
+  );
+
+  // Estado agrupado en hooks cohesivos. Se desestructura para que el cuerpo
+  // del componente siga leyendose igual, y los objetos completos se pasan
+  // enteros a las secciones extraidas.
+  const vocab = useVocabularyView(data);
+  const ngram = useNgramConfigs(data);
+  const terms = useTermSelection(data);
+
+  // Lo que el cuerpo del dashboard sigue necesitando; el resto viaja dentro
+  // de los objetos vocab / ngram / terms hacia las secciones.
+  const { idfValues, idfFilteredVocab, setVocabView, setIdfRange,
+          compareTerms, setCompareTerms } = vocab;
+  const { ngramConfigs, setActiveNgramConfig } = ngram;
+  const { selectedTerm, setSelectedTerm, buildTerm } = terms;
 
   useEffect(() => {
     setSelectedTerm(null);
@@ -98,19 +105,6 @@ export const VectorizacionDashboard: React.FC = () => {
   }, [filters.selectedTfidfId]);
 
   // ── N-gram configurations ──
-  const ngramConfigs = useMemo(() => {
-    if (!data?.selectedNgram?.results) return [];
-    return Object.entries(data.selectedNgram.results).map(([key, result]) => ({
-      key,
-      label: getNgramLabel(result.ngram_range || [1, 1]),
-      terms: (result.top_terms || []).map(t => ({ id: t.term, label: t.term, value: t.score })),
-      vocabSize: result.vocabulary_size,
-    }));
-  }, [data?.selectedNgram]);
-
-  const activeConfig = ngramConfigs.find(c => c.key === activeNgramConfig) || ngramConfigs[0];
-  const activeNgramTerms = activeConfig?.terms || data?.ngramBarData || [];
-
   // ── Scatter data: TF (from tf_matrix) × IDF (from idf_vector) ──
   const scatterData = useMemo<ScatterPoint[]>(() => {
     const tfidf = data?.selectedTfidf;
@@ -130,9 +124,6 @@ export const VectorizacionDashboard: React.FC = () => {
       .slice(0, 200); // top 200 by TF-IDF for clarity
   }, [data?.selectedTfidf]);
 
-  // ── Vocabulary for table (full, from bow.vocabulary) ──
-  const fullVocabulary = data?.selectedBow?.vocabulary || {};
-  const idfValues      = data?.selectedTfidf?.idf_vector?.idf_values || {};
   const tfidfScoresMap = useMemo(() => {
     const m: Record<string, number> = {};
     (data?.selectedTfidf?.tfidf_matrix?.top_terms || []).forEach(t => { m[t.term] = t.score; });
@@ -227,66 +218,7 @@ export const VectorizacionDashboard: React.FC = () => {
       .map(([, freq], i) => ({ rank: i + 1, freq }));
   }, [data?.selectedBow]);
 
-  // ── TRANS-5: IDF bounds for range slider ──
-  const idfBounds = useMemo(() => {
-    const vals = Object.values(idfValues);
-    if (vals.length === 0) return { min: 0, max: 1, step: 0.01 };
-    const mn = Math.floor(Math.min(...vals) * 100) / 100;
-    const mx = Math.ceil(Math.max(...vals) * 100) / 100;
-    return { min: mn, max: mx, step: Math.round(((mx - mn) / 100) * 100) / 100 || 0.01 };
-  }, [idfValues]);
-
-  // ── TRANS-5: filtered vocabulary by IDF range ──
-  const idfFilteredVocab = useMemo(() => {
-    if (Object.keys(idfValues).length === 0) return fullVocabulary;
-    const [lo, hi] = idfRange;
-    const filtered: Record<string, number> = {};
-    Object.entries(fullVocabulary).forEach(([term, freq]) => {
-      const idf = idfValues[term];
-      if (idf === undefined || (idf >= lo && idf <= hi)) filtered[term] = freq;
-    });
-    return filtered;
-  }, [fullVocabulary, idfValues, idfRange]);
-
   // ── Term selection handler ──
-  const buildTerm = useCallback((text: string, source: SelectedTerm['source'], bowScore?: number, bowRank?: number): SelectedTerm => {
-    const tfidfEntry = data?.tfidfTopTerms?.find(t => t.term === text);
-    const idfScore   = data?.selectedTfidf?.idf_vector?.idf_values?.[text] ?? null;
-    const relatedNgrams = (data?.ngramBarData || []).filter(ng => ng.label.toLowerCase().includes(text.toLowerCase()));
-    return { text, bowScore: bowScore ?? null, bowRank: bowRank ?? null, tfidfScore: tfidfEntry?.score ?? null, tfidfRank: tfidfEntry?.rank ?? null, idfScore, relatedNgrams, source };
-  }, [data]);
-
-  const handleWordClick = useCallback((word: { text: string; value: number }) => {
-    const bowEntry = data?.selectedBow?.top_terms?.find(t => t.term === word.text);
-    const term = buildTerm(word.text, 'bow', word.value, bowEntry?.rank);
-    setSelectedTerm(prev => prev?.text === word.text ? null : term);
-  }, [data, buildTerm]);
-
-  const handleVocabTableClick = useCallback((termText: string, freq: number) => {
-    const bowEntry = data?.selectedBow?.top_terms?.find(t => t.term === termText);
-    const term = buildTerm(termText, 'bow', freq, bowEntry?.rank);
-    setSelectedTerm(prev => prev?.text === termText ? null : term);
-  }, [data, buildTerm]);
-
-  const handleBarClick = useCallback((source: 'tfidf' | 'ngram') => (item: { id: string; label: string; value: number }) => {
-    if (source === 'tfidf') {
-      const bowEntry = data?.selectedBow?.top_terms?.find(t => t.term === item.id);
-      const term = buildTerm(item.id, 'tfidf', bowEntry?.score, bowEntry?.rank);
-      setSelectedTerm(prev => prev?.text === item.id ? null : { ...term, tfidfScore: item.value });
-    } else {
-      const term = buildTerm(item.label, 'ngram');
-      setSelectedTerm(prev => prev?.text === item.label ? null : term);
-    }
-  }, [data, buildTerm]);
-
-  const handleScatterClick = useCallback((termText: string) => {
-    const bowEntry  = data?.selectedBow?.top_terms?.find(t => t.term === termText);
-    const tfidfEntry = data?.tfidfTopTerms?.find(t => t.term === termText);
-    const term = buildTerm(termText, 'tfidf', bowEntry?.score, bowEntry?.rank);
-    if (tfidfEntry) term.tfidfScore = tfidfEntry.score;
-    setSelectedTerm(prev => prev?.text === termText ? null : term);
-  }, [data, buildTerm]);
-
   const handleExportTerm = useCallback((term: SelectedTerm) => {
     const rows: (string | number)[][] = [
       ['termino', term.text],
@@ -600,275 +532,19 @@ export const VectorizacionDashboard: React.FC = () => {
         })}
       </div>
 
-      {/* ═══════════════ ANÁLISIS section ═══════════════ */}
-      {activeSection === 'analysis' && <>
-
-      {/* ── BoW: Nube de Palabras ↔ Tabla de Vocabulario ── */}
-      {(data?.wordCloudData?.length || 0) > 0 || Object.keys(fullVocabulary).length > 0 ? (
-        <ChartCard
-          title={vocabView === 'cloud' ? 'Nube de Palabras' : 'Tabla de Vocabulario Completa'}
-          subtitle={vocabView === 'cloud'
-            ? `Haz clic en una palabra para ver su análisis${data?.selectedBow ? ` · ${data.selectedBow.name}` : ''}`
-            : `${Object.keys(fullVocabulary).length > 0 ? Object.keys(fullVocabulary).length.toLocaleString() : data?.selectedBow?.vocabulary_size?.toLocaleString() || 0} términos — haz clic para analizar`}
-          accentColor="cyan"
-          size="lg"
-          icon={vocabView === 'cloud' ? <CloudIcon /> : <TableIcon />}
-          downloadable={vocabView === 'cloud'}
-          onRefreshClick={() => refetch()}
-          isLoading={isLoading}
-          headerExtra={
-            <button
-              onClick={() => setVocabView(v => v === 'cloud' ? 'table' : 'cloud')}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-600/50 text-slate-300 hover:bg-slate-700/40 hover:text-white transition-colors"
-            >
-              {vocabView === 'cloud' ? <><TableIcon /><span>Ver tabla</span></> : <><CloudIcon /><span>Ver nube</span></>}
-            </button>
-          }
-        >
-          {vocabView === 'cloud' ? (
-            <div className="min-h-[280px] overflow-hidden">
-              <SimpleWordCloud
-                data={data?.wordCloudData || []}
-                maxWords={60}
-                onWordClick={handleWordClick}
-                selectedWord={selectedTerm?.source === 'bow' ? selectedTerm.text : null}
-              />
-            </div>
-          ) : (
-            <div className="p-1">
-              {/* TRANS-5: IDF range filter */}
-              {Object.keys(idfValues).length > 0 && (
-                <div className="flex items-center gap-3 mb-3 px-1 py-2 rounded-lg bg-slate-800/40 border border-slate-700/40">
-                  <span className="text-xs text-slate-400 whitespace-nowrap font-medium shrink-0">Filtrar IDF:</span>
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="text-xs text-slate-500 w-10 text-right shrink-0">{idfRange[0].toFixed(2)}</span>
-                    <input
-                      type="range" min={idfBounds.min} max={idfBounds.max} step={idfBounds.step}
-                      value={idfRange[0]}
-                      onChange={e => setIdfRange([Math.min(Number(e.target.value), idfRange[1] - idfBounds.step), idfRange[1]])}
-                      className="flex-1 h-1.5 accent-blue-500"
-                    />
-                    <input
-                      type="range" min={idfBounds.min} max={idfBounds.max} step={idfBounds.step}
-                      value={idfRange[1]}
-                      onChange={e => setIdfRange([idfRange[0], Math.max(Number(e.target.value), idfRange[0] + idfBounds.step)])}
-                      className="flex-1 h-1.5 accent-blue-500"
-                    />
-                    <span className="text-xs text-slate-500 w-10 shrink-0">{idfRange[1].toFixed(2)}</span>
-                  </div>
-                  <button
-                    onClick={() => setIdfRange([idfBounds.min, idfBounds.max])}
-                    className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded hover:bg-slate-700/50 transition-colors shrink-0"
-                  >Reset</button>
-                  <span className="text-xs text-blue-400 shrink-0">{Object.keys(idfFilteredVocab).length} términos</span>
-                </div>
-              )}
-              <VocabularyTable
-                vocabulary={Object.keys(idfFilteredVocab).length > 0 ? idfFilteredVocab : Object.fromEntries((data?.selectedBow?.top_terms || []).map(t => [t.term, t.score]))}
-                idfValues={idfValues}
-                tfidfScores={tfidfScoresMap}
-                onTermClick={handleVocabTableClick}
-                selectedTerm={selectedTerm?.text ?? null}
-                compareTerms={compareTerms}
-                onCompareToggle={term => {
-                  setCompareTerms(prev => prev.includes(term) ? prev.filter(t => t !== term) : prev.length < 3 ? [...prev, term] : prev);
-                }}
-              />
-            </div>
-          )}
-        </ChartCard>
-      ) : null}
-
-      {/* ── N-gramas con Tabs + TF-IDF side by side ── */}
-      <DashboardGrid columns={2} gap="lg">
-        {/* N-gramas con tabs por tamaño */}
-        <ChartCard
-          title="N-gramas"
-          subtitle={activeConfig
-            ? `${activeConfig.label} · ${activeConfig.vocabSize?.toLocaleString() || activeConfig.terms.length} términos`
-            : data?.selectedNgram ? data.selectedNgram.name : 'Secuencias más frecuentes'}
-          accentColor="purple"
-          size="lg"
-          downloadable
-          icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>}
-          onRefreshClick={() => refetch()}
-          isLoading={isLoading}
-        >
-          {/* Tabs por configuración */}
-          {ngramConfigs.length > 1 && (
-            <div className="flex gap-1 mb-3 flex-wrap border-b border-slate-700/40 pb-2">
-              {ngramConfigs.map(cfg => (
-                <button key={cfg.key}
-                  onClick={() => setActiveNgramConfig(cfg.key)}
-                  className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${
-                    (activeNgramConfig === cfg.key || (!activeNgramConfig && cfg === ngramConfigs[0]))
-                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/30'
-                  }`}
-                >
-                  {cfg.label}
-                  <span className="ml-1.5 text-slate-500 text-xs">({cfg.vocabSize?.toLocaleString() || cfg.terms.length})</span>
-                </button>
-              ))}
-            </div>
-          )}
-          <div className="h-[280px] overflow-y-auto pr-1">
-            {activeNgramTerms.length > 0 ? (
-              <HorizontalBarChart
-                data={activeNgramTerms}
-                maxBars={15}
-                colorClass="bg-gradient-to-r from-purple-500 to-violet-500"
-                onItemClick={handleBarClick('ngram')}
-                selectedId={selectedTerm?.source === 'ngram' ? selectedTerm.text : null}
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full text-slate-500 text-sm">
-                {data?.ngramAnalyses?.length === 0 ? 'No hay análisis de N-gramas disponibles' : 'Sin datos de N-gramas'}
-              </div>
-            )}
-          </div>
-        </ChartCard>
-
-        {/* TF-IDF Top Terms */}
-        <ChartCard
-          title="Top TF-IDF"
-          subtitle={`Haz clic para analizar · ${data?.selectedTfidf ? data.selectedTfidf.name : 'Términos con mayor peso'}`}
-          accentColor="blue"
-          size="lg"
-          downloadable
-          icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>}
-          onRefreshClick={() => refetch()}
-          isLoading={isLoading}
-        >
-          <div className="h-[300px] overflow-y-auto pr-1">
-            {data?.tfidfTopTerms && data.tfidfTopTerms.length > 0 ? (
-              <HorizontalBarChart
-                data={data.tfidfTopTerms.slice(0, 15).map(t => ({ id: t.term, label: t.term, value: Math.round(t.score * 10000) / 10000 }))}
-                maxBars={15}
-                colorClass="bg-gradient-to-r from-blue-500 to-cyan-500"
-                onItemClick={handleBarClick('tfidf')}
-                selectedId={selectedTerm?.source === 'tfidf' ? selectedTerm.text : null}
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full text-slate-500 text-sm">
-                {data?.tfidfAnalyses?.length === 0 ? 'No hay análisis TF-IDF disponibles' : 'Sin datos TF-IDF'}
-              </div>
-            )}
-          </div>
-        </ChartCard>
-      </DashboardGrid>
-
-      {/* ── Scatter Plot TF vs IDF ── */}
-      {data?.selectedTfidf && (
-        <ChartCard
-          title="Scatter: TF vs IDF"
-          subtitle={`Cada punto es un término — posición: frecuencia (X) vs especificidad (Y) — tamaño: score TF-IDF · ${scatterData.length} términos`}
-          accentColor="blue"
-          size="lg"
-          downloadable
-          icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>}
-          onRefreshClick={() => refetch()}
-          isLoading={isLoading}
-        >
-          <div className="pt-2 pl-4">
-            <TfIdfScatter
-              data={scatterData}
-              onPointClick={handleScatterClick}
-              selectedTerm={selectedTerm?.text ?? null}
-            />
-          </div>
-          {/* Interpretation guide */}
-          <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-slate-400 border-t border-slate-700/40 pt-3">
-            <div className="space-y-1">
-              <p className="font-medium text-slate-300">↗ Arriba-izquierda</p>
-              <p>IDF alto + TF bajo → Términos raros y específicos (muy descriptivos)</p>
-            </div>
-            <div className="space-y-1">
-              <p className="font-medium text-slate-300">↘ Abajo-derecha</p>
-              <p>IDF bajo + TF alto → Términos comunes (stopwords residuales o ruido)</p>
-            </div>
-            <div className="space-y-1">
-              <p className="font-medium text-slate-300">↗ Arriba-derecha</p>
-              <p>IDF alto + TF alto → Términos clave del corpus (ideal para análisis)</p>
-            </div>
-            <div className="space-y-1">
-              <p className="font-medium text-slate-300">↙ Abajo-izquierda</p>
-              <p>IDF bajo + TF bajo → Términos poco significativos en general</p>
-            </div>
-          </div>
-        </ChartCard>
-      )}
-
-      {/* ── Analysis Selector (when multiple) ── */}
-      {((data?.bowAnalyses?.length || 0) > 1 || (data?.ngramAnalyses?.length || 0) > 1 || (data?.tfidfAnalyses?.length || 0) > 1) && (
-        <ChartCard
-          title="Selección de Análisis"
-          subtitle="Elige qué análisis visualizar"
-          accentColor="emerald"
-          size="sm"
-          icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>}
-        >
-          <div className="grid grid-cols-3 gap-4 p-2">
-            {data?.bowAnalyses && data.bowAnalyses.length > 1 && (
-              <div>
-                <label className="text-xs text-slate-400 block mb-1">Bag of Words</label>
-                <select value={filters.selectedBowId || ''} onChange={e => setSelectedBow(e.target.value ? Number(e.target.value) : null)}
-                  className="w-full bg-slate-800/50 border border-slate-600/50 rounded-lg px-3 py-1.5 text-sm text-white">
-                  <option value="">Más reciente</option>
-                  {data.bowAnalyses.map(bow => <option key={bow.id} value={bow.id}>{bow.name}</option>)}
-                </select>
-              </div>
-            )}
-            {data?.ngramAnalyses && data.ngramAnalyses.length > 1 && (
-              <div>
-                <label className="text-xs text-slate-400 block mb-1">N-gramas</label>
-                <select value={filters.selectedNgramId || ''} onChange={e => setSelectedNgram(e.target.value ? Number(e.target.value) : null)}
-                  className="w-full bg-slate-800/50 border border-slate-600/50 rounded-lg px-3 py-1.5 text-sm text-white">
-                  <option value="">Más reciente</option>
-                  {data.ngramAnalyses.map(ng => <option key={ng.id} value={ng.id}>{ng.name}</option>)}
-                </select>
-              </div>
-            )}
-            {data?.tfidfAnalyses && data.tfidfAnalyses.length > 1 && (
-              <div>
-                <label className="text-xs text-slate-400 block mb-1">TF-IDF</label>
-                <select value={filters.selectedTfidfId || ''} onChange={e => setSelectedTfidf(e.target.value ? Number(e.target.value) : null)}
-                  className="w-full bg-slate-800/50 border border-slate-600/50 rounded-lg px-3 py-1.5 text-sm text-white">
-                  <option value="">Más reciente</option>
-                  {data.tfidfAnalyses.map(tf => <option key={tf.id} value={tf.id}>{tf.name}</option>)}
-                </select>
-              </div>
-            )}
-          </div>
-        </ChartCard>
-      )}
-
-      {/* ── BoW Details ── */}
-      {data?.selectedBow && (
-        <ChartCard
-          title="Detalles del Análisis BoW"
-          subtitle={data.selectedBow.name}
-          accentColor="cyan"
-          size="md"
-          icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-        >
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-2">
-            {[
-              { label: 'Vocabulario', value: data.selectedBow.vocabulary_size?.toLocaleString(), color: 'text-cyan-400' },
-              { label: 'Documentos',  value: data.selectedBow.document_count?.toLocaleString(),  color: 'text-emerald-400' },
-              { label: 'Min DF',      value: data.selectedBow.min_df || 1,                        color: 'text-purple-400' },
-              { label: 'Max Features',value: data.selectedBow.max_features || '∞',               color: 'text-amber-400' },
-            ].map(s => (
-              <div key={s.label} className="text-center p-3 rounded-lg bg-slate-800/30">
-                <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-                <p className="text-xs text-slate-400">{s.label}</p>
-              </div>
-            ))}
-          </div>
-        </ChartCard>
-      )}
-
-      </> /* end analysis section */}
+      <AnalysisSection
+        activeSection={activeSection}
+        data={data}
+        isLoading={isLoading}
+        refetch={refetch}
+        filters={filters}
+        filterSetters={{ setSelectedBow, setSelectedNgram, setSelectedTfidf }}
+        vocab={vocab}
+        ngram={ngram}
+        terms={terms}
+        scatterData={scatterData}
+        tfidfScoresMap={tfidfScoresMap}
+      />
 
       <CompareSection
         activeSection={activeSection}
