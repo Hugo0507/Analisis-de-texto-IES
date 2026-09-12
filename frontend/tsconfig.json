@@ -30,16 +30,7 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
     "noEmit": true,
-    "baseUrl": "src",
-    "paths": {
-      "@components/*": ["components/*"],
-      "@pages/*": ["pages/*"],
-      "@services/*": ["services/*"],
-      "@hooks/*": ["hooks/*"],
-      "@context/*": ["context/*"],
-      "@types/*": ["types/*"],
-      "@styles/*": ["styles/*"]
-    }
+    "baseUrl": "src"
   },
   "include": [
     "src"
