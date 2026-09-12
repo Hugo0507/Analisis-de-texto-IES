@@ -180,9 +180,12 @@ class PublicWorkspaceViewSet(viewsets.ViewSet):
             status=status.HTTP_202_ACCEPTED,
         )
 
-    @action(detail=True, methods=['get'])
+    # url_path con barra para que la ruta publica coincida con la del API
+    # autenticado (apps/workspace/urls.py): sin el, el router de DRF genera
+    # /export_excel/ y el frontend, que pide /export/excel/, recibe un 404.
+    @action(detail=True, methods=['get'], url_path='export/excel')
     def export_excel(self, request, pk=None):
-        """GET /api/v1/public/workspace/{uuid}/export_excel/ — Export as .xlsx."""
+        """GET /api/v1/public/workspace/{uuid}/export/excel/ — Export as .xlsx."""
         from django.http import HttpResponse
         workspace = self._get_workspace(pk)
         if not workspace:
@@ -208,9 +211,9 @@ class PublicWorkspaceViewSet(viewsets.ViewSet):
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['get'], url_path='export/config')
     def export_config(self, request, pk=None):
-        """GET /api/v1/public/workspace/{uuid}/export_config/ — Export config+results as JSON."""
+        """GET /api/v1/public/workspace/{uuid}/export/config/ — Export config+results as JSON."""
         from django.http import HttpResponse
         workspace = self._get_workspace(pk)
         if not workspace:
