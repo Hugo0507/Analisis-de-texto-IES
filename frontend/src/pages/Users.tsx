@@ -26,7 +26,7 @@ export const Users: React.FC = () => {
   useEffect(() => {
     if (!currentUser) return;
 
-    if (currentUser.role !== 'admin') {
+    if (!currentUser.is_admin) {
       showError('No tienes permisos para acceder a esta página');
       navigate('/dashboard');
       return;
@@ -135,7 +135,7 @@ export const Users: React.FC = () => {
             </button>
 
             {/* Add Button - Only for admins */}
-            {currentUser?.role === 'admin' && (
+            {currentUser?.is_admin && (
               <button
                 onClick={() => navigate('/admin/configuracion/usuarios/nuevo')}
                 className="p-3 bg-emerald-500 hover:bg-emerald-600 rounded-full transition-all shadow-md hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-400"
@@ -168,11 +168,11 @@ export const Users: React.FC = () => {
               No hay usuarios registrados
             </h3>
             <p className="text-sm text-gray-600 mb-6">
-              {currentUser?.role === 'admin'
+              {currentUser?.is_admin
                 ? 'Comienza creando tu primer usuario'
                 : 'No tienes permisos para gestionar usuarios'}
             </p>
-            {currentUser?.role === 'admin' && (
+            {currentUser?.is_admin && (
               <button
                 onClick={() => navigate('/admin/configuracion/usuarios/nuevo')}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full transition-colors font-medium shadow-md"
@@ -241,7 +241,7 @@ export const Users: React.FC = () => {
 
                     {/* Acciones Column - Only for admins */}
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      {currentUser?.role === 'admin' ? (
+                      {currentUser?.is_admin ? (
                         <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                           {/* Editar Button */}
                           <button

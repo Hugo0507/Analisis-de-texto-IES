@@ -10,6 +10,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from django.http import FileResponse, HttpResponse, Http404
 from rest_framework import viewsets, status
+from apps.core.permissions import IsAdminRole
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -29,16 +30,6 @@ from .services import DatasetProcessorService, SimpleDriveService, BibExtractorS
 logger = logging.getLogger(__name__)
 
 
-class IsAdminUser(IsAuthenticated):
-    """
-    Permission class that only allows admin users.
-    """
-    def has_permission(self, request, view):
-        if not super().has_permission(request, view):
-            return False
-        return request.user.is_admin
-
-
 class DatasetViewSet(viewsets.ModelViewSet):
     """
     ViewSet for Dataset management.
@@ -46,7 +37,7 @@ class DatasetViewSet(viewsets.ModelViewSet):
     Only accessible by admin users.
     """
     queryset = Dataset.objects.all().prefetch_related('files')
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminRole]
 
     def get_serializer_class(self):
         """Return appropriate serializer based on action."""

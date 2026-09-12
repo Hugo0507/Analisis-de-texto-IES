@@ -35,7 +35,7 @@ export const UserCreate: React.FC = () => {
   useEffect(() => {
     if (!currentUser) return;
 
-    if (currentUser.role !== 'admin') {
+    if (!currentUser.is_admin) {
       showError('No tienes permisos para crear usuarios');
       navigate('/admin/configuracion/usuarios');
     }

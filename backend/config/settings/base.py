@@ -175,8 +175,13 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
     ],
+    # Cerrado por defecto: cada vista que deba ser publica lo declara
+    # explicitamente (AllowAny), como hace todo apps/public_api. Antes esto
+    # era AllowAny y solo se endurecia a IsAuthenticated dentro del try de
+    # simplejwt de mas abajo: si ese import fallaba, el API entero quedaba
+    # abierto sin que nada lo avisara.
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
@@ -220,9 +225,8 @@ try:
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ]
-    REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = [
-        'rest_framework.permissions.IsAuthenticated',
-    ]
+    # El default ya es IsAuthenticated; aqui solo se anaden las clases de
+    # autenticacion JWT.
 
     SIMPLE_JWT = {
         'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),

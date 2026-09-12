@@ -243,7 +243,18 @@ class TestUserListPermissions:
         resp = client.get(f'{BASE}/users/')
         assert resp.status_code in (401, 403)
 
-    def test_authenticated_user_can_list_users(self, auth_client):
+    def test_regular_user_cannot_list_users(self, auth_client):
+        """
+        Listar cuentas es cosa de administradores.
+
+        Antes bastaba con estar autenticado, de modo que cualquier usuario
+        registrado podia enumerar el resto de cuentas con sus correos.
+        """
         client, _ = auth_client
+        resp = client.get(f'{BASE}/users/')
+        assert resp.status_code == 403
+
+    def test_admin_can_list_users(self, admin_client):
+        client, _ = admin_client
         resp = client.get(f'{BASE}/users/')
         assert resp.status_code == 200
