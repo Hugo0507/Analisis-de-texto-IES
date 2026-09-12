@@ -9,8 +9,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import datasetsService from '../services/datasetsService';
 import type { DatasetListItem } from '../services/datasetsService';
-import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
+import { LoadingPanel, PageHeader } from '../components/molecules';
+import { IconButton, RefreshIcon, PlusIcon } from '../components/atoms';
 
 export const DatasetList: React.FC = () => {
   const navigate = useNavigate();
@@ -105,52 +106,37 @@ export const DatasetList: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Spinner size="lg" />
-      </div>
+      <LoadingPanel />
     );
   }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
       {/* Fixed Header */}
-      <div className="sticky top-0 z-40 bg-white border-b border-gray-200" style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-        <div className="flex items-center justify-between px-8 py-4">
-          {/* Left: Icon + Title */}
-          <div className="flex items-center gap-3">
-            <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
-            </svg>
-            <h1 className="text-xl font-semibold text-gray-900">Conjunto de Datos</h1>
-          </div>
-
-          {/* Right: Action Buttons */}
-          <div className="flex items-center gap-3">
-            {/* Refresh Button */}
-            <button
+      <PageHeader
+        title="Conjunto de Datos"
+        icon={
+          <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+          </svg>
+        }
+        actions={
+          <>
+            <IconButton
+              icon={<RefreshIcon />}
               onClick={loadDatasets}
               disabled={isLoading}
-              className="p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400"
               title="Refrescar lista"
-            >
-              <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </button>
-
-            {/* Add Button */}
-            <button
+            />
+            <IconButton
+              icon={<PlusIcon />}
               onClick={() => navigate('/admin/configuracion/datasets/nuevo')}
-              className="p-3 bg-emerald-500 hover:bg-emerald-600 rounded-full transition-all shadow-md hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-400"
+              variant="success"
               title="Crear dataset"
-            >
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
+            />
+          </>
+        }
+      />
 
       {/* Content */}
       <div className="p-8">

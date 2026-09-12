@@ -20,6 +20,7 @@ import type {
 } from '../services/datasetsService';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
+import { usePolling } from '../hooks/usePolling';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -273,11 +274,7 @@ export const DatasetView: React.FC = () => {
     loadDataset();
   }, [id, loadDataset]);
 
-  useEffect(() => {
-    if (!dataset || dataset.status !== 'processing') return;
-    const poll = setInterval(loadDataset, 5000);
-    return () => clearInterval(poll);
-  }, [dataset?.status, loadDataset]);
+  usePolling(() => loadDataset(), dataset?.status === 'processing', { intervalMs: 5000 });
 
   const handleExtractMetadata = async (force = false) => {
     if (!id) return;

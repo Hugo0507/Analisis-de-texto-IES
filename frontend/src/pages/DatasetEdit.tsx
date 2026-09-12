@@ -11,6 +11,7 @@ import datasetsService from '../services/datasetsService';
 import type { Dataset } from '../services/datasetsService';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
+import { LoadingPanel } from '../components/molecules';
 
 type ImportMethod = 'files' | 'folder';
 
@@ -122,9 +123,7 @@ export const DatasetEdit: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Spinner size="lg" />
-      </div>
+      <LoadingPanel />
     );
   }
 

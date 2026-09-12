@@ -5,11 +5,11 @@ Procesamiento en background de análisis de múltiples configuraciones de N-gram
 """
 
 import logging
-import threading
 from typing import List, Dict, Any, Tuple
 from sklearn.feature_extraction.text import CountVectorizer
 from django.utils import timezone
 from apps.core.nlp.matrix_stats import calculate_sparsity, calculate_statistics
+from apps.core.background import run_in_background
 
 logger = logging.getLogger(__name__)
 
@@ -294,16 +294,5 @@ def calculate_comparisons(
 
 
 def start_processing_thread(ngram_id: int):
-    """
-    Iniciar procesamiento en thread de background.
-
-    Args:
-        ngram_id: ID del análisis NgramAnalysis a procesar
-    """
-    thread = threading.Thread(
-        target=process_ngram_analysis,
-        args=(ngram_id,),
-        daemon=True
-    )
-    thread.start()
-    logger.info(f"Thread de procesamiento Ngram iniciado para ID {ngram_id}")
+    """Lanza el procesamiento de N-gramas en segundo plano."""
+    return run_in_background(process_ngram_analysis, ngram_id, label=f'N-gramas #{ngram_id}')

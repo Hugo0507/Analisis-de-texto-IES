@@ -14,7 +14,6 @@ Architecture: Split into focused modules:
 import logging
 import os
 import re
-import threading
 import traceback
 from typing import Dict, List
 
@@ -26,6 +25,7 @@ from .pdf_extractor import PDFExtractor
 from .drive_downloader import DriveFileDownloader
 from .language_detector import LanguageDetector
 from apps.datasets.models import DatasetFile
+from apps.core.background import run_in_background
 
 logger = logging.getLogger(__name__)
 
@@ -308,14 +308,8 @@ def process_data_preparation(preparation_id: int):
 
 
 def start_processing_thread(preparation_id: int):
-    """Iniciar procesamiento en thread de background."""
-    thread = threading.Thread(
-        target=process_data_preparation,
-        args=(preparation_id,),
-        daemon=True
-    )
-    thread.start()
-    logger.info(f"Thread started for preparation {preparation_id}")
+    """Lanza el procesamiento de Preparacion de datos en segundo plano."""
+    return run_in_background(process_data_preparation, preparation_id, label=f'Preparacion de datos #{preparation_id}')
 
 
 def update_data_preparation(preparation_id: int):
@@ -532,11 +526,6 @@ def _extract_new_file_texts(preparation, new_files, total_new: int) -> List[Dict
 
 
 def start_update_thread(preparation_id: int):
-    """Iniciar actualizacion en thread de background."""
-    thread = threading.Thread(
-        target=update_data_preparation,
-        args=(preparation_id,),
-        daemon=True
-    )
-    thread.start()
-    logger.info(f"Update thread started for preparation {preparation_id}")
+    """Lanza la actualizacion de la preparacion de datos en segundo plano."""
+    return run_in_background(update_data_preparation, preparation_id,
+                             label=f'Actualizacion de preparacion #{preparation_id}')

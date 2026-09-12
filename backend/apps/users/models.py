@@ -2,8 +2,24 @@
 User models for authentication and authorization.
 """
 
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager
 from django.db import models
+
+
+class CustomUserManager(UserManager):
+    """
+    Manager de usuarios que mantiene coherentes `role` e `is_superuser`.
+
+    `create_superuser` de Django solo activa is_staff e is_superuser, asi que
+    todo superusuario nacia con el `role` por defecto, 'user'. La propiedad
+    is_admin lo seguia considerando administrador -mira is_superuser-, pero la
+    ficha del usuario decia "Usuario". Esa contradiccion fue justo la que hizo
+    que la cuenta admin fuese rechazada por unas pantallas y aceptada por otras.
+    """
+
+    def create_superuser(self, username, email=None, password=None, **extra_fields):
+        extra_fields.setdefault('role', 'admin')
+        return super().create_superuser(username, email, password, **extra_fields)
 
 
 class User(AbstractUser):
@@ -16,6 +32,8 @@ class User(AbstractUser):
     - is_active: Whether the user account is active
     - role: User role (Admin or User)
     """
+
+    objects = CustomUserManager()
 
     ROLE_CHOICES = [
         ('admin', 'Administrador'),

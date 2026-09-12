@@ -10,8 +10,8 @@ import { useNavigate } from 'react-router-dom';
 import { BarChart2, RefreshCw, Plus, Eye, Trash2, CheckCircle2, XCircle, Clock, Loader2 } from 'lucide-react';
 import factorService from '../services/factorService';
 import type { FactorRunListItem } from '../services/factorService';
-import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
+import { LoadingPanel } from '../components/molecules';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -75,9 +75,7 @@ export const FactorsList: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Spinner size="lg" />
-      </div>
+      <LoadingPanel />
     );
   }
 

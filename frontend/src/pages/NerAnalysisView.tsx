@@ -16,6 +16,8 @@ import nerAnalysisService from '../services/nerAnalysisService';
 import type { NerAnalysis } from '../services/nerAnalysisService';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
+import { LoadingPanel } from '../components/molecules';
+import { usePolling } from '../hooks/usePolling';
 
 // Register ChartJS components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -34,16 +36,11 @@ export const NerAnalysisView: React.FC = () => {
     if (!id) return;
 
     loadAnalysis();
+  }, [id]);
 
-    // Polling cada 2 segundos si está procesando
-    const interval = setInterval(() => {
-      if (analysis?.status === 'processing') {
-        loadProgress();
-      }
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [id, analysis?.status]);
+  // Antes el intervalo se creaba siempre y solo miraba el estado dentro, asi
+  // que un analisis terminado dejaba el temporizador corriendo para siempre.
+  usePolling(() => loadProgress(), analysis?.status === 'processing');
 
   const loadAnalysis = async () => {
     setIsLoading(true);
@@ -165,9 +162,7 @@ export const NerAnalysisView: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Spinner size="lg" />
-      </div>
+      <LoadingPanel />
     );
   }
 

@@ -13,8 +13,9 @@ import ngramAnalysisService from '../services/ngramAnalysisService';
 import type { DataPreparationListItem } from '../services/dataPreparationService';
 import type { BagOfWordsListItem } from '../services/bagOfWordsService';
 import type { NgramAnalysisListItem } from '../services/ngramAnalysisService';
-import { Spinner } from '../components/atoms';
+import { IconButton, CheckIcon } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
+import { LoadingPanel, PageHeader } from '../components/molecules';
 
 type SourceType = 'data_preparation' | 'bag_of_words' | 'ngram_config' | 'ngram_all' | 'ngram_vocabulary';
 
@@ -163,50 +164,29 @@ export const TfIdfCreate: React.FC = () => {
 
   if (isLoadingData) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Spinner size="lg" />
-      </div>
+      <LoadingPanel />
     );
   }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
       {/* Fixed Header */}
-      <div className="sticky top-0 z-40 bg-white border-b border-gray-200" style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-        <div className="flex items-center justify-between px-8 py-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate('/admin/vectorizacion/tf-idf')}
-              className="p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400"
-              title="Volver"
-            >
-              <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-            </button>
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900">Crear Análisis TF-IDF</h1>
-              <p className="text-sm text-gray-500">Matriz TF-IDF desde múltiples fuentes</p>
-            </div>
-          </div>
-
-          {/* Right: Save Button */}
-          <button
+      <PageHeader
+        title="Crear Análisis TF-IDF"
+        subtitle="Matriz TF-IDF desde múltiples fuentes"
+        onBack={() => navigate('/admin/vectorizacion/tf-idf')}
+        backTitle="Volver"
+        actions={
+          <IconButton
+            icon={<CheckIcon />}
             onClick={handleSubmit}
+            variant="success"
+            isLoading={isLoading}
             disabled={isLoading}
-            className="p-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-400"
             title="Guardar"
-          >
-            {isLoading ? (
-              <Spinner size="sm" />
-            ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            )}
-          </button>
-        </div>
-      </div>
+          />
+        }
+      />
 
       {/* Content */}
       <div className="p-8">

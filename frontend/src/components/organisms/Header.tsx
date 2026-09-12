@@ -7,6 +7,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { etiquetaDeRol } from '../../utils/roleLabels';
 
 export interface HeaderProps {
   className?: string;
@@ -48,7 +49,7 @@ export const Header: React.FC<HeaderProps> = ({ className = '' }) => {
                     {user.full_name || user.username}
                   </p>
                   <p className="text-xs text-gray-600">
-                    {user.role === 'admin' ? 'Administrador' : 'Usuario'}
+                    {etiquetaDeRol(user)}
                   </p>
                 </div>
 

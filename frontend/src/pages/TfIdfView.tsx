@@ -4,12 +4,14 @@
  * Muestra las 3 matrices: TF, IDF y TF-IDF con descripciones.
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import tfidfAnalysisService from '../services/tfidfAnalysisService';
 import type { TfIdfAnalysis } from '../services/tfidfAnalysisService';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
+import { LoadingPanel } from '../components/molecules';
+import { usePolling } from '../hooks/usePolling';
 
 type MatrixView = 'tf' | 'idf' | 'tfidf';
 
@@ -17,7 +19,6 @@ export const TfIdfView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showError } = useToast();
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const [analysis, setAnalysis] = useState<TfIdfAnalysis | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,25 +30,8 @@ export const TfIdfView: React.FC = () => {
     }
   }, [id]);
 
-  useEffect(() => {
-    // Polling para progreso
-    if (analysis?.status === 'processing') {
-      pollIntervalRef.current = setInterval(() => {
-        loadProgress();
-      }, 2000);
-    } else {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-        pollIntervalRef.current = null;
-      }
-    }
-
-    return () => {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-      }
-    };
-  }, [analysis?.status]);
+  // El intervalo solo existe mientras el analisis se esta procesando.
+  usePolling(() => loadProgress(), analysis?.status === 'processing');
 
   const loadAnalysis = async () => {
     if (!id) return;
@@ -91,9 +75,7 @@ export const TfIdfView: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Spinner size="lg" />
-      </div>
+      <LoadingPanel />
     );
   }
 

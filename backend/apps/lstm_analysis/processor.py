@@ -8,7 +8,6 @@ Entrenamiento: CrossEntropyLoss + Adam
 """
 
 import logging
-import threading
 import traceback
 import time
 from typing import List, Dict, Tuple, Any
@@ -17,19 +16,14 @@ from collections import Counter
 
 from django.utils import timezone
 from django.db import transaction
+from apps.core.background import run_in_background
 
 logger = logging.getLogger(__name__)
 
 
 def start_processing_thread(lstm_id: int):
-    """Inicia el procesamiento LSTM en un hilo daemon."""
-    thread = threading.Thread(
-        target=process_lstm_analysis,
-        args=(lstm_id,),
-        daemon=True,
-    )
-    thread.start()
-    logger.info(f"🚀 [LSTM] Thread iniciado para análisis #{lstm_id}")
+    """Lanza el procesamiento de LSTM en segundo plano."""
+    return run_in_background(process_lstm_analysis, lstm_id, label=f'LSTM #{lstm_id}')
 
 
 def process_lstm_analysis(lstm_id: int):

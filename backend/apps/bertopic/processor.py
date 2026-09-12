@@ -11,7 +11,6 @@ BERTopic combina:
 """
 
 import logging
-import threading
 import traceback
 from datetime import datetime
 from typing import List, Tuple, Dict, Any
@@ -20,24 +19,14 @@ from collections import Counter, defaultdict
 
 from django.utils import timezone
 from django.db import transaction
+from apps.core.background import run_in_background
 
 logger = logging.getLogger(__name__)
 
 
 def start_processing_thread(bertopic_id: int):
-    """
-    Inicia procesamiento de BERTopic en background thread.
-
-    Args:
-        bertopic_id: ID del análisis BERTopic
-    """
-    thread = threading.Thread(
-        target=process_bertopic_analysis,
-        args=(bertopic_id,),
-        daemon=True
-    )
-    thread.start()
-    logger.info(f"🚀 [BERTopic] Thread iniciado para análisis #{bertopic_id}")
+    """Lanza el procesamiento de BERTopic en segundo plano."""
+    return run_in_background(process_bertopic_analysis, bertopic_id, label=f'BERTopic #{bertopic_id}')
 
 
 def process_bertopic_analysis(bertopic_id: int):

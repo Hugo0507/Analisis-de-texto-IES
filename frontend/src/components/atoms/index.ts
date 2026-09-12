@@ -23,3 +23,6 @@ export { Toast } from './Toast';
 export type { ToastProps } from './Toast';
 
 export { ContextTooltip } from './ContextTooltip';
+
+export { IconButton, BackIcon, CheckIcon, RefreshIcon, PlusIcon } from './IconButton';
+export type { IconButtonProps } from './IconButton';

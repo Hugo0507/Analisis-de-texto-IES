@@ -8,21 +8,21 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import nerAnalysisService from '../services/nerAnalysisService';
-import dataPreparationService from '../services/dataPreparationService';
 import datasetsService from '../services/datasetsService';
-import type { DataPreparationListItem } from '../services/dataPreparationService';
 import type { DatasetListItem } from '../services/datasetsService';
 import type { EntityGroup, EntityType, SpacyModel, NerSourceType } from '../services/nerAnalysisService';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
+import { LoadingPanel } from '../components/molecules';
+import { useCompletedPreparations } from '../hooks/useCompletedPreparations';
 
 export const NerAnalysisCreate: React.FC = () => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
+  const { preparations, isLoadingPreparations } = useCompletedPreparations();
 
   // Estados de carga
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingPreparations, setIsLoadingPreparations] = useState(false);
   const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
   const [isLoadingEntityTypes, setIsLoadingEntityTypes] = useState(false);
   const [isLoadingEntityGroups, setIsLoadingEntityGroups] = useState(true);
@@ -33,7 +33,6 @@ export const NerAnalysisCreate: React.FC = () => {
 
   // Sección 2: Origen de Datos
   const [sourceType, setSourceType] = useState<NerSourceType>('data_preparation');
-  const [preparations, setPreparations] = useState<DataPreparationListItem[]>([]);
   const [datasets, setDatasets] = useState<DatasetListItem[]>([]);
   const [dataPreparationId, setDataPreparationId] = useState<number>(0);
   const [datasetId, setDatasetId] = useState<number>(0);
@@ -51,7 +50,6 @@ export const NerAnalysisCreate: React.FC = () => {
 
   useEffect(() => {
     loadEntityGroups();
-    loadPreparations();
   }, []);
 
   useEffect(() => {
@@ -110,18 +108,6 @@ export const NerAnalysisCreate: React.FC = () => {
     }
   };
 
-  const loadPreparations = async () => {
-    setIsLoadingPreparations(true);
-    try {
-      const data = await dataPreparationService.getPreparations();
-      const completed = data.filter((prep: DataPreparationListItem) => prep.status === 'completed');
-      setPreparations(completed);
-    } catch (error: any) {
-      showError('Error al cargar preparaciones: ' + (error.response?.data?.error || error.message));
-    } finally {
-      setIsLoadingPreparations(false);
-    }
-  };
 
   const loadDatasets = async () => {
     setIsLoadingDatasets(true);
@@ -208,9 +194,7 @@ export const NerAnalysisCreate: React.FC = () => {
 
   if (isLoadingEntityGroups) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Spinner size="lg" />
-      </div>
+      <LoadingPanel />
     );
   }
 

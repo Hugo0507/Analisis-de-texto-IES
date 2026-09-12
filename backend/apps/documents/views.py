@@ -6,6 +6,7 @@ Exposes Use Cases as REST API endpoints.
 
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .models import Document
 from .serializers import DocumentSerializer, DocumentListSerializer
@@ -21,6 +22,8 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
     Provides CRUD operations and custom actions for document processing pipeline.
     """
+
+    permission_classes = [IsAuthenticated]
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
 

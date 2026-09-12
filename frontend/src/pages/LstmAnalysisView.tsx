@@ -17,6 +17,8 @@ import lstmService from '../services/lstmService';
 import type { LstmAnalysis } from '../services/lstmService';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
+import { LoadingPanel } from '../components/molecules';
+import { usePolling } from '../hooks/usePolling';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -55,11 +57,7 @@ export const LstmAnalysisView: React.FC = () => {
   }, [id]);
 
   // Poll while processing
-  useEffect(() => {
-    if (analysis?.status !== 'processing') return;
-    const timer = setInterval(poll, 2000);
-    return () => clearInterval(timer);
-  }, [analysis?.status]);
+  usePolling(() => poll(), analysis?.status === 'processing');
 
   const load = async () => {
     setIsLoading(true);
@@ -95,9 +93,7 @@ export const LstmAnalysisView: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Spinner size="lg" />
-      </div>
+      <LoadingPanel />
     );
   }
 

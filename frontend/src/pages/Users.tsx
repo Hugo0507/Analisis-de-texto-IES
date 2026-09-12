@@ -8,8 +8,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import authService, { User } from '../services/authService';
-import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
+import { LoadingPanel } from '../components/molecules';
+import { InsigniaDeRol } from '../utils/roleLabels';
 
 export const Users: React.FC = () => {
   const navigate = useNavigate();
@@ -93,17 +94,10 @@ export const Users: React.FC = () => {
     }
   };
 
-  const getRoleBadge = (role: string) => {
-    return role === 'admin'
-      ? <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">Admin</span>
-      : <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-semibold">User</span>;
-  };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Spinner size="lg" />
-      </div>
+      <LoadingPanel />
     );
   }
 
@@ -236,7 +230,7 @@ export const Users: React.FC = () => {
 
                     {/* Rol Column */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {getRoleBadge(user.role)}
+                      <InsigniaDeRol usuario={user} />
                     </td>
 
                     {/* Acciones Column - Only for admins */}

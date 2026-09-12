@@ -8,21 +8,21 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import topicModelingService from '../services/topicModelingService';
-import dataPreparationService from '../services/dataPreparationService';
 import datasetsService from '../services/datasetsService';
-import type { DataPreparationListItem } from '../services/dataPreparationService';
 import type { DatasetListItem } from '../services/datasetsService';
 import type { TopicModelingAlgorithm, TopicModelingSourceType, AlgorithmInfo } from '../services/topicModelingService';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
+import { LoadingPanel } from '../components/molecules';
+import { useCompletedPreparations } from '../hooks/useCompletedPreparations';
 
 export const TopicModelingCreate: React.FC = () => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
+  const { preparations, isLoadingPreparations } = useCompletedPreparations();
 
   // Estados de carga
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingPreparations, setIsLoadingPreparations] = useState(false);
   const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
   const [isLoadingAlgorithms, setIsLoadingAlgorithms] = useState(true);
 
@@ -32,7 +32,6 @@ export const TopicModelingCreate: React.FC = () => {
 
   // Sección 2: Origen de Datos
   const [sourceType, setSourceType] = useState<TopicModelingSourceType>('data_preparation');
-  const [preparations, setPreparations] = useState<DataPreparationListItem[]>([]);
   const [datasets, setDatasets] = useState<DatasetListItem[]>([]);
   const [dataPreparationId, setDataPreparationId] = useState<number>(0);
   const [datasetId, setDatasetId] = useState<number>(0);
@@ -50,7 +49,6 @@ export const TopicModelingCreate: React.FC = () => {
 
   useEffect(() => {
     loadAlgorithms();
-    loadPreparations();
   }, []);
 
   useEffect(() => {
@@ -71,18 +69,6 @@ export const TopicModelingCreate: React.FC = () => {
     }
   };
 
-  const loadPreparations = async () => {
-    setIsLoadingPreparations(true);
-    try {
-      const data = await dataPreparationService.getPreparations();
-      const completed = data.filter((prep: DataPreparationListItem) => prep.status === 'completed');
-      setPreparations(completed);
-    } catch (error: any) {
-      showError('Error al cargar preparaciones: ' + (error.response?.data?.error || error.message));
-    } finally {
-      setIsLoadingPreparations(false);
-    }
-  };
 
   const loadDatasets = async () => {
     setIsLoadingDatasets(true);
@@ -155,9 +141,7 @@ export const TopicModelingCreate: React.FC = () => {
 
   if (isLoadingAlgorithms) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Spinner size="lg" />
-      </div>
+      <LoadingPanel />
     );
   }
 
