@@ -7,8 +7,6 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { ResponsiveSankey } from '@nivo/sankey';
-import { ResponsiveRadar } from '@nivo/radar';
 import { ChartCard } from '../molecules';
 import publicTopicModelingService from '../../services/publicTopicModelingService';
 import publicBertopicService from '../../services/publicBertopicService';
@@ -16,7 +14,7 @@ import publicDataPreparationService from '../../services/publicDataPreparationSe
 import { useFilter } from '../../contexts/FilterContext';
 import type { TopicModeling, TopicModelingListItem } from '../../services/topicModelingService';
 import type { BERTopicAnalysis, BERTopicListItem } from '../../services/bertopicService';
-import type { ExecutiveSummary } from '../../services/publicTopicModelingService';
+import type { ExecutiveSummary as ExecutiveSummaryData } from '../../services/publicTopicModelingService';
 import {
   ScienceMap,
   CategoryCard,
@@ -27,6 +25,9 @@ import {
   FACTOR_CATEGORIES,
   CAT_BY_ID,
   classifyTopic,
+  SankeyChart,
+  RadarChart,
+  ExecutiveSummary,
 } from '../organisms/general';
 import type {
   EnrichedTopic,
@@ -70,7 +71,7 @@ export const GeneralDashboard: React.FC = () => {
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string | null>(null);
   const [clusterTabs, setClusterTabs] = useState<Record<number, ClusterTab>>({});
-  const [executiveSummary, setExecutiveSummary] = useState<ExecutiveSummary | null>(null);
+  const [executiveSummary, setExecutiveSummary] = useState<ExecutiveSummaryData | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
 
@@ -571,234 +572,22 @@ export const GeneralDashboard: React.FC = () => {
         );
       })()}
 
-      {/* ── VIZ-7: Sankey tópico → categoría ── */}
-      {enrichedTopics.length >= 2 && (() => {
-        const catNodes = FACTOR_CATEGORIES.map(c => ({ id: `cat:${c.id}` }));
-        const topicNodes = enrichedTopics.map(t => ({ id: `t:${t.id}` }));
-        const links = enrichedTopics.map(t => ({
-          source: `t:${t.id}`,
-          target: `cat:${t.categoryId}`,
-          value: Math.max(t.numDocuments, 1),
-        }));
-        // Only include categories that have at least one topic
-        const usedCatIds = new Set(enrichedTopics.map(t => t.categoryId));
-        const filteredCatNodes = catNodes.filter(n => usedCatIds.has(n.id.replace('cat:', '')));
-        const sankeyData = { nodes: [...topicNodes, ...filteredCatNodes], links };
-        return (
-          <ChartCard
-            title="Flujo Tema → Categoría OE3"
-            subtitle="Sankey — cada banda muestra cómo los temas se asignan a las categorías del marco OE3"
-            accentColor="purple"
-            size="lg"
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-              </svg>
-            }
-          >
-            <div style={{ height: Math.max(300, enrichedTopics.length * 28 + 60) }}>
-              <ResponsiveSankey
-                data={sankeyData as any}
-                margin={{ top: 16, right: 160, bottom: 16, left: 160 }}
-                align="justify"
-                colors={(node: any) => {
-                  const id: string = node.id || '';
-                  if (id.startsWith('cat:')) {
-                    const cat = FACTOR_CATEGORIES.find(c => c.id === id.replace('cat:', ''));
-                    return cat?.color || '#64748b';
-                  }
-                  const tid = Number(id.replace('t:', ''));
-                  const topic = enrichedTopics.find(t => t.id === tid);
-                  return CAT_BY_ID[topic?.categoryId || '']?.color || '#8b5cf6';
-                }}
-                nodeOpacity={1}
-                nodeHoverOpacity={1}
-                nodeThickness={18}
-                nodeInnerPadding={3}
-                nodeSpacing={12}
-                nodeBorderWidth={0}
-                linkOpacity={0.4}
-                linkHoverOpacity={0.7}
-                linkContract={2}
-                enableLinkGradient
-                labelPosition="outside"
-                labelOrientation="horizontal"
-                labelPadding={14}
-                labelTextColor={{ from: 'color', modifiers: [['brighter', 1]] } as any}
-                theme={{
-                  text: { fill: '#94a3b8', fontSize: 11 },
-                  tooltip: { container: { background: '#1e293b', color: '#f8fafc', fontSize: 12, borderRadius: '8px', border: '1px solid #334155' } },
-                }}
-              />
-            </div>
-          </ChartCard>
-        );
-      })()}
+      <SankeyChart enrichedTopics={enrichedTopics} />
 
-      {/* ── VIZ-8: Radar chart por categoría ── */}
-      {enrichedTopics.length >= 2 && (() => {
-        const catMetrics = FACTOR_CATEGORIES.map(cat => {
-          const catTopics = topicsByCategory[cat.id] ?? [];
-          const docCount = catTopics.reduce((s, t) => s + t.numDocuments, 0);
-          return {
-            category: cat.shortLabel,
-            'Nº Temas': catTopics.length,
-            'Cobertura (docs)': docCount,
-          };
-        });
-        const hasData = catMetrics.some(m => m['Nº Temas'] > 0);
-        if (!hasData) return null;
-        return (
-          <ChartCard
-            title="Radar de Cobertura por Categoría"
-            subtitle="Comparativa de temas y documentos cubiertos por cada factor OE3"
-            accentColor="cyan"
-            size="md"
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-              </svg>
-            }
-          >
-            <div style={{ height: '340px' }}>
-              <ResponsiveRadar
-                data={catMetrics as any}
-                keys={['Nº Temas', 'Cobertura (docs)']}
-                indexBy="category"
-                maxValue="auto"
-                margin={{ top: 50, right: 80, bottom: 50, left: 80 }}
-                curve="linearClosed"
-                borderWidth={2}
-                borderColor={{ from: 'color' } as any}
-                gridLevels={4}
-                gridShape="circular"
-                gridLabelOffset={18}
-                enableDots
-                dotSize={8}
-                dotColor={{ from: 'color' } as any}
-                dotBorderWidth={2}
-                dotBorderColor={{ from: 'color', modifiers: [['darker', 0.5]] } as any}
-                enableDotLabel={false}
-                fillOpacity={0.25}
-                blendMode="normal"
-                animate
-                motionConfig="gentle"
-                colors={['#06b6d4', '#8b5cf6']}
-                theme={{
-                  text: { fill: '#94a3b8', fontSize: 11 },
-                  grid: { line: { stroke: '#334155' } },
-                  tooltip: { container: { background: '#1e293b', color: '#f8fafc', fontSize: 12, borderRadius: '8px', border: '1px solid #334155' } },
-                }}
-                legends={[{
-                  anchor: 'top-left',
-                  direction: 'column',
-                  translateX: -40,
-                  translateY: -30,
-                  itemWidth: 90,
-                  itemHeight: 18,
-                  itemTextColor: '#94a3b8',
-                  symbolSize: 10,
-                  symbolShape: 'circle',
-                  effects: [{ on: 'hover', style: { itemTextColor: '#fff' } }],
-                }] as any}
-              />
-            </div>
-          </ChartCard>
-        );
-      })()}
+      <RadarChart
+        enrichedTopics={enrichedTopics}
+        topicsByCategory={topicsByCategory}
+      />
 
-      {/* ── BE-7: Resumen Ejecutivo ── */}
-      {topicModel && (
-        <div className="rounded-xl bg-slate-800/60 border border-slate-700/50">
-          <button
-            onClick={async () => {
-              if (!showSummary) {
-                setShowSummary(true);
-                if (!executiveSummary) {
-                  setSummaryLoading(true);
-                  try {
-                    const s = await publicTopicModelingService.getExecutiveSummary(topicModel.id);
-                    setExecutiveSummary(s);
-                  } catch { /* silent */ }
-                  finally { setSummaryLoading(false); }
-                }
-              } else {
-                setShowSummary(false);
-              }
-            }}
-            className="w-full flex items-center justify-between px-5 py-3.5 text-left"
-          >
-            <div className="flex items-center gap-3">
-              <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span className="text-sm font-semibold text-white">Resumen Ejecutivo</span>
-              <span className="text-xs text-slate-400">Generado automáticamente desde el modelo de temas</span>
-            </div>
-            <svg className={`w-4 h-4 text-slate-400 transition-transform ${showSummary ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-
-          {showSummary && (
-            <div className="px-5 pb-5 border-t border-slate-700/40">
-              {summaryLoading ? (
-                <div className="flex items-center gap-3 py-6 text-slate-400">
-                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                  Generando resumen ejecutivo...
-                </div>
-              ) : !executiveSummary ? (
-                <p className="py-4 text-slate-500 text-sm">No se pudo generar el resumen.</p>
-              ) : (
-                <div className="pt-4 space-y-3">
-                  {/* Stats bar */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                    {[
-                      { label: 'Temas', value: executiveSummary.n_topics, color: 'text-cyan-400' },
-                      { label: 'Documentos', value: executiveSummary.n_docs.toLocaleString(), color: 'text-emerald-400' },
-                      { label: 'Cobertura OE3', value: `${executiveSummary.oe3_coverage}/6`, color: 'text-violet-400' },
-                      { label: 'Coherencia', value: executiveSummary.coherence_score != null ? executiveSummary.coherence_score.toFixed(3) : '—', color: (executiveSummary.coherence_score ?? 0) >= 0.5 ? 'text-emerald-400' : (executiveSummary.coherence_score ?? 0) >= 0.3 ? 'text-amber-400' : 'text-rose-400' },
-                    ].map(s => (
-                      <div key={s.label} className="text-center p-3 rounded-lg bg-slate-800/60 border border-slate-700/40">
-                        <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
-                        <p className="text-xs text-slate-400 mt-0.5">{s.label}</p>
-                      </div>
-                    ))}
-                  </div>
-                  {/* Paragraphs */}
-                  {executiveSummary.summary_paragraphs.map((p, i) => (
-                    <p key={i} className="text-sm text-slate-300 leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: p.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>') }}
-                    />
-                  ))}
-                  {/* Category distribution */}
-                  {executiveSummary.category_distribution.length > 0 && (
-                    <div className="mt-4 pt-3 border-t border-slate-700/40">
-                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Distribución por categoría OE3</p>
-                      <div className="space-y-1.5">
-                        {executiveSummary.category_distribution.map(c => {
-                          const pct = Math.round(c.count / executiveSummary.n_topics * 100);
-                          const catColor = FACTOR_CATEGORIES.find(fc => fc.id === c.id)?.color || '#94a3b8';
-                          return (
-                            <div key={c.id} className="flex items-center gap-3">
-                              <span className="text-xs text-slate-400 w-40 truncate">{c.label}</span>
-                              <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
-                                <div className="h-2 rounded-full" style={{ width: `${pct}%`, backgroundColor: catColor }} />
-                              </div>
-                              <span className="text-xs font-mono text-slate-300 w-6 text-right">{c.count}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
+      <ExecutiveSummary
+        topicModel={topicModel}
+        executiveSummary={executiveSummary}
+        setExecutiveSummary={setExecutiveSummary}
+        showSummary={showSummary}
+        setShowSummary={setShowSummary}
+        summaryLoading={summaryLoading}
+        setSummaryLoading={setSummaryLoading}
+      />
       {/* ── Methodology Footer — bg sólido, texto legible ── */}
       <div className="p-5 rounded-xl bg-slate-800 border border-slate-600">
         <div className="flex items-start gap-3">

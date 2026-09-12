@@ -14,3 +14,6 @@ export { ClusterCard } from './ClusterCard';
 export { ExportMenu } from './ExportMenu';
 export { MetricsStrip } from './MetricsStrip';
 export { LoadingSkeleton } from './LoadingSkeleton';
+export { SankeyChart } from './SankeyChart';
+export { RadarChart } from './RadarChart';
+export { ExecutiveSummary } from './ExecutiveSummary';
