@@ -10,6 +10,7 @@ import bagOfWordsService from '../services/bagOfWordsService';
 import type { BagOfWords, BagOfWordsUpdateRequest } from '../services/bagOfWordsService';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
+import { LoadingPanel } from '../components/molecules';
 
 export const BagOfWordsEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -79,9 +80,7 @@ export const BagOfWordsEdit: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Spinner size="lg" />
-      </div>
+      <LoadingPanel />
     );
   }
 

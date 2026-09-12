@@ -21,6 +21,7 @@ import {
 import dataPreparationService, { DataPreparation, FileDetailsData, FileDetail, DatasetChanges } from '../services/dataPreparationService';
 import { useToast } from '../contexts/ToastContext';
 import { Spinner } from '../components/atoms';
+import { usePolling } from '../hooks/usePolling';
 
 type FileModalType = 'processed' | 'omitted' | 'duplicates' | null;
 
@@ -42,16 +43,10 @@ export const DataPreparationView: React.FC = () => {
     if (!id) return;
 
     loadPreparation();
+  }, [id]);
 
-    // Poll cada 2 segundos si está en proceso
-    const interval = setInterval(() => {
-      if (preparation?.status === 'processing') {
-        loadPreparation();
-      }
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [id, preparation?.status]);
+  // Igual que arriba: el intervalo solo vive mientras hay algo que sondear.
+  usePolling(() => loadPreparation(), preparation?.status === 'processing');
 
   const loadPreparation = async () => {
     try {

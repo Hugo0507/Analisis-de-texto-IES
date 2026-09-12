@@ -12,6 +12,8 @@ import { useAuth } from '../contexts/AuthContext';
 import authService, { User } from '../services/authService';
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
+import { LoadingPanel } from '../components/molecules';
+import { esAdministrador, etiquetaDeRol } from '../utils/roleLabels';
 
 export const UserDetail: React.FC = () => {
   const navigate = useNavigate();
@@ -163,9 +165,7 @@ export const UserDetail: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Spinner size="lg" />
-      </div>
+      <LoadingPanel />
     );
   }
 
@@ -357,11 +357,11 @@ export const UserDetail: React.FC = () => {
               </select>
             ) : (
               <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
-                user.role === 'admin'
+                esAdministrador(user)
                   ? 'bg-emerald-100 text-emerald-700'
                   : 'bg-gray-100 text-gray-700'
               }`}>
-                {user.role === 'admin' ? 'Administrador' : 'Usuario'}
+                {etiquetaDeRol(user)}
               </span>
             )}
           </div>

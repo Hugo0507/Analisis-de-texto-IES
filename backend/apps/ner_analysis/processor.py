@@ -5,12 +5,12 @@ Procesamiento en background de análisis NER usando threading y spaCy.
 """
 
 import logging
-import threading
 from datetime import datetime
 from typing import List, Dict, Any, Tuple
 from collections import defaultdict, Counter
 import spacy
 from django.utils import timezone
+from apps.core.background import run_in_background
 
 logger = logging.getLogger(__name__)
 
@@ -547,20 +547,5 @@ def update_progress(ner_id: int, percentage: int):
 
 
 def start_processing_thread(ner_id: int):
-    """
-    Iniciar procesamiento en thread de background.
-
-    NOTA: Los threads NO persisten después de reiniciar Gunicorn o cerrar sesión,
-    independientemente de si son daemon o no. Para persistencia real se requiere
-    implementar un sistema de tareas como Celery + Redis.
-
-    Args:
-        ner_id: ID del análisis NerAnalysis a procesar
-    """
-    thread = threading.Thread(
-        target=process_ner_analysis,
-        args=(ner_id,),
-        daemon=True  # daemon=True es más limpio (threads no bloquean shutdown)
-    )
-    thread.start()
-    logger.info(f"[THREAD] Procesamiento NER iniciado para ID {ner_id}")
+    """Lanza el procesamiento de NER en segundo plano."""
+    return run_in_background(process_ner_analysis, ner_id, label=f'NER #{ner_id}')

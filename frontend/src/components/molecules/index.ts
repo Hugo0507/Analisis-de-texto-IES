@@ -12,3 +12,9 @@ export type { StageCardProps } from './StageCard';
 
 export { ChartCard } from './ChartCard';
 export type { ChartCardProps } from './ChartCard';
+
+export { LoadingPanel } from './LoadingPanel';
+export type { LoadingPanelProps } from './LoadingPanel';
+
+export { PageHeader } from './PageHeader';
+export type { PageHeaderProps } from './PageHeader';

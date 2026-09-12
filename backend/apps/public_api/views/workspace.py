@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 
 import subprocess
 import sys
-import threading
 
+from apps.core.background import run_in_background
 from apps.workspace.models import Workspace, WorkspaceDocument
 from apps.workspace.serializers import (
     WorkspaceSerializer,
@@ -168,12 +168,8 @@ class PublicWorkspaceViewSet(viewsets.ViewSet):
 
         logger.info(f"[PUBLIC WS {pk}] Subprocess lanzado (PID: {process.pid})")
 
-        monitor = threading.Thread(
-            target=_monitor_inference_subprocess,
-            args=(process, str(workspace.id)),
-            daemon=True,
-        )
-        monitor.start()
+        run_in_background(_monitor_inference_subprocess, process, str(workspace.id),
+                          label=f'Monitor de inferencia {workspace.id}')
 
         return Response(
             {'status': 'processing', 'workspace_id': str(workspace.id)},

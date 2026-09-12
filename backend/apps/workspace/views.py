@@ -17,7 +17,6 @@ import json
 import logging
 import subprocess
 import sys
-import threading
 
 from django.http import HttpResponse
 from rest_framework import status
@@ -26,6 +25,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from apps.core.background import run_in_background
 from .models import Workspace, WorkspaceDocument
 from .serializers import (
     WorkspaceSerializer,
@@ -174,12 +174,8 @@ def workspace_run(request, workspace_id):
     )
 
     # Monitor: vigila el subprocess y actualiza status si crashea/timeout
-    monitor = threading.Thread(
-        target=_monitor_inference_subprocess,
-        args=(process, str(workspace.id)),
-        daemon=True,
-    )
-    monitor.start()
+    run_in_background(_monitor_inference_subprocess, process, str(workspace.id),
+                      label=f'Monitor de inferencia {workspace.id}')
 
     return Response(
         {'status': 'processing', 'workspace_id': str(workspace.id)},

@@ -7,7 +7,6 @@ Calcula 3 matrices separadas: TF, IDF y TF-IDF.
 
 import io
 import logging
-import threading
 from datetime import datetime
 from typing import Dict, List, Any, Tuple
 import joblib
@@ -15,6 +14,7 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from django.core.files.base import ContentFile
 from django.utils import timezone
+from apps.core.background import run_in_background
 
 logger = logging.getLogger(__name__)
 
@@ -496,16 +496,5 @@ def calculate_tfidf_matrix(
 
 
 def start_processing_thread(tfidf_id: int):
-    """
-    Iniciar procesamiento en thread de background.
-
-    Args:
-        tfidf_id: ID del análisis TfIdfAnalysis a procesar
-    """
-    thread = threading.Thread(
-        target=process_tfidf_analysis,
-        args=(tfidf_id,),
-        daemon=True
-    )
-    thread.start()
-    logger.info(f"Thread de procesamiento TF-IDF iniciado para ID {tfidf_id}")
+    """Lanza el procesamiento de TF-IDF en segundo plano."""
+    return run_in_background(process_tfidf_analysis, tfidf_id, label=f'TF-IDF #{tfidf_id}')

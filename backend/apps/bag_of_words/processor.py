@@ -5,13 +5,13 @@ Procesamiento en background de análisis BoW usando threading.
 """
 
 import logging
-import threading
 from typing import List
 import joblib
 from sklearn.feature_extraction.text import CountVectorizer
 from django.core.files.base import ContentFile
 from django.utils import timezone
 from apps.core.nlp.matrix_stats import calculate_sparsity, calculate_statistics
+from apps.core.background import run_in_background
 
 logger = logging.getLogger(__name__)
 
@@ -235,16 +235,5 @@ def vectorize_texts(bow, texts: List[str]):
 
 
 def start_processing_thread(bow_id: int):
-    """
-    Iniciar procesamiento en thread de background.
-
-    Args:
-        bow_id: ID del análisis BagOfWords a procesar
-    """
-    thread = threading.Thread(
-        target=process_bag_of_words,
-        args=(bow_id,),
-        daemon=True
-    )
-    thread.start()
-    logger.info(f"Thread de procesamiento BoW iniciado para ID {bow_id}")
+    """Lanza el procesamiento de BoW en segundo plano."""
+    return run_in_background(process_bag_of_words, bow_id, label=f'BoW #{bow_id}')

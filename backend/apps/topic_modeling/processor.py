@@ -6,7 +6,6 @@ Procesamiento de Topic Modeling con LSA, NMF, PLSA y LDA.
 
 import io
 import logging
-import threading
 import numpy as np
 from typing import List, Dict, Any, Tuple
 import joblib
@@ -23,6 +22,7 @@ from sklearn.decomposition import TruncatedSVD, NMF as SKNMF, LatentDirichletAll
 from gensim.models import LdaModel
 from gensim.corpora import Dictionary
 from gensim.models.coherencemodel import CoherenceModel
+from apps.core.background import run_in_background
 
 logger = logging.getLogger(__name__)
 
@@ -509,16 +509,5 @@ def save_results(tm, topics, doc_topic_matrix, document_ids, coherence_score):
 
 
 def start_processing_thread(tm_id: int):
-    """
-    Iniciar procesamiento en thread de background.
-
-    Args:
-        tm_id: ID del análisis TopicModeling a procesar
-    """
-    thread = threading.Thread(
-        target=process_topic_modeling,
-        args=(tm_id,),
-        daemon=True
-    )
-    thread.start()
-    logger.info(f"[THREAD] Procesamiento Topic Modeling iniciado para ID {tm_id}")
+    """Lanza el procesamiento de Modelado de temas en segundo plano."""
+    return run_in_background(process_topic_modeling, tm_id, label=f'Modelado de temas #{tm_id}')

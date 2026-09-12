@@ -8,6 +8,7 @@ import logging
 
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .use_cases.execute_pipeline import ExecutePipelineUseCase
@@ -24,6 +25,8 @@ class PipelineViewSet(viewsets.ViewSet):
     - GET /api/pipeline/status/{execution_id}/ - Get execution status
     - GET /api/pipeline/history/ - Get execution history
     """
+
+    permission_classes = [IsAuthenticated]
 
     @action(detail=False, methods=['post'], url_path='execute')
     def execute(self, request):

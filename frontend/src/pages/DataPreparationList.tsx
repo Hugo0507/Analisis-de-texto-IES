@@ -10,6 +10,8 @@ import { Eye, Trash2, AlertCircle } from 'lucide-react';
 import dataPreparationService, { DataPreparationListItem } from '../services/dataPreparationService';
 import { useToast } from '../contexts/ToastContext';
 import { Spinner } from '../components/atoms';
+import { LoadingPanel } from '../components/molecules';
+import { usePolling } from '../hooks/usePolling';
 
 export const DataPreparationList: React.FC = () => {
   const navigate = useNavigate();
@@ -23,14 +25,10 @@ export const DataPreparationList: React.FC = () => {
 
   useEffect(() => {
     loadPreparations();
-
-    // Poll para actualizar progreso cada 3 segundos
-    const interval = setInterval(() => {
-      loadPreparations();
-    }, 3000);
-
-    return () => clearInterval(interval);
   }, []);
+
+  // La lista se refresca sola: siempre activa mientras la pagina este montada.
+  usePolling(() => loadPreparations(), true, { intervalMs: 3000 });
 
   const loadPreparations = async () => {
     try {
@@ -146,9 +144,7 @@ export const DataPreparationList: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Spinner size="lg" />
-      </div>
+      <LoadingPanel />
     );
   }
 

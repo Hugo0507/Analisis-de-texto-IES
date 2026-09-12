@@ -5,7 +5,6 @@ Views for Dataset management API.
 import logging
 import mimetypes
 import os
-import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from django.http import FileResponse, HttpResponse, Http404
@@ -26,6 +25,7 @@ from .serializers import (
     DatasetFileUpdateSerializer,
 )
 from .services import DatasetProcessorService, SimpleDriveService, BibExtractorService
+from apps.core.background import run_in_background
 
 logger = logging.getLogger(__name__)
 
@@ -156,10 +156,8 @@ class DatasetViewSet(viewsets.ModelViewSet):
                             dataset.save()
 
                     # Launch background thread
-                    thread = threading.Thread(target=process_drive_in_background, daemon=True)
-                    thread.start()
-
-                    logger.info(f"Started background processing for Drive dataset {dataset.id}")
+                    run_in_background(process_drive_in_background,
+                                      label=f'Dataset de Drive #{dataset.id}')
 
                 # Return created dataset
                 output_serializer = DatasetSerializer(dataset)
@@ -506,8 +504,7 @@ class DatasetViewSet(viewsets.ModelViewSet):
             )
 
         # Run in background thread so the request returns immediately
-        thread = threading.Thread(target=run_extraction, daemon=True)
-        thread.start()
+        run_in_background(run_extraction, label=f'Metadatos del dataset #{dataset.id}')
 
         return Response({
             'message': f'Extrayendo metadatos de {total} archivo(s) en segundo plano. '

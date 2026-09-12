@@ -3,9 +3,17 @@ source =
     apps/documents/services
     apps.analysis.use_cases.generate_bow
     apps.analysis.use_cases.calculate_tfidf
+    apps.analysis.use_cases.train_topic_models
+    apps.analysis.use_cases.analyze_factors
     apps.pipeline.use_cases.execute_pipeline
     apps.users.views
     apps.users.serializers
+    apps.users.models
+    apps.core.permissions
+    apps.core.background
+    apps.datasets.views
+    apps.data_preparation.views
+    apps.bertopic.views
 
 [report]
 omit =

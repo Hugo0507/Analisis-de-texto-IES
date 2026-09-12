@@ -13,6 +13,7 @@ from django.db.models import Count
 
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .use_cases.analyze_factors import AnalyzeFactorsUseCase
@@ -30,6 +31,8 @@ class FactorAnalysisViewSet(viewsets.ViewSet):
     - GET /api/analysis/factors/{document_id}/
     - GET /api/analysis/factors/statistics/
     """
+
+    permission_classes = [IsAuthenticated]
 
     @action(detail=False, methods=['post'], url_path='analyze')
     def analyze(self, request):
@@ -534,6 +537,8 @@ class FactorCRUDViewSet(viewsets.ViewSet):
     - DELETE /api/analysis/factors-catalog/{id}/  destroy
     """
 
+    permission_classes = [IsAuthenticated]
+
     def list(self, request):
         """List all factors with their keywords."""
         factors = Factor.objects.all().order_by('category', 'name')
@@ -637,6 +642,8 @@ class FactorRunViewSet(viewsets.ViewSet):
     - GET  /api/analysis/factor-runs/{id}/     retrieve
     - DELETE /api/analysis/factor-runs/{id}/   destroy
     """
+
+    permission_classes = [IsAuthenticated]
 
     def _serialize_run(self, run):
         return {
@@ -750,6 +757,8 @@ class DatasetFileExportViewSet(viewsets.ViewSet):
     Endpoints:
     - GET /api/analysis/dataset-export/export/
     """
+
+    permission_classes = [IsAuthenticated]
 
     @action(detail=False, methods=['get'], url_path='export')
     def export_csv(self, request):

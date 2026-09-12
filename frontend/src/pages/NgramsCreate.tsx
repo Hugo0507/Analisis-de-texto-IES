@@ -7,10 +7,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ngramAnalysisService from '../services/ngramAnalysisService';
-import dataPreparationService from '../services/dataPreparationService';
-import type { DataPreparationListItem } from '../services/dataPreparationService';
-import { Spinner } from '../components/atoms';
+import { IconButton, CheckIcon } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
+import { LoadingPanel, PageHeader } from '../components/molecules';
+import { useCompletedPreparations } from '../hooks/useCompletedPreparations';
 
 
 interface ConfigOption {
@@ -23,10 +23,8 @@ interface ConfigOption {
 export const NgramsCreate: React.FC = () => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
-
-  const [preparations, setPreparations] = useState<DataPreparationListItem[]>([]);
+  const { preparations, isLoadingPreparations } = useCompletedPreparations();
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingPreparations, setIsLoadingPreparations] = useState(true);
 
   // Form data
   const [name, setName] = useState('');
@@ -67,21 +65,8 @@ export const NgramsCreate: React.FC = () => {
   };
 
   useEffect(() => {
-    loadPreparations();
   }, []);
 
-  const loadPreparations = async () => {
-    setIsLoadingPreparations(true);
-    try {
-      const data = await dataPreparationService.getPreparations();
-      const completed = data.filter((prep: DataPreparationListItem) => prep.status === 'completed');
-      setPreparations(completed);
-    } catch (error: any) {
-      showError('Error al cargar preparaciones: ' + (error.response?.data?.error || error.message));
-    } finally {
-      setIsLoadingPreparations(false);
-    }
-  };
 
   const toggleConfigOption = (index: number) => {
     setConfigOptions(prev => prev.map((opt, i) =>
@@ -176,50 +161,29 @@ export const NgramsCreate: React.FC = () => {
 
   if (isLoadingPreparations) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Spinner size="lg" />
-      </div>
+      <LoadingPanel />
     );
   }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
       {/* Fixed Header */}
-      <div className="sticky top-0 z-40 bg-white border-b border-gray-200" style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)' }}>
-        <div className="flex items-center justify-between px-8 py-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate('/admin/preprocesamiento/n-gramas')}
-              className="p-2.5 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400"
-              title="Volver"
-            >
-              <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-            </button>
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900">Crear Análisis de N-gramas</h1>
-              <p className="text-sm text-gray-500">Análisis comparativo de múltiples configuraciones de n-gramas</p>
-            </div>
-          </div>
-
-          {/* Right: Save Button */}
-          <button
+      <PageHeader
+        title="Crear Análisis de N-gramas"
+        subtitle="Análisis comparativo de múltiples configuraciones de n-gramas"
+        onBack={() => navigate('/admin/preprocesamiento/n-gramas')}
+        backTitle="Volver"
+        actions={
+          <IconButton
+            icon={<CheckIcon />}
             onClick={handleSubmit}
+            variant="success"
+            isLoading={isLoading}
             disabled={isLoading || dataPreparationId === 0}
-            className="p-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-400"
             title="Guardar"
-          >
-            {isLoading ? (
-              <Spinner size="sm" />
-            ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            )}
-          </button>
-        </div>
-      </div>
+          />
+        }
+      />
 
       {/* Content */}
       <div className="p-8">

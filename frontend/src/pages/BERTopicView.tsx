@@ -22,6 +22,8 @@ import type { BERTopicAnalysis, Projections2D } from '../services/bertopicServic
 import { Spinner } from '../components/atoms';
 import { useToast } from '../contexts/ToastContext';
 import { ScatterPlotProjection } from '../components/organisms/ScatterPlotProjection';
+import { LoadingPanel } from '../components/molecules';
+import { usePolling } from '../hooks/usePolling';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Tooltip, Legend);
@@ -44,16 +46,7 @@ export const BERTopicView: React.FC = () => {
   }, [id]);
 
   // Poll progress if processing
-  useEffect(() => {
-    if (analysis && analysis.status === 'processing') {
-      const interval = setInterval(() => {
-        pollProgress();
-      }, 2000); // Every 2 seconds
-
-      return () => clearInterval(interval);
-    }
-    return undefined;
-  }, [analysis]);
+  usePolling(() => pollProgress(), analysis?.status === 'processing');
 
   const loadAnalysis = async () => {
     setIsLoading(true);
@@ -133,9 +126,7 @@ export const BERTopicView: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Spinner size="lg" />
-      </div>
+      <LoadingPanel />
     );
   }
 
