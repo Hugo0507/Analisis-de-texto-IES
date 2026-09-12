@@ -87,7 +87,8 @@ function App() {
           </Route>
 
           {/* Protected Admin Configuration Routes - Users only (LOGIN REQUIRED) */}
-          <Route element={<ProtectedRoute />}>
+          {/* Todo /admin/* exige sesion Y rol de administrador */}
+          <Route element={<ProtectedRoute requireAdmin />}>
             <Route path="/admin/configuracion" element={<MainLayout />}>
               <Route path="usuarios" element={<Users />} />
               <Route path="usuarios/nuevo" element={<UserCreate />} />

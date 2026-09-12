@@ -46,7 +46,7 @@ export const UserDetail: React.FC = () => {
     }
 
     // Check admin permissions for edit mode
-    if (isEditMode && currentUser && currentUser.role !== 'admin') {
+    if (isEditMode && currentUser && !currentUser.is_admin) {
       showError('No tienes permisos para editar usuarios');
       navigate(`/admin/configuracion/usuarios/${id}`);
       return;

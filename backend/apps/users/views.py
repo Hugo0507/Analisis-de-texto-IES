@@ -3,6 +3,7 @@ Views for User management.
 """
 
 from rest_framework import viewsets, status
+from apps.core.permissions import IsAdminRole
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -77,12 +78,21 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         """
-        Allow any user to create an account (registration).
-        All other operations require authentication.
+        Reparto de permisos por accion.
+
+        - create: abierto. El registro publico es una decision de diseno que
+          documenta el propio test test_create_user_does_not_require_auth.
+        - me y change_password: cualquier usuario autenticado, sobre si mismo.
+        - el resto (listar, ver, editar o borrar OTRAS cuentas): solo
+          administradores. Antes bastaba con estar autenticado, asi que
+          cualquier usuario registrado podia enumerar y modificar el resto de
+          cuentas.
         """
         if self.action == 'create':
             return [AllowAny()]
-        return [IsAuthenticated()]
+        if self.action in ('me', 'change_password'):
+            return [IsAuthenticated()]
+        return [IsAdminRole()]
 
     @action(detail=True, methods=['post'], url_path='change-password')
     def change_password(self, request, pk=None):
