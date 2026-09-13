@@ -66,6 +66,15 @@ export const LaboratorioDashboard: React.FC = () => {
 
   const selectedDataPrepName = dataPreparations.find((d) => d.id === selectedDataPrepId)?.name ?? null;
 
+  // Idioma del corpus para avisar en la subida: el de la preparacion elegida
+  // o, si no hay una elegida, el comun a todas las del dataset.
+  const corpusLanguage = (() => {
+    const elegida = dataPreparations.find((d) => d.id === selectedDataPrepId);
+    if (elegida?.predominant_language) return elegida.predominant_language;
+    const idiomas = Array.from(new Set(dataPreparations.map((d) => d.predominant_language).filter(Boolean)));
+    return idiomas.length === 1 ? idiomas[0] : null;
+  })();
+
   const handleViewImportedResults = useCallback((ws: Workspace) => {
     setWorkspace(ws);
     setIsImportedView(true);
@@ -186,13 +195,18 @@ export const LaboratorioDashboard: React.FC = () => {
           <p className="text-slate-400 text-sm text-center py-8">Selecciona un dataset para continuar.</p>
         )}
         {stage === 'upload' && workspace && (
-          <UploadStage workspaceId={workspace.id} onNext={handleUploadDone} onBack={handleReset} />
+          <UploadStage
+            workspaceId={workspace.id}
+            onNext={handleUploadDone}
+            onBack={handleReset}
+            corpusLanguage={corpusLanguage}
+          />
         )}
         {stage === 'processing' && workspace && (
           <ProcessingStage
             workspaceId={workspace.id}
             onDone={handleProcessingDone}
-            onError={() => { setError('Ocurrió un error durante la inferencia.'); setStage('upload'); }}
+            onError={(mensaje) => { setError(mensaje); setStage('upload'); }}
           />
         )}
         {stage === 'results' && workspace && (

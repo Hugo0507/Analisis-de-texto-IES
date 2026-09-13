@@ -3,17 +3,33 @@
  */
 
 import React, { useState, useRef, useCallback } from 'react';
-import publicWorkspaceService, {
-} from '../../../services/publicWorkspaceService';
+import publicWorkspaceService from '../../../services/publicWorkspaceService';
+import { LANGUAGE_NAMES } from '../../../services/dataPreparationService';
 
 
 export interface UploadStageProps {
   workspaceId: string;
   onNext: () => void;
   onBack: () => void;
+  /**
+   * Codigo del idioma del corpus (p. ej. 'en'). La inferencia rechaza los
+   * documentos en otro idioma porque los modelos se entrenaron con ese, asi
+   * que conviene decirlo antes de que el usuario suba nada.
+   */
+  corpusLanguage?: string | null;
 }
 
-export const UploadStage: React.FC<UploadStageProps> = ({ workspaceId, onNext, onBack }) => {
+/** Texto del aviso de idioma, con el nombre legible cuando se conoce. */
+export function avisoIdioma(corpusLanguage?: string | null): string {
+  if (!corpusLanguage) {
+    return 'Los documentos deben estar en el mismo idioma del corpus; los demás se rechazan.';
+  }
+  const nombre = LANGUAGE_NAMES[corpusLanguage]?.name ?? corpusLanguage.toUpperCase();
+  return `Los documentos deben estar en ${nombre.toLowerCase()}, el idioma del corpus: `
+    + 'los modelos se entrenaron con ese idioma y los documentos en otro se rechazan.';
+}
+
+export const UploadStage: React.FC<UploadStageProps> = ({ workspaceId, onNext, onBack, corpusLanguage }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<{ name: string; size: number; status: 'pending' | 'uploading' | 'done' | 'error'; error?: string }[]>([]);
   const [dragOver, setDragOver] = useState(false);
@@ -60,6 +76,9 @@ export const UploadStage: React.FC<UploadStageProps> = ({ workspaceId, onNext, o
       <div>
         <h3 className="text-lg font-semibold text-white mb-1">Sube los documentos a analizar</h3>
         <p className="text-sm text-slate-300">Solo archivos PDF · Máximo 50 MB por archivo</p>
+        <p className="text-sm text-amber-300 mt-1" data-testid="aviso-idioma">
+          {avisoIdioma(corpusLanguage)}
+        </p>
       </div>
 
       {/* Drop zone */}
