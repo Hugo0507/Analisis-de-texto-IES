@@ -5,6 +5,8 @@ Serializers para la API de BERTopic.
 """
 
 from rest_framework import serializers
+from apps.topic_modeling.factors import classify_topics
+
 from .models import BERTopicAnalysis
 
 
@@ -39,10 +41,21 @@ class BERTopicDetailSerializer(serializers.ModelSerializer):
     embedding_model_display = serializers.CharField(source='get_embedding_model_display', read_only=True)
     created_by_username = serializers.CharField(source='created_by.username', read_only=True)
     source_name = serializers.CharField(read_only=True)
+    topic_classifications = serializers.SerializerMethodField()
 
     class Meta:
         model = BERTopicAnalysis
         fields = '__all__'
+
+    def get_topic_classifications(self, obj):
+        """
+        Clasificacion de los temas de BERTopic en las seis categorias del OE3.
+
+        Usa el mismo clasificador que los modelos de temas. Antes el backend no
+        clasificaba BERTopic y el Resumen lo hacia en el navegador con un lexico
+        distinto, asi que ambas cifras no eran comparables.
+        """
+        return classify_topics(obj.topics)
 
 
 class BERTopicCreateSerializer(serializers.ModelSerializer):

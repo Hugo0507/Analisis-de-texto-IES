@@ -11,6 +11,7 @@ source =
     apps.users.models
     apps.core.permissions
     apps.topic_modeling.plsa
+    apps.topic_modeling.factors
     apps.core.background
     apps.datasets.views
     apps.data_preparation.views

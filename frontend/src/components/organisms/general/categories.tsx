@@ -2,7 +2,7 @@
  * Catalogo de categorias de transformacion digital y clasificacion de temas.
  */
 
-import type { FactorCategory } from './types';
+import type { FactorCategory, TopicClassification } from './types';
 
 export const FACTOR_CATEGORIES: FactorCategory[] = [
   {
@@ -15,9 +15,6 @@ export const FACTOR_CATEGORIES: FactorCategory[] = [
     bgClass: 'bg-slate-800',
     borderClass: 'border-slate-600 border-l-4 border-l-cyan-400',
     badgeClass: 'bg-cyan-400/10 text-cyan-300 border border-cyan-400/50',
-    keywords: ['infrastructure', 'technology', 'digital', 'platform', 'system', 'software',
-               'hardware', 'cloud', 'internet', 'network', 'tool', 'resource', 'ict', 'device',
-               'infraestructura', 'plataforma', 'sistema', 'herramienta', 'tecnolog'],
     description: 'Herramientas, plataformas y sistemas tecnológicos adoptados en IES',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -37,9 +34,6 @@ export const FACTOR_CATEGORIES: FactorCategory[] = [
     bgClass: 'bg-slate-800',
     borderClass: 'border-slate-600 border-l-4 border-l-blue-400',
     badgeClass: 'bg-blue-400/10 text-blue-300 border border-blue-400/50',
-    keywords: ['governance', 'strategy', 'policy', 'management', 'leadership', 'institutional',
-               'organization', 'framework', 'model', 'plan', 'implementation', 'initiative',
-               'gobernanza', 'estrategia', 'política', 'gestión', 'liderazgo', 'institucion'],
     description: 'Marcos de política institucional y liderazgo para la TD',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,7 +45,7 @@ export const FACTOR_CATEGORIES: FactorCategory[] = [
   },
   {
     id: 'docencia',
-    label: 'Formación Docente',
+    label: 'Docencia y Formación',
     shortLabel: 'Docencia',
     color: '#8b5cf6',
     ringColor: 'rgba(139,92,246,0.18)',
@@ -59,9 +53,6 @@ export const FACTOR_CATEGORIES: FactorCategory[] = [
     bgClass: 'bg-slate-800',
     borderClass: 'border-slate-600 border-l-4 border-l-violet-400',
     badgeClass: 'bg-violet-400/10 text-violet-300 border border-violet-400/50',
-    keywords: ['teaching', 'teacher', 'faculty', 'training', 'professional', 'development',
-               'competency', 'skill', 'pedagogy', 'instruction', 'educator', 'literacy',
-               'docente', 'formación', 'capacitación', 'competencia', 'enseñanza'],
     description: 'Capacitación y desarrollo de competencias digitales docentes',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -81,9 +72,6 @@ export const FACTOR_CATEGORIES: FactorCategory[] = [
     bgClass: 'bg-slate-800',
     borderClass: 'border-slate-600 border-l-4 border-l-emerald-400',
     badgeClass: 'bg-emerald-400/10 text-emerald-300 border border-emerald-400/50',
-    keywords: ['student', 'learning', 'education', 'academic', 'curriculum', 'online',
-               'e-learning', 'engagement', 'experience', 'achievement', 'performance',
-               'estudiante', 'aprendizaje', 'educación', 'académico', 'currículo'],
     description: 'Impacto en el proceso de aprendizaje y experiencia estudiantil',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -96,7 +84,7 @@ export const FACTOR_CATEGORIES: FactorCategory[] = [
   },
   {
     id: 'cultura',
-    label: 'Cambio Cultural',
+    label: 'Cultura e Innovación',
     shortLabel: 'Cultura',
     color: '#f59e0b',
     ringColor: 'rgba(245,158,11,0.18)',
@@ -104,9 +92,6 @@ export const FACTOR_CATEGORIES: FactorCategory[] = [
     bgClass: 'bg-slate-800',
     borderClass: 'border-slate-600 border-l-4 border-l-amber-400',
     badgeClass: 'bg-amber-400/10 text-amber-300 border border-amber-400/50',
-    keywords: ['culture', 'change', 'innovation', 'transformation', 'adoption', 'mindset',
-               'resistance', 'readiness', 'attitude', 'perception', 'barrier', 'challenge',
-               'cultura', 'cambio', 'innovación', 'transformación', 'adopción', 'barrera'],
     description: 'Transformación cultural, barreras e innovación institucional',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -118,7 +103,7 @@ export const FACTOR_CATEGORIES: FactorCategory[] = [
   },
   {
     id: 'calidad',
-    label: 'Evaluación y Calidad',
+    label: 'Calidad y Evaluación',
     shortLabel: 'Calidad',
     color: '#ec4899',
     ringColor: 'rgba(236,72,153,0.18)',
@@ -126,9 +111,6 @@ export const FACTOR_CATEGORIES: FactorCategory[] = [
     bgClass: 'bg-slate-800',
     borderClass: 'border-slate-600 border-l-4 border-l-pink-400',
     badgeClass: 'bg-pink-400/10 text-pink-300 border border-pink-400/50',
-    keywords: ['quality', 'evaluation', 'assessment', 'performance', 'outcome', 'impact',
-               'measure', 'indicator', 'effectiveness', 'efficiency', 'improvement', 'accreditation',
-               'calidad', 'evaluación', 'rendimiento', 'resultado', 'impacto', 'medición'],
     description: 'Métricas, evaluación y aseguramiento de calidad en la TD',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -144,15 +126,23 @@ export const CAT_BY_ID: Record<string, FactorCategory> = Object.fromEntries(
   FACTOR_CATEGORIES.map(c => [c.id, c])
 );
 
-export function classifyTopic(words: string[]): string {
-  const text = words.join(' ').toLowerCase();
-  let best = 'infraestructura';
-  let bestScore = 0;
-  for (const cat of FACTOR_CATEGORIES) {
-    const score = cat.keywords.filter(kw => text.includes(kw)).length;
-    if (score > bestScore) { bestScore = score; best = cat.id; }
-  }
-  return best;
+/**
+ * Categoria factorial de un tema, tomada de la clasificacion del backend.
+ *
+ * Antes el Resumen clasificaba aqui con un lexico propio que no coincidia con
+ * el del backend: el mismo modelo daba repartos de factores distintos segun la
+ * pantalla. El lexico canonico es el del backend (reproduce las Tablas 12 y 13
+ * del informe) y el frontend solo lo consume.
+ *
+ * Si el tema no trae clasificacion se usa 'infraestructura', que es tambien lo
+ * que decide el backend cuando un tema no coincide con ninguna palabra clave.
+ */
+export function categoryFromClassification(
+  classifications: TopicClassification[] | null | undefined,
+  topicId: number,
+): string {
+  const c = classifications?.find(x => x.topic_id === topicId);
+  return c?.primary_category ?? 'infraestructura';
 }
 
 // zoneBubblePositions — multi-ring layout that prevents node overlap.

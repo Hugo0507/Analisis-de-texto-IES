@@ -5,6 +5,7 @@ Serializers para la API REST de Topic Modeling.
 """
 
 from rest_framework import serializers
+from .factors import classify_topics
 from .models import TopicModeling
 from apps.data_preparation.models import DataPreparation
 from apps.datasets.models import Dataset
@@ -163,113 +164,15 @@ class TopicModelingDetailSerializer(serializers.ModelSerializer):
 
     # ── BE-6: OE3 Factor Category Classification ──────────────────────────────
 
-    # OE3 keyword lexicon (mirrors GeneralDashboard.tsx FACTOR_CATEGORIES)
-    _OE3_CATEGORIES = [
-        {
-            'id': 'infraestructura',
-            'label': 'Infraestructura Tecnológica',
-            'keywords': [
-                'infrastructure', 'technology', 'digital', 'platform', 'system', 'software',
-                'hardware', 'cloud', 'network', 'data', 'iot', 'cybersecurity', 'database',
-                'integration', 'interoperability', 'bandwidth', 'connectivity', 'server',
-                'infraestructura', 'tecnología', 'plataforma', 'sistema', 'nube', 'red',
-                'datos', 'seguridad', 'base de datos', 'integración', 'conectividad',
-            ],
-        },
-        {
-            'id': 'gobernanza',
-            'label': 'Gobernanza y Estrategia',
-            'keywords': [
-                'governance', 'strategy', 'policy', 'management', 'leadership', 'institutional',
-                'planning', 'regulation', 'compliance', 'framework', 'administration',
-                'gobernanza', 'estrategia', 'política', 'gestión', 'liderazgo', 'institucional',
-                'planificación', 'regulación', 'marco', 'administración',
-            ],
-        },
-        {
-            'id': 'docencia',
-            'label': 'Docencia y Formación',
-            'keywords': [
-                'teaching', 'teacher', 'faculty', 'training', 'professional', 'development',
-                'pedagogy', 'instructor', 'professor', 'course', 'curriculum', 'competency',
-                'docencia', 'docente', 'formación', 'profesional', 'pedagogía', 'capacitación',
-                'instructor', 'curso', 'currículo', 'competencia',
-            ],
-        },
-        {
-            'id': 'estudiante',
-            'label': 'Experiencia del Estudiante',
-            'keywords': [
-                'student', 'learning', 'education', 'academic', 'curriculum', 'online',
-                'e-learning', 'blended', 'engagement', 'experience', 'skill', 'outcome',
-                'estudiante', 'aprendizaje', 'educación', 'académico', 'en línea',
-                'aprendizaje combinado', 'experiencia', 'habilidad', 'resultado',
-            ],
-        },
-        {
-            'id': 'cultura',
-            'label': 'Cultura e Innovación',
-            'keywords': [
-                'culture', 'change', 'innovation', 'transformation', 'adoption', 'mindset',
-                'resistance', 'collaboration', 'agile', 'startup', 'entrepreneurship',
-                'cultura', 'cambio', 'innovación', 'transformación', 'adopción', 'mentalidad',
-                'resistencia', 'colaboración', 'ágil', 'emprendimiento',
-            ],
-        },
-        {
-            'id': 'calidad',
-            'label': 'Calidad y Evaluación',
-            'keywords': [
-                'quality', 'evaluation', 'assessment', 'performance', 'outcome', 'impact',
-                'measurement', 'metric', 'indicator', 'benchmark', 'accreditation', 'audit',
-                'calidad', 'evaluación', 'rendimiento', 'impacto', 'medición', 'métrica',
-                'indicador', 'acreditación', 'auditoría',
-            ],
-        },
-    ]
-
     def get_topic_classifications(self, obj):
         """
-        BE-6: For each topic, compute OE3 factor category classification with confidence.
-        Returns list of {topic_id, primary_category, secondary_category, confidence_score, matched_keywords}
+        Clasificacion de cada tema en las seis categorias factoriales del OE3.
+
+        La logica y el lexico viven en apps/topic_modeling/factors.py, la unica
+        fuente del marco de factores: la comparten los modelos de temas y
+        BERTopic, y el frontend la consume en vez de clasificar por su cuenta.
         """
-        topics = obj.topics or []
-        if not topics:
-            return []
-
-        result = []
-        for i, topic in enumerate(topics):
-            words = [w.get('word', '').lower() for w in (topic.get('words') or [])]
-            text = ' '.join(words)
-
-            scores = []
-            for cat in self._OE3_CATEGORIES:
-                matched = [kw for kw in cat['keywords'] if kw in text]
-                score = len(matched)
-                scores.append({
-                    'id': cat['id'],
-                    'label': cat['label'],
-                    'score': score,
-                    'matched': matched,
-                })
-
-            scores.sort(key=lambda x: x['score'], reverse=True)
-            primary = scores[0]
-            secondary = scores[1] if scores[1]['score'] > 0 else None
-
-            total_kw = len(self._OE3_CATEGORIES[0]['keywords'])
-            confidence = round(primary['score'] / max(1, total_kw), 3)
-
-            result.append({
-                'topic_id': topic.get('topic_id', i),
-                'primary_category': primary['id'],
-                'primary_category_label': primary['label'],
-                'secondary_category': secondary['id'] if secondary else None,
-                'confidence_score': confidence,
-                'matched_keywords': primary['matched'][:8],
-            })
-
-        return result
+        return classify_topics(obj.topics)
 
 
 class TopicModelingCreateSerializer(serializers.ModelSerializer):
