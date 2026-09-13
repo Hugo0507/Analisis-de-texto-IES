@@ -70,6 +70,8 @@ EXTRA_STOPWORDS = {
     "sr", "sra", "srta", "dra", "ing", "lic", "phd", "msc", "bsc",
     # IDs de bases de datos y artefactos de URLs que aparecen en metadatos exportados
     "cid", "dx",
+    # Enlaces de las listas de referencias ("Google Scholar | Crossref") y portadas
+    "crossref", "crossmark", "orcid",
 
     # Palabras muy cortas sin significado
     # Nota: "ai" (Artificial Intelligence) y "ar" (Augmented Reality) se excluyen

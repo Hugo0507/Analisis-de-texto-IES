@@ -13,14 +13,15 @@ Architecture: Split into focused modules:
 
 import logging
 import os
-import re
+import tempfile
 import traceback
-from typing import Dict, List
+from typing import Dict, List, Optional, Tuple
 
 from django.utils import timezone
 
 from .models import DataPreparation
 from .stopwords import get_combined_stopwords
+from .text_cleaning import limpiar_texto
 from .pdf_extractor import PDFExtractor
 from .drive_downloader import DriveFileDownloader
 from .language_detector import LanguageDetector
@@ -77,7 +78,7 @@ class DataPreparationProcessor:
             pdf_files = DatasetFile.objects.filter(
                 dataset=self.preparation.dataset,
                 mime_type='application/pdf'
-            )
+            ).defer('file_content')
 
             if not pdf_files.exists():
                 raise Exception("No se encontraron archivos PDF en el dataset")
@@ -120,19 +121,12 @@ class DataPreparationProcessor:
             progress = int((idx / total_files) * 30)
             self.update_progress(DataPreparation.STAGE_EXTRACTING, progress)
 
-            pdf_path = pdf_file.file_path
-            temp_file_path = None
+            pdf_path, es_temporal = _ruta_pdf_para_extraer(pdf_file, self.preparation.created_by)
 
             try:
-                if pdf_path.startswith('drive://'):
-                    drive_file_id = pdf_path.replace('drive://', '')
-                    temp_file_path = DriveFileDownloader.download_from_drive(
-                        drive_file_id, self.preparation.created_by
-                    )
-                    if not temp_file_path:
-                        logger.warning(f"Could not download {pdf_file.original_filename} from Drive")
-                        continue
-                    pdf_path = temp_file_path
+                if not pdf_path:
+                    logger.warning(f"Could not get the PDF of {pdf_file.original_filename}")
+                    continue
 
                 text, method = PDFExtractor.extract_text(pdf_path)
 
@@ -146,8 +140,8 @@ class DataPreparationProcessor:
                 else:
                     logger.warning(f"Could not extract text from {pdf_file.original_filename}")
             finally:
-                if temp_file_path:
-                    DriveFileDownloader.cleanup_temp_file(temp_file_path)
+                if es_temporal:
+                    DriveFileDownloader.cleanup_temp_file(pdf_path)
 
         return files_with_text
 
@@ -196,7 +190,7 @@ class DataPreparationProcessor:
         return processed_files
 
     def _apply_stopwords(self, processed_files: List[Dict], predominant_lang: str):
-        """ETAPA 4: Aplicar stopwords (60-70%)."""
+        """ETAPA 4: Limpiar el ruido del PDF y aplicar stopwords (60-70%)."""
         self.update_progress(DataPreparation.STAGE_CLEANING, 60)
 
         stopwords = get_combined_stopwords(
@@ -208,10 +202,13 @@ class DataPreparationProcessor:
             progress = 60 + int((idx / len(processed_files)) * 10)
             self.update_progress(DataPreparation.STAGE_CLEANING, progress)
 
-            text = file_data['text']
-            words = text.lower().split()
-            cleaned_words = [w for w in words if w not in stopwords]
-            file_data['cleaned_text'] = ' '.join(cleaned_words)
+            # El ruido del PDF se quita antes de comparar con las stopwords
+            # (ver text_cleaning.py): al reves, "(cid:3)" terminaba como "cid".
+            file_data['cleaned_text'] = limpiar_texto(
+                file_data['text'],
+                stopwords,
+                quitar_simbolos=self.preparation.enable_special_chars_removal,
+            )
 
     def _apply_transformations(self, processed_files: List[Dict], predominant_lang: str):
         """ETAPA 5: Transformacion - tokenizacion, lematizacion, limpieza (70-90%)."""
@@ -229,11 +226,9 @@ class DataPreparationProcessor:
             if self.preparation.enable_lemmatization:
                 self._lemmatize(file_data, text, predominant_lang)
 
-            if self.preparation.enable_special_chars_removal:
-                # Eliminar todo excepto letras y espacios.
-                # El patrón anterior [^a-zA-Z0-9\s] conservaba dígitos,
-                # permitiendo que años y números entren al vocabulario BoW/TF-IDF.
-                file_data['cleaned_text'] = re.sub(r'[^a-zA-Z\s]', '', text)
+            # La eliminacion de caracteres especiales ya ocurrio en la etapa 4,
+            # antes de las stopwords. Aqui borraba los simbolos sin dejar
+            # espacio y pegaba palabras ("https://doi.org" -> "httpsdoiorg").
 
     def _lemmatize(self, file_data: Dict, text: str, lang: str):
         """Apply spaCy lemmatization to a single file."""
@@ -299,6 +294,38 @@ class DataPreparationProcessor:
                 logger.error(f"Error saving preprocessed text for file {file_data['file_id']}: {e}")
 
         logger.info(f"Preprocessed texts saved to DB for {len(processed_files)} files")
+
+
+def _contenido_pdf_en_bd(file_id: int) -> Optional[bytes]:
+    """Leer la copia del PDF guardada en la base de datos, si existe."""
+    contenido = DatasetFile.objects.filter(id=file_id).values_list('file_content', flat=True).first()
+    return bytes(contenido) if contenido else None
+
+
+def _ruta_pdf_para_extraer(pdf_file, usuario) -> Tuple[Optional[str], bool]:
+    """
+    Dejar el PDF en disco para extraer su texto.
+
+    Usa primero la copia guardada en la base de datos: sobrevive a los reinicios
+    del Space y no depende de que el token de Google Drive del usuario siga
+    vigente. Si no hay copia, descarga de Drive o usa la ruta local.
+
+    Returns:
+        (ruta, es_temporal). La ruta es None si no se pudo obtener el PDF; si
+        es_temporal es True, quien llama debe borrar el archivo.
+    """
+    contenido = _contenido_pdf_en_bd(pdf_file.id)
+    if contenido:
+        descriptor, ruta = tempfile.mkstemp(suffix='.pdf')
+        with os.fdopen(descriptor, 'wb') as archivo:
+            archivo.write(contenido)
+        return ruta, True
+
+    ruta = pdf_file.file_path
+    if ruta and ruta.startswith('drive://'):
+        ruta = DriveFileDownloader.download_from_drive(ruta.replace('drive://', ''), usuario)
+        return ruta, bool(ruta)
+    return ruta, False
 
 
 def process_data_preparation(preparation_id: int):
@@ -390,7 +417,7 @@ def _process_new_files(preparation, added_ids: set):
     if not added_ids:
         return
 
-    new_files = DatasetFile.objects.filter(id__in=added_ids)
+    new_files = DatasetFile.objects.filter(id__in=added_ids).defer('file_content')
     total_new = len(added_ids)
 
     logger.info(f"Updating: {total_new} new files to process")
@@ -425,7 +452,7 @@ def _process_new_files(preparation, added_ids: set):
         new_processed = files_with_text
         new_omitted = []
 
-    # Apply stopwords (70-90%)
+    # Limpiar el ruido del PDF y aplicar stopwords (70-90%)
     stopwords = get_combined_stopwords(
         custom_stopwords=preparation.custom_stopwords,
         language=predominant_lang
@@ -436,10 +463,11 @@ def _process_new_files(preparation, added_ids: set):
         preparation.progress_percentage = progress
         preparation.save()
 
-        text = file_data['text']
-        words = text.lower().split()
-        cleaned_words = [w for w in words if w not in stopwords]
-        file_data['cleaned_text'] = ' '.join(cleaned_words)
+        file_data['cleaned_text'] = limpiar_texto(
+            file_data['text'],
+            stopwords,
+            quitar_simbolos=preparation.enable_special_chars_removal,
+        )
 
     # Save preprocessed texts to DB (90-95%)
     preparation.progress_percentage = 90
@@ -482,25 +510,15 @@ def _extract_new_file_texts(preparation, new_files, total_new: int) -> List[Dict
         preparation.progress_percentage = progress
         preparation.save()
 
-        pdf_path = pdf_file.file_path
-        temp_file_path = None
+        pdf_path, es_temporal = None, False
 
         try:
             logger.info(f"[UPDATE] Processing file {idx+1}/{total_new}: {pdf_file.original_filename}")
 
-            if pdf_path.startswith('drive://'):
-                drive_file_id = pdf_path.replace('drive://', '')
-                temp_file_path = DriveFileDownloader.download_from_drive(
-                    drive_file_id, preparation.created_by
-                )
-                if not temp_file_path:
-                    logger.warning(f"[UPDATE] Could not download {pdf_file.original_filename} from Drive")
-                    continue
-                pdf_path = temp_file_path
-            else:
-                if not os.path.exists(pdf_path):
-                    logger.error(f"[UPDATE] File does not exist: {pdf_path}")
-                    continue
+            pdf_path, es_temporal = _ruta_pdf_para_extraer(pdf_file, preparation.created_by)
+            if not pdf_path or not os.path.exists(pdf_path):
+                logger.error(f"[UPDATE] PDF not available: {pdf_file.original_filename}")
+                continue
 
             text, method = PDFExtractor.extract_text(pdf_path)
 
@@ -519,8 +537,8 @@ def _extract_new_file_texts(preparation, new_files, total_new: int) -> List[Dict
             logger.error(f"[UPDATE] Traceback: {traceback.format_exc()}")
 
         finally:
-            if temp_file_path:
-                DriveFileDownloader.cleanup_temp_file(temp_file_path)
+            if es_temporal:
+                DriveFileDownloader.cleanup_temp_file(pdf_path)
 
     return files_with_text
 
