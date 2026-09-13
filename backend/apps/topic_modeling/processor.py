@@ -84,7 +84,11 @@ def process_topic_modeling(tm_id: int):
         # ETAPA 3: Vectorizar (30%)
         logger.info(f"[TM {tm_id}] Vectorizando textos...")
         doc_term_matrix, feature_names, vectorizer = vectorize_texts(
-            processed_texts, tm.algorithm
+            processed_texts, tm.algorithm,
+            max_features=tm.max_features,
+            min_df=tm.min_df,
+            max_df=tm.max_df,
+            ngram_range=(tm.ngram_min, tm.ngram_max),
         )
         tm.vocabulary_size = len(feature_names)
         logger.info(f"[TM {tm_id}] [OK] Vocabulario: {tm.vocabulary_size} términos")
@@ -265,33 +269,47 @@ def preprocess_texts(texts: List[str]) -> List[str]:
     return processed
 
 
-def vectorize_texts(texts: List[str], algorithm: str) -> Tuple[Any, List[str], Any]:
+def vectorize_texts(
+    texts: List[str],
+    algorithm: str,
+    max_features: int = 2000,
+    min_df: int = 2,
+    max_df: float = 0.8,
+    ngram_range: Tuple[int, int] = (1, 2),
+) -> Tuple[Any, List[str], Any]:
     """
-    Vectorizar textos según algoritmo.
+    Vectorizar textos segun el algoritmo y los parametros del analisis.
+
+    LSA y NMF trabajan sobre TF-IDF; LDA y PLSA sobre frecuencias, porque son
+    modelos de conteos.
+
+    Estos parametros estaban escritos a mano aqui (2000 terminos, min_df=2,
+    max_df=0.8, n-gramas 1-2) y no quedaban registrados con cada analisis. Ahora
+    los fija quien crea el analisis y se guardan en el modelo. Los valores por
+    defecto son exactamente los historicos, asi que los analisis antiguos se
+    reproducen igual.
 
     Args:
-        texts: Textos preprocesados
-        algorithm: Algoritmo a usar (lsa, nmf, plsa, lda)
+        texts: textos preprocesados.
+        algorithm: lsa, nmf, plsa o lda.
+        max_features: tamano maximo del vocabulario (los terminos mas frecuentes).
+        min_df: se descartan los terminos presentes en menos documentos.
+        max_df: se descartan los terminos presentes en una proporcion mayor.
+        ngram_range: rango de n-gramas, p. ej. (1, 2) palabras y bigramas.
 
     Returns:
-        Tupla de (doc_term_matrix, feature_names, vectorizer)
+        Tupla (doc_term_matrix, feature_names, vectorizer).
     """
+    parametros = dict(
+        max_features=max_features,
+        min_df=min_df,
+        max_df=max_df,
+        ngram_range=tuple(ngram_range),
+    )
     if algorithm in ['lsa', 'nmf']:
-        # TF-IDF para LSA y NMF
-        vectorizer = TfidfVectorizer(
-            max_features=2000,
-            min_df=2,
-            max_df=0.8,
-            ngram_range=(1, 2)
-        )
+        vectorizer = TfidfVectorizer(**parametros)
     else:
-        # CountVectorizer para PLSA y LDA (requieren frecuencias)
-        vectorizer = CountVectorizer(
-            max_features=2000,
-            min_df=2,
-            max_df=0.8,
-            ngram_range=(1, 2)
-        )
+        vectorizer = CountVectorizer(**parametros)
 
     doc_term_matrix = vectorizer.fit_transform(texts)
     feature_names = vectorizer.get_feature_names_out()

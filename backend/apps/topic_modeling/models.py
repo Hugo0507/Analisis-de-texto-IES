@@ -150,6 +150,35 @@ class TopicModeling(models.Model):
         verbose_name='Semilla Aleatoria'
     )
 
+    # Parametros de vectorizacion. Antes estaban escritos a mano en
+    # processor.vectorize_texts (2000 terminos, min_df=2, max_df=0.8,
+    # n-gramas 1-2) y no quedaban registrados con cada analisis. Los valores
+    # por defecto son exactamente esos, asi que los analisis existentes quedan
+    # documentados con la configuracion real con la que se entrenaron.
+    max_features = models.PositiveIntegerField(
+        default=2000,
+        verbose_name='Tamaño Máximo del Vocabulario',
+        help_text='Numero maximo de terminos (los mas frecuentes) de la matriz documento-termino',
+    )
+    min_df = models.PositiveIntegerField(
+        default=2,
+        verbose_name='Frecuencia Mínima de Documento',
+        help_text='Se descartan los terminos que aparecen en menos documentos que este valor',
+    )
+    max_df = models.FloatField(
+        default=0.8,
+        verbose_name='Frecuencia Máxima de Documento',
+        help_text='Se descartan los terminos presentes en una proporcion mayor de documentos (0-1)',
+    )
+    ngram_min = models.PositiveSmallIntegerField(
+        default=1,
+        verbose_name='N-grama Mínimo',
+    )
+    ngram_max = models.PositiveSmallIntegerField(
+        default=2,
+        verbose_name='N-grama Máximo',
+    )
+
     # ============================================================
     # ESTADO Y PROGRESO
     # ============================================================

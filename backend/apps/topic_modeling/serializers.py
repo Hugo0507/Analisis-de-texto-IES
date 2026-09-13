@@ -27,6 +27,7 @@ class TopicModelingListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'description', 'algorithm', 'algorithm_display',
             'algorithm_category', 'num_topics', 'num_words',
+            'max_features', 'min_df', 'max_df', 'ngram_min', 'ngram_max',
             'source_type', 'source_name', 'status', 'status_display',
             'progress_percentage', 'documents_processed', 'coherence_score',
             'has_artifact', 'created_by_username', 'created_at'
@@ -73,6 +74,7 @@ class TopicModelingDetailSerializer(serializers.ModelSerializer):
             # Configuración
             'algorithm', 'algorithm_display', 'algorithm_category', 'is_probabilistic',
             'num_topics', 'num_words', 'max_iterations', 'random_seed',
+            'max_features', 'min_df', 'max_df', 'ngram_min', 'ngram_max',
 
             # Estado y progreso
             'status', 'status_display', 'current_stage', 'current_stage_display',
@@ -184,7 +186,8 @@ class TopicModelingCreateSerializer(serializers.ModelSerializer):
         model = TopicModeling
         fields = [
             'name', 'description', 'source_type', 'data_preparation', 'dataset',
-            'algorithm', 'num_topics', 'num_words', 'max_iterations', 'random_seed'
+            'algorithm', 'num_topics', 'num_words', 'max_iterations', 'random_seed',
+            'max_features', 'min_df', 'max_df', 'ngram_min', 'ngram_max'
         ]
 
     def validate(self, data):
@@ -227,6 +230,32 @@ class TopicModelingCreateSerializer(serializers.ModelSerializer):
         if num_words < 5 or num_words > 50:
             raise serializers.ValidationError({
                 'num_words': 'El número de palabras debe estar entre 5 y 50'
+            })
+
+        # Validar parametros de vectorizacion
+        max_features = data.get('max_features', 2000)
+        if max_features < 100 or max_features > 100000:
+            raise serializers.ValidationError({
+                'max_features': 'El tamaño del vocabulario debe estar entre 100 y 100000 términos'
+            })
+
+        min_df = data.get('min_df', 2)
+        if min_df < 1:
+            raise serializers.ValidationError({
+                'min_df': 'La frecuencia mínima de documento debe ser al menos 1'
+            })
+
+        max_df = data.get('max_df', 0.8)
+        if not 0 < max_df <= 1:
+            raise serializers.ValidationError({
+                'max_df': 'La frecuencia máxima de documento debe estar entre 0 y 1'
+            })
+
+        ngram_min = data.get('ngram_min', 1)
+        ngram_max = data.get('ngram_max', 2)
+        if ngram_min < 1 or ngram_max > 3 or ngram_min > ngram_max:
+            raise serializers.ValidationError({
+                'ngram_max': 'El rango de n-gramas debe cumplir 1 <= mínimo <= máximo <= 3'
             })
 
         return data
