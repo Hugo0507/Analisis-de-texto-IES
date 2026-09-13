@@ -13,11 +13,23 @@ export interface FactorCategory {
   bgClass: string;
   borderClass: string;
   badgeClass: string;
-  keywords: string[];
   description: string;
   icon: React.ReactNode;
   zoneX: number;
   zoneY: number;
+}
+
+/**
+ * Clasificacion de un tema en las seis categorias del OE3, tal como la
+ * devuelve el backend (apps/topic_modeling/factors.py).
+ */
+export interface TopicClassification {
+  topic_id: number;
+  primary_category: string;
+  primary_category_label: string;
+  secondary_category: string | null;
+  confidence_score: number;
+  matched_keywords: string[];
 }
 
 export interface EnrichedTopic {

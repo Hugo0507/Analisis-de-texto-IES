@@ -137,6 +137,16 @@ export interface BERTopicAnalysis {
   dataset: number | null;
   source_name: string;
 
+  // Clasificacion OE3 de los temas (misma logica que los modelos de temas)
+  topic_classifications?: Array<{
+    topic_id: number;
+    primary_category: string;
+    primary_category_label: string;
+    secondary_category: string | null;
+    confidence_score: number;
+    matched_keywords: string[];
+  }> | null;
+
   // Configuration
   embedding_model: string;
   embedding_model_display: string;
