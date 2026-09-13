@@ -100,6 +100,53 @@ class TestAvisosEditoriales:
         texto = 'View Crossmark data\nFull Terms & Conditions of access and use can be found at\nhttps://www.tandfonline.com/action/journalInformation?journalCode=rsar20\naccountancy curricula'
         assert limpiar_texto(texto) == 'accountancy curricula'
 
+    def test_portada_de_researchgate(self):
+        texto = (
+            'See discussions, stats, and author profiles for this publication at: '
+            'https://www.researchgate.net/publication/357306954\n\n'
+            'Conceptual Framework for High Performance Digital Entrepreneurial University\n\n'
+            'CITATIONS\n3\n\n3 authors:\n\nREADS\n31\n\nTippawan Meepung\n\n'
+            '10 PUBLICATIONS 26 CITATIONS\n\nSEE PROFILE\n\n'
+            'All content following this page was uploaded by Tippawan Meepung on 26 November 2023.\n\n'
+            'The user has requested enhancement of the downloaded file.\n\n'
+            'Digital transformation with university context'
+        )
+        palabras = limpiar_texto(texto).split()
+        for ruido in ('discussions', 'stats', 'profiles', 'citations', 'reads', 'uploaded',
+                      'enhancement', 'downloaded', 'meepung', 'researchgate'):
+            assert ruido not in palabras
+        assert palabras == ['digital', 'transformation', 'with', 'university', 'context']
+
+    def test_aviso_de_acm(self):
+        texto = (
+            'open-ended process. Permission to make digital or hard copies of all or part of this work for '
+            'personal or classroom use is granted without fee provided that copies are not made or distributed '
+            'for profit or commercial advantage and that copies bear this notice and the full citation on the '
+            'first page. Copyrights for components of this work owned by others than ACM must be honored. '
+            'To copy otherwise, or republish, requires prior specific permission and/or a fee. Request permissions '
+            'from Permissions@acm.org. ICEEL 2019, November 5-7, 2019, Barcelona, Spain. '
+            'Copyright is held by the owner/author(s). Publication rights licensed to ACM. '
+            'Digitalization in mid-rank higher education institutions'
+        )
+        palabras = limpiar_texto(texto).split()
+        for ruido in ('permission', 'permissions', 'copies', 'republish', 'acm', 'licensed', 'copyrights'):
+            assert ruido not in palabras
+        assert palabras[:2] == ['open', 'ended']
+        assert palabras[-3:] == ['higher', 'education', 'institutions']
+
+    def test_licencia_creative_commons(self):
+        textos = [
+            'Copyright 2023 Li and Wu. This is an open access article distributed under the Creative Commons '
+            'Attribution License, which permits unrestricted use, distribution, and reproduction in any medium, '
+            'provided the original work is properly cited. digital maturity model',
+            'This work is licensed under a Creative Commons Attribution 4.0 International License. digital maturity model',
+        ]
+        for texto in textos:
+            palabras = limpiar_texto(texto).split()
+            for ruido in ('creative', 'commons', 'licensed', 'reproduction', 'attribution'):
+                assert ruido not in palabras, (texto[:40], ruido)
+            assert palabras[-3:] == ['digital', 'maturity', 'model']
+
     def test_quitar_ruido_conserva_mayusculas_para_las_citas(self):
         assert 'Smith' not in quitar_ruido_pdf('as noted (Smith, 2020) before')
 

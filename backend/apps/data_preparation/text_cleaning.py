@@ -41,6 +41,23 @@ _RE_AVISOS_EDITORIALES = [
     # Taylor & Francis, en la portada.
     re.compile(r'view\s+crossmark\s+data', re.I),
     re.compile(r'full\s+terms\s*&\s*conditions\s+of\s+access\s+and\s+use\s+can\s+be\s+found\s+at', re.I),
+    # ResearchGate antepone una portada con autores, citas y perfiles. Va
+    # completa, desde "See discussions..." hasta "...the downloaded file."
+    re.compile(r'see\s+discussions,?\s+stats,?\s+and\s+author\s+profiles\s+for\s+this\s+publication\s+at'
+               r'.{0,2000}?the\s+user\s+has\s+requested\s+enhancement\s+of\s+the\s+downloaded\s+file\.?', re.I | re.S),
+    re.compile(r'see\s+discussions,?\s+stats,?\s+and\s+author\s+profiles\s+for\s+this\s+publication\s+at:?\s*\S*', re.I),
+    re.compile(r'all\s+content\s+following\s+this\s+page\s+was\s+uploaded\s+by\s+.{0,120}?\d{4}\.?', re.I | re.S),
+    re.compile(r'the\s+user\s+has\s+requested\s+enhancement\s+of\s+the\s+downloaded\s+file\.?', re.I),
+    # ACM, en la primera pagina de sus actas.
+    re.compile(r'permission\s+to\s+make\s+digital\s+or\s+hard\s+copies.{0,1200}?permissions@acm\.org\.?', re.I | re.S),
+    re.compile(r'fee\.\s*request\s+permissions', re.I),
+    re.compile(r'copyright\s+is\s+held\s+by\s+the\s+owner\s*/\s*author\(s\)\.?'
+               r'\s*publication\s+rights\s+licensed\s+to\s+acm\.?', re.I | re.S),
+    # Licencias Creative Commons (Frontiers, Hindawi, MDPI, Redalyc...).
+    re.compile(r'open[-\s]?access\s+article\s+distributed\s+under\s+the\s+(?:terms\s+of\s+the\s+)?'
+               r'creative\s+commons.{0,300}?properly\s+cited\.?', re.I | re.S),
+    re.compile(r'distributed\s+under\s+the\s+terms\s+of\s+the\s+creative\s+commons[^.]{0,250}\.?', re.I | re.S),
+    re.compile(r'this\s+(?:work|article)\s+is\s+licensed\s+under\s+an?\s+creative\s+commons[^.]{0,200}\.?', re.I | re.S),
 ]
 
 RE_URL = re.compile(r'https?://\S+|www\.\S+|\b(?:dx\.)?doi\.org/\S+', re.IGNORECASE)
