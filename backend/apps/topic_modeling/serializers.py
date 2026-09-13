@@ -32,7 +32,18 @@ class TopicModelingListSerializer(serializers.ModelSerializer):
         ]
 
     def get_has_artifact(self, obj):
-        return bool(obj.model_artifact and obj.vectorizer_artifact)
+        """
+        True si el modelo puede usarse para inferir sobre documentos nuevos.
+
+        Mira primero el respaldo en la base de datos, que es el que carga la
+        inferencia y el unico que sobrevive a un reinicio del contenedor. Antes
+        solo consultaba los ficheros en disco, asi que informaba que habia
+        artefacto cuando ya no se podia inferir, y al reves.
+        """
+        return bool(
+            (obj.model_artifact_bin and obj.vectorizer_artifact_bin)
+            or (obj.model_artifact and obj.vectorizer_artifact)
+        )
 
 
 class TopicModelingDetailSerializer(serializers.ModelSerializer):

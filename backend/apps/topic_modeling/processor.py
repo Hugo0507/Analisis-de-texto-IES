@@ -19,6 +19,8 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.decomposition import TruncatedSVD, NMF as SKNMF, LatentDirichletAllocation
+
+from .plsa import PLSA
 from gensim.models import LdaModel
 from gensim.corpora import Dictionary
 from gensim.models.coherencemodel import CoherenceModel
@@ -129,29 +131,36 @@ def process_topic_modeling(tm_id: int):
         # Serializar vectorizador y modelo para inferencia futura
         logger.info(f"[TM {tm_id}] Serializando artefactos del modelo...")
         try:
-            # Vectorizador
+            # El BinaryField va PRIMERO y el fichero despues. El orden importa:
+            # en un hosting de disco efimero como HF Spaces, la copia que
+            # sobrevive es la de la base de datos, y si el guardado en disco
+            # falla no debe arrastrar consigo al respaldo que si sirve.
             buf_vec = io.BytesIO()
             joblib.dump(vectorizer, buf_vec)
-            buf_vec.seek(0)
-            vec_filename = f"tm_{tm_id}_vectorizer.pkl"
-            tm.vectorizer_artifact.save(vec_filename, ContentFile(buf_vec.read()), save=False)
-            # Guardar también en BinaryField para persistencia en hosting efímero
-            buf_vec.seek(0)
-            tm.vectorizer_artifact_bin = buf_vec.read()
+            tm.vectorizer_artifact_bin = buf_vec.getvalue()
 
-            # Modelo
             buf_model = io.BytesIO()
             joblib.dump(model, buf_model)
-            buf_model.seek(0)
-            model_filename = f"tm_{tm_id}_model.pkl"
-            tm.model_artifact.save(model_filename, ContentFile(buf_model.read()), save=False)
-            # Guardar también en BinaryField para persistencia en hosting efímero
-            buf_model.seek(0)
-            tm.model_artifact_bin = buf_model.read()
+            tm.model_artifact_bin = buf_model.getvalue()
 
-            logger.info(f"[TM {tm_id}] ✅ Artefactos serializados: {vec_filename}, {model_filename}")
+            logger.info(
+                f"[TM {tm_id}] [OK] Artefactos serializados en DB: "
+                f"vectorizador {len(tm.vectorizer_artifact_bin)} bytes, "
+                f"modelo {len(tm.model_artifact_bin)} bytes"
+            )
         except Exception as artifact_error:
-            logger.warning(f"[TM {tm_id}] ⚠️ No se pudo serializar artefactos: {artifact_error}")
+            logger.warning(f"[TM {tm_id}] [WARN] No se pudo serializar artefactos: {artifact_error}")
+
+        try:
+            vec_filename = f"tm_{tm_id}_vectorizer.pkl"
+            tm.vectorizer_artifact.save(
+                vec_filename, ContentFile(tm.vectorizer_artifact_bin or b''), save=False)
+            model_filename = f"tm_{tm_id}_model.pkl"
+            tm.model_artifact.save(
+                model_filename, ContentFile(tm.model_artifact_bin or b''), save=False)
+        except Exception as file_error:
+            # Copia en disco opcional: util en local, prescindible en produccion.
+            logger.warning(f"[TM {tm_id}] [WARN] No se pudo escribir el artefacto en disco: {file_error}")
 
         # COMPLETADO
         tm.status = TopicModeling.STATUS_COMPLETED
@@ -327,15 +336,16 @@ def train_model(tm, doc_term_matrix, feature_names, processed_texts) -> Tuple[An
         doc_topic_matrix = model.fit_transform(doc_term_matrix)
 
     elif tm.algorithm == 'plsa':
-        # PLSA usando LatentDirichletAllocation con parámetros específicos
-        # (PLSA es similar a LDA pero sin priors Dirichlet)
-        model = LatentDirichletAllocation(
+        # PLSA de Hofmann por maxima verosimilitud con EM (apps/topic_modeling/plsa.py).
+        # Antes se entrenaba con LatentDirichletAllocation pasando los priors a
+        # None, pero en scikit-learn None significa "usa el valor por defecto",
+        # asi que entrenaba un LDA identico: ambos modelos devolvian los mismos
+        # temas palabra por palabra y la misma coherencia. La diferencia real
+        # entre ambos es precisamente que PLSA no lleva priors de Dirichlet.
+        model = PLSA(
             n_components=n_topics,
-            random_state=random_seed,
             max_iter=max_iter,
-            learning_method='batch',
-            doc_topic_prior=None,  # Sin prior para simular PLSA
-            topic_word_prior=None
+            random_state=random_seed,
         )
         doc_topic_matrix = model.fit_transform(doc_term_matrix)
 

@@ -10,6 +10,7 @@ source =
     apps.users.serializers
     apps.users.models
     apps.core.permissions
+    apps.topic_modeling.plsa
     apps.core.background
     apps.datasets.views
     apps.data_preparation.views
