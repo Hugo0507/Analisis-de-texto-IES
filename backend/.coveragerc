@@ -15,6 +15,7 @@ source =
     apps.core.background
     apps.datasets.views
     apps.data_preparation.views
+    apps.data_preparation.text_cleaning
     apps.bertopic.views
 
 [report]

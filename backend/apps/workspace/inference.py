@@ -15,6 +15,8 @@ import joblib
 import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 
+from apps.data_preparation.text_cleaning import filtrar_palabras, normalizar, quitar_ruido_pdf
+
 logger = logging.getLogger(__name__)
 
 
@@ -325,18 +327,8 @@ def infer_topics(
 
 # ── Preprocesamiento para inferencia ─────────────────────────────────────────
 
-# Patrones compilados para limpieza de texto de PDFs
-_RE_URL = re.compile(r'https?://\S+|www\.\S+', re.IGNORECASE)
-_RE_EMAIL = re.compile(r'\S+@\S+\.\S+')
-_RE_DOI = re.compile(r'\b(?:doi|DOI)[:\s]*10\.\S+')
-_RE_ISBN = re.compile(r'\b(?:ISBN|ISSN)[:\s\-]*[\d\-Xx]+', re.IGNORECASE)
-_RE_PAGE_NUMBERS = re.compile(r'\b(?:pp?\.|pages?)\s*\d+[\s\-–]+\d+', re.IGNORECASE)
-_RE_CITATION_BRACKETS = re.compile(r'\[[\d,;\s\-–]+\]')
-_RE_CITATION_PARENS = re.compile(r'\(\s*(?:[A-Z][a-z]+(?:\s+(?:et\s+al\.?|&|and)\s*)?(?:,?\s*\d{4})\s*(?:;\s*)?)+\)')
-_RE_NUMBERS_STANDALONE = re.compile(r'\b\d+(?:\.\d+)?\b')
-_RE_NON_ALPHA = re.compile(r'[^a-zA-Z\s]')
-_RE_MULTI_SPACE = re.compile(r'\s+')
-_RE_SHORT_WORDS = re.compile(r'\b[a-zA-Z]\b')
+# Los patrones de limpieza (URLs, DOIs, citas, glifos, avisos editoriales)
+# viven en data_preparation/text_cleaning.py y los comparte el corpus.
 
 # Sección de referencias: líneas que comienzan con "References", "Bibliography", etc.
 _RE_REFERENCES_SECTION = re.compile(
@@ -391,15 +383,14 @@ def preprocess_for_inference(
     """
     Preprocesamiento completo para texto extraído de PDFs nuevos.
 
-    Replica el pipeline del corpus:
+    Usa la misma limpieza que la Preparación de datos (text_cleaning.py), para que
+    el texto llegue a los modelos igual que el del corpus con que se entrenaron:
       1. Eliminar sección de referencias/bibliografía (si strip_references=True)
-      2. Eliminar URLs, emails, DOIs, ISBNs, citas en brackets
-      3. Eliminar números de páginas y citas parentéticas
-      4. Convertir a minúsculas
-      5. Eliminar caracteres no alfabéticos
-      6. Lematizar con spaCy (si disponible)
-      7. Aplicar stopwords (EXTRA + NLTK + custom del dataset)
-      8. Eliminar palabras más cortas que min_word_length
+      2. Normalizar ligaduras y tildes; eliminar glifos (cid:n), avisos
+         editoriales, URLs, emails, DOIs, ISBNs, páginas y citas
+      3. Convertir a minúsculas y eliminar números y caracteres no alfabéticos
+      4. Lematizar con spaCy (si lemmatize=True)
+      5. Aplicar stopwords y eliminar palabras más cortas que min_word_length
 
     Args:
         text: Texto crudo extraído del PDF
@@ -418,39 +409,18 @@ def preprocess_for_inference(
     if strip_references:
         text = _strip_references_section(text)
 
-    # 2–3. Eliminar URLs, emails, DOIs, citas, etc.
-    text = _RE_URL.sub(' ', text)
-    text = _RE_EMAIL.sub(' ', text)
-    text = _RE_DOI.sub(' ', text)
-    text = _RE_ISBN.sub(' ', text)
-    text = _RE_PAGE_NUMBERS.sub(' ', text)
-    text = _RE_CITATION_BRACKETS.sub(' ', text)
-    text = _RE_CITATION_PARENS.sub(' ', text)
+    # 2. Ruido de la extracción: glifos, avisos editoriales, URLs, DOIs, citas
+    text = quitar_ruido_pdf(text)
 
-    # 4. Minúsculas
-    text = text.lower()
+    # 3. Minúsculas; números y caracteres no alfabéticos a espacios
+    text = normalizar(text)
 
-    # 5. Eliminar números y caracteres no alfabéticos
-    text = _RE_NUMBERS_STANDALONE.sub(' ', text)
-    text = _RE_NON_ALPHA.sub(' ', text)
-
-    # 6. Lematizar (si spaCy está disponible)
+    # 4. Lematizar (si spaCy está disponible)
     if lemmatize:
         text = _lemmatize_text(text, language, nlp=nlp)
 
-    # 7. Aplicar stopwords
-    if stopwords:
-        words = text.split()
-        words = [w for w in words if w not in stopwords]
-        text = ' '.join(words)
-
-    # 8. Eliminar palabras más cortas que min_word_length y normalizar espacios
-    if min_word_length > 1:
-        re_short = re.compile(r'\b[a-zA-Z]{1,' + str(min_word_length - 1) + r'}\b')
-        text = re_short.sub(' ', text)
-    text = _RE_MULTI_SPACE.sub(' ', text).strip()
-
-    return text
+    # 5. Stopwords y palabras más cortas que min_word_length
+    return filtrar_palabras(text, stopwords, min_word_length)
 
 
 def infer_ner(
