@@ -11,7 +11,8 @@ import publicWorkspaceService, {
 export interface ProcessingStageProps {
   workspaceId: string;
   onDone: (workspace: Workspace) => void;
-  onError: () => void;
+  /** Recibe el motivo concreto del fallo para que el Laboratorio lo muestre. */
+  onError: (message: string) => void;
 }
 
 export const POLL_INTERVAL_MS = 2500;
@@ -42,8 +43,9 @@ export const ProcessingStage: React.FC<ProcessingStageProps> = ({ workspaceId, o
   useEffect(() => {
     // Kick off inference
     publicWorkspaceService.runInference(workspaceId).catch(() => {
-      setErrorMsg('No se pudo iniciar la inferencia. Intenta de nuevo.');
-      onError();
+      const mensaje = 'No se pudo iniciar la inferencia. Intenta de nuevo.';
+      setErrorMsg(mensaje);
+      onError(mensaje);
     });
 
     // Poll for status with timeout
@@ -54,11 +56,11 @@ export const ProcessingStage: React.FC<ProcessingStageProps> = ({ workspaceId, o
       // Timeout — dejar de hacer polling
       if (elapsedMs > MAX_POLL_TIMEOUT_MS) {
         if (intervalRef.current) clearInterval(intervalRef.current);
-        setErrorMsg(
+        const mensaje =
           'La inferencia excedió el tiempo máximo de 5 minutos. '
-          + 'El servidor puede estar sobrecargado. Intenta de nuevo más tarde.'
-        );
-        onError();
+          + 'El servidor puede estar sobrecargado. Intenta de nuevo más tarde.';
+        setErrorMsg(mensaje);
+        onError(mensaje);
         return;
       }
 
@@ -71,8 +73,9 @@ export const ProcessingStage: React.FC<ProcessingStageProps> = ({ workspaceId, o
           onDone(ws);
         } else if (ws.status === 'error') {
           if (intervalRef.current) clearInterval(intervalRef.current);
-          setErrorMsg(ws.error_message || 'Ocurrió un error durante la inferencia.');
-          onError();
+          const mensaje = ws.error_message || 'Ocurrió un error durante la inferencia.';
+          setErrorMsg(mensaje);
+          onError(mensaje);
         }
       } catch {
         // Polling error — seguir intentando (puede ser un blip de red)
