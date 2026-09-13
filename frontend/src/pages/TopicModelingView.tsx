@@ -306,6 +306,12 @@ export const TopicModelingView: React.FC = () => {
               <p className="text-xs text-gray-500 mt-0.5">
                 Max iteraciones: {analysis.max_iterations}
               </p>
+              {analysis.max_features != null && (
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Vocabulario: hasta {analysis.max_features.toLocaleString()} términos · min_df {analysis.min_df}
+                  {' '}· max_df {analysis.max_df} · n-gramas ({analysis.ngram_min}, {analysis.ngram_max})
+                </p>
+              )}
             </div>
           </div>
 

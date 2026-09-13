@@ -118,6 +118,13 @@ export interface TopicModeling {
   max_iterations: number;
   random_seed: number | null;
 
+  // Parametros de vectorizacion (antes fijos en el backend)
+  max_features: number;
+  min_df: number;
+  max_df: number;
+  ngram_min: number;
+  ngram_max: number;
+
   // Estado y progreso
   status: TopicModelingStatus;
   status_display: string;
@@ -201,6 +208,11 @@ export interface TopicModelingCreateRequest {
   num_words: number;
   max_iterations?: number;
   random_seed?: number;
+  max_features?: number;
+  min_df?: number;
+  max_df?: number;
+  ngram_min?: number;
+  ngram_max?: number;
 }
 
 /**

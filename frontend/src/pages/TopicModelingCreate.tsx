@@ -47,6 +47,13 @@ export const TopicModelingCreate: React.FC = () => {
   const [randomSeed, setRandomSeed] = useState<number | null>(null);
   const [useRandomSeed, setUseRandomSeed] = useState<boolean>(false);
 
+  // Parametros de vectorizacion. Los valores por defecto son los que el
+  // backend usaba fijos antes de que fueran configurables.
+  const [maxFeatures, setMaxFeatures] = useState<number>(2000);
+  const [minDf, setMinDf] = useState<number>(2);
+  const [maxDf, setMaxDf] = useState<number>(0.8);
+  const [ngramMax, setNgramMax] = useState<number>(2);
+
   useEffect(() => {
     loadAlgorithms();
   }, []);
@@ -114,6 +121,21 @@ export const TopicModelingCreate: React.FC = () => {
       return;
     }
 
+    if (maxFeatures < 100 || maxFeatures > 100000) {
+      showError('El tamaño del vocabulario debe estar entre 100 y 100.000 términos');
+      return;
+    }
+
+    if (minDf < 1) {
+      showError('La frecuencia mínima de documento debe ser al menos 1');
+      return;
+    }
+
+    if (!(maxDf > 0 && maxDf <= 1)) {
+      showError('La frecuencia máxima de documento debe estar entre 0 y 1');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const requestData = {
@@ -127,6 +149,11 @@ export const TopicModelingCreate: React.FC = () => {
         num_words: numWords,
         max_iterations: maxIterations,
         random_seed: useRandomSeed && randomSeed !== null ? randomSeed : undefined,
+        max_features: maxFeatures,
+        min_df: minDf,
+        max_df: maxDf,
+        ngram_min: 1,
+        ngram_max: ngramMax,
       };
 
       const result = await topicModelingService.createTopicModeling(requestData);
@@ -578,6 +605,77 @@ export const TopicModelingCreate: React.FC = () => {
                         LSA y NMF no usan iteraciones, calculan temas directamente mediante descomposición matricial.
                       </p>
                     )}
+                  </div>
+
+                  {/* Vectorizacion del texto */}
+                  <div>
+                    <p className="block text-sm font-medium text-gray-700 mb-2">Vectorización del texto</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="maxFeatures" className="block text-xs font-medium text-gray-600 mb-1">
+                          Tamaño del vocabulario (términos)
+                        </label>
+                        <input
+                          type="number"
+                          id="maxFeatures"
+                          min="100"
+                          max="100000"
+                          step="100"
+                          value={maxFeatures}
+                          onChange={(e) => setMaxFeatures(Number(e.target.value))}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="ngramMax" className="block text-xs font-medium text-gray-600 mb-1">
+                          N-gramas
+                        </label>
+                        <select
+                          id="ngramMax"
+                          value={ngramMax}
+                          onChange={(e) => setNgramMax(Number(e.target.value))}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                        >
+                          <option value={1}>Solo palabras (1, 1)</option>
+                          <option value={2}>Palabras y bigramas (1, 2)</option>
+                          <option value={3}>Hasta trigramas (1, 3)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label htmlFor="minDf" className="block text-xs font-medium text-gray-600 mb-1">
+                          Frecuencia mínima de documento (min_df)
+                        </label>
+                        <input
+                          type="number"
+                          id="minDf"
+                          min="1"
+                          step="1"
+                          value={minDf}
+                          onChange={(e) => setMinDf(Number(e.target.value))}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="maxDf" className="block text-xs font-medium text-gray-600 mb-1">
+                          Frecuencia máxima de documento (max_df)
+                        </label>
+                        <input
+                          type="number"
+                          id="maxDf"
+                          min="0.05"
+                          max="1"
+                          step="0.05"
+                          value={maxDf}
+                          onChange={(e) => setMaxDf(Number(e.target.value))}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2 italic">
+                      Por defecto: hasta 2.000 términos presentes en al menos 2 documentos y en no más del 80 %,
+                      con palabras sueltas y bigramas. Un vocabulario mayor conserva términos menos frecuentes:
+                      los temas pueden ganar matices y perder coherencia.
+                    </p>
                   </div>
 
                   {/* Random Seed */}
