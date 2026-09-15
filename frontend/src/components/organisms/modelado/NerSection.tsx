@@ -69,7 +69,7 @@ export const NerSection: React.FC<NerSectionProps> = ({
           {/* NER Charts — donut + top entities by type */}
           <DashboardGrid columns={2} gap="lg">
             <ChartCard
-              title="Distribución de Entidades"
+              title="Distribución de entidades"
               subtitle={data.selectedNer.name}
               accentColor="purple"
               size="lg"
@@ -108,7 +108,7 @@ export const NerSection: React.FC<NerSectionProps> = ({
             </ChartCard>
 
             <ChartCard
-              title="Top Entidades por Tipo"
+              title="Entidades principales por tipo"
               subtitle="Entidades más frecuentes"
               accentColor="blue"
               size="lg"
@@ -142,7 +142,7 @@ export const NerSection: React.FC<NerSectionProps> = ({
           {/* NER — Top 20 entidades por frecuencia (filtrado por tipo al hacer click en el donut) */}
           {nerEntities.length > 0 && (
             <ChartCard
-              title="Frecuencia de Entidades"
+              title="Frecuencia de entidades"
               subtitle={
                 selectedEntityType
                   ? `Filtrando por tipo: ${selectedEntityType} — ${filteredNerEntities.length} entidades`
@@ -184,7 +184,7 @@ export const NerSection: React.FC<NerSectionProps> = ({
           {/* VIZ-4: NER Co-occurrence Network */}
           {nerNetworkData && (
             <ChartCard
-              title="Red de Co-ocurrencia de Entidades"
+              title="Red de co-ocurrencia de entidades"
               subtitle={`Top 25 pares — grosor del enlace proporcional a la frecuencia de co-ocurrencia`}
               accentColor="blue"
               size="lg"

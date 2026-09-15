@@ -29,7 +29,7 @@ export const SankeyChart: React.FC<SankeyChartProps> = ({ enrichedTopics }) => {
         const sankeyData = { nodes: [...topicNodes, ...filteredCatNodes], links };
         return (
           <ChartCard
-            title="Flujo Tema → Categoría OE3"
+            title="Flujo tema → categoría OE3"
             subtitle="Sankey — cada banda muestra cómo los temas se asignan a las categorías del marco OE3"
             accentColor="purple"
             size="lg"

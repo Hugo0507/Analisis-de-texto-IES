@@ -25,7 +25,7 @@ export const PIPELINE_STEPS = [
   { label: 'Extrayendo texto de los PDFs',   maxPct: 20  },
   { label: 'Validando idioma',               maxPct: 30  },
   { label: 'Preparando inferencia',          maxPct: 40  },
-  { label: 'Bolsa de Palabras',              maxPct: 55  },
+  { label: 'Bolsa de palabras',              maxPct: 55  },
   { label: 'TF-IDF',                         maxPct: 65  },
   { label: 'Asignando temas',               maxPct: 75  },
   { label: 'Entidades NER',                  maxPct: 88  },

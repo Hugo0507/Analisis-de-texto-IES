@@ -82,7 +82,7 @@ export const AnalysisSection: React.FC<AnalysisSectionProps> = ({
       {/* ── BoW: Nube de Palabras ↔ Tabla de Vocabulario ── */}
       {(data?.wordCloudData?.length || 0) > 0 || Object.keys(fullVocabulary).length > 0 ? (
         <ChartCard
-          title={vocabView === 'cloud' ? 'Nube de Palabras' : 'Tabla de Vocabulario Completa'}
+          title={vocabView === 'cloud' ? 'Nube de palabras' : 'Vocabulario completo'}
           subtitle={vocabView === 'cloud'
             ? `Haz clic en una palabra para ver su análisis${data?.selectedBow ? ` · ${data.selectedBow.name}` : ''}`
             : `${Object.keys(fullVocabulary).length > 0 ? Object.keys(fullVocabulary).length.toLocaleString() : data?.selectedBow?.vocabulary_size?.toLocaleString() || 0} términos — haz clic para analizar`}
@@ -278,7 +278,7 @@ export const AnalysisSection: React.FC<AnalysisSectionProps> = ({
       {/* ── Analysis Selector (when multiple) ── */}
       {((data?.bowAnalyses?.length || 0) > 1 || (data?.ngramAnalyses?.length || 0) > 1 || (data?.tfidfAnalyses?.length || 0) > 1) && (
         <ChartCard
-          title="Selección de Análisis"
+          title="Selección de análisis"
           subtitle="Elige qué análisis visualizar"
           accentColor="emerald"
           size="sm"
@@ -322,7 +322,7 @@ export const AnalysisSection: React.FC<AnalysisSectionProps> = ({
       {/* ── BoW Details ── */}
       {data?.selectedBow && (
         <ChartCard
-          title="Detalles del Análisis BoW"
+          title="Detalles del análisis BoW"
           subtitle={data.selectedBow.name}
           accentColor="cyan"
           size="md"

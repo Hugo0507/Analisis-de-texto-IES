@@ -30,7 +30,7 @@ export const RadarChart: React.FC<RadarChartProps> = ({ enrichedTopics, topicsBy
         if (!hasData) return null;
         return (
           <ChartCard
-            title="Radar de Cobertura por Categoría"
+            title="Radar de cobertura por categoría"
             subtitle="Comparativa de temas y documentos cubiertos por cada factor OE3"
             accentColor="cyan"
             size="md"

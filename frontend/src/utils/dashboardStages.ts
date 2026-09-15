@@ -39,7 +39,7 @@ export const DASHBOARD_STAGES: DashboardStage[] = [
     end: true,
     tone: {
       text: 'text-stage-prep',
-      activeTab: 'bg-stage-prep/10 ring-1 ring-stage-prep/30',
+      activeTab: 'bg-ink-800 ring-1 ring-stage-prep/40',
       rule: 'via-stage-prep/60',
       dot: 'bg-stage-prep',
     },
@@ -52,7 +52,7 @@ export const DASHBOARD_STAGES: DashboardStage[] = [
     eyebrow: 'Etapa 02',
     tone: {
       text: 'text-stage-vec',
-      activeTab: 'bg-stage-vec/10 ring-1 ring-stage-vec/30',
+      activeTab: 'bg-ink-800 ring-1 ring-stage-vec/40',
       rule: 'via-stage-vec/60',
       dot: 'bg-stage-vec',
     },
@@ -65,7 +65,7 @@ export const DASHBOARD_STAGES: DashboardStage[] = [
     eyebrow: 'Etapa 03',
     tone: {
       text: 'text-stage-mod',
-      activeTab: 'bg-stage-mod/10 ring-1 ring-stage-mod/30',
+      activeTab: 'bg-ink-800 ring-1 ring-stage-mod/40',
       rule: 'via-stage-mod/60',
       dot: 'bg-stage-mod',
     },
@@ -77,7 +77,7 @@ export const DASHBOARD_STAGES: DashboardStage[] = [
     eyebrow: 'Aplicación de los modelos',
     tone: {
       text: 'text-stage-lab',
-      activeTab: 'bg-stage-lab/10 ring-1 ring-stage-lab/30',
+      activeTab: 'bg-ink-800 ring-1 ring-stage-lab/40',
       rule: 'via-stage-lab/60',
       dot: 'bg-stage-lab',
     },
@@ -89,7 +89,7 @@ export const DASHBOARD_STAGES: DashboardStage[] = [
     eyebrow: 'Síntesis · OE3',
     tone: {
       text: 'text-stage-sum',
-      activeTab: 'bg-stage-sum/10 ring-1 ring-stage-sum/30',
+      activeTab: 'bg-ink-800 ring-1 ring-stage-sum/40',
       rule: 'via-stage-sum/60',
       dot: 'bg-stage-sum',
     },

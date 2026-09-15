@@ -110,7 +110,7 @@ export const BertopicSection: React.FC<BertopicSectionProps> = ({
           {/* BERTopic Distribution Donut */}
           {bertopicDistData.length > 0 && (
             <ChartCard
-              title="Distribución de Clústeres"
+              title="Distribución de clústeres"
               subtitle="Documentos por clúster BERTopic"
               accentColor="amber"
               size="md"
@@ -140,7 +140,7 @@ export const BertopicSection: React.FC<BertopicSectionProps> = ({
             if (!umapPoints || umapPoints.length === 0) return null;
             return (
               <ChartCard
-                title="Mapa de Ciencia del Corpus"
+                title="Mapa de ciencia del corpus"
                 subtitle="Proyección UMAP — cada punto es un documento"
                 accentColor="amber"
                 size="lg"

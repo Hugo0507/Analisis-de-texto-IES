@@ -90,9 +90,9 @@ export const MetricCardDark: React.FC<MetricCardDarkProps> = ({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-2 text-sm text-mist">
-            <span aria-hidden="true" className={`h-1.5 w-1.5 shrink-0 rounded-full ${metricAccentDots[accentColor]}`} />
-            <span className="truncate">{title}</span>
+          <p className="flex items-start gap-2 text-sm leading-snug text-mist">
+            <span aria-hidden="true" className={`mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full ${metricAccentDots[accentColor]}`} />
+            <span>{title}</span>
           </p>
           <p
             className={`

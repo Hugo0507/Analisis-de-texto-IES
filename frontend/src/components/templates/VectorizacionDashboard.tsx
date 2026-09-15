@@ -378,19 +378,19 @@ export const VectorizacionDashboard: React.FC = () => {
 
         const kpis = [
           {
-            label: 'Vocabulario Único', value: vocabSize, unit: 'tipos de palabras',
+            label: 'Vocabulario único', value: vocabSize, unit: 'tipos de palabras',
             sub: bow ? `min_df ${bow.min_df} · ${bow.document_count} docs` : 'sin BoW',
             icon: 'M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129',
             tip: 'Número de palabras únicas (types) detectadas por CountVectorizer. Influenciado por min_df y max_features.',
           },
           {
-            label: 'Riqueza Léxica (TTR)', value: ttr, unit: 'type-token ratio',
+            label: 'Riqueza léxica (TTR)', value: ttr, unit: 'type-token ratio',
             sub: bow ? `${bow.total_term_occurrences.toLocaleString()} tokens totales` : 'sin BoW',
             icon: 'M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z',
             tip: 'TTR = términos_únicos / total_ocurrencias × 100. Alto = corpus diverso; bajo = corpus repetitivo. Útil para medir la riqueza lingüística del corpus.',
           },
           {
-            label: 'Densidad de Matriz', value: density, unit: 'densidad doc-término',
+            label: 'Densidad de la matriz', value: density, unit: 'densidad doc-término',
             sub: bow ? `dispersión ${(bow.matrix_sparsity * 100).toFixed(1)}%` : 'sin BoW',
             icon: 'M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z',
             tip: 'Densidad = 1 − dispersión de la matriz documento-término. Alto = documentos comparten vocabulario. Bajo = vocabularios muy distintos por documento.',
@@ -402,13 +402,13 @@ export const VectorizacionDashboard: React.FC = () => {
             tip: 'IDF promedio del corpus (log(N/df) por término). Alto = corpus con términos raros y específicos. Bajo = vocabulario muy común entre documentos.',
           },
           {
-            label: 'Tokens por Documento', value: tokPerDoc, unit: 'términos únicos/doc',
+            label: 'Términos por documento', value: tokPerDoc, unit: 'términos únicos/doc',
             sub: bow ? `matriz ${bow.matrix_shape?.rows ?? '?'}×${bow.matrix_shape?.cols ?? '?'}` : 'sin BoW',
             icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
             tip: 'Media de términos únicos por documento en la matriz BoW. Indica la extensión promedio del vocabulario activo en cada documento del corpus.',
           },
           {
-            label: 'Cobertura N-gramas', value: ngramVocab, unit: 'n-gramas únicos',
+            label: 'Cobertura de n-gramas', value: ngramVocab, unit: 'n-gramas únicos',
             sub: ngram ? `${ngramConfs} config${ngramConfs !== 1 ? 's' : ''} · ${ngram.document_count} docs` : 'sin análisis',
             icon: 'M13 10V3L4 14h7v7l9-11h-7z',
             tip: 'Total de n-gramas únicos sumando todas las configuraciones (unigramas, bigramas, trigramas…). Mide la riqueza de secuencias de tokens capturadas.',
@@ -416,7 +416,7 @@ export const VectorizacionDashboard: React.FC = () => {
         ];
 
         return (
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 2xl:grid-cols-6 gap-3">
             {kpis.map(kpi => (
               <div key={kpi.label} title={kpi.tip}
                 className="flex flex-col rounded-2xl border border-ink-700 bg-ink-900 p-4 cursor-help transition-colors hover:border-ink-600"
@@ -603,7 +603,7 @@ export const VectorizacionDashboard: React.FC = () => {
         }));
         return (
           <ChartCard
-            title="Distribución de Frecuencias — Ley de Zipf"
+            title="Distribución de frecuencias: ley de Zipf"
             subtitle={`Gráfico log-log: rango vs frecuencia — ${zipfData.length} términos del vocabulario BoW`}
             accentColor="purple"
             size="lg"

@@ -80,7 +80,7 @@ export const TopicsSection: React.FC<TopicsSectionProps> = ({
 
           {/* Topics Grid */}
           <ChartCard
-            title="Temas Identificados"
+            title="Temas identificados"
             subtitle={`${data.selectedTopicModeling.name} — ${data.topics.length} temas`}
             accentColor="emerald"
             size="lg"
@@ -120,7 +120,7 @@ export const TopicsSection: React.FC<TopicsSectionProps> = ({
           {/* Topic Distribution Donut */}
           {data.topicDistribution && data.topicDistribution.length > 0 && (
             <ChartCard
-              title="Distribución de Temas"
+              title="Distribución de temas"
               subtitle="Documentos por tema"
               accentColor="cyan"
               size="md"
@@ -245,7 +245,7 @@ export const TopicsSection: React.FC<TopicsSectionProps> = ({
             const setHovered = setPcaHovered;
             return (
               <ChartCard
-                title="Mapa de Distancia Inter-Temas (PCA)"
+                title="Mapa de distancia entre temas (PCA)"
                 subtitle="Proyección 2D — temas cercanos comparten vocabulario"
                 accentColor="emerald"
                 size="lg"

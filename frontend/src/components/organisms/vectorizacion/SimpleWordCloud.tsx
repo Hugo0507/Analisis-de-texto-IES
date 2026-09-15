@@ -13,7 +13,17 @@ export interface WordCloudProps {
 
 export const CLOUD_W = 660;
 export const CLOUD_H = 310;
-export const CLOUD_COLORS = ['#22d3ee','#34d399','#c084fc','#60a5fa','#fbbf24','#fb7185','#2dd4bf','#a78bfa','#4ade80','#f472b6','#38bdf8','#a3e635'];
+// El tamaño ya codifica la frecuencia; el color la refuerza con una sola rampa
+// (del gris al blanco pasando por el violeta de Vectorización) en vez de un
+// color distinto por palabra. Todos los pasos superan 4,5:1 sobre ink-900.
+export const CLOUD_RAMP = [
+  { desde: 0.6, color: '#E6ECF5', peso: 600 },
+  { desde: 0.3, color: '#CDBFFD', peso: 600 },
+  { desde: 0.12, color: '#A78BFA', peso: 500 },
+  { desde: 0, color: '#97A6BE', peso: 400 },
+];
+
+const tonoPara = (n: number) => CLOUD_RAMP.find(paso => n >= paso.desde) ?? CLOUD_RAMP[CLOUD_RAMP.length - 1];
 
 export const SimpleWordCloud: React.FC<WordCloudProps> = ({ data, maxWords = 60, onWordClick, selectedWord }) => {
   const layout = useMemo(() => {
@@ -27,7 +37,7 @@ export const SimpleWordCloud: React.FC<WordCloudProps> = ({ data, maxWords = 60,
     const placed: Box[] = [];
     const hits = (x1: number, y1: number, x2: number, y2: number) =>
       placed.some(p => x1 < p.x2 + 5 && x2 > p.x1 - 5 && y1 < p.y2 + 3 && y2 > p.y1 - 3);
-    return words.map((word, idx) => {
+    return words.map((word) => {
       const size = fs(word.value);
       const ww = word.text.length * size * 0.57;
       const wh = size * 1.25;
@@ -40,22 +50,23 @@ export const SimpleWordCloud: React.FC<WordCloudProps> = ({ data, maxWords = 60,
       }
       placed.push({ x1: fx, y1: fy, x2: fx + ww, y2: fy + wh });
       const n = (word.value - minVal) / range;
-      return { word, fx, fy, size, color: CLOUD_COLORS[idx % CLOUD_COLORS.length], n };
+      return { word, fx, fy, size, n };
     });
   }, [data, maxWords]);
 
   if (layout.length === 0) return null;
   return (
     <svg viewBox={`0 0 ${CLOUD_W} ${CLOUD_H}`} className="w-full" style={{ minHeight: '260px' }}>
-      {layout.map(({ word, fx, fy, size, color, n }) => {
+      {layout.map(({ word, fx, fy, size, n }) => {
         const isSelected = selectedWord === word.text;
+        const tono = tonoPara(n);
+        const hayOtraSeleccionada = !!selectedWord && !isSelected;
         return (
           <text key={word.text} x={fx} y={fy + size} fontSize={size}
-            fontFamily="ui-sans-serif, system-ui, sans-serif"
-            fontWeight={n > 0.6 ? 700 : n > 0.3 ? 600 : 400}
-            fill={color}
-            fillOpacity={isSelected ? 1 : 0.45 + n * 0.55}
-            stroke={isSelected ? color : 'none'} strokeWidth={isSelected ? 0.6 : 0}
+            fontFamily='"Instrument Sans", Inter, ui-sans-serif, system-ui, sans-serif'
+            fontWeight={tono.peso}
+            fill={isSelected ? '#3DD9A0' : tono.color}
+            fillOpacity={hayOtraSeleccionada ? 0.55 : 1}
             style={{ cursor: 'pointer' }}
             onClick={() => onWordClick?.(word)}
           >
