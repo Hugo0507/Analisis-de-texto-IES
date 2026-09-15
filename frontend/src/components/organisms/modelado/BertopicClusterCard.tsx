@@ -30,14 +30,14 @@ export const BertopicClusterCard: React.FC<BertopicClusterCardProps> = ({ cluste
           const barPct = Math.round((word.weight / maxWeight) * 100);
           return (
             <div key={word.word} className="flex items-center gap-2">
-              <span className="text-xs text-slate-300 w-20 truncate shrink-0">{word.word}</span>
-              <div className="flex-1 h-1.5 bg-slate-700/60 rounded-full overflow-hidden">
+              <span className="text-xs text-haze w-20 truncate shrink-0">{word.word}</span>
+              <div className="flex-1 h-1.5 bg-ink-800/60 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-amber-400 rounded-full"
                   style={{ width: `${barPct}%`, opacity: 0.8 }}
                 />
               </div>
-              <span className="text-xs text-slate-400 w-10 text-right shrink-0">
+              <span className="text-xs text-mist w-10 text-right shrink-0">
                 {word.weight.toFixed(4)}
               </span>
             </div>

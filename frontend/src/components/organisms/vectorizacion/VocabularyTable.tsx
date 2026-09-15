@@ -67,23 +67,23 @@ export const VocabularyTable: React.FC<VocabularyTableProps> = ({
     <div className="flex flex-col gap-3">
       {/* Search + count */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <p className="text-xs text-gray-500">
-          <span className="font-semibold text-gray-700">{filtered.length.toLocaleString()}</span> términos
-          {search && <span className="text-blue-600"> · búsqueda: "{search}"</span>}
-          <span className="ml-1.5 px-1.5 py-0.5 rounded bg-gray-100 text-gray-400 text-xs">vocabulario {dataSource}</span>
+        <p className="text-xs text-mist">
+          <span className="num font-semibold text-paper">{filtered.length.toLocaleString()}</span> términos
+          {search && <span className="text-stage-vec"> · búsqueda: "{search}"</span>}
+          <span className="ml-1.5 px-1.5 py-0.5 rounded-md border border-ink-700 bg-ink-850 text-fog text-xs">vocabulario {dataSource}</span>
         </p>
         <input
           type="text" value={search} placeholder="Buscar término…"
           onChange={e => { setSearch(e.target.value); setPage(1); }}
-          className="bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 w-52 shadow-sm"
+          className="bg-ink-850 border border-ink-600 rounded-xl px-3 py-1.5 text-sm text-paper placeholder-fog focus:outline-none focus:border-stage-vec/60 w-52"
         />
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-        <table className="w-full text-sm bg-white">
+      <div className="overflow-x-auto rounded-xl border border-ink-700">
+        <table className="w-full text-sm bg-ink-900">
           <thead>
-            <tr className="border-b border-gray-200 bg-gray-50">
+            <tr className="border-b border-ink-700 bg-ink-850">
               {[
                 { f: 'rank' as const, label: '#',          w: 'w-12' },
                 { f: 'term' as const, label: 'Término',    w: '' },
@@ -92,16 +92,16 @@ export const VocabularyTable: React.FC<VocabularyTableProps> = ({
                 ...(hasTfidf ? [{ f: 'tfidf' as const, label: 'TF-IDF', w: 'w-24' }] : []),
               ].map(col => (
                 <th key={col.f} onClick={() => handleSort(col.f)}
-                  className={`${col.w} px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-800 hover:bg-gray-100 select-none transition-colors`}
+                  className={`${col.w} px-3 py-2.5 text-left text-[11px] font-medium text-mist uppercase tracking-[0.08em] cursor-pointer hover:text-paper hover:bg-ink-800 select-none transition-colors`}
                 >
                   <span className="flex items-center gap-1">{col.label}<SortIndicator f={col.f} /></span>
                 </th>
               ))}
-              <th className="w-20 px-3 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Peso</th>
+              <th className="w-20 px-3 py-2.5 text-left text-[11px] font-medium text-mist uppercase tracking-[0.08em]">Peso</th>
               {onCompareToggle && <th className="w-10 px-2 py-2.5" title="Comparar términos" />}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-ink-700/70">
             {paginated.map(row => {
               const isSelected = selectedTerm === row.term;
               const isCompared = compareTerms.includes(row.term);
@@ -111,20 +111,20 @@ export const VocabularyTable: React.FC<VocabularyTableProps> = ({
               return (
                 <tr key={row.term}
                   onClick={() => onTermClick?.(row.term, row.freq)}
-                  className={`cursor-pointer transition-colors ${isCompared ? 'bg-violet-50/60' : isSelected ? 'bg-blue-50 border-l-2 border-l-blue-500' : 'hover:bg-gray-50'}`}
+                  className={`cursor-pointer transition-colors ${isCompared ? 'bg-stage-vec/10' : isSelected ? 'bg-stage-vec/[0.14] shadow-[inset_2px_0_0_#A78BFA]' : 'hover:bg-ink-850'}`}
                 >
-                  <td className="px-3 py-2 text-gray-400 text-xs font-mono">{row.rank}</td>
+                  <td className="num px-3 py-2 text-fog text-xs font-mono">{row.rank}</td>
                   <td className="px-3 py-2">
-                    <span className={`font-semibold text-sm ${isCompared ? 'text-violet-700' : isSelected ? 'text-blue-700' : 'text-gray-800'}`}>{row.term}</span>
+                    <span className={`font-medium text-sm ${isCompared || isSelected ? 'text-stage-vec' : 'text-paper'}`}>{row.term}</span>
                   </td>
                   <td className="px-3 py-2">
-                    <span className="text-blue-600 font-mono text-xs font-semibold">{freqDisplay}</span>
+                    <span className="num text-haze font-mono text-xs font-medium">{freqDisplay}</span>
                   </td>
-                  {hasIdf   && <td className="px-3 py-2 text-violet-600 font-mono text-xs">{row.idf   != null ? row.idf.toFixed(2)   : <span className="text-gray-300">—</span>}</td>}
-                  {hasTfidf && <td className="px-3 py-2 text-emerald-600 font-mono text-xs">{row.tfidf != null ? row.tfidf.toFixed(2) : <span className="text-gray-300">—</span>}</td>}
+                  {hasIdf   && <td className="num px-3 py-2 text-haze font-mono text-xs">{row.idf   != null ? row.idf.toFixed(2)   : <span className="text-fog">—</span>}</td>}
+                  {hasTfidf && <td className="num px-3 py-2 text-haze font-mono text-xs">{row.tfidf != null ? row.tfidf.toFixed(2) : <span className="text-fog">—</span>}</td>}
                   <td className="px-3 py-2">
-                    <div className="h-2 w-16 bg-gray-100 rounded-full overflow-hidden">
-                      <div className={`h-2 rounded-full transition-all ${isSelected ? 'bg-blue-500' : 'bg-cyan-400'}`} style={{ width: `${pct}%` }} />
+                    <div className="h-1.5 w-16 bg-ink-700 rounded-full overflow-hidden">
+                      <div className={`h-1.5 rounded-full transition-all ${isSelected ? 'bg-stage-vec' : 'bg-stage-vec/60'}`} style={{ width: `${pct}%` }} />
                     </div>
                   </td>
                   {onCompareToggle && (
@@ -133,7 +133,7 @@ export const VocabularyTable: React.FC<VocabularyTableProps> = ({
                         title={isCompared ? 'Quitar de comparación' : compareTerms.length >= 3 ? 'Máximo 3 términos' : 'Agregar a comparación'}
                         disabled={!isCompared && compareTerms.length >= 3}
                         className={`w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold transition-colors ${
-                          isCompared ? 'bg-violet-500 text-white' : 'bg-gray-100 text-gray-400 hover:bg-violet-100 hover:text-violet-600 disabled:opacity-30'
+                          isCompared ? 'bg-stage-vec text-ink-950' : 'border border-ink-600 text-mist hover:border-stage-vec/50 hover:text-stage-vec disabled:opacity-30'
                         }`}
                       >
                         {isCompared ? '✓' : '+'}
@@ -144,7 +144,7 @@ export const VocabularyTable: React.FC<VocabularyTableProps> = ({
               );
             })}
             {paginated.length === 0 && (
-              <tr><td colSpan={5 + (hasIdf ? 1 : 0) + (hasTfidf ? 1 : 0)} className="text-center py-8 text-gray-400 text-sm">Sin resultados para "{search}"</td></tr>
+              <tr><td colSpan={5 + (hasIdf ? 1 : 0) + (hasTfidf ? 1 : 0)} className="text-center py-8 text-mist text-sm">Sin resultados para "{search}"</td></tr>
             )}
           </tbody>
         </table>
@@ -153,13 +153,13 @@ export const VocabularyTable: React.FC<VocabularyTableProps> = ({
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <p className="text-xs text-gray-400">
+          <p className="num text-xs text-mist">
             {Math.min((page - 1) * VOCAB_PER_PAGE + 1, filtered.length)}–{Math.min(page * VOCAB_PER_PAGE, filtered.length)} de {filtered.length.toLocaleString()} términos
           </p>
           <div className="flex gap-1">
             {['«','‹'].map((ch, i) => (
               <button key={ch} onClick={() => setPage(i === 0 ? 1 : p => p - 1)} disabled={page === 1}
-                className="px-2.5 py-1 text-xs rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="px-2.5 py-1 text-xs rounded-lg border border-ink-600 text-mist hover:bg-ink-800 hover:text-paper disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >{ch}</button>
             ))}
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -167,13 +167,13 @@ export const VocabularyTable: React.FC<VocabularyTableProps> = ({
               const p = start + i;
               return p <= totalPages ? (
                 <button key={p} onClick={() => setPage(p)}
-                  className={`px-2.5 py-1 text-xs rounded-lg border transition-colors ${p === page ? 'bg-blue-600 border-blue-600 text-white font-semibold' : 'border-gray-200 text-gray-500 hover:bg-gray-100'}`}
+                  className={`px-2.5 py-1 text-xs rounded-lg border transition-colors ${p === page ? 'bg-stage-vec/15 border-stage-vec/50 text-paper font-semibold' : 'border-ink-600 text-mist hover:bg-ink-800 hover:text-paper'}`}
                 >{p}</button>
               ) : null;
             })}
             {['›','»'].map((ch, i) => (
               <button key={ch} onClick={() => setPage(i === 0 ? p => p + 1 : totalPages)} disabled={page === totalPages}
-                className="px-2.5 py-1 text-xs rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="px-2.5 py-1 text-xs rounded-lg border border-ink-600 text-mist hover:bg-ink-800 hover:text-paper disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >{ch}</button>
             ))}
           </div>

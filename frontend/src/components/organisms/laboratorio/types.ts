@@ -15,8 +15,8 @@ export interface AnalysisOption {
 // ── Stage indicator ───────────────────────────────────────────────────────────
 
 export const STAGES: { key: Stage; label: string }[] = [
-  { key: 'configure', label: '1. Configurar' },
-  { key: 'upload', label: '2. Subir PDFs' },
-  { key: 'processing', label: '3. Procesando' },
-  { key: 'results', label: '4. Resultados' },
+  { key: 'configure', label: 'Configurar' },
+  { key: 'upload', label: 'Subir PDFs' },
+  { key: 'processing', label: 'Procesar' },
+  { key: 'results', label: 'Resultados' },
 ];

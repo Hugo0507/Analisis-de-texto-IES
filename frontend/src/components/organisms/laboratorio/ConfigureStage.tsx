@@ -275,7 +275,7 @@ export const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataP
     noOptionsMsg: string;
     accentColor?: string;
   }> = ({ label, options, value, onChange, noOptionsMsg, accentColor = 'bg-violet-400' }) => (
-    <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
+    <div className="flex items-start gap-4 p-4 rounded-xl bg-ink-850/50 border border-ink-700/50">
       <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${accentColor}`} />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-white mb-1">{label}</p>
@@ -285,7 +285,7 @@ export const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataP
           <select
             value={value ?? ''}
             onChange={e => onChange(e.target.value === '' ? null : Number(e.target.value))}
-            className="w-full text-xs bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+            className="w-full text-xs bg-ink-900 border border-ink-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
           >
             <option value="">(ninguno — opcional)</option>
             {options.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
@@ -296,14 +296,14 @@ export const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataP
   );
 
   if (loading) {
-    return <div className="text-slate-300 text-sm py-12 text-center">Cargando análisis disponibles…</div>;
+    return <div className="text-haze text-sm py-12 text-center">Cargando análisis disponibles…</div>;
   }
 
   return (
     <div className="space-y-8">
       <div>
         <h3 className="text-lg font-semibold text-white mb-1">Configurar sesión de análisis</h3>
-        <p className="text-sm text-slate-300">
+        <p className="text-sm text-haze">
           Selecciona los modelos de referencia y personaliza las stopwords antes de subir los documentos.
         </p>
       </div>
@@ -314,7 +314,7 @@ export const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataP
           type="button"
           disabled={loading}
           onClick={() => { setImportWarnings([]); configImportRef.current?.click(); }}
-          className="w-full px-4 py-2.5 min-h-[44px] rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-600/60 text-slate-300 text-sm font-medium transition-colors flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+          className="w-full px-4 py-2.5 min-h-[44px] rounded-xl bg-ink-850 hover:bg-ink-800 disabled:opacity-40 disabled:cursor-not-allowed border border-ink-600/60 text-haze text-sm font-medium transition-colors flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-mist focus:ring-offset-2 focus:ring-offset-slate-900"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -363,7 +363,7 @@ export const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataP
           </button>
         )}
         {!importSuccess && importWarnings.length === 0 && (
-          <p className="mt-1.5 text-xs text-slate-600">
+          <p className="mt-1.5 text-xs text-fog">
             Carga un JSON exportado previamente para restaurar modelos, parámetros y stopwords.
           </p>
         )}
@@ -371,7 +371,7 @@ export const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataP
 
       {/* ── Sección A: Modelos ── */}
       <div>
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+        <p className="text-xs font-semibold text-mist uppercase tracking-wider mb-3">
           A — Modelos de referencia
         </p>
         <div className="space-y-2">
@@ -413,7 +413,7 @@ export const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataP
             accentColor="bg-sky-400"
           />
           {selectedBertopic != null && (
-            <p className="text-xs text-slate-500 italic pl-6">
+            <p className="text-xs text-fog italic pl-6">
               La similitud BERTopic usa matching de palabras clave, no inferencia nativa (UMAP/HDBSCAN no se almacenan).
             </p>
           )}
@@ -427,14 +427,14 @@ export const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataP
 
       {/* ── Sección B: Stopwords ── */}
       <div>
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+        <p className="text-xs font-semibold text-mist uppercase tracking-wider mb-3">
           B — Stopwords
         </p>
 
         {/* Corpus stopwords (read-only) */}
-        <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-700/50 mb-3">
+        <div className="p-4 rounded-xl bg-ink-900/60 border border-ink-700/50 mb-3">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-medium text-slate-400">
+            <p className="text-xs font-medium text-mist">
               Corpus ({corpusStopwords.length} palabras — solo lectura)
             </p>
             {corpusStopwords.length > 20 && (
@@ -447,16 +447,16 @@ export const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataP
             )}
           </div>
           {corpusStopwords.length === 0 ? (
-            <p className="text-xs text-slate-600 italic">No se pudieron cargar las stopwords del corpus.</p>
+            <p className="text-xs text-fog italic">No se pudieron cargar las stopwords del corpus.</p>
           ) : (
             <div className="flex flex-wrap gap-1">
               {(corpusExpanded ? corpusStopwords : corpusStopwords.slice(0, 20)).map(w => (
-                <span key={w} className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-500 border border-slate-700">
+                <span key={w} className="text-xs px-2 py-0.5 rounded-full bg-ink-850 text-fog border border-ink-700">
                   {w}
                 </span>
               ))}
               {!corpusExpanded && corpusStopwords.length > 20 && (
-                <span className="text-xs text-slate-600 self-center">
+                <span className="text-xs text-fog self-center">
                   +{corpusStopwords.length - 20} más…
                 </span>
               )}
@@ -465,9 +465,9 @@ export const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataP
         </div>
 
         {/* Custom stopwords editor */}
-        <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
+        <div className="p-4 rounded-xl bg-ink-850/50 border border-ink-700/50">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-medium text-slate-400">
+            <p className="text-xs font-medium text-mist">
               Stopwords propias ({customStopwords.length})
             </p>
             <button
@@ -518,7 +518,7 @@ export const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataP
                 if (e.key === 'Enter') { e.preventDefault(); addCustomStopword(); }
               }}
               placeholder="Añadir palabra y pulsar Enter…"
-              className="flex-1 text-xs bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+              className="flex-1 text-xs bg-ink-900 border border-ink-600 rounded-lg px-3 py-2 text-white placeholder-fog focus:outline-none focus:ring-1 focus:ring-violet-500"
             />
             <button
               type="button"
@@ -530,64 +530,64 @@ export const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataP
           </div>
         </div>
 
-        <p className="text-xs text-slate-600 mt-1.5">
+        <p className="text-xs text-fog mt-1.5">
           {corpusStopwords.length} corpus + {customStopwords.length} propias = {corpusStopwords.length + customStopwords.length} stopwords en total
         </p>
       </div>
 
       {/* ── Sección C: Parámetros ── */}
       <div>
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+        <p className="text-xs font-semibold text-mist uppercase tracking-wider mb-3">
           C — Parámetros de inferencia
         </p>
         <div className="space-y-3">
 
           {/* Fila: num_top_terms + min_word_length */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
+            <div className="p-4 rounded-xl bg-ink-850/50 border border-ink-700/50">
               <label className="block text-sm font-semibold text-white mb-1">
                 Términos a mostrar
               </label>
-              <p className="text-xs text-slate-300 mb-2">Top N en BoW / TF-IDF</p>
+              <p className="text-xs text-haze mb-2">Top N en BoW / TF-IDF</p>
               <input
                 type="number"
                 min={10}
                 max={200}
                 value={numTopTerms}
                 onChange={e => setNumTopTerms(Math.min(200, Math.max(10, Number(e.target.value))))}
-                className="w-full text-sm bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                className="w-full text-sm bg-ink-900 border border-ink-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
               />
-              <p className="text-xs text-slate-500 mt-1">Rango: 10 – 200</p>
+              <p className="text-xs text-fog mt-1">Rango: 10 – 200</p>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
+            <div className="p-4 rounded-xl bg-ink-850/50 border border-ink-700/50">
               <label className="block text-sm font-semibold text-white mb-1">
                 Long. mínima de token
               </label>
-              <p className="text-xs text-slate-300 mb-2">Filtrar palabras cortas</p>
+              <p className="text-xs text-haze mb-2">Filtrar palabras cortas</p>
               <input
                 type="number"
                 min={1}
                 max={5}
                 value={minWordLength}
                 onChange={e => setMinWordLength(Math.min(5, Math.max(1, Number(e.target.value))))}
-                className="w-full text-sm bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                className="w-full text-sm bg-ink-900 border border-ink-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
               />
-              <p className="text-xs text-slate-500 mt-1">Rango: 1 – 5 caracteres</p>
+              <p className="text-xs text-fog mt-1">Rango: 1 – 5 caracteres</p>
             </div>
           </div>
 
           {/* strip_references toggle */}
-          <div className="flex items-start justify-between gap-4 p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
+          <div className="flex items-start justify-between gap-4 p-4 rounded-xl bg-ink-850/50 border border-ink-700/50">
             <div>
               <p className="text-sm font-semibold text-white">Cortar sección de referencias</p>
-              <p className="text-xs text-slate-300 mt-0.5">
+              <p className="text-xs text-haze mt-0.5">
                 Elimina automáticamente la bibliografía al final del PDF antes de analizar
               </p>
             </div>
             <button
               onClick={() => setStripReferences(v => !v)}
-              className={`relative shrink-0 w-11 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${stripReferences ? 'bg-violet-600' : 'bg-slate-700'}`}
+              className={`relative shrink-0 w-11 h-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${stripReferences ? 'bg-violet-600' : 'bg-ink-800'}`}
               role="switch"
               aria-checked={stripReferences}
             >
@@ -597,9 +597,9 @@ export const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataP
 
           {/* ner_entity_types checkboxes — solo visible si hay NER seleccionado */}
           {selectedNer != null && (
-            <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
+            <div className="p-4 rounded-xl bg-ink-850/50 border border-ink-700/50">
               <p className="text-sm font-semibold text-white mb-1">Tipos de entidad NER</p>
-              <p className="text-xs text-slate-300 mb-3">
+              <p className="text-xs text-haze mb-3">
                 Selecciona qué tipos de entidad extraer. Por defecto hereda la configuración del análisis NER seleccionado.
               </p>
               <div className="flex flex-wrap gap-2">
@@ -616,7 +616,7 @@ export const ConfigureStage: React.FC<ConfigureStageProps> = ({ datasetId, dataP
                       className={`min-h-[36px] px-3 py-1 rounded-lg text-xs font-semibold border transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-slate-900 ${
                         active
                           ? 'bg-emerald-900/50 text-emerald-300 border-emerald-700/60'
-                          : 'bg-slate-900/60 text-slate-500 border-slate-700/50'
+                          : 'bg-ink-900/60 text-fog border-ink-700/50'
                       }`}
                     >
                       {type}

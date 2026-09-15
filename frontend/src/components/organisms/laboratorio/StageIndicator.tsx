@@ -9,32 +9,36 @@ import { STAGES } from './types';
 export const StageIndicator: React.FC<{ current: Stage }> = ({ current }) => {
   const currentIdx = STAGES.findIndex(s => s.key === current);
   return (
-    <div className="flex items-center gap-0 mb-8 overflow-x-auto pb-1">
+    <ol className="flex items-center gap-0 overflow-x-auto px-1 py-1" aria-label="Pasos del laboratorio">
       {STAGES.map((s, i) => {
         const done = i < currentIdx;
         const active = i === currentIdx;
         return (
           <React.Fragment key={s.key}>
-            <div className="flex items-center gap-2 shrink-0">
-              <div className={`
-                w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors
-                ${active ? 'bg-violet-500 border-violet-400 text-white' : ''}
-                ${done ? 'bg-emerald-500 border-emerald-400 text-white' : ''}
-                ${!active && !done ? 'bg-slate-800 border-slate-600 text-slate-400' : ''}
+            <li className="flex shrink-0 items-center gap-2.5" aria-current={active ? 'step' : undefined}>
+              <span className={`
+                num flex h-7 w-7 items-center justify-center rounded-full border font-mono text-[11px] font-medium transition-colors
+                ${active ? 'border-stage-lab bg-stage-lab/15 text-stage-lab' : ''}
+                ${done ? 'border-stage-sum/60 bg-stage-sum/10 text-stage-sum' : ''}
+                ${!active && !done ? 'border-ink-600 text-fog' : ''}
               `}>
-                {done ? '✓' : i + 1}
-              </div>
-              <span className={`text-xs font-medium whitespace-nowrap ${active ? 'text-white' : done ? 'text-emerald-400' : 'text-slate-500'}`}>
+                {done ? (
+                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : String(i + 1).padStart(2, '0')}
+              </span>
+              <span className={`whitespace-nowrap text-sm ${active ? 'font-medium text-paper' : done ? 'text-haze' : 'text-fog'}`}>
                 {s.label}
               </span>
-            </div>
+            </li>
             {i < STAGES.length - 1 && (
-              <div className={`flex-1 min-w-[20px] h-0.5 mx-2 transition-colors ${done ? 'bg-emerald-500' : 'bg-slate-700'}`} />
+              <li aria-hidden="true" className={`mx-3 h-px min-w-[24px] flex-1 transition-colors ${done ? 'bg-stage-sum/50' : 'bg-ink-700'}`} />
             )}
           </React.Fragment>
         );
       })}
-    </div>
+    </ol>
   );
 };
 

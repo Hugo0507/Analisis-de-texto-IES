@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { ChartCard } from '../molecules';
+import { ChartCard, StageHeading } from '../molecules';
 import publicTopicModelingService from '../../services/publicTopicModelingService';
 import publicBertopicService from '../../services/publicBertopicService';
 import publicDataPreparationService from '../../services/publicDataPreparationService';
@@ -217,13 +217,13 @@ export const GeneralDashboard: React.FC = () => {
   if (!filters.selectedDatasetId) return (
     <div className="flex items-center justify-center min-h-[400px]">
       <div className="text-center">
-        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-slate-800/50 flex items-center justify-center">
-          <svg className="w-10 h-10 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="w-16 h-16 mx-auto mb-5 rounded-2xl border border-ink-700 bg-ink-900 flex items-center justify-center">
+          <svg className="w-7 h-7 text-fog" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
           </svg>
         </div>
-        <h3 className="text-lg font-medium text-white mb-2">Selecciona un Dataset</h3>
-        <p className="text-slate-400 text-sm">Usa el selector en el panel lateral izquierdo.</p>
+        <h3 className="font-display text-lg font-semibold text-paper mb-1.5">Selecciona un dataset</h3>
+        <p className="text-mist text-sm">Elígelo en el panel de filtros para ver el mapa de conocimiento.</p>
       </div>
     </div>
   );
@@ -233,24 +233,23 @@ export const GeneralDashboard: React.FC = () => {
   if (error) return (
     <div className="flex items-center justify-center min-h-[400px]">
       <div className="text-center">
-        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-rose-500/10 flex items-center justify-center">
-          <svg className="w-8 h-8 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-stage-lab/10 border border-stage-lab/25 flex items-center justify-center">
+          <svg className="w-7 h-7 text-stage-lab" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
         </div>
-        <p className="text-slate-300">{error}</p>
+        <p className="text-haze">{error}</p>
       </div>
     </div>
   );
 
   if (!topicModel && !bertopic) return (
     <div className="space-y-6">
-      <div><h2 className="text-2xl font-bold text-white">Resumen · Science Mapping</h2></div>
-      <div className="p-8 rounded-xl bg-slate-800/30 border border-slate-700/50 text-center">
-        <h3 className="text-lg font-semibold text-white mb-2">Sin datos para este dataset</h3>
-        <p className="text-slate-400 max-w-md mx-auto">
-          Aún no hay análisis de Modelado de Temas o BERTopic completados para el dataset seleccionado.
-          Crea un análisis desde Administración para visualizar el Science Mapping.
+      <StageHeading stage="sum" title="Landscape de la TD en Educación Superior" />
+      <div className="p-10 rounded-2xl bg-ink-900 border border-ink-700 text-center">
+        <h3 className="font-display text-lg font-semibold text-paper mb-1.5">Aún no hay modelos de temas para este dataset</h3>
+        <p className="text-mist max-w-md mx-auto">
+          Completa un modelado de temas o un BERTopic desde Administración para generar el mapa de conocimiento.
         </p>
       </div>
     </div>
@@ -260,38 +259,25 @@ export const GeneralDashboard: React.FC = () => {
     <div className="space-y-8">
 
       {/* ── Header ── */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700/50 p-7">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-cyan-500/8 to-violet-500/8 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 tracking-wide uppercase">
-                Science Mapping
-              </span>
-              <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-violet-500/15 border border-violet-500/30 text-violet-300">
-                OE3
-              </span>
-            </div>
-            <h2 className="text-2xl font-bold text-white leading-tight">
-              Landscape de la TD en Educación Superior
-            </h2>
-            <p className="mt-1 text-sm text-slate-300 max-w-xl">
-              Mapa de conocimiento consolidado identificado mediante análisis de temas
-              sobre el corpus de literatura académica.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
-            {[
-              { label: 'Temas', value: totalTopics || '—', color: 'text-cyan-300' },
-              { label: 'Documentos', value: totalDocs ? totalDocs.toLocaleString() : '—', color: 'text-violet-300' },
-              { label: 'Categorías', value: 6, color: 'text-emerald-300' },
-            ].map(s => (
-              <div key={s.label}
-                className="text-center px-4 py-2 rounded-xl bg-slate-800/60 border border-slate-700/40">
-                <div className={`text-xl font-bold ${s.color}`}>{s.value}</div>
-                <div className="text-xs text-slate-400">{s.label}</div>
-              </div>
-            ))}
+      <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+        <StageHeading
+          stage="sum"
+          title="Landscape de la TD en Educación Superior"
+          subtitle="Mapa de conocimiento consolidado a partir del modelado de temas sobre el corpus de literatura académica."
+        />
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <dl className="flex items-stretch divide-x divide-ink-700 rounded-2xl border border-ink-700 bg-ink-900">
+              {[
+                { label: 'Temas', value: totalTopics || '—' },
+                { label: 'Documentos', value: totalDocs ? totalDocs.toLocaleString() : '—' },
+                { label: 'Categorías', value: 6 },
+              ].map(s => (
+                <div key={s.label} className="px-4 py-2.5 text-center">
+                  <dd className="num font-display text-xl font-semibold leading-none text-paper">{s.value}</dd>
+                  <dt className="mt-1 text-xs text-mist">{s.label}</dt>
+                </div>
+              ))}
+            </dl>
             {/* Export button */}
             {enrichedTopics.length > 0 && (
               <ExportMenu
@@ -369,7 +355,7 @@ export const GeneralDashboard: React.FC = () => {
                     setTimeout(() => win.print(), 800);
                   }
                 }}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-cyan-300 hover:text-cyan-200 text-sm font-semibold transition-all"
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-ink-850 hover:bg-ink-800 border border-ink-600 text-paper text-sm font-medium transition-colors"
                 title="Exportar reporte como PDF"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -378,32 +364,31 @@ export const GeneralDashboard: React.FC = () => {
                 PDF
               </button>
             )}
-          </div>
         </div>
       </div>
 
       {/* ── Analysis Selector Bar ── */}
       {(topicList.length > 1 || bertopicList.length > 1) && (
-        // bg-slate-900 sólido + border-slate-600 → fondo predecible para contraste
-        <div className="flex flex-wrap gap-4 p-5 rounded-xl bg-slate-900 border border-slate-600">
+        // bg-ink-900 sólido + border-ink-600 → fondo predecible para contraste
+        <div className="flex flex-wrap gap-4 p-4 rounded-2xl bg-ink-900 border border-ink-700">
           {topicList.length > 1 && (
             <div className="flex flex-col gap-1.5 min-w-[220px] flex-1">
               {/* Label visible: 14px (text-sm), slate-200 → ≈ 10:1 contraste */}
               <label
                 htmlFor="select-topic-model"
-                className="text-sm font-semibold text-slate-200 whitespace-nowrap"
+                className="text-xs text-mist whitespace-nowrap"
               >
-                Modelo de Temas
+                Modelo de temas
               </label>
               <select
                 id="select-topic-model"
                 value={filters.selectedTopicModelId ?? topicModel?.id ?? ''}
                 onChange={e => setSelectedTopicModel(Number(e.target.value))}
-                // text-sm (14px) + text-white sobre bg-slate-800 → ≈ 13:1 contraste
-                // border-slate-500 sólido → visible sin depender de opacidad
+                // text-sm (14px) + text-white sobre bg-ink-850 → ≈ 13:1 contraste
+                // border-fog sólido → visible sin depender de opacidad
                 // focus ring 2px cyan con offset — cumple WCAG 2.4.11 (foco visible)
                 // min-h-[44px] — cumple touch target WCAG 2.5.5 + Apple HIG
-                className="min-h-[44px] bg-slate-800 border border-slate-500 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-slate-900 focus:border-emerald-400 cursor-pointer transition-colors hover:border-slate-400"
+                className="min-h-[44px] bg-ink-850 border border-ink-600 text-paper text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-stage-sum/60 cursor-pointer transition-colors hover:border-fog/50"
               >
                 {topicList.map(a => (
                   <option key={a.id} value={a.id}>{a.name} ({a.algorithm_display})</option>
@@ -415,7 +400,7 @@ export const GeneralDashboard: React.FC = () => {
             <div className="flex flex-col gap-1.5 min-w-[220px] flex-1">
               <label
                 htmlFor="select-bertopic"
-                className="text-sm font-semibold text-slate-200 whitespace-nowrap"
+                className="text-xs text-mist whitespace-nowrap"
               >
                 Modelo BERTopic
               </label>
@@ -423,7 +408,7 @@ export const GeneralDashboard: React.FC = () => {
                 id="select-bertopic"
                 value={filters.selectedBertopicId ?? bertopic?.id ?? ''}
                 onChange={e => setSelectedBertopic(Number(e.target.value))}
-                className="min-h-[44px] bg-slate-800 border border-slate-500 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-slate-900 focus:border-amber-400 cursor-pointer transition-colors hover:border-slate-400"
+                className="min-h-[44px] bg-ink-850 border border-ink-600 text-paper text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-stage-sum/60 cursor-pointer transition-colors hover:border-fog/50"
               >
                 {bertopicList.map(a => (
                   <option key={a.id} value={a.id}>{a.name}</option>
@@ -451,17 +436,17 @@ export const GeneralDashboard: React.FC = () => {
           <div className="flex items-center justify-between px-4 py-2.5 rounded-xl border"
             style={{ borderColor: `${cat.color}40`, backgroundColor: `${cat.color}10` }}>
             <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: cat.color }} />
-              <span className="text-sm font-medium text-white">
-                Filtro activo: <span style={{ color: cat.color }}>{cat.label}</span>
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+              <span className="text-sm text-mist">
+                Filtro activo: <span className="font-medium text-paper">{cat.label}</span>
               </span>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-mist">
                 · {catTopics.length} tema{catTopics.length !== 1 ? 's' : ''} · {catDocs} docs
               </span>
             </div>
             <button
               onClick={() => setActiveCategoryFilter(null)}
-              className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-slate-300 bg-slate-700/50 rounded-lg hover:bg-slate-600/50 transition-colors"
+              className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-haze bg-ink-800/50 rounded-lg hover:bg-ink-700/50 transition-colors"
             >
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -474,7 +459,7 @@ export const GeneralDashboard: React.FC = () => {
 
       {/* ── Knowledge Map ── */}
       <ChartCard
-        title="Mapa de Conocimiento"
+        title="Mapa de conocimiento"
         subtitle={
           totalTopics
             ? `${totalTopics} temas — haz clic en un nodo para ver sus términos y documentos`
@@ -499,16 +484,16 @@ export const GeneralDashboard: React.FC = () => {
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             {/* Ícono de empty state — bg sólido + borde visible */}
-            <div className="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-600 flex items-center justify-center mb-5">
-              <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-16 h-16 rounded-2xl bg-ink-850 border border-ink-600 flex items-center justify-center mb-5">
+              <svg className="w-8 h-8 text-mist" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                   d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
               </svg>
             </div>
             {/* Texto empty state: text-sm + slate-300 → contraste ≥ 7.5:1 */}
-            <p className="text-slate-300 text-sm max-w-xs leading-relaxed">
+            <p className="text-haze text-sm max-w-xs leading-relaxed">
               No se encontraron análisis de temas completados. Ejecuta un modelo LDA o BERTopic en la pestaña{' '}
-              <span className="text-emerald-400 font-semibold">Modelado</span> para generar el mapa.
+              <span className="text-stage-mod font-medium">Modelado</span> para generar el mapa.
             </p>
           </div>
         )}
@@ -516,10 +501,12 @@ export const GeneralDashboard: React.FC = () => {
 
       {/* ── Factor Categories ── */}
       <div>
-        <h3 className="text-lg font-bold text-white mb-5 flex items-center gap-2.5">
-          <span className="w-1 h-5 rounded-full bg-gradient-to-b from-cyan-400 to-violet-400" aria-hidden="true" />
-          Categorías Factoriales de la TD en IES
-        </h3>
+        <div className="mb-4">
+          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-fog">Factores OE3</p>
+          <h3 className="mt-1 font-display text-xl font-semibold tracking-[-0.01em] text-paper">
+            Categorías factoriales de la TD en IES
+          </h3>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {FACTOR_CATEGORIES.map(cat => (
             <CategoryCard
@@ -546,7 +533,7 @@ export const GeneralDashboard: React.FC = () => {
           : `${enrichedTopics.length} clústeres extraídos del corpus — selecciona una pestaña para ver términos, documentos o detalles`;
         return (
         <ChartCard
-          title="Clústeres Temáticos Identificados"
+          title="Clústeres temáticos identificados"
           subtitle={clusterSubtitle}
           accentColor="purple"
           size="md"
@@ -589,25 +576,25 @@ export const GeneralDashboard: React.FC = () => {
         setSummaryLoading={setSummaryLoading}
       />
       {/* ── Methodology Footer — bg sólido, texto legible ── */}
-      <div className="p-5 rounded-xl bg-slate-800 border border-slate-600">
+      <div className="p-5 rounded-2xl bg-ink-900 border border-ink-700">
         <div className="flex items-start gap-3">
           {/* Icono: slate-300 → contraste ≥ 7.5:1 */}
-          <svg className="w-5 h-5 text-slate-300 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-fog mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <div>
             {/* Título: text-sm + text-white → ≈ 21:1 */}
-            <p className="text-sm font-semibold text-white mb-1.5">Metodología del Landscape</p>
+            <p className="font-display text-[15px] font-semibold text-paper mb-1.5">Cómo se construyó el landscape</p>
             {/* Cuerpo: text-sm (14px) + slate-300 → ≈ 7.5:1 (antes text-xs slate-400 = ≈ 3.5:1) */}
-            <p className="text-sm text-slate-300 leading-relaxed">
+            <p className="text-sm text-mist leading-relaxed">
               Los temas se extraen mediante modelos de{' '}
               <span className="text-white font-medium">modelado de temas</span> (LDA / NMF / LSA) y{' '}
               <span className="text-white font-medium">BERTopic</span> aplicados al corpus preprocesado.
               La clasificación en categorías factoriales se realiza automáticamente por coincidencia
               semántica con los descriptores del marco OE3.
               {sourceLabel && (
-                <span className="block mt-1.5 text-slate-300">Fuente activa: <span className="text-white font-medium">{sourceLabel}</span></span>
+                <span className="block mt-1.5 text-haze">Fuente activa: <span className="text-white font-medium">{sourceLabel}</span></span>
               )}
             </p>
           </div>

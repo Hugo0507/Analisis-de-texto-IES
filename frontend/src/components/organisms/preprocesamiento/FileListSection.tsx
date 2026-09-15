@@ -63,17 +63,17 @@ export const FileListSection: React.FC<FileListSectionProps> = ({
   return (
     <>
       {data?.dataset?.files && data.dataset.files.length > 0 && (
-        <div className="bg-slate-800 border border-slate-700/60 rounded-xl overflow-hidden">
+        <div className="bg-ink-850 border border-ink-700/60 rounded-xl overflow-hidden">
           {/* Header */}
-          <div className="px-5 py-4 border-b border-slate-700/60 flex items-center justify-between flex-wrap gap-3">
+          <div className="px-5 py-4 border-b border-ink-700/60 flex items-center justify-between flex-wrap gap-3">
             <div>
               <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-mist" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                 </svg>
                 {crossFilter ? `Archivos — ${crossFilterLabel}` : 'Archivos del Dataset'}
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-fog mt-0.5">
                 {displayedFiles.length} archivo{displayedFiles.length !== 1 ? 's' : ''}
                 {crossFilter && ` coinciden con el filtro`}
                 {fileSearch && ` · búsqueda: "${fileSearch}"`}
@@ -83,7 +83,7 @@ export const FileListSection: React.FC<FileListSectionProps> = ({
             {/* Search */}
             <div className="relative">
               <span className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-fog" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </span>
@@ -92,7 +92,7 @@ export const FileListSection: React.FC<FileListSectionProps> = ({
                 value={fileSearch}
                 onChange={e => { setFileSearch(e.target.value); setFilePage(1); }}
                 placeholder="Buscar archivo..."
-                className="pl-9 pr-3 py-2 text-sm border border-slate-600 rounded-lg bg-slate-700/50 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-400 w-56"
+                className="pl-9 pr-3 py-2 text-sm border border-ink-600 rounded-lg bg-ink-800/50 text-paper placeholder-fog focus:outline-none focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-400 w-56"
               />
             </div>
           </div>
@@ -101,10 +101,10 @@ export const FileListSection: React.FC<FileListSectionProps> = ({
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-700/60 bg-slate-900/40">
+                <tr className="border-b border-ink-700/60 bg-ink-900/40">
                   <th
                     onClick={() => handleSort('name')}
-                    className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider cursor-pointer hover:text-slate-200 select-none"
+                    className="px-4 py-3 text-left text-xs font-semibold text-mist uppercase tracking-wider cursor-pointer hover:text-paper select-none"
                   >
                     <span className="flex items-center gap-1">
                       Nombre del Archivo
@@ -117,7 +117,7 @@ export const FileListSection: React.FC<FileListSectionProps> = ({
                   </th>
                   <th
                     onClick={() => handleSort('directory')}
-                    className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider cursor-pointer hover:text-slate-200 select-none hidden md:table-cell"
+                    className="px-4 py-3 text-left text-xs font-semibold text-mist uppercase tracking-wider cursor-pointer hover:text-paper select-none hidden md:table-cell"
                   >
                     <span className="flex items-center gap-1">
                       Directorio
@@ -128,15 +128,15 @@ export const FileListSection: React.FC<FileListSectionProps> = ({
                       )}
                     </span>
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider hidden sm:table-cell">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-mist uppercase tracking-wider hidden sm:table-cell">
                     Tipo
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider hidden lg:table-cell">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-mist uppercase tracking-wider hidden lg:table-cell">
                     Idioma
                   </th>
                   <th
                     onClick={() => handleSort('size')}
-                    className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider cursor-pointer hover:text-slate-200 select-none hidden lg:table-cell"
+                    className="px-4 py-3 text-left text-xs font-semibold text-mist uppercase tracking-wider cursor-pointer hover:text-paper select-none hidden lg:table-cell"
                   >
                     <span className="flex items-center gap-1">
                       Tamaño
@@ -147,15 +147,15 @@ export const FileListSection: React.FC<FileListSectionProps> = ({
                       )}
                     </span>
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-mist uppercase tracking-wider">
                     Acciones
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700/40">
+              <tbody className="divide-y divide-ink-700/40">
                 {paginatedFiles.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-slate-500 text-sm">
+                    <td colSpan={6} className="px-4 py-10 text-center text-fog text-sm">
                       No se encontraron archivos
                       {fileSearch && ` para "${fileSearch}"`}
                     </td>
@@ -166,36 +166,36 @@ export const FileListSection: React.FC<FileListSectionProps> = ({
                   const lang = file.language_code ? getLanguageName(file.language_code) : '—';
                   const isEven = idx % 2 === 0;
                   return (
-                    <tr key={file.id} className={`hover:bg-slate-700/30 transition-colors ${isEven ? '' : 'bg-slate-900/20'}`}>
+                    <tr key={file.id} className={`hover:bg-ink-800/30 transition-colors ${isEven ? '' : 'bg-ink-900/20'}`}>
                       {/* Filename */}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-7 h-7 rounded-lg bg-slate-700/60 flex items-center justify-center flex-shrink-0">
-                            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="w-7 h-7 rounded-lg bg-ink-800/60 flex items-center justify-center flex-shrink-0">
+                            <svg className="w-4 h-4 text-mist" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                             </svg>
                           </div>
                           <div className="min-w-0">
                             <p
-                              className="text-sm font-medium text-slate-200 truncate max-w-[200px] lg:max-w-[320px]"
+                              className="text-sm font-medium text-paper truncate max-w-[200px] lg:max-w-[320px]"
                               title={file.original_filename}
                             >
                               {file.bib_title || file.original_filename}
                             </p>
                             {file.bib_title && (
-                              <p className="text-xs text-slate-500 truncate max-w-[200px]" title={file.original_filename}>
+                              <p className="text-xs text-fog truncate max-w-[200px]" title={file.original_filename}>
                                 {file.original_filename}
                               </p>
                             )}
                             {file.bib_year && (
-                              <p className="text-xs text-slate-500">{file.bib_year}</p>
+                              <p className="text-xs text-fog">{file.bib_year}</p>
                             )}
                           </div>
                         </div>
                       </td>
                       {/* Directory */}
                       <td className="px-4 py-3 hidden md:table-cell">
-                        <span className="inline-flex items-center gap-1 text-xs text-slate-400 bg-slate-700/60 px-2 py-0.5 rounded-md">
+                        <span className="inline-flex items-center gap-1 text-xs text-mist bg-ink-800/60 px-2 py-0.5 rounded-md">
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                           </svg>
@@ -213,12 +213,12 @@ export const FileListSection: React.FC<FileListSectionProps> = ({
                             {lang}
                           </span>
                         ) : (
-                          <span className="text-xs text-slate-500">—</span>
+                          <span className="text-xs text-fog">—</span>
                         )}
                       </td>
                       {/* Size */}
                       <td className="px-4 py-3 hidden lg:table-cell">
-                        <span className="text-xs text-slate-400">{formatFileSize(file.file_size_bytes)}</span>
+                        <span className="text-xs text-mist">{formatFileSize(file.file_size_bytes)}</span>
                       </td>
                       {/* Actions */}
                       <td className="px-4 py-3">
@@ -227,7 +227,7 @@ export const FileListSection: React.FC<FileListSectionProps> = ({
                           <button
                             onClick={() => handlePreview(file)}
                             title="Vista previa del texto"
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-blue-400 hover:bg-blue-500/15 transition-colors"
+                            className="p-1.5 rounded-lg text-fog hover:text-blue-400 hover:bg-blue-500/15 transition-colors"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -238,7 +238,7 @@ export const FileListSection: React.FC<FileListSectionProps> = ({
                           <button
                             onClick={() => handleDownload(file)}
                             title="Descargar PDF"
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/15 transition-colors"
+                            className="p-1.5 rounded-lg text-fog hover:text-emerald-400 hover:bg-emerald-500/15 transition-colors"
                           >
                             <DownloadIcon />
                           </button>
@@ -246,7 +246,7 @@ export const FileListSection: React.FC<FileListSectionProps> = ({
                           <button
                             onClick={() => handleDelete(file)}
                             title="Eliminar archivo"
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/15 transition-colors"
+                            className="p-1.5 rounded-lg text-fog hover:text-rose-400 hover:bg-rose-500/15 transition-colors"
                           >
                             <TrashIcon />
                           </button>
@@ -261,8 +261,8 @@ export const FileListSection: React.FC<FileListSectionProps> = ({
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="px-5 py-3 border-t border-slate-700/60 flex items-center justify-between flex-wrap gap-3 bg-slate-900/40">
-              <p className="text-xs text-slate-500">
+            <div className="px-5 py-3 border-t border-ink-700/60 flex items-center justify-between flex-wrap gap-3 bg-ink-900/40">
+              <p className="text-xs text-fog">
                 Mostrando {Math.min((filePage - 1) * FILES_PER_PAGE + 1, displayedFiles.length)}–
                 {Math.min(filePage * FILES_PER_PAGE, displayedFiles.length)} de {displayedFiles.length}
               </p>
@@ -270,14 +270,14 @@ export const FileListSection: React.FC<FileListSectionProps> = ({
                 <button
                   onClick={() => setFilePage(1)}
                   disabled={filePage === 1}
-                  className="px-2.5 py-1 text-xs rounded-md border border-slate-600 text-slate-400 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="px-2.5 py-1 text-xs rounded-md border border-ink-600 text-mist hover:bg-ink-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   «
                 </button>
                 <button
                   onClick={() => setFilePage(p => p - 1)}
                   disabled={filePage === 1}
-                  className="px-2.5 py-1 text-xs rounded-md border border-slate-600 text-slate-400 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="px-2.5 py-1 text-xs rounded-md border border-ink-600 text-mist hover:bg-ink-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   ‹
                 </button>
@@ -291,7 +291,7 @@ export const FileListSection: React.FC<FileListSectionProps> = ({
                       className={`px-2.5 py-1 text-xs rounded-md border transition-colors ${
                         page === filePage
                           ? 'bg-emerald-500 border-emerald-500 text-white'
-                          : 'border-slate-600 text-slate-400 hover:bg-slate-700'
+                          : 'border-ink-600 text-mist hover:bg-ink-800'
                       }`}
                     >
                       {page}
@@ -301,14 +301,14 @@ export const FileListSection: React.FC<FileListSectionProps> = ({
                 <button
                   onClick={() => setFilePage(p => p + 1)}
                   disabled={filePage === totalPages}
-                  className="px-2.5 py-1 text-xs rounded-md border border-slate-600 text-slate-400 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="px-2.5 py-1 text-xs rounded-md border border-ink-600 text-mist hover:bg-ink-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   ›
                 </button>
                 <button
                   onClick={() => setFilePage(totalPages)}
                   disabled={filePage === totalPages}
-                  className="px-2.5 py-1 text-xs rounded-md border border-slate-600 text-slate-400 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="px-2.5 py-1 text-xs rounded-md border border-ink-600 text-mist hover:bg-ink-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   »
                 </button>

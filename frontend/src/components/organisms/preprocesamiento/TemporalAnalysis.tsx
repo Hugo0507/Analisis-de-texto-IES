@@ -43,12 +43,12 @@ export const TemporalAnalysis: React.FC<TemporalAnalysisProps> = ({ data }) => {
                   return (
                     <div key={year} className="flex-1 flex flex-col items-center gap-1 min-w-0 group relative">
                       <div
-                        className="w-full bg-amber-400 rounded-t-sm transition-all duration-500 group-hover:bg-amber-500"
+                        className="w-full bg-stage-prep/70 rounded-t-sm transition-all duration-500 group-hover:bg-stage-prep"
                         style={{ height: `${Math.max(heightPct, 4)}%` }}
                       />
                       {/* Tooltip */}
                       <div className="absolute bottom-full mb-1 hidden group-hover:flex flex-col items-center pointer-events-none z-10">
-                        <div className="bg-slate-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap">
+                        <div className="bg-ink-850 text-white text-xs rounded px-2 py-1 whitespace-nowrap">
                           {year}: {count} doc{count !== 1 ? 's' : ''}
                         </div>
                         <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-800" />
@@ -61,22 +61,22 @@ export const TemporalAnalysis: React.FC<TemporalAnalysisProps> = ({ data }) => {
               <div className="flex items-start gap-1 mt-1">
                 {sortedYears.map(year => (
                   <div key={year} className="flex-1 min-w-0 text-center">
-                    <span className="text-xs text-gray-400 block truncate" style={{ fontSize: sortedYears.length > 15 ? '9px' : '10px' }}>
+                    <span className="text-xs text-fog block truncate" style={{ fontSize: sortedYears.length > 15 ? '9px' : '10px' }}>
                       {year}
                     </span>
                   </div>
                 ))}
               </div>
               {/* Summary */}
-              <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-500 border-t border-gray-100 pt-3">
+              <div className="mt-3 flex flex-wrap gap-3 text-xs text-mist border-t border-ink-700 pt-3">
                 <span>
-                  <strong className="text-gray-700">{sortedYears.length}</strong> años con publicaciones
+                  <strong className="text-paper">{sortedYears.length}</strong> años con publicaciones
                 </span>
                 <span>
-                  <strong className="text-gray-700">{sortedYears[0]}</strong> – <strong className="text-gray-700">{sortedYears[sortedYears.length - 1]}</strong> rango
+                  <strong className="text-paper">{sortedYears[0]}</strong> – <strong className="text-paper">{sortedYears[sortedYears.length - 1]}</strong> rango
                 </span>
                 <span>
-                  Pico: <strong className="text-gray-700">{sortedYears.find(y => yearCounts[y] === maxCount)}</strong> ({maxCount} docs)
+                  Pico: <strong className="text-paper">{sortedYears.find(y => yearCounts[y] === maxCount)}</strong> ({maxCount} docs)
                 </span>
               </div>
             </div>

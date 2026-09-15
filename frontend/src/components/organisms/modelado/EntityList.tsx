@@ -17,13 +17,13 @@ export const EntityList: React.FC<EntityListProps> = ({ entities, entityType, ma
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <span className={`px-2 py-0.5 text-xs rounded border ${badgeClass}`}>{entityType}</span>
-        <span className="text-xs text-slate-400">{entities.length} entidades</span>
+        <span className="text-xs text-mist">{entities.length} entidades</span>
       </div>
       <div className="space-y-1">
         {entities.slice(0, maxItems).map((entity) => (
           <div key={entity.text} className="flex items-center justify-between text-sm">
-            <span className="text-slate-300 truncate">{entity.text}</span>
-            <span className="text-slate-400">{entity.frequency}</span>
+            <span className="text-haze truncate">{entity.text}</span>
+            <span className="text-mist">{entity.frequency}</span>
           </div>
         ))}
       </div>

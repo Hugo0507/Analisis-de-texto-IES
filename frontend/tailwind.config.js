@@ -60,9 +60,35 @@ module.exports = {
         error: {
           500: '#E57373',
         },
+        // ── Dashboard público (Centro de Comando) ──────────────────────────
+        // Superficies "tinta": fondo, tarjetas, controles y bordes finos.
+        ink: {
+          950: '#080C16',
+          900: '#0D1424',
+          850: '#111A2D',
+          800: '#162038',
+          700: '#1F2A44',
+          600: '#2A3754',
+        },
+        // Texto sobre tinta: principal, secundario y metadatos (≥ 4,5:1 en ink-900).
+        paper: '#E6ECF5',
+        haze: '#C2CDDC',
+        mist: '#97A6BE',
+        fog: '#7A89A3',
+        // Un tono por sección del pipeline; se usa con moderación y siempre
+        // para la misma etapa, de modo que el color indique dónde se está.
+        stage: {
+          prep: '#5CC8F0',
+          vec: '#A78BFA',
+          mod: '#F5B94A',
+          lab: '#F6809B',
+          sum: '#3DD9A0',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['"Instrument Sans"', 'Inter', 'system-ui', 'sans-serif'],
+        mono: ['"IBM Plex Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       boxShadow: {
         'card': '0 2px 8px rgba(0, 0, 0, 0.1)',

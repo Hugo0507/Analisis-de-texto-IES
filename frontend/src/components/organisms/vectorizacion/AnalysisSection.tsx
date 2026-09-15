@@ -95,7 +95,7 @@ export const AnalysisSection: React.FC<AnalysisSectionProps> = ({
           headerExtra={
             <button
               onClick={() => setVocabView(v => v === 'cloud' ? 'table' : 'cloud')}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-600/50 text-slate-300 hover:bg-slate-700/40 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-ink-600/50 text-haze hover:bg-ink-800/40 hover:text-white transition-colors"
             >
               {vocabView === 'cloud' ? <><TableIcon /><span>Ver tabla</span></> : <><CloudIcon /><span>Ver nube</span></>}
             </button>
@@ -114,10 +114,10 @@ export const AnalysisSection: React.FC<AnalysisSectionProps> = ({
             <div className="p-1">
               {/* TRANS-5: IDF range filter */}
               {Object.keys(idfValues).length > 0 && (
-                <div className="flex items-center gap-3 mb-3 px-1 py-2 rounded-lg bg-slate-800/40 border border-slate-700/40">
-                  <span className="text-xs text-slate-400 whitespace-nowrap font-medium shrink-0">Filtrar IDF:</span>
+                <div className="flex items-center gap-3 mb-3 px-1 py-2 rounded-lg bg-ink-850/40 border border-ink-700/40">
+                  <span className="text-xs text-mist whitespace-nowrap font-medium shrink-0">Filtrar IDF:</span>
                   <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="text-xs text-slate-500 w-10 text-right shrink-0">{idfRange[0].toFixed(2)}</span>
+                    <span className="text-xs text-fog w-10 text-right shrink-0">{idfRange[0].toFixed(2)}</span>
                     <input
                       type="range" min={idfBounds.min} max={idfBounds.max} step={idfBounds.step}
                       value={idfRange[0]}
@@ -130,11 +130,11 @@ export const AnalysisSection: React.FC<AnalysisSectionProps> = ({
                       onChange={e => setIdfRange([idfRange[0], Math.max(Number(e.target.value), idfRange[0] + idfBounds.step)])}
                       className="flex-1 h-1.5 accent-blue-500"
                     />
-                    <span className="text-xs text-slate-500 w-10 shrink-0">{idfRange[1].toFixed(2)}</span>
+                    <span className="text-xs text-fog w-10 shrink-0">{idfRange[1].toFixed(2)}</span>
                   </div>
                   <button
                     onClick={() => setIdfRange([idfBounds.min, idfBounds.max])}
-                    className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded hover:bg-slate-700/50 transition-colors shrink-0"
+                    className="text-xs text-mist hover:text-white px-2 py-1 rounded hover:bg-ink-800/50 transition-colors shrink-0"
                   >Reset</button>
                   <span className="text-xs text-blue-400 shrink-0">{Object.keys(idfFilteredVocab).length} términos</span>
                 </div>
@@ -172,18 +172,18 @@ export const AnalysisSection: React.FC<AnalysisSectionProps> = ({
         >
           {/* Tabs por configuración */}
           {ngramConfigs.length > 1 && (
-            <div className="flex gap-1 mb-3 flex-wrap border-b border-slate-700/40 pb-2">
+            <div className="flex gap-1 mb-3 flex-wrap border-b border-ink-700/40 pb-2">
               {ngramConfigs.map(cfg => (
                 <button key={cfg.key}
                   onClick={() => setActiveNgramConfig(cfg.key)}
                   className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${
                     (activeNgramConfig === cfg.key || (!activeNgramConfig && cfg === ngramConfigs[0]))
                       ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/30'
+                      : 'text-mist hover:text-paper hover:bg-ink-800/30'
                   }`}
                 >
                   {cfg.label}
-                  <span className="ml-1.5 text-slate-500 text-xs">({cfg.vocabSize?.toLocaleString() || cfg.terms.length})</span>
+                  <span className="ml-1.5 text-fog text-xs">({cfg.vocabSize?.toLocaleString() || cfg.terms.length})</span>
                 </button>
               ))}
             </div>
@@ -198,7 +198,7 @@ export const AnalysisSection: React.FC<AnalysisSectionProps> = ({
                 selectedId={selectedTerm?.source === 'ngram' ? selectedTerm.text : null}
               />
             ) : (
-              <div className="flex items-center justify-center h-full text-slate-500 text-sm">
+              <div className="flex items-center justify-center h-full text-fog text-sm">
                 {data?.ngramAnalyses?.length === 0 ? 'No hay análisis de N-gramas disponibles' : 'Sin datos de N-gramas'}
               </div>
             )}
@@ -226,7 +226,7 @@ export const AnalysisSection: React.FC<AnalysisSectionProps> = ({
                 selectedId={selectedTerm?.source === 'tfidf' ? selectedTerm.text : null}
               />
             ) : (
-              <div className="flex items-center justify-center h-full text-slate-500 text-sm">
+              <div className="flex items-center justify-center h-full text-fog text-sm">
                 {data?.tfidfAnalyses?.length === 0 ? 'No hay análisis TF-IDF disponibles' : 'Sin datos TF-IDF'}
               </div>
             )}
@@ -254,21 +254,21 @@ export const AnalysisSection: React.FC<AnalysisSectionProps> = ({
             />
           </div>
           {/* Interpretation guide */}
-          <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-slate-400 border-t border-slate-700/40 pt-3">
+          <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-mist border-t border-ink-700/40 pt-3">
             <div className="space-y-1">
-              <p className="font-medium text-slate-300">↗ Arriba-izquierda</p>
+              <p className="font-medium text-haze">↗ Arriba-izquierda</p>
               <p>IDF alto + TF bajo → Términos raros y específicos (muy descriptivos)</p>
             </div>
             <div className="space-y-1">
-              <p className="font-medium text-slate-300">↘ Abajo-derecha</p>
+              <p className="font-medium text-haze">↘ Abajo-derecha</p>
               <p>IDF bajo + TF alto → Términos comunes (stopwords residuales o ruido)</p>
             </div>
             <div className="space-y-1">
-              <p className="font-medium text-slate-300">↗ Arriba-derecha</p>
+              <p className="font-medium text-haze">↗ Arriba-derecha</p>
               <p>IDF alto + TF alto → Términos clave del corpus (ideal para análisis)</p>
             </div>
             <div className="space-y-1">
-              <p className="font-medium text-slate-300">↙ Abajo-izquierda</p>
+              <p className="font-medium text-haze">↙ Abajo-izquierda</p>
               <p>IDF bajo + TF bajo → Términos poco significativos en general</p>
             </div>
           </div>
@@ -287,9 +287,9 @@ export const AnalysisSection: React.FC<AnalysisSectionProps> = ({
           <div className="grid grid-cols-3 gap-4 p-2">
             {data?.bowAnalyses && data.bowAnalyses.length > 1 && (
               <div>
-                <label className="text-xs text-slate-400 block mb-1">Bag of Words</label>
+                <label className="text-xs text-mist block mb-1">Bag of Words</label>
                 <select value={filters.selectedBowId || ''} onChange={e => setSelectedBow(e.target.value ? Number(e.target.value) : null)}
-                  className="w-full bg-slate-800/50 border border-slate-600/50 rounded-lg px-3 py-1.5 text-sm text-white">
+                  className="w-full bg-ink-850/50 border border-ink-600/50 rounded-lg px-3 py-1.5 text-sm text-white">
                   <option value="">Más reciente</option>
                   {data.bowAnalyses.map(bow => <option key={bow.id} value={bow.id}>{bow.name}</option>)}
                 </select>
@@ -297,9 +297,9 @@ export const AnalysisSection: React.FC<AnalysisSectionProps> = ({
             )}
             {data?.ngramAnalyses && data.ngramAnalyses.length > 1 && (
               <div>
-                <label className="text-xs text-slate-400 block mb-1">N-gramas</label>
+                <label className="text-xs text-mist block mb-1">N-gramas</label>
                 <select value={filters.selectedNgramId || ''} onChange={e => setSelectedNgram(e.target.value ? Number(e.target.value) : null)}
-                  className="w-full bg-slate-800/50 border border-slate-600/50 rounded-lg px-3 py-1.5 text-sm text-white">
+                  className="w-full bg-ink-850/50 border border-ink-600/50 rounded-lg px-3 py-1.5 text-sm text-white">
                   <option value="">Más reciente</option>
                   {data.ngramAnalyses.map(ng => <option key={ng.id} value={ng.id}>{ng.name}</option>)}
                 </select>
@@ -307,9 +307,9 @@ export const AnalysisSection: React.FC<AnalysisSectionProps> = ({
             )}
             {data?.tfidfAnalyses && data.tfidfAnalyses.length > 1 && (
               <div>
-                <label className="text-xs text-slate-400 block mb-1">TF-IDF</label>
+                <label className="text-xs text-mist block mb-1">TF-IDF</label>
                 <select value={filters.selectedTfidfId || ''} onChange={e => setSelectedTfidf(e.target.value ? Number(e.target.value) : null)}
-                  className="w-full bg-slate-800/50 border border-slate-600/50 rounded-lg px-3 py-1.5 text-sm text-white">
+                  className="w-full bg-ink-850/50 border border-ink-600/50 rounded-lg px-3 py-1.5 text-sm text-white">
                   <option value="">Más reciente</option>
                   {data.tfidfAnalyses.map(tf => <option key={tf.id} value={tf.id}>{tf.name}</option>)}
                 </select>
@@ -335,9 +335,9 @@ export const AnalysisSection: React.FC<AnalysisSectionProps> = ({
               { label: 'Min DF',      value: data.selectedBow.min_df || 1,                        color: 'text-purple-400' },
               { label: 'Max Features',value: data.selectedBow.max_features || '∞',               color: 'text-amber-400' },
             ].map(s => (
-              <div key={s.label} className="text-center p-3 rounded-lg bg-slate-800/30">
+              <div key={s.label} className="text-center p-3 rounded-lg bg-ink-850/30">
                 <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-                <p className="text-xs text-slate-400">{s.label}</p>
+                <p className="text-xs text-mist">{s.label}</p>
               </div>
             ))}
           </div>

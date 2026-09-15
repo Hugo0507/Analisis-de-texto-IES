@@ -18,3 +18,6 @@ export type { LoadingPanelProps } from './LoadingPanel';
 
 export { PageHeader } from './PageHeader';
 export type { PageHeaderProps } from './PageHeader';
+
+export { StageHeading } from './StageHeading';
+export type { StageHeadingProps } from './StageHeading';

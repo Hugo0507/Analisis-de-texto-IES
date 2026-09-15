@@ -8,12 +8,14 @@ import type { TopicModeling } from '../../../services/topicModelingService';
 import type { BERTopicAnalysis } from '../../../services/bertopicService';
 import { LANGUAGE_NAMES } from '../../../services/dataPreparationService';
 
+// Estado de calidad: punto de color + palabra, nunca solo el color. La cifra va
+// siempre en texto principal.
 export const Q = {
-  good:    { border: 'border-l-emerald-400', text: 'text-emerald-300', dot: 'bg-emerald-400', chip: 'bg-emerald-400/10 text-emerald-300 border-emerald-400/40' },
-  average: { border: 'border-l-amber-400',   text: 'text-amber-300',   dot: 'bg-amber-400',   chip: 'bg-amber-400/10   text-amber-300   border-amber-400/40'   },
-  poor:    { border: 'border-l-rose-400',     text: 'text-rose-300',     dot: 'bg-rose-400',    chip: 'bg-rose-400/10    text-rose-300    border-rose-400/40'    },
-  neutral: { border: 'border-l-slate-400',    text: 'text-slate-100',    dot: 'bg-slate-300',   chip: 'bg-slate-700      text-slate-200   border-slate-500'      },
-  info:    { border: 'border-l-blue-400',     text: 'text-blue-300',     dot: 'bg-blue-400',    chip: 'bg-blue-400/10    text-blue-300    border-blue-400/40'    },
+  good:    { border: 'border-l-emerald-400', text: 'text-emerald-300', dot: 'bg-stage-sum',  chip: 'bg-emerald-400/10 text-emerald-300 border-emerald-400/40', word: 'Bueno' },
+  average: { border: 'border-l-amber-400',   text: 'text-amber-300',   dot: 'bg-stage-mod',  chip: 'bg-amber-400/10   text-amber-300   border-amber-400/40',   word: 'Aceptable' },
+  poor:    { border: 'border-l-rose-400',    text: 'text-rose-300',    dot: 'bg-stage-lab',  chip: 'bg-rose-400/10    text-rose-300    border-rose-400/40',    word: 'Revisar' },
+  neutral: { border: 'border-l-ink-600',     text: 'text-paper',       dot: 'bg-fog',        chip: 'bg-ink-800        text-paper       border-fog',            word: '' },
+  info:    { border: 'border-l-blue-400',    text: 'text-blue-300',    dot: 'bg-stage-prep', chip: 'bg-blue-400/10    text-blue-300    border-blue-400/40',    word: '' },
 };
 
 export interface MetricsStripProps {
@@ -26,50 +28,56 @@ export interface MetricsStripProps {
 export const MetricChip: React.FC<{ metric: MetricItem; flipTooltip?: boolean }> = ({ metric, flipTooltip }) => {
   const q = Q[metric.quality];
   return (
-    // bg-slate-800/85 ≈ #1a2234 — fondo sólido legible, border visible
-    <div className={`group relative flex-1 min-w-[130px] max-w-[210px] rounded-xl bg-slate-800/85 border border-slate-600 border-l-2 ${q.border} px-4 py-3.5 cursor-default select-none`}>
+    <div tabIndex={0} className="group relative min-w-0 rounded-xl bg-ink-850 border border-ink-700 px-4 py-3.5 cursor-default select-none transition-colors hover:border-ink-600 focus-visible:border-ink-600">
 
-      {/* Icon + calidad badge */}
-      <div className="flex items-center justify-between mb-2.5">
-        {/* Icono con color semántico del estado */}
-        <span className={`${q.text}`}>{metric.icon}</span>
-        {/* Badge de calidad: texto legible 12px, contraste ≥ 4.5:1 */}
-        <span className={`text-xs px-1.5 py-0.5 rounded-full border font-semibold ${q.chip}`} aria-hidden="true">i</span>
+      {/* Icono + estado de calidad */}
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <span className="text-fog">{metric.icon}</span>
+        {q.word ? (
+          <span className="flex items-center gap-1.5 text-[11px] text-mist">
+            <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${q.dot}`} />
+            {q.word}
+          </span>
+        ) : (
+          <svg className="w-3.5 h-3.5 text-fog" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        )}
       </div>
 
-      {/* Valor — grande y con color de calidad (contraste ≥ 5.5:1) */}
-      <div className={`text-xl font-bold leading-tight ${q.text} mb-1 truncate`} aria-label={metric.label}>
+      {/* Valor */}
+      <div className="num font-display text-2xl font-semibold leading-none tracking-[-0.02em] text-paper mb-2 truncate" aria-label={metric.label}>
         {metric.value}
       </div>
 
-      {/* Etiqueta — slate-200 (#e2e8f0) sobre #1a2234 → ≈ 10:1 contraste */}
-      <div className="text-xs font-medium text-slate-200 leading-snug">{metric.label}</div>
+      {/* Etiqueta */}
+      <div className="text-xs text-mist leading-snug">{metric.label}</div>
 
       {/* Tooltip — visible al hacer hover, posición adaptativa */}
       <div
         role="tooltip"
         className={`
-          hidden group-hover:block absolute z-50 w-72
+          hidden group-hover:block group-focus-visible:block absolute z-50 w-72
           ${flipTooltip ? 'bottom-full mb-2' : 'top-full mt-2'}
-          left-0 rounded-xl border border-slate-600 bg-slate-900 shadow-2xl p-4 pointer-events-none
+          left-0 rounded-xl border border-ink-600 bg-ink-850 shadow-2xl shadow-black/50 p-4 pointer-events-none
         `}
       >
         <div className="flex items-center gap-2 mb-2">
           <span className={`w-2.5 h-2.5 rounded-full ${q.dot} shrink-0`} />
           {/* Título tooltip: slate-100 → ≈ 14:1 */}
-          <p className={`text-sm font-semibold ${q.text}`}>{metric.tooltip.title}</p>
+          <p className="text-sm font-semibold text-paper">{metric.tooltip.title}</p>
         </div>
-        {/* Cuerpo: slate-300 (#cbd5e1) sobre bg-slate-900 (#0f172a) → ≈ 7.5:1 */}
-        <p className="text-sm text-slate-300 leading-relaxed mb-2.5">{metric.tooltip.body}</p>
+        {/* Cuerpo: slate-300 (#cbd5e1) sobre bg-ink-900 (#0f172a) → ≈ 7.5:1 */}
+        <p className="text-sm text-haze leading-relaxed mb-2.5">{metric.tooltip.body}</p>
         {metric.tooltip.range && (
-          <div className="text-xs rounded-lg bg-slate-800 border border-slate-600 px-3 py-2 mb-2">
-            <span className="text-slate-300 font-medium">Rango: </span>
-            <span className="text-white font-semibold">{metric.tooltip.range}</span>
+          <div className="text-xs rounded-lg bg-ink-900 border border-ink-700 px-3 py-2 mb-2">
+            <span className="text-haze font-medium">Rango: </span>
+            <span className="text-paper font-medium">{metric.tooltip.range}</span>
           </div>
         )}
         {metric.tooltip.source && (
-          <div className="text-xs text-slate-300 mt-1">
-            Fuente: <span className="text-white font-medium">{metric.tooltip.source}</span>
+          <div className="text-xs text-haze mt-1">
+            Fuente: <span className="text-paper font-medium">{metric.tooltip.source}</span>
           </div>
         )}
       </div>
@@ -259,16 +267,14 @@ export const MetricsStrip: React.FC<MetricsStripProps> = ({ topicModel, bertopic
   if (visibleMetrics.length === 0) return null;
 
   return (
-    // Contenedor con fondo sólido — sin opacidad para garantizar contraste predecible
-    <div className="rounded-2xl border border-slate-600 bg-slate-900 p-5">
-      <div className="flex items-center gap-2 mb-4">
-        <span className="w-1 h-4 rounded-full bg-gradient-to-b from-cyan-400 to-violet-400" aria-hidden="true" />
-        {/* Título de sección: slate-200 → contraste ≈ 10:1 sobre bg-slate-900 */}
-        <p className="text-sm font-semibold text-slate-200 uppercase tracking-wider">
+    <div className="rounded-2xl border border-ink-700 bg-ink-900 p-5">
+      <div className="flex items-baseline justify-between gap-3 mb-4">
+        <h3 className="font-display text-[16px] font-semibold tracking-[-0.01em] text-paper">
           Indicadores de calidad del análisis
-        </p>
+        </h3>
+        <p className="hidden text-xs text-fog sm:block">Pasa el cursor sobre un indicador para ver cómo leerlo.</p>
       </div>
-      <div className="flex flex-wrap gap-3">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3">
         {visibleMetrics.map((m, i) => (
           <MetricChip
             key={m.id}

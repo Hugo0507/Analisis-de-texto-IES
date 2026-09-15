@@ -10,7 +10,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ChartCard } from '../molecules';
+import { ChartCard, StageHeading } from '../molecules';
 import { useFilter } from '../../contexts/FilterContext';
 import publicTfidfAnalysisService from '../../services/publicTfidfAnalysisService';
 import type { DocTermMatrix } from '../../services/publicTfidfAnalysisService';
@@ -237,13 +237,13 @@ export const VectorizacionDashboard: React.FC = () => {
   if (!filters.selectedDatasetId) return (
     <div className="flex items-center justify-center min-h-[400px]">
       <div className="text-center">
-        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-slate-800/50 flex items-center justify-center">
-          <svg className="w-10 h-10 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-ink-850/50 flex items-center justify-center">
+          <svg className="w-10 h-10 text-fog" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
           </svg>
         </div>
         <h3 className="text-lg font-medium text-white mb-2">Selecciona un Dataset</h3>
-        <p className="text-slate-400 text-sm">Usa el selector en el panel lateral izquierdo.</p>
+        <p className="text-mist text-sm">Usa el selector en el panel lateral izquierdo.</p>
       </div>
     </div>
   );
@@ -251,8 +251,8 @@ export const VectorizacionDashboard: React.FC = () => {
   if (isLoading) return (
     <div className="flex items-center justify-center min-h-[400px]">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
-        <p className="text-slate-400 text-sm">Cargando análisis de vectorización...</p>
+        <div className="w-10 h-10 border-2 border-stage-vec/25 border-t-stage-vec rounded-full animate-spin" />
+        <p className="text-mist text-sm">Cargando análisis de vectorización…</p>
       </div>
     </div>
   );
@@ -260,14 +260,14 @@ export const VectorizacionDashboard: React.FC = () => {
   if (error) return (
     <div className="flex items-center justify-center min-h-[400px]">
       <div className="text-center">
-        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-rose-500/10 flex items-center justify-center">
-          <svg className="w-8 h-8 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-stage-lab/10 border border-stage-lab/25 flex items-center justify-center">
+          <svg className="w-7 h-7 text-stage-lab" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
         </div>
-        <p className="text-slate-300 mb-4">{error}</p>
+        <p className="text-haze mb-4">{error}</p>
         <button onClick={() => refetch()}
-          className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all">
+          className="px-4 py-2 text-sm font-medium text-paper bg-ink-850 border border-ink-600 rounded-xl hover:bg-ink-800 transition-colors">
           Reintentar
         </button>
       </div>
@@ -277,12 +277,12 @@ export const VectorizacionDashboard: React.FC = () => {
   const hasAnyData = (data?.bowAnalyses?.length || 0) > 0 || (data?.ngramAnalyses?.length || 0) > 0 || (data?.tfidfAnalyses?.length || 0) > 0;
   if (!hasAnyData) return (
     <div className="space-y-6">
-      <div><h2 className="text-2xl font-bold text-white">Vectorización</h2></div>
-      <div className="p-8 rounded-xl bg-slate-800/30 border border-slate-700/50 text-center">
-        <h3 className="text-lg font-semibold text-white mb-2">Sin Análisis de Vectorización</h3>
-        <p className="text-slate-400 max-w-md mx-auto mb-6">Crea un análisis desde Administración.</p>
-        <a href="/admin/bow" className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg">
-          Crear Análisis
+      <StageHeading stage="vec" title="Vectorización" />
+      <div className="p-10 rounded-2xl bg-ink-900 border border-ink-700 text-center">
+        <h3 className="font-display text-lg font-semibold text-paper mb-1.5">Este corpus aún no tiene vectorización</h3>
+        <p className="text-mist max-w-md mx-auto mb-6">Crea una bolsa de palabras, n-gramas o TF-IDF desde Administración para verlos aquí.</p>
+        <a href="/admin/bow" className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-paper bg-stage-vec/15 border border-stage-vec/40 rounded-xl hover:bg-stage-vec/25 transition-colors">
+          Crear análisis
         </a>
       </div>
     </div>
@@ -295,19 +295,18 @@ export const VectorizacionDashboard: React.FC = () => {
     <div className="space-y-6">
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h2 className="text-2xl font-bold text-white">Vectorización</h2>
-          <p className="text-slate-400 text-sm mt-1">Haz clic en cualquier término para ver su análisis detallado</p>
-        </div>
-        {hasExportableData && (
+      <StageHeading
+        stage="vec"
+        title="Vectorización"
+        subtitle="Cómo se convirtió el texto en números. Haz clic en cualquier término para ver su análisis."
+        actions={hasExportableData ? (
           <button onClick={() => setShowExportModal(true)}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-cyan-400 border border-cyan-500/40 rounded-xl hover:bg-cyan-500/10 transition-colors flex-shrink-0"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-paper bg-ink-850 border border-ink-600 rounded-xl hover:bg-ink-800 transition-colors flex-shrink-0"
           >
             <DownloadIcon />Exportar datos completos
           </button>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       {/* ── Analysis Selector Bar ── */}
       {(
@@ -315,48 +314,48 @@ export const VectorizacionDashboard: React.FC = () => {
         (data?.ngramAnalyses?.length ?? 0) > 1 ||
         (data?.tfidfAnalyses?.length ?? 0) > 1
       ) && (
-        <div className="flex flex-wrap gap-4 p-4 rounded-xl bg-slate-800/40 border border-slate-700/50">
+        <div className="flex flex-wrap gap-3 p-3 rounded-2xl bg-ink-900 border border-ink-700">
           {(data?.bowAnalyses?.length ?? 0) > 1 && (
-            <div className="flex items-center gap-2 min-w-[200px] flex-1">
-              <span className="text-xs text-slate-400 whitespace-nowrap font-medium">BoW:</span>
+            <label className="flex items-center gap-2.5 min-w-[220px] flex-1 pl-2">
+              <span className="text-xs text-mist whitespace-nowrap">Bolsa de palabras</span>
               <select
                 value={filters.selectedBowId ?? data?.selectedBow?.id ?? ''}
                 onChange={e => setSelectedBow(Number(e.target.value))}
-                className="flex-1 bg-slate-900/70 border border-slate-600/50 text-slate-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/50 cursor-pointer"
+                className="min-w-0 flex-1 bg-ink-850 border border-ink-600 text-paper text-sm rounded-xl px-3 py-2 transition-colors hover:border-fog/50 focus:outline-none focus:border-stage-vec/60 cursor-pointer"
               >
                 {data?.bowAnalyses.map(a => (
                   <option key={a.id} value={a.id}>{a.name}</option>
                 ))}
               </select>
-            </div>
+            </label>
           )}
           {(data?.ngramAnalyses?.length ?? 0) > 1 && (
-            <div className="flex items-center gap-2 min-w-[200px] flex-1">
-              <span className="text-xs text-slate-400 whitespace-nowrap font-medium">N-gramas:</span>
+            <label className="flex items-center gap-2.5 min-w-[220px] flex-1 pl-2">
+              <span className="text-xs text-mist whitespace-nowrap">N-gramas</span>
               <select
                 value={filters.selectedNgramId ?? data?.selectedNgram?.id ?? ''}
                 onChange={e => setSelectedNgram(Number(e.target.value))}
-                className="flex-1 bg-slate-900/70 border border-slate-600/50 text-slate-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500/50 cursor-pointer"
+                className="min-w-0 flex-1 bg-ink-850 border border-ink-600 text-paper text-sm rounded-xl px-3 py-2 transition-colors hover:border-fog/50 focus:outline-none focus:border-stage-vec/60 cursor-pointer"
               >
                 {data?.ngramAnalyses.map(a => (
                   <option key={a.id} value={a.id}>{a.name}</option>
                 ))}
               </select>
-            </div>
+            </label>
           )}
           {(data?.tfidfAnalyses?.length ?? 0) > 1 && (
-            <div className="flex items-center gap-2 min-w-[200px] flex-1">
-              <span className="text-xs text-slate-400 whitespace-nowrap font-medium">TF-IDF:</span>
+            <label className="flex items-center gap-2.5 min-w-[220px] flex-1 pl-2">
+              <span className="text-xs text-mist whitespace-nowrap">TF-IDF</span>
               <select
                 value={filters.selectedTfidfId ?? data?.selectedTfidf?.id ?? ''}
                 onChange={e => setSelectedTfidf(Number(e.target.value))}
-                className="flex-1 bg-slate-900/70 border border-slate-600/50 text-slate-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/50 cursor-pointer"
+                className="min-w-0 flex-1 bg-ink-850 border border-ink-600 text-paper text-sm rounded-xl px-3 py-2 transition-colors hover:border-fog/50 focus:outline-none focus:border-stage-vec/60 cursor-pointer"
               >
                 {data?.tfidfAnalyses.map(a => (
                   <option key={a.id} value={a.id}>{a.name}</option>
                 ))}
               </select>
-            </div>
+            </label>
           )}
         </div>
       )}
@@ -381,65 +380,59 @@ export const VectorizacionDashboard: React.FC = () => {
           {
             label: 'Vocabulario Único', value: vocabSize, unit: 'tipos de palabras',
             sub: bow ? `min_df ${bow.min_df} · ${bow.document_count} docs` : 'sin BoW',
-            accent: 'border-cyan-300 bg-cyan-50', val: 'text-cyan-800', bar: 'bg-cyan-500',
             icon: 'M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129',
             tip: 'Número de palabras únicas (types) detectadas por CountVectorizer. Influenciado por min_df y max_features.',
           },
           {
             label: 'Riqueza Léxica (TTR)', value: ttr, unit: 'type-token ratio',
             sub: bow ? `${bow.total_term_occurrences.toLocaleString()} tokens totales` : 'sin BoW',
-            accent: 'border-emerald-300 bg-emerald-50', val: 'text-emerald-800', bar: 'bg-emerald-500',
             icon: 'M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z',
             tip: 'TTR = términos_únicos / total_ocurrencias × 100. Alto = corpus diverso; bajo = corpus repetitivo. Útil para medir la riqueza lingüística del corpus.',
           },
           {
             label: 'Densidad de Matriz', value: density, unit: 'densidad doc-término',
             sub: bow ? `dispersión ${(bow.matrix_sparsity * 100).toFixed(1)}%` : 'sin BoW',
-            accent: 'border-blue-300 bg-blue-50', val: 'text-blue-800', bar: 'bg-blue-500',
             icon: 'M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z',
             tip: 'Densidad = 1 − dispersión de la matriz documento-término. Alto = documentos comparten vocabulario. Bajo = vocabularios muy distintos por documento.',
           },
           {
             label: 'Especificidad IDF', value: avgIdf, unit: 'IDF promedio',
             sub: tfidf ? `smooth_idf: ${tfidf.smooth_idf ? 'sí' : 'no'} · sublinear: ${tfidf.sublinear_tf ? 'sí' : 'no'}` : 'sin TF-IDF',
-            accent: 'border-violet-300 bg-violet-50', val: 'text-violet-800', bar: 'bg-violet-500',
             icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
             tip: 'IDF promedio del corpus (log(N/df) por término). Alto = corpus con términos raros y específicos. Bajo = vocabulario muy común entre documentos.',
           },
           {
             label: 'Tokens por Documento', value: tokPerDoc, unit: 'términos únicos/doc',
             sub: bow ? `matriz ${bow.matrix_shape?.rows ?? '?'}×${bow.matrix_shape?.cols ?? '?'}` : 'sin BoW',
-            accent: 'border-amber-300 bg-amber-50', val: 'text-amber-800', bar: 'bg-amber-500',
             icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
             tip: 'Media de términos únicos por documento en la matriz BoW. Indica la extensión promedio del vocabulario activo en cada documento del corpus.',
           },
           {
             label: 'Cobertura N-gramas', value: ngramVocab, unit: 'n-gramas únicos',
             sub: ngram ? `${ngramConfs} config${ngramConfs !== 1 ? 's' : ''} · ${ngram.document_count} docs` : 'sin análisis',
-            accent: 'border-rose-300 bg-rose-50', val: 'text-rose-800', bar: 'bg-rose-500',
             icon: 'M13 10V3L4 14h7v7l9-11h-7z',
             tip: 'Total de n-gramas únicos sumando todas las configuraciones (unigramas, bigramas, trigramas…). Mide la riqueza de secuencias de tokens capturadas.',
           },
         ];
 
         return (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
             {kpis.map(kpi => (
               <div key={kpi.label} title={kpi.tip}
-                className={`relative rounded-xl border ${kpi.accent} p-3.5 flex flex-col gap-1.5 overflow-hidden cursor-help`}
+                className="flex flex-col rounded-2xl border border-ink-700 bg-ink-900 p-4 cursor-help transition-colors hover:border-ink-600"
               >
-                <div className="flex items-start justify-between gap-1">
-                  <span className="text-xs font-medium text-gray-500 leading-tight">{kpi.label}</span>
-                  <svg className="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {/* La etiqueta reserva dos líneas para que las cifras queden alineadas */}
+                <div className="flex min-h-[2.5rem] items-start justify-between gap-2">
+                  <span className="text-xs leading-snug text-mist">{kpi.label}</span>
+                  <svg className="w-3.5 h-3.5 text-fog shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={kpi.icon} />
                   </svg>
                 </div>
-                <div className={`text-xl font-bold ${kpi.val} leading-none tracking-tight`}>{kpi.value}</div>
-                <div>
-                  <div className="text-xs text-gray-400">{kpi.unit}</div>
-                  <div className="text-xs text-gray-400 truncate mt-0.5">{kpi.sub}</div>
+                <div className="num mt-1 font-display text-[26px] font-semibold leading-none tracking-[-0.02em] text-paper">{kpi.value}</div>
+                <div className="mt-2.5">
+                  <div className="text-xs text-mist">{kpi.unit}</div>
+                  <div className="num text-xs text-fog truncate mt-0.5">{kpi.sub}</div>
                 </div>
-                <div className={`absolute bottom-0 left-0 right-0 h-0.5 ${kpi.bar} opacity-70`} />
               </div>
             ))}
           </div>
@@ -448,15 +441,15 @@ export const VectorizacionDashboard: React.FC = () => {
 
       {/* ── Selected term indicator ── */}
       {selectedTerm && (
-        <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30">
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-stage-vec/[0.08] border border-stage-vec/30">
           <div className="flex items-center gap-2.5">
-            <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-            <span className="text-sm text-cyan-300">
-              Término seleccionado: <span className="font-semibold text-white">"{selectedTerm.text}"</span>
+            <div className="w-2 h-2 rounded-full bg-stage-vec" />
+            <span className="text-sm text-mist">
+              Término seleccionado: <span className="font-semibold text-paper">"{selectedTerm.text}"</span>
             </span>
           </div>
           <button onClick={() => setSelectedTerm(null)}
-            className="text-xs text-cyan-400 hover:text-white flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-cyan-500/20 transition-colors">
+            className="text-xs text-mist hover:text-paper flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-ink-800 transition-colors">
             <CloseIcon />Cerrar panel
           </button>
         </div>
@@ -469,46 +462,46 @@ export const VectorizacionDashboard: React.FC = () => {
             key: 'analysis',
             label: 'Análisis',
             icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
-            activeClass: 'bg-cyan-500/20 text-cyan-100 border-cyan-500/60 shadow-[0_0_14px_rgba(6,182,212,0.2)]',
-            inactiveClass: 'text-slate-400 border-slate-700/50 hover:text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-500/30',
-            dotActive: 'bg-cyan-400',
-            dotInactive: 'bg-slate-600',
+            activeClass: 'bg-stage-vec/10 text-paper border-stage-vec/40',
+            inactiveClass: 'text-mist border-ink-700 hover:text-paper hover:bg-ink-850',
+            dotActive: 'bg-stage-vec',
+            dotInactive: 'bg-ink-600',
           },
           {
             key: 'compare',
             label: 'Comparar',
             icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4',
-            activeClass: 'bg-blue-500/20 text-blue-100 border-blue-500/60 shadow-[0_0_14px_rgba(59,130,246,0.2)]',
-            inactiveClass: 'text-slate-400 border-slate-700/50 hover:text-blue-300 hover:bg-blue-500/10 hover:border-blue-500/30',
-            dotActive: 'bg-blue-400',
-            dotInactive: 'bg-slate-600',
+            activeClass: 'bg-stage-vec/10 text-paper border-stage-vec/40',
+            inactiveClass: 'text-mist border-ink-700 hover:text-paper hover:bg-ink-850',
+            dotActive: 'bg-stage-vec',
+            dotInactive: 'bg-ink-600',
           },
           {
             key: 'heatmap',
             label: 'Heatmap',
             icon: 'M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z',
-            activeClass: 'bg-violet-500/20 text-violet-100 border-violet-500/60 shadow-[0_0_14px_rgba(139,92,246,0.2)]',
-            inactiveClass: 'text-slate-400 border-slate-700/50 hover:text-violet-300 hover:bg-violet-500/10 hover:border-violet-500/30',
-            dotActive: 'bg-violet-400',
-            dotInactive: 'bg-slate-600',
+            activeClass: 'bg-stage-vec/10 text-paper border-stage-vec/40',
+            inactiveClass: 'text-mist border-ink-700 hover:text-paper hover:bg-ink-850',
+            dotActive: 'bg-stage-vec',
+            dotInactive: 'bg-ink-600',
           },
           {
             key: 'cooccurrence',
             label: 'Co-ocurrencia',
             icon: 'M13 10V3L4 14h7v7l9-11h-7z',
-            activeClass: 'bg-emerald-500/20 text-emerald-100 border-emerald-500/60 shadow-[0_0_14px_rgba(16,185,129,0.2)]',
-            inactiveClass: 'text-slate-400 border-slate-700/50 hover:text-emerald-300 hover:bg-emerald-500/10 hover:border-emerald-500/30',
-            dotActive: 'bg-emerald-400',
-            dotInactive: 'bg-slate-600',
+            activeClass: 'bg-stage-vec/10 text-paper border-stage-vec/40',
+            inactiveClass: 'text-mist border-ink-700 hover:text-paper hover:bg-ink-850',
+            dotActive: 'bg-stage-vec',
+            dotInactive: 'bg-ink-600',
           },
           {
             key: 'zipf',
             label: 'Ley de Zipf',
             icon: 'M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z',
-            activeClass: 'bg-rose-500/20 text-rose-100 border-rose-500/60 shadow-[0_0_14px_rgba(244,63,94,0.2)]',
-            inactiveClass: 'text-slate-400 border-slate-700/50 hover:text-rose-300 hover:bg-rose-500/10 hover:border-rose-500/30',
-            dotActive: 'bg-rose-400',
-            dotInactive: 'bg-slate-600',
+            activeClass: 'bg-stage-vec/10 text-paper border-stage-vec/40',
+            inactiveClass: 'text-mist border-ink-700 hover:text-paper hover:bg-ink-850',
+            dotActive: 'bg-stage-vec',
+            dotInactive: 'bg-ink-600',
           },
         ] as const).map(tab => {
           const isActive = activeSection === tab.key;
@@ -518,11 +511,11 @@ export const VectorizacionDashboard: React.FC = () => {
               role="tab"
               aria-selected={isActive}
               onClick={() => setActiveSection(tab.key)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${
+              className={`flex items-center gap-2 px-3.5 py-2 text-sm font-medium rounded-xl border transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-stage-vec/50 ${
                 isActive ? tab.activeClass : tab.inactiveClass
               }`}
             >
-              <span className={`w-2 h-2 rounded-full shrink-0 transition-colors ${isActive ? tab.dotActive : tab.dotInactive}`} />
+              <span aria-hidden="true" className={`w-1.5 h-1.5 rounded-full shrink-0 transition-colors ${isActive ? tab.dotActive : tab.dotInactive}`} />
               <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
               </svg>
@@ -585,7 +578,7 @@ export const VectorizacionDashboard: React.FC = () => {
       {/* ═══════════════ ZIPF section (VIZ-2) ═══════════════ */}
       {activeSection === 'zipf' && (() => {
         if (zipfData.length < 5) return (
-          <div className="flex items-center justify-center h-[300px] text-slate-400 text-sm">
+          <div className="flex items-center justify-center h-[300px] text-mist text-sm">
             Se necesita un análisis BoW con vocabulario para generar la curva de Zipf
           </div>
         );
@@ -612,7 +605,7 @@ export const VectorizacionDashboard: React.FC = () => {
           <ChartCard
             title="Distribución de Frecuencias — Ley de Zipf"
             subtitle={`Gráfico log-log: rango vs frecuencia — ${zipfData.length} términos del vocabulario BoW`}
-            accentColor="rose"
+            accentColor="purple"
             size="lg"
             icon={
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -626,26 +619,26 @@ export const VectorizacionDashboard: React.FC = () => {
                   {/* Grid lines */}
                   {yTicks.map(t => (
                     <g key={t.v}>
-                      <line x1={0} y1={t.y} x2={chartW} y2={t.y} stroke="#1e293b" strokeWidth={1} />
-                      <text x={-8} y={t.y + 4} textAnchor="end" fill="#64748b" fontSize={10}>{t.label}</text>
+                      <line x1={0} y1={t.y} x2={chartW} y2={t.y} stroke="#1F2A44" strokeWidth={1} />
+                      <text x={-8} y={t.y + 4} textAnchor="end" fill="#7A89A3" fontSize={10}>{t.label}</text>
                     </g>
                   ))}
                   {xTicks.map(t => (
                     <g key={t.v}>
-                      <line x1={t.x} y1={0} x2={t.x} y2={chartH} stroke="#1e293b" strokeWidth={1} />
-                      <text x={t.x} y={chartH + 16} textAnchor="middle" fill="#64748b" fontSize={10}>{t.label}</text>
+                      <line x1={t.x} y1={0} x2={t.x} y2={chartH} stroke="#1F2A44" strokeWidth={1} />
+                      <text x={t.x} y={chartH + 16} textAnchor="middle" fill="#7A89A3" fontSize={10}>{t.label}</text>
                     </g>
                   ))}
                   {/* Axis labels */}
-                  <text x={chartW / 2} y={chartH + 36} textAnchor="middle" fill="#94a3b8" fontSize={11}>Rango (log)</text>
-                  <text x={-40} y={chartH / 2} textAnchor="middle" fill="#94a3b8" fontSize={11} transform={`rotate(-90,-40,${chartH / 2})`}>Frecuencia (log)</text>
+                  <text x={chartW / 2} y={chartH + 36} textAnchor="middle" fill="#97A6BE" fontSize={11}>Rango (log)</text>
+                  <text x={-40} y={chartH / 2} textAnchor="middle" fill="#97A6BE" fontSize={11} transform={`rotate(-90,-40,${chartH / 2})`}>Frecuencia (log)</text>
                   {/* Ideal Zipf reference line */}
-                  <path d={idealD} fill="none" stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="6,4" />
+                  <path d={idealD} fill="none" stroke="#7A89A3" strokeWidth={1.5} strokeDasharray="6,4" />
                   {/* Actual data line */}
-                  <path d={pathD} fill="none" stroke="#f43f5e" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                  <path d={pathD} fill="none" stroke="#3987e5" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
                   {/* Scatter dots (sample) */}
                   {zipfData.filter((_, i) => i % 10 === 0).map((d, i) => (
-                    <circle key={i} cx={sx(logRanks[zipfData.indexOf(d)])} cy={sy(logFreqs[zipfData.indexOf(d)])} r={3} fill="#f43f5e" fillOpacity={0.7}>
+                    <circle key={i} cx={sx(logRanks[zipfData.indexOf(d)])} cy={sy(logFreqs[zipfData.indexOf(d)])} r={3} fill="#3987e5" fillOpacity={0.8}>
                       <title>"{d.rank}º" — {d.freq.toLocaleString()} apariciones</title>
                     </circle>
                   ))}
@@ -653,16 +646,16 @@ export const VectorizacionDashboard: React.FC = () => {
               </svg>
               <div className="flex gap-5 mt-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-0.5 bg-rose-500 rounded" />
-                  <span className="text-xs text-slate-400">Distribución real del corpus</span>
+                  <div className="w-6 h-0.5 bg-[#3987e5] rounded" />
+                  <span className="text-xs text-mist">Distribución real del corpus</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-6 border-t-2 border-amber-400 border-dashed" />
-                  <span className="text-xs text-slate-400">Ley de Zipf ideal (α=1)</span>
+                  <div className="w-6 border-t-2 border-fog border-dashed" />
+                  <span className="text-xs text-mist">Ley de Zipf ideal (α=1)</span>
                 </div>
               </div>
-              <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                La <strong className="text-slate-300">Ley de Zipf</strong> predice que en lenguaje natural, la frecuencia de una palabra es inversamente proporcional a su rango.
+              <p className="text-xs text-mist mt-2 leading-relaxed">
+                La <strong className="text-haze">Ley de Zipf</strong> predice que en lenguaje natural, la frecuencia de una palabra es inversamente proporcional a su rango.
                 Si la curva real sigue la línea ideal, el corpus exhibe distribución léxica típica del lenguaje humano.
                 Desviaciones indican sesgo temático o corpus especializado.
               </p>
@@ -673,21 +666,21 @@ export const VectorizacionDashboard: React.FC = () => {
 
       {/* ── TRANS-4: Floating Compare Badge ── */}
       {compareTerms.length > 0 && !showComparator && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 bg-slate-800 border border-violet-500/40 rounded-2xl px-4 py-2.5 shadow-2xl">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 bg-ink-850 border border-stage-vec/40 rounded-2xl px-4 py-2.5 shadow-2xl shadow-black/50">
           <div className="flex gap-1.5">
             {compareTerms.map(t => (
-              <span key={t} className="px-2.5 py-1 rounded-lg bg-violet-500/20 text-violet-300 text-xs font-semibold border border-violet-500/30">{t}</span>
+              <span key={t} className="px-2.5 py-1 rounded-lg bg-stage-vec/15 text-paper text-xs font-medium border border-stage-vec/30">{t}</span>
             ))}
           </div>
           <button
             onClick={() => setShowComparator(true)}
-            className="px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold transition-colors"
+            className="px-3 py-1.5 rounded-lg bg-stage-vec text-ink-950 hover:bg-violet-300 text-xs font-semibold transition-colors"
           >
             Comparar →
           </button>
           <button
             onClick={() => setCompareTerms([])}
-            className="p-1 text-slate-500 hover:text-white transition-colors"
+            className="p-1 text-fog hover:text-white transition-colors"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
@@ -711,26 +704,26 @@ export const VectorizacionDashboard: React.FC = () => {
           };
         });
         const metrics = [
-          { key: 'freq',  label: 'Frecuencia (BoW)', color: 'text-cyan-400',    fmt: (v: number | null) => v != null ? v.toLocaleString() : '—' },
-          { key: 'rank',  label: 'Rango',            color: 'text-slate-300',   fmt: (v: number | null) => v != null ? `#${v}` : '—' },
-          { key: 'idf',   label: 'IDF',              color: 'text-violet-400',  fmt: (v: number | null) => v != null ? v.toFixed(4) : '—' },
-          { key: 'tfidf', label: 'TF-IDF Score',     color: 'text-emerald-400', fmt: (v: number | null) => v != null ? v.toFixed(4) : '—' },
+          { key: 'freq',  label: 'Frecuencia (BoW)', color: 'text-paper',    fmt: (v: number | null) => v != null ? v.toLocaleString() : '—' },
+          { key: 'rank',  label: 'Rango',            color: 'text-haze',   fmt: (v: number | null) => v != null ? `#${v}` : '—' },
+          { key: 'idf',   label: 'IDF',              color: 'text-paper',  fmt: (v: number | null) => v != null ? v.toFixed(4) : '—' },
+          { key: 'tfidf', label: 'TF-IDF',           color: 'text-paper', fmt: (v: number | null) => v != null ? v.toFixed(4) : '—' },
         ] as const;
         return (
           <>
-            <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setShowComparator(false)} />
-            <div className="fixed inset-x-4 bottom-4 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[700px] z-50 bg-slate-900 rounded-2xl border border-violet-500/30 shadow-2xl">
-              <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-700/60">
+            <div className="fixed inset-0 z-40 bg-ink-950/70 backdrop-blur-sm" onClick={() => setShowComparator(false)} />
+            <div className="fixed inset-x-4 bottom-4 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[700px] z-50 bg-ink-900 rounded-2xl border border-ink-600 shadow-2xl shadow-black/50">
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-ink-700/60">
                 <div>
-                  <h3 className="text-sm font-semibold text-white">Comparador de Términos</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">{compareTerms.length} términos seleccionados</p>
+                  <h3 className="font-display text-[15px] font-semibold text-paper">Comparador de términos</h3>
+                  <p className="text-xs text-mist mt-0.5">{compareTerms.length} términos seleccionados</p>
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => { setCompareTerms([]); setShowComparator(false); }}
-                    className="text-xs text-slate-400 hover:text-rose-400 transition-colors px-2 py-1"
+                    className="text-xs text-mist hover:text-rose-400 transition-colors px-2 py-1"
                   >Limpiar</button>
-                  <button onClick={() => setShowComparator(false)} className="p-1.5 text-slate-500 hover:text-white">
+                  <button onClick={() => setShowComparator(false)} className="p-1.5 text-fog hover:text-white">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
                 </div>
@@ -738,17 +731,17 @@ export const VectorizacionDashboard: React.FC = () => {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-slate-700/40">
-                      <th className="text-left px-5 py-2.5 text-xs text-slate-500 font-medium uppercase tracking-wider w-32">Métrica</th>
+                    <tr className="border-b border-ink-700/40">
+                      <th className="text-left px-5 py-2.5 text-xs text-fog font-medium uppercase tracking-wider w-32">Métrica</th>
                       {termData.map(td => (
-                        <th key={td.term} className="text-center px-4 py-2.5 text-xs font-bold text-violet-300 bg-violet-500/5">{td.term}</th>
+                        <th key={td.term} className="text-center px-4 py-2.5 text-xs font-semibold text-paper bg-stage-vec/[0.06]">{td.term}</th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-700/30">
+                  <tbody className="divide-y divide-ink-700/30">
                     {metrics.map(m => (
-                      <tr key={m.key} className="hover:bg-slate-800/30">
-                        <td className="px-5 py-2.5 text-xs text-slate-400 font-medium">{m.label}</td>
+                      <tr key={m.key} className="hover:bg-ink-850/30">
+                        <td className="px-5 py-2.5 text-xs text-mist font-medium">{m.label}</td>
                         {termData.map(td => {
                           const raw = td[m.key as keyof typeof td] as number | null | string;
                           const val = typeof raw === 'number' ? raw : null;
@@ -762,14 +755,14 @@ export const VectorizacionDashboard: React.FC = () => {
                       </tr>
                     ))}
                     {/* Frequency bar row */}
-                    <tr className="hover:bg-slate-800/30">
-                      <td className="px-5 py-2.5 text-xs text-slate-400 font-medium">Frecuencia relativa</td>
+                    <tr className="hover:bg-ink-850/30">
+                      <td className="px-5 py-2.5 text-xs text-mist font-medium">Frecuencia relativa</td>
                       {termData.map(td => (
                         <td key={td.term} className="px-4 py-2.5">
-                          <div className="h-2 w-full bg-slate-700 rounded-full overflow-hidden">
-                            <div className="h-2 bg-violet-500 rounded-full transition-all" style={{ width: `${td.pct}%` }} />
+                          <div className="h-2 w-full bg-ink-800 rounded-full overflow-hidden">
+                            <div className="h-2 bg-stage-vec rounded-full transition-all" style={{ width: `${td.pct}%` }} />
                           </div>
-                          <p className="text-xs text-slate-500 text-center mt-1">{td.pct.toFixed(1)}%</p>
+                          <p className="text-xs text-fog text-center mt-1">{td.pct.toFixed(1)}%</p>
                         </td>
                       ))}
                     </tr>

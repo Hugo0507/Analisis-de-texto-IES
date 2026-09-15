@@ -39,8 +39,8 @@ export const ClusterCard: React.FC<ClusterCardProps> = ({ topic, docTopics, acti
   ];
 
   return (
-    // bg-slate-800 sólido + borde izquierdo semántico (via cat.borderClass actualizado)
-    <div className={`rounded-xl border ${cat.borderClass} bg-slate-800 flex flex-col`}>
+    // bg-ink-850 sólido + borde izquierdo semántico (via cat.borderClass actualizado)
+    <div className={`rounded-xl border ${cat.borderClass} bg-ink-850 flex flex-col`}>
       {/* Header */}
       <div className="p-4 pb-2">
         <div className="flex items-start justify-between mb-3">
@@ -76,7 +76,7 @@ export const ClusterCard: React.FC<ClusterCardProps> = ({ topic, docTopics, acti
                   // Activo: bg+texto semántico + borde visible
                   ? `${cat.badgeClass} border`
                   // Inactivo: slate-300 (≈ 7.5:1) → hover a white (≈ 21:1)
-                  : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                  : 'text-haze hover:text-white hover:bg-ink-800/50'
               }`}
             >
               {tab.label}
@@ -93,16 +93,16 @@ export const ClusterCard: React.FC<ClusterCardProps> = ({ topic, docTopics, acti
             {topic.words.slice(0, 8).map((w, i) => (
               <div key={i} className="flex items-center gap-2.5">
                 {/* Término: text-sm + slate-200 → ≈ 10:1 */}
-                <span className="text-sm text-slate-200 w-28 truncate shrink-0">{w.word}</span>
+                <span className="text-sm text-paper w-28 truncate shrink-0">{w.word}</span>
                 {/* Barra de progreso: track sólido, fill con color de categoría */}
-                <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
+                <div className="flex-1 h-2 bg-ink-800 rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all"
                     style={{ width: `${(w.weight / maxW) * 100}%`, backgroundColor: cat.color }}
                   />
                 </div>
                 {/* Porcentaje: text-sm + slate-300 + tabular-nums → ≈ 7.5:1 */}
-                <span className="text-sm text-slate-300 w-9 text-right shrink-0 tabular-nums font-medium">
+                <span className="text-sm text-haze w-9 text-right shrink-0 tabular-nums font-medium">
                   {(w.weight * 100).toFixed(0)}%
                 </span>
               </div>
@@ -119,12 +119,12 @@ export const ClusterCard: React.FC<ClusterCardProps> = ({ topic, docTopics, acti
                   {/* Número: color semántico de categoría */}
                   <span className={`text-sm ${cat.textClass} font-bold shrink-0`}>{i + 1}.</span>
                   {/* Nombre: text-sm + slate-100 → ≈ 14:1 */}
-                  <span className="text-sm text-slate-100 break-all leading-relaxed flex-1" title={d.document_name}>
+                  <span className="text-sm text-paper break-all leading-relaxed flex-1" title={d.document_name}>
                     {d.document_name ?? `Documento ${d.document_id}`}
                   </span>
                   {(d.dominant_topic_weight ?? d.topic_weight) != null && (
                     // Peso: text-sm + slate-300 + tabular-nums
-                    <span className="text-sm text-slate-300 shrink-0 font-medium tabular-nums">
+                    <span className="text-sm text-haze shrink-0 font-medium tabular-nums">
                       {((d.dominant_topic_weight ?? d.topic_weight ?? 0) * 100).toFixed(0)}%
                     </span>
                   )}
@@ -133,7 +133,7 @@ export const ClusterCard: React.FC<ClusterCardProps> = ({ topic, docTopics, acti
             </ul>
           ) : (
             // text-sm + slate-300 — legible, no invisible
-            <p className="text-sm text-slate-300 italic py-2">
+            <p className="text-sm text-haze italic py-2">
               No hay información de documentos disponible para este clúster.
             </p>
           )
@@ -152,7 +152,7 @@ export const ClusterCard: React.FC<ClusterCardProps> = ({ topic, docTopics, acti
             ].map(item => (
               <div key={item.label} className="flex justify-between items-start gap-2">
                 {/* Etiqueta: text-sm + slate-300 → ≈ 7.5:1 (antes text-xs slate-400 = ≈ 3.5:1, fallaba) */}
-                <span className="text-sm text-slate-300">{item.label}</span>
+                <span className="text-sm text-haze">{item.label}</span>
                 {/* Valor: color semántico, font-semibold, tabular-nums */}
                 <span className={`text-sm ${cat.textClass} font-semibold text-right tabular-nums`}>{String(item.value)}</span>
               </div>

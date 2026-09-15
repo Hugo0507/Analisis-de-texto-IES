@@ -39,16 +39,57 @@ code {
 }
 
 ::-webkit-scrollbar-track {
-  background: #1e293b;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #475569;
-  border-radius: 4px;
+  background: #2A3754;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: #3A4868;
+  background-clip: padding-box;
+}
+
+/* ── Dashboard público (Centro de Comando) ───────────────────────────────── */
+
+/* Fondo: tinta con un halo muy tenue arriba, para que la cabecera no flote
+   sobre un negro plano. */
+.dashboard-shell {
+  background:
+    radial-gradient(1100px 420px at 72% -12%, rgba(92, 200, 240, 0.055), transparent 62%),
+    #080C16;
+}
+
+/* Cifras alineadas en columnas (tablas, indicadores). */
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Las opciones de los <select> nativos heredan el tema oscuro. */
+.dashboard-shell select option {
+  background-color: #111A2D;
+  color: #E6ECF5;
+}
+
+/* Foco visible solo con teclado, en todo el dashboard. */
+.dashboard-shell :focus-visible {
+  outline: 2px solid rgba(61, 217, 160, 0.7);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-shell *,
+  .dashboard-shell *::before,
+  .dashboard-shell *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Utility Classes */

@@ -75,14 +75,14 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
   const Section: React.FC<{ title: string; color: string; children: React.ReactNode; defaultOpen?: boolean }> = ({ title, color, children, defaultOpen = true }) => {
     const [open, setOpen] = useState(defaultOpen);
     return (
-      <div className="rounded-2xl border bg-slate-800/40 overflow-hidden" style={{ borderColor: `${color}33` }}>
+      <div className="rounded-2xl border bg-ink-850/40 overflow-hidden" style={{ borderColor: `${color}33` }}>
         <button
           onClick={() => setOpen(!open)}
           className="w-full px-5 py-3 border-b flex items-center justify-between cursor-pointer hover:brightness-110 transition-all"
           style={{ borderColor: `${color}33`, backgroundColor: `${color}11` }}
         >
           <h4 className="text-sm font-semibold text-white">{title}</h4>
-          <svg className={`w-4 h-4 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className={`w-4 h-4 text-mist transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </button>
@@ -120,7 +120,7 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h3 className="text-lg font-semibold text-white">Resultados de inferencia</h3>
-          <p className="text-sm text-slate-300 mt-0.5">
+          <p className="text-sm text-haze mt-0.5">
             {results.document_count ?? 0} documento{(results.document_count ?? 0) !== 1 ? 's' : ''} analizado{(results.document_count ?? 0) !== 1 ? 's' : ''}
             {' '}usando los modelos del corpus de referencia.
           </p>
@@ -128,7 +128,7 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
           <button
             onClick={onReset}
-            className="px-4 py-2 min-h-[44px] rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+            className="px-4 py-2 min-h-[44px] rounded-xl bg-ink-800 hover:bg-ink-700 text-white text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-mist focus:ring-offset-2 focus:ring-offset-slate-900"
           >
             ← Nueva análisis
           </button>
@@ -144,7 +144,7 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
           <button
             onClick={handleExportConfig}
             disabled={downloading.config}
-            className="px-4 py-2 min-h-[44px] rounded-xl bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+            className="px-4 py-2 min-h-[44px] rounded-xl bg-ink-800 hover:bg-ink-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-mist focus:ring-offset-2 focus:ring-offset-slate-900"
           >
             {downloading.config ? '…' : '↓ Config JSON'}
           </button>
@@ -161,21 +161,21 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
       {/* Indicador de calidad de preprocesamiento */}
       {stats && stats.total_raw_tokens > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/40 text-center">
+          <div className="p-3 rounded-xl bg-ink-850/60 border border-ink-700/40 text-center">
             <p className="text-lg font-bold text-emerald-400">{stats.total_clean_tokens.toLocaleString()}</p>
-            <p className="text-xs text-slate-300 mt-0.5">Tokens útiles</p>
+            <p className="text-xs text-haze mt-0.5">Tokens útiles</p>
           </div>
-          <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/40 text-center">
-            <p className="text-lg font-bold text-slate-300">{stats.total_raw_tokens.toLocaleString()}</p>
-            <p className="text-xs text-slate-300 mt-0.5">Tokens extraídos</p>
+          <div className="p-3 rounded-xl bg-ink-850/60 border border-ink-700/40 text-center">
+            <p className="text-lg font-bold text-haze">{stats.total_raw_tokens.toLocaleString()}</p>
+            <p className="text-xs text-haze mt-0.5">Tokens extraídos</p>
           </div>
-          <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/40 text-center">
+          <div className="p-3 rounded-xl bg-ink-850/60 border border-ink-700/40 text-center">
             <p className="text-lg font-bold text-amber-400">{noisePercent}%</p>
-            <p className="text-xs text-slate-300 mt-0.5">Ruido filtrado</p>
+            <p className="text-xs text-haze mt-0.5">Ruido filtrado</p>
           </div>
-          <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/40 text-center">
+          <div className="p-3 rounded-xl bg-ink-850/60 border border-ink-700/40 text-center">
             <p className="text-lg font-bold text-white">{stats.documents_processed}</p>
-            <p className="text-xs text-slate-300 mt-0.5">Docs procesados</p>
+            <p className="text-xs text-haze mt-0.5">Docs procesados</p>
           </div>
         </div>
       )}
@@ -190,8 +190,8 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
             {results.rejected_documents.map((d, i) => (
               <div key={i} className="flex items-center gap-2 text-xs">
                 <span className="text-amber-400 font-medium truncate max-w-[200px]">{d.filename}</span>
-                <span className="text-slate-500">—</span>
-                <span className="text-slate-300">
+                <span className="text-fog">—</span>
+                <span className="text-haze">
                   detectado: <span className="text-white font-medium">{d.detected_language}</span>
                   {' '}(esperado: {d.expected_language}, confianza: {(d.confidence * 100).toFixed(0)}%)
                 </span>
@@ -211,19 +211,19 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
               { label: 'Términos/doc (prom.)', value: results.bow.avg_terms_per_document.toFixed(1) },
               { label: 'Dispersión', value: `${(results.bow.matrix_sparsity * 100).toFixed(1)}%` },
             ].map(({ label, value }) => (
-              <div key={label} className="p-3 rounded-xl bg-slate-900/50 text-center">
+              <div key={label} className="p-3 rounded-xl bg-ink-900/50 text-center">
                 <p className="text-lg font-bold text-white">{value}</p>
-                <p className="text-xs text-slate-300 mt-0.5">{label}</p>
+                <p className="text-xs text-haze mt-0.5">{label}</p>
               </div>
             ))}
           </div>
           {/* Nube de palabras — SVG espiral, colores por frecuencia */}
-          <div className="mb-5 p-4 rounded-xl bg-slate-900/40 border border-violet-800/20">
+          <div className="mb-5 p-4 rounded-xl bg-ink-900/40 border border-violet-800/20">
             <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-              <p className="text-xs text-slate-400 font-medium">
+              <p className="text-xs text-mist font-medium">
                 Nube de palabras — top {Math.min(results.bow!.top_terms.length, 60)} términos
               </p>
-              <div className="flex items-center gap-3 text-xs text-slate-500">
+              <div className="flex items-center gap-3 text-xs text-fog">
                 <span className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#f97316' }} />
                   Alta
@@ -245,14 +245,14 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
             <BoWWordCloud terms={results.bow!.top_terms} maxWords={60} />
           </div>
           <div className="space-y-1.5">
-            <p className="text-xs text-slate-300 font-medium mb-2">Top 15 términos por frecuencia</p>
+            <p className="text-xs text-haze font-medium mb-2">Top 15 términos por frecuencia</p>
             {results.bow.top_terms.slice(0, 15).map((t, i) => {
               const maxScore = results.bow!.top_terms[0]?.score || 1;
               const pct = (t.score / maxScore) * 100;
               return (
                 <div key={t.term} className="flex items-center gap-2">
-                  <span className="text-xs text-slate-500 w-5 text-right">{i + 1}</span>
-                  <div className="flex-1 h-5 bg-slate-700/50 rounded overflow-hidden relative">
+                  <span className="text-xs text-fog w-5 text-right">{i + 1}</span>
+                  <div className="flex-1 h-5 bg-ink-800/50 rounded overflow-hidden relative">
                     <div
                       className="h-full rounded transition-all"
                       style={{
@@ -262,7 +262,7 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
                     />
                     <span className="absolute inset-y-0 left-2 flex items-center text-xs text-white font-medium">{t.term}</span>
                   </div>
-                  <span className="text-xs text-slate-400 w-12 text-right font-mono">{t.score.toFixed(0)}</span>
+                  <span className="text-xs text-mist w-12 text-right font-mono">{t.score.toFixed(0)}</span>
                 </div>
               );
             })}
@@ -279,15 +279,15 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
               { label: 'Dispersión', value: `${(results.tfidf.matrix_sparsity * 100).toFixed(1)}%` },
               { label: 'Documentos', value: results.tfidf.matrix_shape.rows.toString() },
             ].map(({ label, value }) => (
-              <div key={label} className="p-3 rounded-xl bg-slate-900/50 text-center">
+              <div key={label} className="p-3 rounded-xl bg-ink-900/50 text-center">
                 <p className="text-lg font-bold text-white">{value}</p>
-                <p className="text-xs text-slate-300 mt-0.5">{label}</p>
+                <p className="text-xs text-haze mt-0.5">{label}</p>
               </div>
             ))}
           </div>
           {/* Scatter: rango vs. peso TF-IDF */}
-          <div className="mb-5 p-3 rounded-xl bg-slate-900/40 border border-cyan-800/20" style={{ height: 260 }}>
-            <p className="text-xs text-slate-400 font-medium mb-2">Rango vs. peso TF-IDF (scatter)</p>
+          <div className="mb-5 p-3 rounded-xl bg-ink-900/40 border border-cyan-800/20" style={{ height: 260 }}>
+            <p className="text-xs text-mist font-medium mb-2">Rango vs. peso TF-IDF (scatter)</p>
             <div style={{ height: 210 }}>
               <Scatter
                 data={{
@@ -332,15 +332,15 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
             </div>
           </div>
           <div className="space-y-1.5">
-            <p className="text-xs text-slate-300 font-medium mb-2">Top 15 términos por TF-IDF</p>
+            <p className="text-xs text-haze font-medium mb-2">Top 15 términos por TF-IDF</p>
             {results.tfidf.top_terms.slice(0, 15).map((t, i) => {
               const maxScore = results.tfidf!.top_terms[0]?.score || 1;
               const pct = (t.score / maxScore) * 100;
               const isHighScore = pct > 70;
               return (
                 <div key={t.term} className="flex items-center gap-2">
-                  <span className="text-xs text-slate-500 w-5 text-right">{i + 1}</span>
-                  <div className="flex-1 h-5 bg-slate-700/50 rounded overflow-hidden relative">
+                  <span className="text-xs text-fog w-5 text-right">{i + 1}</span>
+                  <div className="flex-1 h-5 bg-ink-800/50 rounded overflow-hidden relative">
                     <div
                       className="h-full rounded transition-all"
                       style={{
@@ -350,11 +350,11 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
                           : `linear-gradient(90deg, rgba(6,182,212,0.5), rgba(6,182,212,${0.2 + (pct / 100) * 0.4}))`,
                       }}
                     />
-                    <span className={`absolute inset-y-0 left-2 flex items-center text-xs font-medium ${isHighScore ? 'text-white' : 'text-slate-200'}`}>
+                    <span className={`absolute inset-y-0 left-2 flex items-center text-xs font-medium ${isHighScore ? 'text-white' : 'text-paper'}`}>
                       {t.term}
                     </span>
                   </div>
-                  <span className={`text-xs w-14 text-right font-mono ${isHighScore ? 'text-cyan-300 font-semibold' : 'text-slate-400'}`}>
+                  <span className={`text-xs w-14 text-right font-mono ${isHighScore ? 'text-cyan-300 font-semibold' : 'text-mist'}`}>
                     {t.score.toFixed(2)}
                   </span>
                 </div>
@@ -380,8 +380,8 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
             ];
             const colors = visibleTopics.map((_, i) => PALETTE[i % PALETTE.length]);
             return (
-              <div className="mb-5 p-3 rounded-xl bg-slate-900/40 border border-amber-800/20" style={{ height: 260 }}>
-                <p className="text-xs text-slate-400 font-medium mb-2">Afinidad promedio por tema (%)</p>
+              <div className="mb-5 p-3 rounded-xl bg-ink-900/40 border border-amber-800/20" style={{ height: 260 }}>
+                <p className="text-xs text-mist font-medium mb-2">Afinidad promedio por tema (%)</p>
                 <div style={{ height: 210 }}>
                   <Doughnut
                     data={{
@@ -414,13 +414,13 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
           })()}
           {/* Distribución de temas dominantes */}
           <div className="space-y-3 mb-6">
-            <p className="text-xs text-slate-300 font-medium">Distribución de temas dominantes en los nuevos documentos</p>
+            <p className="text-xs text-haze font-medium">Distribución de temas dominantes en los nuevos documentos</p>
             {results.topics.topic_distribution.map(t => (
               <div key={t.topic_id} className="flex items-center gap-3">
-                <span className="text-xs text-slate-400 w-24 truncate shrink-0" title={t.topic_label || `Tema ${t.topic_id}`}>
+                <span className="text-xs text-mist w-24 truncate shrink-0" title={t.topic_label || `Tema ${t.topic_id}`}>
                   {t.topic_label || `Tema ${t.topic_id}`}
                 </span>
-                <div className="flex-1 h-5 bg-slate-700/50 rounded overflow-hidden">
+                <div className="flex-1 h-5 bg-ink-800/50 rounded overflow-hidden">
                   <div
                     className="h-full bg-amber-500/60 rounded flex items-center justify-end pr-2"
                     style={{ width: `${Math.max(t.percentage, 3)}%` }}
@@ -433,25 +433,25 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
                 {t.percentage < 10 && (
                   <span className="text-xs text-amber-300 font-medium w-10">{t.percentage}%</span>
                 )}
-                <span className="text-xs text-slate-500 w-8 text-right shrink-0">{t.document_count}</span>
+                <span className="text-xs text-fog w-8 text-right shrink-0">{t.document_count}</span>
               </div>
             ))}
           </div>
 
           {/* Afinidad completa: Heatmap de todos los temas */}
           {results.topics.all_topics_affinity && results.topics.all_topics_affinity.length > 0 && (
-            <div className="space-y-3 pt-4 border-t border-slate-700/50">
-              <p className="text-xs text-slate-300 font-medium">Afinidad promedio con todos los temas del corpus</p>
+            <div className="space-y-3 pt-4 border-t border-ink-700/50">
+              <p className="text-xs text-haze font-medium">Afinidad promedio con todos los temas del corpus</p>
               <div className="grid gap-2">
                 {results.topics.all_topics_affinity.map(a => {
                   const maxWeight = results.topics!.all_topics_affinity[0]?.weight || 1;
                   const intensity = a.weight / maxWeight;
                   return (
                     <div key={a.topic_id} className="flex items-center gap-3">
-                      <span className="text-xs text-slate-400 w-24 truncate shrink-0" title={a.topic_label}>
+                      <span className="text-xs text-mist w-24 truncate shrink-0" title={a.topic_label}>
                         {a.topic_label}
                       </span>
-                      <div className="flex-1 h-6 bg-slate-700/30 rounded overflow-hidden relative">
+                      <div className="flex-1 h-6 bg-ink-800/30 rounded overflow-hidden relative">
                         <div
                           className="h-full rounded"
                           style={{
@@ -459,13 +459,13 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
                             background: `rgba(245,158,11,${0.3 + intensity * 0.6})`,
                           }}
                         />
-                        <span className="absolute inset-y-0 left-2 flex items-center text-xs text-slate-200">
+                        <span className="absolute inset-y-0 left-2 flex items-center text-xs text-paper">
                           {a.percentage}%
                         </span>
                       </div>
                       <div className="flex gap-1 shrink-0">
                         {a.top_words?.slice(0, 3).map((w, wi) => (
-                          <span key={wi} className="text-xs px-1.5 py-0.5 rounded bg-slate-700/60 text-slate-300">
+                          <span key={wi} className="text-xs px-1.5 py-0.5 rounded bg-ink-800/60 text-haze">
                             {typeof w === 'string' ? w : w.word}
                           </span>
                         ))}
@@ -497,19 +497,19 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
               { label: 'Total entidades', value: results.ner.total_entities_found.toLocaleString(), color: 'text-emerald-400' },
               { label: 'Entidades únicas', value: results.ner.unique_entities_count.toLocaleString(), color: 'text-white' },
               { label: 'Tipos analizados', value: results.ner.entity_types_used.length.toString(), color: 'text-white' },
-              { label: 'Modelo spaCy', value: results.ner.spacy_model.replace('_', ' '), color: 'text-slate-300' },
+              { label: 'Modelo spaCy', value: results.ner.spacy_model.replace('_', ' '), color: 'text-haze' },
             ].map(({ label, value, color }) => (
-              <div key={label} className="p-3 rounded-xl bg-slate-900/50 text-center">
+              <div key={label} className="p-3 rounded-xl bg-ink-900/50 text-center">
                 <p className={`text-base font-bold ${color}`}>{value}</p>
-                <p className="text-xs text-slate-300 mt-0.5">{label}</p>
+                <p className="text-xs text-haze mt-0.5">{label}</p>
               </div>
             ))}
           </div>
 
           {/* Donut: distribución por tipo de entidad */}
           {results.ner!.entity_distribution.length > 0 && (
-            <div className="mb-5 p-3 rounded-xl bg-slate-900/40 border border-emerald-800/20" style={{ height: 260 }}>
-              <p className="text-xs text-slate-400 font-medium mb-2">Distribución por tipo de entidad</p>
+            <div className="mb-5 p-3 rounded-xl bg-ink-900/40 border border-emerald-800/20" style={{ height: 260 }}>
+              <p className="text-xs text-mist font-medium mb-2">Distribución por tipo de entidad</p>
               <div style={{ height: 210 }}>
                 <Doughnut
                   data={{
@@ -564,14 +564,14 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
           {/* Distribución por tipo */}
           {results.ner.entity_distribution.length > 0 && (
             <div className="space-y-2 mb-5">
-              <p className="text-xs text-slate-300 font-medium mb-2">Distribución por tipo de entidad</p>
+              <p className="text-xs text-haze font-medium mb-2">Distribución por tipo de entidad</p>
               {results.ner.entity_distribution.map(item => {
                 const maxPct = results.ner!.entity_distribution[0]?.percentage || 1;
                 const barWidth = (item.percentage / maxPct) * 100;
                 return (
                   <div key={item.type} className="flex items-center gap-3">
-                    <span className="text-xs text-slate-300 w-20 shrink-0 font-medium">{item.type}</span>
-                    <div className="flex-1 h-5 bg-slate-700/50 rounded overflow-hidden relative">
+                    <span className="text-xs text-haze w-20 shrink-0 font-medium">{item.type}</span>
+                    <div className="flex-1 h-5 bg-ink-800/50 rounded overflow-hidden relative">
                       <div
                         className="h-full rounded transition-all"
                         style={{ width: `${barWidth}%`, background: 'rgba(16,185,129,0.55)' }}
@@ -589,17 +589,17 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
 
           {/* Top entidades por tipo */}
           {Object.keys(results.ner.top_entities_by_type).length > 0 && (
-            <div className="border-t border-slate-700/50 pt-4">
-              <p className="text-xs text-slate-300 font-medium mb-3">Top entidades por tipo</p>
+            <div className="border-t border-ink-700/50 pt-4">
+              <p className="text-xs text-haze font-medium mb-3">Top entidades por tipo</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {Object.entries(results.ner.top_entities_by_type).slice(0, 6).map(([type, entities]) => (
-                  <div key={type} className="p-3 rounded-xl bg-slate-900/50">
+                  <div key={type} className="p-3 rounded-xl bg-ink-900/50">
                     <p className="text-xs font-semibold text-emerald-400 mb-2">{type}</p>
                     <div className="space-y-1">
                       {entities.slice(0, 5).map((e, i) => (
                         <div key={i} className="flex items-center justify-between gap-1">
-                          <span className="text-xs text-slate-200 truncate">{e.text}</span>
-                          <span className="text-xs text-slate-500 shrink-0 font-mono">{e.count}</span>
+                          <span className="text-xs text-paper truncate">{e.text}</span>
+                          <span className="text-xs text-fog shrink-0 font-mono">{e.count}</span>
                         </div>
                       ))}
                     </div>
@@ -619,16 +619,16 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
             <span className="text-xs font-semibold text-sky-300 bg-sky-900/60 px-2 py-0.5 rounded-full shrink-0 border border-sky-700/50">
               keyword matching
             </span>
-            <p className="text-xs text-slate-400">{results.bertopic.method_note}</p>
+            <p className="text-xs text-mist">{results.bertopic.method_note}</p>
           </div>
 
           {/* Horizontal bar: distribución de documentos por tema */}
           {results.bertopic!.topic_distribution.length > 0 && (
             <div
-              className="mb-5 p-3 rounded-xl bg-slate-900/40 border border-sky-800/20"
+              className="mb-5 p-3 rounded-xl bg-ink-900/40 border border-sky-800/20"
               style={{ height: Math.max(180, results.bertopic!.topic_distribution.length * 38 + 50) }}
             >
-              <p className="text-xs text-slate-400 font-medium mb-2">Documentos por tema (BERTopic)</p>
+              <p className="text-xs text-mist font-medium mb-2">Documentos por tema (BERTopic)</p>
               <div style={{ height: Math.max(140, results.bertopic!.topic_distribution.length * 38) }}>
                 <Bar
                   data={{
@@ -670,15 +670,15 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
           {/* Distribución por tema */}
           {results.bertopic.topic_distribution.length > 0 && (
             <div className="space-y-2 mb-5">
-              <p className="text-xs text-slate-300 font-medium mb-2">
+              <p className="text-xs text-haze font-medium mb-2">
                 Distribución de documentos por tema ({results.bertopic.total_documents} docs)
               </p>
               {results.bertopic.topic_distribution.map(t => (
                 <div key={t.topic_id} className="flex items-center gap-3">
-                  <span className="text-xs text-slate-300 w-28 truncate shrink-0" title={t.topic_label}>
+                  <span className="text-xs text-haze w-28 truncate shrink-0" title={t.topic_label}>
                     {t.topic_label}
                   </span>
-                  <div className="flex-1 h-5 bg-slate-700/50 rounded overflow-hidden relative">
+                  <div className="flex-1 h-5 bg-ink-800/50 rounded overflow-hidden relative">
                     <div
                       className="h-full rounded transition-all"
                       style={{ width: `${Math.max(t.percentage, 3)}%`, background: 'rgba(14,165,233,0.55)' }}
@@ -693,9 +693,9 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
                     <span className="text-xs text-sky-300 font-mono w-10 text-right">{t.percentage}%</span>
                   )}
                   {t.percentage >= 10 && (
-                    <span className="text-xs text-slate-500 w-10 text-right font-mono">{t.percentage}%</span>
+                    <span className="text-xs text-fog w-10 text-right font-mono">{t.percentage}%</span>
                   )}
-                  <span className="text-xs text-slate-500 w-6 text-right shrink-0">{t.document_count}</span>
+                  <span className="text-xs text-fog w-6 text-right shrink-0">{t.document_count}</span>
                 </div>
               ))}
             </div>
@@ -703,8 +703,8 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
 
           {/* Asignaciones por documento */}
           {results.bertopic.document_assignments.length > 0 && (
-            <div className="border-t border-slate-700/50 pt-4">
-              <p className="text-xs text-slate-300 font-medium mb-3">Similitud por documento (temas con similitud &gt; 0)</p>
+            <div className="border-t border-ink-700/50 pt-4">
+              <p className="text-xs text-haze font-medium mb-3">Similitud por documento (temas con similitud &gt; 0)</p>
               <div className="space-y-3">
                 {results.bertopic.document_assignments.map((da) => {
                   const relevantTopics = (da.top_topics ?? [])
@@ -712,24 +712,24 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
                     .sort((a, b) => b.similarity_score - a.similarity_score);
                   if (relevantTopics.length === 0) return null;
                   return (
-                    <div key={da.document_index} className="p-3 rounded-xl bg-slate-900/40 border border-slate-700/30">
-                      <p className="text-xs text-slate-500 font-mono mb-2">Doc {da.document_index + 1}</p>
+                    <div key={da.document_index} className="p-3 rounded-xl bg-ink-900/40 border border-ink-700/30">
+                      <p className="text-xs text-fog font-mono mb-2">Doc {da.document_index + 1}</p>
                       <div className="space-y-1.5">
                         {relevantTopics.map((t) => {
                           const simPct = Math.round(t.similarity_score * 100);
                           const isDominant = t.topic_id === da.dominant_topic;
                           return (
                             <div key={t.topic_id} className="flex items-center gap-2">
-                              <span className={`text-xs w-28 truncate shrink-0 ${isDominant ? 'text-sky-300 font-semibold' : 'text-slate-400'}`} title={t.topic_label}>
+                              <span className={`text-xs w-28 truncate shrink-0 ${isDominant ? 'text-sky-300 font-semibold' : 'text-mist'}`} title={t.topic_label}>
                                 {t.topic_label}
                               </span>
-                              <div className="flex-1 h-2 bg-slate-700 rounded overflow-hidden">
+                              <div className="flex-1 h-2 bg-ink-800 rounded overflow-hidden">
                                 <div
                                   className="h-full rounded"
                                   style={{ width: `${simPct}%`, background: isDominant ? '#38bdf8' : simPct >= 25 ? '#7dd3fc' : '#475569' }}
                                 />
                               </div>
-                              <span className={`text-xs font-mono w-8 text-right shrink-0 ${isDominant ? 'text-sky-300' : 'text-slate-500'}`}>
+                              <span className={`text-xs font-mono w-8 text-right shrink-0 ${isDominant ? 'text-sky-300' : 'text-fog'}`}>
                                 {simPct}%
                               </span>
                             </div>

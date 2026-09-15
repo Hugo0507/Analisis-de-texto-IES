@@ -45,7 +45,7 @@ export const DistributionCharts: React.FC<DistributionChartsProps> = ({
       <DashboardGrid columns={3} gap="lg">
         {/* Directory Donut */}
         <ChartCard
-          title="Distribución por Directorio"
+          title="Distribución por directorio"
           subtitle="Archivos por carpeta"
           accentColor="emerald"
           size="lg"
@@ -58,7 +58,7 @@ export const DistributionCharts: React.FC<DistributionChartsProps> = ({
           onRefreshClick={() => refetch()}
           isLoading={isLoading}
         >
-          <div className="h-[260px]">
+          <div className="h-[300px]">
             {dirChartData.length > 0 ? (
               <DonutChartViz
                 data={dirChartData}
@@ -71,14 +71,14 @@ export const DistributionCharts: React.FC<DistributionChartsProps> = ({
                 onClearFilter={clearFilter}
               />
             ) : (
-              <div className="flex items-center justify-center h-full text-gray-400">No hay datos de directorios</div>
+              <div className="flex items-center justify-center h-full text-sm text-mist">No hay datos de directorios</div>
             )}
           </div>
         </ChartCard>
 
         {/* Extension Donut */}
         <ChartCard
-          title="Distribución por Extensión"
+          title="Distribución por extensión"
           subtitle="Tipos de archivo"
           accentColor="cyan"
           size="lg"
@@ -91,7 +91,7 @@ export const DistributionCharts: React.FC<DistributionChartsProps> = ({
           onRefreshClick={() => refetch()}
           isLoading={isLoading}
         >
-          <div className="h-[260px]">
+          <div className="h-[300px]">
             {extChartData.length > 0 ? (
               <DonutChartViz
                 data={extChartData}
@@ -104,14 +104,14 @@ export const DistributionCharts: React.FC<DistributionChartsProps> = ({
                 onClearFilter={clearFilter}
               />
             ) : (
-              <div className="flex items-center justify-center h-full text-gray-400">No hay datos de extensiones</div>
+              <div className="flex items-center justify-center h-full text-sm text-mist">No hay datos de extensiones</div>
             )}
           </div>
         </ChartCard>
 
         {/* Language Donut — shows ALL detected languages */}
         <ChartCard
-          title="Distribución de Idiomas"
+          title="Distribución de idiomas"
           subtitle={`Idiomas detectados${originalLangs.length > 0 ? ` · ${originalLangs.length} idioma${originalLangs.length !== 1 ? 's' : ''}` : ''}`}
           accentColor="purple"
           size="lg"
@@ -124,7 +124,7 @@ export const DistributionCharts: React.FC<DistributionChartsProps> = ({
           onRefreshClick={() => refetch()}
           isLoading={isLoading}
         >
-          <div className="h-[260px]">
+          <div className="h-[300px]">
             {langChartData.length > 0 ? (
               <DonutChartViz
                 data={langChartData}
@@ -137,7 +137,7 @@ export const DistributionCharts: React.FC<DistributionChartsProps> = ({
                 onClearFilter={clearFilter}
               />
             ) : (
-              <div className="flex items-center justify-center h-full text-gray-400 text-sm text-center px-4">
+              <div className="flex items-center justify-center h-full text-mist text-sm text-center px-4">
                 {data?.selectedPreparation ? 'No hay datos de idiomas detectados' : 'Ejecuta una preparación para detectar idiomas'}
               </div>
             )}

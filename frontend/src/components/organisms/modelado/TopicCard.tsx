@@ -25,21 +25,21 @@ export const TopicCard: React.FC<TopicCardProps> = ({ topic, accentColor }) => {
         <h4 className="text-sm font-medium text-white truncate pr-2">
           {topic.label || `Tema ${topic.id}`}
         </h4>
-        <span className="text-xs text-slate-300 shrink-0">{topic.documentCount} docs</span>
+        <span className="text-xs text-haze shrink-0">{topic.documentCount} docs</span>
       </div>
       <div className="space-y-1.5">
         {topic.words.slice(0, 8).map((word) => {
           const barPct = Math.round((word.weight / maxWeight) * 100);
           return (
             <div key={word.word} className="flex items-center gap-2">
-              <span className="text-xs text-slate-300 w-20 truncate shrink-0">{word.word}</span>
-              <div className="flex-1 h-1.5 bg-slate-700/60 rounded-full overflow-hidden">
+              <span className="text-xs text-haze w-20 truncate shrink-0">{word.word}</span>
+              <div className="flex-1 h-1.5 bg-ink-800/60 rounded-full overflow-hidden">
                 <div
                   className={`h-full ${colors.bar} rounded-full`}
                   style={{ width: `${barPct}%`, opacity: 0.8 }}
                 />
               </div>
-              <span className="text-xs text-slate-400 w-10 text-right shrink-0">
+              <span className="text-xs text-mist w-10 text-right shrink-0">
                 {word.weight.toFixed(4)}
               </span>
             </div>

@@ -16,7 +16,7 @@ export const EXT_COLORS: Record<string, string> = {
 };
 
 export const ExtBadge: React.FC<{ ext: string }> = ({ ext }) => (
-  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase ${EXT_COLORS[ext] || 'bg-slate-700 text-slate-400'}`}>
+  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase ${EXT_COLORS[ext] || 'bg-ink-800 text-mist'}`}>
     .{ext}
   </span>
 );

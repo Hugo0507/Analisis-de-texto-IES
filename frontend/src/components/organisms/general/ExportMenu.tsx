@@ -120,9 +120,9 @@ export const ExportMenu: React.FC<ExportMenuProps> = ({ topics, topicsByCategory
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-slate-700/60 bg-slate-900/95 backdrop-blur-sm shadow-2xl z-50 overflow-hidden">
-          <div className="px-3 py-2 border-b border-slate-700/40">
-            <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">Formato de exportación</p>
+        <div className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-ink-700/60 bg-ink-900/95 backdrop-blur-sm shadow-2xl z-50 overflow-hidden">
+          <div className="px-3 py-2 border-b border-ink-700/40">
+            <p className="text-xs text-mist font-medium uppercase tracking-wide">Formato de exportación</p>
           </div>
           {[
             { label: 'CSV completo (Excel)', ext: 'csv', desc: 'UTF-8 con BOM — compatible con Excel', action: exportAllCSV, color: 'text-emerald-300' },
@@ -132,14 +132,14 @@ export const ExportMenu: React.FC<ExportMenuProps> = ({ topics, topicsByCategory
             <button
               key={opt.ext}
               onClick={opt.action}
-              className="w-full flex items-start gap-3 px-3 py-2.5 hover:bg-slate-800/60 transition-colors text-left"
+              className="w-full flex items-start gap-3 px-3 py-2.5 hover:bg-ink-850/60 transition-colors text-left"
             >
-              <div className={`mt-0.5 w-7 h-7 rounded-lg bg-slate-800 border border-slate-700/50 flex items-center justify-center shrink-0`}>
+              <div className={`mt-0.5 w-7 h-7 rounded-lg bg-ink-850 border border-ink-700/50 flex items-center justify-center shrink-0`}>
                 <span className={`text-xs font-bold ${opt.color}`}>.{opt.ext}</span>
               </div>
               <div>
                 <p className="text-sm text-white font-medium">{opt.label}</p>
-                <p className="text-xs text-slate-400">{opt.desc}</p>
+                <p className="text-xs text-mist">{opt.desc}</p>
               </div>
             </button>
           ))}

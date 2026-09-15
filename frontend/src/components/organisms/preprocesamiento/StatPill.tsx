@@ -14,33 +14,36 @@ export interface StatPillProps {
   tooltip?: string;
 }
 
+// El color marca la naturaleza del dato (procesado, omitido…) en el punto y la
+// barra; la cifra va en texto principal para que se lea igual en todas.
 export const colorMap: Record<StatPillProps['color'], { bg: string; text: string; bar: string; dot: string }> = {
-  emerald: { bg: 'bg-emerald-500/10 border border-emerald-500/20', text: 'text-emerald-400', bar: 'bg-emerald-500', dot: 'bg-emerald-500' },
-  rose:    { bg: 'bg-rose-500/10 border border-rose-500/20',       text: 'text-rose-400',    bar: 'bg-rose-500',    dot: 'bg-rose-500'    },
-  amber:   { bg: 'bg-amber-500/10 border border-amber-500/20',     text: 'text-amber-400',   bar: 'bg-amber-500',   dot: 'bg-amber-500'   },
-  blue:    { bg: 'bg-blue-500/10 border border-blue-500/20',       text: 'text-blue-400',    bar: 'bg-blue-500',    dot: 'bg-blue-500'    },
-  violet:  { bg: 'bg-violet-500/10 border border-violet-500/20',   text: 'text-violet-400',  bar: 'bg-violet-500',  dot: 'bg-violet-500'  },
+  emerald: { bg: 'bg-ink-850 border border-ink-700', text: 'text-paper', bar: 'bg-stage-sum',  dot: 'bg-stage-sum'  },
+  rose:    { bg: 'bg-ink-850 border border-ink-700', text: 'text-paper', bar: 'bg-stage-lab',  dot: 'bg-stage-lab'  },
+  amber:   { bg: 'bg-ink-850 border border-ink-700', text: 'text-paper', bar: 'bg-stage-mod',  dot: 'bg-stage-mod'  },
+  blue:    { bg: 'bg-ink-850 border border-ink-700', text: 'text-paper', bar: 'bg-stage-prep', dot: 'bg-stage-prep' },
+  violet:  { bg: 'bg-ink-850 border border-ink-700', text: 'text-paper', bar: 'bg-stage-vec',  dot: 'bg-stage-vec'  },
 };
 
 export const StatPill: React.FC<StatPillProps> = ({ label, value, percent, subtitle, color, tooltip }) => {
   const c = colorMap[color];
   return (
-    <div className={`flex-1 min-w-[120px] rounded-lg px-4 py-3 ${c.bg}`} title={tooltip}>
-      <div className="flex items-center gap-1 mb-1">
-        <p className="text-xs font-medium text-slate-400">{label}</p>
+    <div className={`min-w-0 rounded-xl px-4 py-3.5 ${c.bg}`} title={tooltip}>
+      <div className="flex items-center gap-2 mb-2">
+        <span aria-hidden="true" className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.dot}`} />
+        <p className="text-xs font-medium text-mist truncate">{label}</p>
         {tooltip && (
-          <svg className="w-3 h-3 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3 h-3 text-fog shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         )}
       </div>
-      <p className={`text-xl font-bold ${c.text}`}>{value}</p>
+      <p className={`num font-display text-2xl font-semibold leading-none tracking-[-0.02em] ${c.text}`}>{value}</p>
       {percent !== undefined && (
-        <div className="mt-1.5">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-slate-500">{percent.toFixed(1)}% del total</span>
+        <div className="mt-3">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="num text-xs text-mist">{percent.toFixed(1)}% del total</span>
           </div>
-          <div className="h-1 w-full rounded-full bg-slate-700">
+          <div className="h-1 w-full rounded-full bg-ink-700">
             <div
               className={`h-1 rounded-full transition-all ${c.bar}`}
               style={{ width: `${Math.min(percent, 100)}%` }}
@@ -49,7 +52,7 @@ export const StatPill: React.FC<StatPillProps> = ({ label, value, percent, subti
         </div>
       )}
       {subtitle && !percent && (
-        <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>
+        <p className="text-xs text-mist mt-3">{subtitle}</p>
       )}
     </div>
   );

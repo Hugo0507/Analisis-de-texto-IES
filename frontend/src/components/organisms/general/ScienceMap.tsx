@@ -92,7 +92,7 @@ export const TopicPanel: React.FC<TopicPanelProps> = ({
 
   return (
     <div
-      className={`absolute z-30 rounded-xl border border-slate-600 bg-slate-900 shadow-2xl p-4 ${mode === 'hover' ? 'pointer-events-none' : ''}`}
+      className={`absolute z-30 rounded-xl border border-ink-600 bg-ink-900 shadow-2xl p-4 ${mode === 'hover' ? 'pointer-events-none' : ''}`}
       style={{ left, top, width: PANEL_W }}
     >
       {/* Header */}
@@ -100,7 +100,7 @@ export const TopicPanel: React.FC<TopicPanelProps> = ({
         <p className={`text-sm font-bold ${cat.textClass} leading-snug flex-1 min-w-0`}>{topic.label}</p>
         {mode === 'selected' && onClose && (
           <button onClick={onClose} aria-label="Cerrar panel"
-            className="shrink-0 w-6 h-6 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+            className="shrink-0 w-6 h-6 flex items-center justify-center text-mist hover:text-white transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -113,7 +113,7 @@ export const TopicPanel: React.FC<TopicPanelProps> = ({
         <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${cat.badgeClass}`}>{cat.shortLabel}</span>
         <span className={`text-xs px-2 py-0.5 rounded border font-semibold ${sourceBg} ${sourceColor}`}>{sourceLabel}</span>
         {topic.numDocuments > 0 && (
-          <span className="text-xs text-slate-300 font-medium">{topic.numDocuments} doc{topic.numDocuments !== 1 ? 's' : ''}</span>
+          <span className="text-xs text-haze font-medium">{topic.numDocuments} doc{topic.numDocuments !== 1 ? 's' : ''}</span>
         )}
       </div>
 
@@ -121,11 +121,11 @@ export const TopicPanel: React.FC<TopicPanelProps> = ({
       <div className="space-y-1.5 mb-3">
         {topic.words.slice(0, mode === 'selected' ? 8 : 5).map((w, i) => (
           <div key={i} className="flex items-center gap-2">
-            <span className="text-sm text-slate-200 w-[90px] truncate shrink-0">{w.word}</span>
-            <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+            <span className="text-sm text-paper w-[90px] truncate shrink-0">{w.word}</span>
+            <div className="flex-1 h-1.5 bg-ink-800 rounded-full overflow-hidden">
               <div className="h-full rounded-full" style={{ width: `${(w.weight / maxWeight) * 100}%`, backgroundColor: cat.color }} />
             </div>
-            <span className="text-xs text-slate-300 w-8 text-right shrink-0 tabular-nums font-medium">
+            <span className="text-xs text-haze w-8 text-right shrink-0 tabular-nums font-medium">
               {(w.weight * 100).toFixed(0)}%
             </span>
           </div>
@@ -134,17 +134,17 @@ export const TopicPanel: React.FC<TopicPanelProps> = ({
 
       {/* Documentos representativos (solo en modo selected) */}
       {mode === 'selected' && topDocs.length > 0 && (
-        <div className="border-t border-slate-700 pt-3">
-          <p className="text-xs font-semibold text-slate-300 mb-2">Documentos representativos</p>
+        <div className="border-t border-ink-700 pt-3">
+          <p className="text-xs font-semibold text-haze mb-2">Documentos representativos</p>
           <ul className="space-y-1.5">
             {topDocs.map((d, i) => (
               <li key={i} className="flex items-start gap-1.5">
                 <span className={`text-sm ${cat.textClass} font-bold shrink-0`}>{i + 1}.</span>
-                <span className="text-sm text-slate-200 truncate flex-1" title={d.document_name}>
+                <span className="text-sm text-paper truncate flex-1" title={d.document_name}>
                   {d.document_name ?? `Doc ${d.document_id}`}
                 </span>
                 {(d.dominant_topic_weight ?? d.topic_weight) != null && (
-                  <span className="text-xs text-slate-300 shrink-0 tabular-nums font-medium ml-auto">
+                  <span className="text-xs text-haze shrink-0 tabular-nums font-medium ml-auto">
                     {((d.dominant_topic_weight ?? d.topic_weight ?? 0) * 100).toFixed(0)}%
                   </span>
                 )}
@@ -346,9 +346,9 @@ export const ScienceMap: React.FC<ScienceMapProps> = ({ topics, docTopics, highl
     <div ref={containerRef} className="relative select-none" style={{ minHeight: 420 }}>
 
       {/* ── Barra de estadísticas (arriba izq) ── */}
-      <div className="absolute top-3 left-3 z-10 flex items-center gap-2 bg-slate-900/90 backdrop-blur-sm border border-slate-700 rounded-lg px-3 py-1.5 pointer-events-none">
+      <div className="absolute top-3 left-3 z-10 flex items-center gap-2 bg-ink-900/90 backdrop-blur-sm border border-ink-700 rounded-lg px-3 py-1.5 pointer-events-none">
         <span className="text-sm font-semibold text-white">{topics.length} temas</span>
-        <span className="text-slate-500 text-xs">·</span>
+        <span className="text-fog text-xs">·</span>
         {hasLda && (
           <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 font-semibold">LDA</span>
         )}
@@ -360,17 +360,17 @@ export const ScienceMap: React.FC<ScienceMapProps> = ({ topics, docTopics, highl
       {/* ── Controles de zoom (arriba der) ── */}
       <div className="absolute top-3 right-3 z-10 flex flex-col gap-1">
         <button onClick={zoomIn}  title="Acercar"
-          className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800 border border-slate-600 text-slate-200 hover:text-white hover:bg-slate-700 transition-colors font-bold text-lg leading-none">+</button>
+          className="w-8 h-8 flex items-center justify-center rounded-lg bg-ink-850 border border-ink-600 text-paper hover:text-white hover:bg-ink-800 transition-colors font-bold text-lg leading-none">+</button>
         <button onClick={zoomOut} title="Alejar"
-          className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800 border border-slate-600 text-slate-200 hover:text-white hover:bg-slate-700 transition-colors font-bold text-lg leading-none">−</button>
+          className="w-8 h-8 flex items-center justify-center rounded-lg bg-ink-850 border border-ink-600 text-paper hover:text-white hover:bg-ink-800 transition-colors font-bold text-lg leading-none">−</button>
         <button onClick={resetView} title="Restablecer vista"
-          className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800 border border-slate-600 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors">
+          className="w-8 h-8 flex items-center justify-center rounded-lg bg-ink-850 border border-ink-600 text-haze hover:text-white hover:bg-ink-800 transition-colors">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
         </button>
         <button onClick={exportSvg} title="Exportar como SVG"
-          className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800 border border-slate-600 text-slate-300 hover:text-cyan-400 hover:bg-slate-700 transition-colors">
+          className="w-8 h-8 flex items-center justify-center rounded-lg bg-ink-850 border border-ink-600 text-haze hover:text-cyan-400 hover:bg-ink-800 transition-colors">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
@@ -379,7 +379,7 @@ export const ScienceMap: React.FC<ScienceMapProps> = ({ topics, docTopics, highl
 
       {/* ── Hint (abajo centro) ── */}
       <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-        <span className="text-xs text-slate-400 bg-slate-900/80 border border-slate-700/50 rounded-full px-3 py-1">
+        <span className="text-xs text-mist bg-ink-900/80 border border-ink-700/50 rounded-full px-3 py-1">
           Arrastra para desplazar · Scroll para zoom · Clic en nodo para detalles
         </span>
       </div>
