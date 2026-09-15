@@ -71,7 +71,7 @@ export const FileListSection: React.FC<FileListSectionProps> = ({
                 <svg className="w-4 h-4 text-mist" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                 </svg>
-                {crossFilter ? `Archivos — ${crossFilterLabel}` : 'Archivos del Dataset'}
+                {crossFilter ? `Archivos — ${crossFilterLabel}` : 'Archivos del dataset'}
               </h3>
               <p className="text-xs text-fog mt-0.5">
                 {displayedFiles.length} archivo{displayedFiles.length !== 1 ? 's' : ''}

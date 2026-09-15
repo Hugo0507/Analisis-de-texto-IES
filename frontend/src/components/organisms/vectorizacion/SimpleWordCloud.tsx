@@ -39,7 +39,7 @@ export const SimpleWordCloud: React.FC<WordCloudProps> = ({ data, maxWords = 60,
       placed.some(p => x1 < p.x2 + 5 && x2 > p.x1 - 5 && y1 < p.y2 + 3 && y2 > p.y1 - 3);
     return words.map((word) => {
       const size = fs(word.value);
-      const ww = word.text.length * size * 0.57;
+      const ww = word.text.length * size * 0.62;
       const wh = size * 1.25;
       let fx = CLOUD_W / 2 - ww / 2, fy = CLOUD_H / 2 - wh / 2;
       for (let s = 0; s < 700; s++) {

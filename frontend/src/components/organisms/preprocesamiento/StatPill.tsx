@@ -28,9 +28,9 @@ export const StatPill: React.FC<StatPillProps> = ({ label, value, percent, subti
   const c = colorMap[color];
   return (
     <div className={`min-w-0 rounded-xl px-4 py-3.5 ${c.bg}`} title={tooltip}>
-      <div className="flex items-center gap-2 mb-2">
-        <span aria-hidden="true" className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.dot}`} />
-        <p className="text-xs font-medium text-mist truncate">{label}</p>
+      <div className="flex items-start gap-2 mb-2">
+        <span aria-hidden="true" className={`mt-[0.35rem] h-1.5 w-1.5 shrink-0 rounded-full ${c.dot}`} />
+        <p className="text-xs font-medium leading-snug text-mist">{label}</p>
         {tooltip && (
           <svg className="w-3 h-3 text-fog shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

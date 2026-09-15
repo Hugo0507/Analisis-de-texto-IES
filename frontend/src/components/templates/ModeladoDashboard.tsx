@@ -246,7 +246,7 @@ export const ModeladoDashboard: React.FC = () => {
       {/* ── KPI Metrics Row (aggregate counts) ── */}
       <DashboardGrid columns={4} gap="md">
         <MetricCardDark
-          title="Análisis de entidades (NER)"
+          title="Análisis de entidades"
           value={data?.nerAnalyses?.length || 0}
           subtitle="Reconocimiento de entidades"
           icon={
