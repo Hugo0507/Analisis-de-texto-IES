@@ -34,14 +34,14 @@ export const NerSection: React.FC<NerSectionProps> = ({
   return (
     <>
       {activeSubTab === 'ner' && !data?.selectedNer && (
-        <div className="flex flex-col items-center justify-center py-12 rounded-xl bg-slate-800/30 border border-slate-700/50 text-center">
+        <div className="flex flex-col items-center justify-center py-12 rounded-xl bg-ink-850/30 border border-ink-700/50 text-center">
           <div className="w-14 h-14 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-4">
             <svg className="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
             </svg>
           </div>
-          <p className="text-slate-300 text-sm">Sin análisis NER para este dataset.</p>
-          <p className="text-slate-400 text-xs mt-1">Crea uno desde Administración › NER.</p>
+          <p className="text-haze text-sm">Sin análisis NER para este dataset.</p>
+          <p className="text-mist text-xs mt-1">Crea uno desde Administración › NER.</p>
         </div>
       )}
       {activeSubTab === 'ner' && data?.selectedNer && (
@@ -100,7 +100,7 @@ export const NerSection: React.FC<NerSectionProps> = ({
                     onClearFilter={() => setSelectedEntityType(null)}
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-slate-400 text-sm">
+                  <div className="flex items-center justify-center h-full text-mist text-sm">
                     No hay datos de entidades
                   </div>
                 )}
@@ -131,7 +131,7 @@ export const NerSection: React.FC<NerSectionProps> = ({
                     ))}
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-full text-slate-400 text-sm">
+                  <div className="flex items-center justify-center h-full text-mist text-sm">
                     No hay entidades disponibles
                   </div>
                 )}
@@ -162,12 +162,12 @@ export const NerSection: React.FC<NerSectionProps> = ({
                     <span className={`px-2 py-0.5 text-xs rounded border ${ENTITY_BADGE_COLORS[selectedEntityType] || ENTITY_BADGE_COLORS.default}`}>
                       {selectedEntityType}
                     </span>
-                    <span className="text-sm text-slate-300">
+                    <span className="text-sm text-haze">
                       {filteredNerEntities.length} entidades encontradas
                     </span>
                     <button
                       onClick={() => setSelectedEntityType(null)}
-                      className="ml-auto flex items-center gap-1 px-2 py-1 text-xs text-slate-300 bg-slate-700/50 hover:bg-slate-600/50 rounded-lg border border-slate-600/50 transition-colors min-h-[32px]"
+                      className="ml-auto flex items-center gap-1 px-2 py-1 text-xs text-haze bg-ink-800/50 hover:bg-ink-700/50 rounded-lg border border-ink-600/50 transition-colors min-h-[32px]"
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -217,7 +217,7 @@ export const NerSection: React.FC<NerSectionProps> = ({
                 {Object.entries({ PERSON: '#3b82f6', ORG: '#10b981', GPE: '#f59e0b', LOC: '#8b5cf6', DATE: '#ec4899' }).map(([label, color]) => (
                   <div key={label} className="flex items-center gap-1.5">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-                    <span className="text-xs text-slate-400">{label}</span>
+                    <span className="text-xs text-mist">{label}</span>
                   </div>
                 ))}
               </div>

@@ -115,33 +115,36 @@ export interface ModelingDashboardData {
 // COLOR PALETTES
 // ============================================================
 
+// Colores de los gráficos del dashboard público: paleta categórica validada
+// sobre la superficie oscura (ver CHART_CATEGORICAL en DonutChartViz). Orden
+// fijo; del noveno directorio en adelante, grises en vez de tonos nuevos.
 export const DIRECTORY_COLORS = [
-  '#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899',
-  '#14b8a6', '#f97316', '#06b6d4', '#84cc16', '#a855f7',
+  '#3987e5', '#d95926', '#199e70', '#c98500', '#d55181',
+  '#008300', '#9085e9', '#e66767', '#5B6B86', '#46546E',
 ];
 
 export const EXTENSION_COLORS: Record<string, string> = {
-  pdf: '#ef4444',
-  txt: '#3b82f6',
-  docx: '#2563eb',
-  xlsx: '#22c55e',
-  csv: '#84cc16',
-  json: '#f59e0b',
-  xml: '#8b5cf6',
-  html: '#ec4899',
-  default: '#64748b',
+  pdf: '#e66767',
+  txt: '#3987e5',
+  docx: '#9085e9',
+  xlsx: '#199e70',
+  csv: '#008300',
+  json: '#c98500',
+  xml: '#d55181',
+  html: '#d95926',
+  default: '#5B6B86',
 };
 
 const ENTITY_COLORS: Record<string, string> = {
-  PERSON: '#3b82f6',
-  ORG: '#10b981',
-  GPE: '#f59e0b',
-  LOC: '#8b5cf6',
-  DATE: '#ec4899',
-  MONEY: '#22c55e',
-  EVENT: '#06b6d4',
-  PRODUCT: '#f97316',
-  default: '#64748b',
+  PERSON: '#3987e5',
+  ORG: '#199e70',
+  GPE: '#c98500',
+  LOC: '#9085e9',
+  DATE: '#d55181',
+  MONEY: '#008300',
+  EVENT: '#d95926',
+  PRODUCT: '#e66767',
+  default: '#5B6B86',
 };
 
 // ============================================================

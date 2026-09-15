@@ -61,7 +61,7 @@ export const HeatmapSection: React.FC<HeatmapSectionProps> = ({
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   heatmapMode === m
                     ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
-                    : 'text-slate-400 hover:text-slate-200 border border-transparent'
+                    : 'text-mist hover:text-paper border border-transparent'
                 }`}
               >
                 {m === 'metrics' ? 'Métricas × Términos' : 'Documentos × Términos'}
@@ -79,23 +79,23 @@ export const HeatmapSection: React.FC<HeatmapSectionProps> = ({
                   setSelectedTerm(prev => prev?.text === termText ? null : term);
                 }}
               />
-              <div className="mt-3 pt-3 border-t border-slate-700/40 grid grid-cols-3 gap-4 text-xs text-slate-400">
-                <div><span className="font-medium text-slate-300">BoW Freq</span><p className="mt-0.5">Frecuencia total del término en el corpus, normalizada.</p></div>
-                <div><span className="font-medium text-slate-300">IDF</span><p className="mt-0.5">Especificidad del término. Alto = aparece en pocos documentos.</p></div>
-                <div><span className="font-medium text-slate-300">TF-IDF</span><p className="mt-0.5">Score combinado. Alto = frecuente y específico a la vez.</p></div>
+              <div className="mt-3 pt-3 border-t border-ink-700/40 grid grid-cols-3 gap-4 text-xs text-mist">
+                <div><span className="font-medium text-haze">BoW Freq</span><p className="mt-0.5">Frecuencia total del término en el corpus, normalizada.</p></div>
+                <div><span className="font-medium text-haze">IDF</span><p className="mt-0.5">Especificidad del término. Alto = aparece en pocos documentos.</p></div>
+                <div><span className="font-medium text-haze">TF-IDF</span><p className="mt-0.5">Score combinado. Alto = frecuente y específico a la vez.</p></div>
               </div>
             </>
           )}
 
           {heatmapMode === 'docterm' && (() => {
             if (docTermLoading) return (
-              <div className="flex items-center justify-center h-[300px] gap-3 text-slate-400">
+              <div className="flex items-center justify-center h-[300px] gap-3 text-mist">
                 <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                 Calculando submatriz doc-término...
               </div>
             );
             if (!docTermMatrix) return (
-              <div className="flex items-center justify-center h-[220px] text-slate-500 text-sm">
+              <div className="flex items-center justify-center h-[220px] text-fog text-sm">
                 {filters.selectedTfidfId || data?.selectedTfidf?.id
                   ? 'No se pudo cargar la submatriz. Verifica que el análisis TF-IDF tenga artefacto serializado.'
                   : 'Selecciona un análisis TF-IDF para ver la submatriz documento × término.'}

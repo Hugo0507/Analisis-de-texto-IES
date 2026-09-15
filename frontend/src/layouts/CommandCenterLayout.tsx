@@ -8,18 +8,22 @@
  */
 
 import React, { useState } from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { FilterProvider, useFilter } from '../contexts/FilterContext';
 import { FilterSidebar } from '../components/organisms';
+import { DASHBOARD_STAGES, DashboardStage, stageForPath } from '../utils/dashboardStages';
 
-// Navigation items for dashboard sections
-const navItems = [
-  { path: '/dashboard', label: 'Preprocesamiento', icon: 'prep', end: true },
-  { path: '/dashboard/vectorizacion', label: 'Vectorización', icon: 'vec' },
-  { path: '/dashboard/modelado', label: 'Modelado', icon: 'model' },
-  { path: '/dashboard/laboratorio', label: 'Laboratorio', icon: 'lab' },
-  { path: '/dashboard/resumen', label: 'Resumen', icon: 'sum' },
-];
+// Etapas en secuencia (llevan índice) y secciones fuera de la secuencia.
+const pipelineStages = DASHBOARD_STAGES.filter((s) => s.index);
+const extraStages = DASHBOARD_STAGES.filter((s) => !s.index);
+
+const stageIcon: Record<DashboardStage['key'], string> = {
+  prep: 'prep',
+  vec: 'vec',
+  mod: 'model',
+  lab: 'lab',
+  sum: 'sum',
+};
 
 // Icons for each section
 const NavIcon: React.FC<{ type: string; className?: string }> = ({ type, className = '' }) => {
@@ -59,18 +63,18 @@ const BackendUnavailableBanner: React.FC = () => {
   const { backendUnavailable, refreshDatasets, isLoadingDatasets } = useFilter();
   if (!backendUnavailable) return null;
   return (
-    <div className="bg-amber-950/60 border-b border-amber-500/30 px-4 py-2 flex items-center justify-between text-sm">
-      <div className="flex items-center gap-2 text-amber-300">
-        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-            d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-        </svg>
+    <div className="flex items-center justify-between gap-4 border-b border-stage-mod/20 bg-stage-mod/[0.06] px-4 md:px-8 py-2.5 text-sm">
+      <div className="flex items-center gap-2.5 text-stage-mod">
+        <span className="relative flex h-2 w-2 shrink-0">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-stage-mod opacity-60" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-stage-mod" />
+        </span>
         <span>El servidor está iniciando (puede tardar ~60 s). Los datos se cargarán automáticamente.</span>
       </div>
       <button
         onClick={() => refreshDatasets()}
         disabled={isLoadingDatasets}
-        className="ml-4 px-3 py-1 rounded-md bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-medium transition-colors disabled:opacity-50"
+        className="shrink-0 rounded-lg border border-stage-mod/30 px-3 py-1 font-medium text-stage-mod transition-colors hover:bg-stage-mod/10 disabled:opacity-50"
       >
         {isLoadingDatasets ? 'Conectando…' : 'Reintentar'}
       </button>
@@ -78,17 +82,48 @@ const BackendUnavailableBanner: React.FC = () => {
   );
 };
 
+// Pestaña del riel de etapas
+const StageTab: React.FC<{ stage: DashboardStage; compact?: boolean }> = ({ stage, compact = false }) => (
+  <NavLink
+    to={stage.path}
+    end={stage.end}
+    className={({ isActive }) => `
+      group relative flex items-center gap-2 whitespace-nowrap rounded-lg
+      ${compact ? 'px-3 py-1.5' : 'px-2.5 xl:px-3 py-1.5'}
+      text-sm transition-colors duration-200
+      ${isActive ? `text-paper ${stage.tone.activeTab}` : 'text-mist hover:text-paper hover:bg-ink-800/70'}
+    `}
+  >
+    {({ isActive }) => (
+      <>
+        {stage.index ? (
+          <span className={`num font-mono text-[11px] font-medium ${isActive ? stage.tone.text : 'text-fog group-hover:text-mist'}`}>
+            {stage.index}
+          </span>
+        ) : (
+          <NavIcon
+            type={stageIcon[stage.key]}
+            className={`h-3.5 w-3.5 ${isActive ? stage.tone.text : 'text-fog group-hover:text-mist'}`}
+          />
+        )}
+        <span>{stage.label}</span>
+      </>
+    )}
+  </NavLink>
+);
+
 export const CommandCenterLayout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const etapaActual = stageForPath(useLocation().pathname);
 
   return (
     <FilterProvider>
-      <div className="flex h-screen overflow-hidden bg-slate-900">
+      <div className="dashboard-shell flex h-screen overflow-hidden font-sans text-paper">
         {/* Mobile Overlay */}
         {mobileMenuOpen && (
           <div
-            className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-40 lg:hidden"
+            className="fixed inset-0 z-40 bg-ink-950/70 backdrop-blur-sm lg:hidden"
             onClick={() => setMobileMenuOpen(false)}
           />
         )}
@@ -110,107 +145,76 @@ export const CommandCenterLayout: React.FC = () => {
         {/* Main Content */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Header */}
-          <header className="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-xl border-b border-slate-700">
-            <div className="flex items-center justify-between px-4 h-16">
+          <header className="sticky top-0 z-30 border-b border-ink-700 bg-ink-950/85 backdrop-blur-xl">
+            <div className="flex h-16 items-center gap-3 px-4 md:px-8">
               {/* Mobile menu button */}
               <button
                 onClick={() => setMobileMenuOpen(true)}
-                className="lg:hidden p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+                className="rounded-lg p-2 text-mist transition-colors hover:bg-ink-800 hover:text-paper lg:hidden"
                 aria-label="Abrir filtros"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
 
-              {/* Logo */}
-              <div className="flex items-center gap-3">
-                <img
-                  src="/Logo_tesis.png"
-                  alt="IES Logo"
-                  className="h-8 w-auto"
-                />
-                <div className="hidden sm:block">
-                  <h1 className="text-lg font-bold text-white">Centro de Comando</h1>
-                  <p className="text-sm text-slate-400">Dashboard de Análisis</p>
-                </div>
+              {/* Marca */}
+              <div className="flex shrink-0 items-center gap-2.5">
+                <img src="/Logo_tesis.png" alt="" className="h-7 w-auto" />
+                <h1 className="hidden whitespace-nowrap font-display text-[15px] font-semibold tracking-[-0.01em] text-paper sm:block md:hidden xl:block">
+                  Centro de Comando
+                </h1>
               </div>
 
-              {/* Navigation tabs */}
-              <nav className="hidden md:flex items-center gap-1">
-                {navItems.map((item) => (
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
-                    end={item.end}
-                    className={({ isActive }) => `
-                      flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
-                      transition-all duration-200
-                      ${isActive
-                        ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-                      }
-                    `}
-                  >
-                    <NavIcon type={item.icon} className="w-4 h-4" />
-                    <span className="hidden lg:inline">{item.label}</span>
-                  </NavLink>
+              {/* Riel de etapas */}
+              <nav aria-label="Secciones del dashboard" className="ml-2 hidden min-w-0 items-center md:flex xl:ml-6">
+                {pipelineStages.map((stage, i) => (
+                  <React.Fragment key={stage.key}>
+                    {i > 0 && <span aria-hidden="true" className="mx-0.5 h-px w-3 bg-ink-600 xl:w-5" />}
+                    <StageTab stage={stage} />
+                  </React.Fragment>
+                ))}
+                <span aria-hidden="true" className="mx-2 h-5 w-px bg-ink-600 xl:mx-3" />
+                {extraStages.map((stage) => (
+                  <StageTab key={stage.key} stage={stage} />
                 ))}
               </nav>
 
-              {/* Right side actions */}
-              <div className="flex items-center gap-2">
-                {/* Link to Admin */}
+              {/* Acciones */}
+              <div className="ml-auto flex items-center">
                 <NavLink
                   to="/admin/configuracion/datasets"
-                  className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+                  className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-mist transition-colors hover:bg-ink-800 hover:text-paper"
                   title="Ir a Administración"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
+                  <span className="hidden 2xl:inline">Administración</span>
                 </NavLink>
-
-                {/* Notifications placeholder */}
-                <button className="relative p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full" />
-                </button>
               </div>
             </div>
 
             {/* Mobile navigation */}
-            <nav className="md:hidden flex items-center gap-1 px-4 pb-3 overflow-x-auto scrollbar-hide">
-              {navItems.map((item) => (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  end={item.end}
-                  className={({ isActive }) => `
-                    flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap
-                    transition-all duration-200
-                    ${isActive
-                      ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
-                      : 'text-slate-400 bg-slate-800 hover:bg-slate-700 hover:text-slate-200'
-                    }
-                  `}
-                >
-                  <NavIcon type={item.icon} className="w-3.5 h-3.5" />
-                  <span>{item.label}</span>
-                </NavLink>
+            <nav aria-label="Secciones del dashboard" className="scrollbar-hide flex items-center gap-1 overflow-x-auto px-4 pb-3 md:hidden">
+              {DASHBOARD_STAGES.map((stage) => (
+                <StageTab key={stage.key} stage={stage} compact />
               ))}
             </nav>
+
+            {/* Línea con el tono de la sección activa */}
+            <div aria-hidden="true" className={`h-px bg-gradient-to-r from-transparent to-transparent ${etapaActual.tone.rule}`} />
           </header>
 
           {/* Backend unavailable banner */}
           <BackendUnavailableBanner />
 
           {/* Page Content */}
-          <main className="flex-1 overflow-y-auto p-4 md:p-6">
-            <Outlet />
+          <main className="flex-1 overflow-y-auto overflow-x-hidden">
+            <div className="mx-auto w-full max-w-[1600px] px-4 py-6 md:px-8 md:py-8">
+              <Outlet />
+            </div>
           </main>
         </div>
       </div>

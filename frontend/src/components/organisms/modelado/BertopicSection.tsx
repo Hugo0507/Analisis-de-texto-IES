@@ -30,14 +30,14 @@ export const BertopicSection: React.FC<BertopicSectionProps> = ({
   return (
     <>
       {activeSubTab === 'bertopic' && !data?.selectedBertopic && (
-        <div className="flex flex-col items-center justify-center py-12 rounded-xl bg-slate-800/30 border border-slate-700/50 text-center">
+        <div className="flex flex-col items-center justify-center py-12 rounded-xl bg-ink-850/30 border border-ink-700/50 text-center">
           <div className="w-14 h-14 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-4">
             <svg className="w-7 h-7 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
-          <p className="text-slate-300 text-sm">Sin análisis BERTopic para este dataset.</p>
-          <p className="text-slate-400 text-xs mt-1">Crea uno desde Administración › BERTopic.</p>
+          <p className="text-haze text-sm">Sin análisis BERTopic para este dataset.</p>
+          <p className="text-mist text-xs mt-1">Crea uno desde Administración › BERTopic.</p>
         </div>
       )}
       {activeSubTab === 'bertopic' && data?.selectedBertopic && data.bertopicClusters && data.bertopicClusters.length > 0 && (
@@ -151,7 +151,7 @@ export const BertopicSection: React.FC<BertopicSectionProps> = ({
                 }
               >
                 <div className="px-2 pb-2">
-                  <p className="text-xs text-slate-400 mb-3">
+                  <p className="text-xs text-mist mb-3">
                     Los documentos cercanos tratan temas similares. El color indica el tema dominante asignado.
                   </p>
                   <ScatterPlotProjection

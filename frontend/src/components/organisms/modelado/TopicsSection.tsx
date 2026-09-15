@@ -33,14 +33,14 @@ export const TopicsSection: React.FC<TopicsSectionProps> = ({
   return (
     <>
       {activeSubTab === 'topics' && !data?.selectedTopicModeling && (
-        <div className="flex flex-col items-center justify-center py-12 rounded-xl bg-slate-800/30 border border-slate-700/50 text-center">
+        <div className="flex flex-col items-center justify-center py-12 rounded-xl bg-ink-850/30 border border-ink-700/50 text-center">
           <div className="w-14 h-14 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-4">
             <svg className="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
             </svg>
           </div>
-          <p className="text-slate-300 text-sm">Sin modelos de temas para este dataset.</p>
-          <p className="text-slate-400 text-xs mt-1">Crea uno desde Administración › Modelado de Temas.</p>
+          <p className="text-haze text-sm">Sin modelos de temas para este dataset.</p>
+          <p className="text-mist text-xs mt-1">Crea uno desde Administración › Modelado de Temas.</p>
         </div>
       )}
       {activeSubTab === 'topics' && data?.selectedTopicModeling && data.topics && data.topics.length > 0 && (
@@ -69,7 +69,7 @@ export const TopicsSection: React.FC<TopicsSectionProps> = ({
                 label="Perplejidad (LDA)"
                 value={data.selectedTopicModeling.perplexity_score.toFixed(2)}
                 badge="menor = mejor"
-                badgeClass="bg-slate-600/30 text-slate-300 border-slate-500/30"
+                badgeClass="bg-ink-700/30 text-haze border-fog/30"
               />
             )}
             <CompactMetric
@@ -217,12 +217,12 @@ export const TopicsSection: React.FC<TopicsSectionProps> = ({
                     {algorithms.map(alg => (
                       <div key={alg} className="flex items-center gap-1.5">
                         <div className="w-4 h-1.5 rounded" style={{ backgroundColor: ALG_COLORS[alg] || '#64748b' }} />
-                        <span className="text-xs text-slate-400 uppercase">{alg}</span>
+                        <span className="text-xs text-mist uppercase">{alg}</span>
                       </div>
                     ))}
                     <div className="flex items-center gap-1.5 ml-2">
                       <div className="w-3 h-3 rounded-full border-2 border-white bg-transparent" />
-                      <span className="text-xs text-slate-400">modelo activo</span>
+                      <span className="text-xs text-mist">modelo activo</span>
                     </div>
                   </div>
                 </div>
@@ -290,13 +290,13 @@ export const TopicsSection: React.FC<TopicsSectionProps> = ({
                     </g>
                   </svg>
                   {hovered !== null && (
-                    <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-slate-900 border border-slate-600/60 rounded-lg px-3 py-2 shadow-xl text-xs pointer-events-none z-10">
+                    <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-ink-900 border border-ink-600/60 rounded-lg px-3 py-2 shadow-xl text-xs pointer-events-none z-10">
                       <p className="font-bold text-white mb-0.5">{pts[hovered]?.label}</p>
-                      <p className="text-slate-400">{pts[hovered]?.size} documentos</p>
+                      <p className="text-mist">{pts[hovered]?.size} documentos</p>
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-slate-400 px-4 pb-3">El tamaño del círculo refleja el número de documentos. La posición refleja la similitud semántica calculada con PCA sobre los pesos de palabras.</p>
+                <p className="text-xs text-mist px-4 pb-3">El tamaño del círculo refleja el número de documentos. La posición refleja la similitud semántica calculada con PCA sobre los pesos de palabras.</p>
               </ChartCard>
             );
           })()}

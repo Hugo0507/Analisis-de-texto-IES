@@ -17,7 +17,7 @@ export const TfIdfScatter: React.FC<TfIdfScatterProps> = ({ data, onPointClick, 
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[300px] text-slate-500 text-sm">
+      <div className="flex items-center justify-center h-[300px] text-fog text-sm">
         Se necesitan datos de TF y IDF para generar el gráfico
       </div>
     );
@@ -57,7 +57,7 @@ export const TfIdfScatter: React.FC<TfIdfScatterProps> = ({ data, onPointClick, 
   return (
     <div className="relative select-none">
       {/* Axis labels */}
-      <div className="absolute left-0 top-1/2 -translate-y-1/2 -rotate-90 text-xs text-slate-400 pointer-events-none" style={{ left: '-10px' }}>
+      <div className="absolute left-0 top-1/2 -translate-y-1/2 -rotate-90 text-xs text-mist pointer-events-none" style={{ left: '-10px' }}>
         IDF (especificidad)
       </div>
       <svg
@@ -138,30 +138,30 @@ export const TfIdfScatter: React.FC<TfIdfScatterProps> = ({ data, onPointClick, 
       {/* Tooltip */}
       {hovered && (
         <div
-          className="absolute z-10 pointer-events-none bg-slate-900 border border-slate-600/60 rounded-lg px-3 py-2 shadow-xl text-xs"
+          className="absolute z-10 pointer-events-none bg-ink-900 border border-ink-600/60 rounded-lg px-3 py-2 shadow-xl text-xs"
           style={{
             left: Math.min(mousePos.x + 12, 480),
             top:  Math.max(mousePos.y - 60, 0),
           }}
         >
           <p className="font-bold text-white mb-1">"{hovered.term}"</p>
-          <p className="text-slate-400">TF: <span className="text-cyan-400 font-mono">{formatNum(hovered.tf)}</span></p>
-          <p className="text-slate-400">IDF: <span className="text-blue-400 font-mono">{hovered.idf.toFixed(2)}</span></p>
-          <p className="text-slate-400">TF-IDF: <span className="text-purple-400 font-mono">{hovered.tfidf.toFixed(2)}</span></p>
+          <p className="text-mist">TF: <span className="text-cyan-400 font-mono">{formatNum(hovered.tf)}</span></p>
+          <p className="text-mist">IDF: <span className="text-blue-400 font-mono">{hovered.idf.toFixed(2)}</span></p>
+          <p className="text-mist">TF-IDF: <span className="text-purple-400 font-mono">{hovered.tfidf.toFixed(2)}</span></p>
         </div>
       )}
 
       {/* Legend */}
       <div className="flex items-center gap-4 justify-center mt-2 flex-wrap">
-        <span className="text-xs text-slate-500">TF-IDF score:</span>
+        <span className="text-xs text-fog">TF-IDF score:</span>
         <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-slate-500 opacity-75" /><span className="text-xs text-slate-400">Bajo</span>
+          <div className="w-2.5 h-2.5 rounded-full bg-ink-600 opacity-75" /><span className="text-xs text-mist">Bajo</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3.5 h-3.5 rounded-full bg-violet-500 opacity-75" /><span className="text-xs text-slate-400">Medio</span>
+          <div className="w-3.5 h-3.5 rounded-full bg-violet-500 opacity-75" /><span className="text-xs text-mist">Medio</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-5 h-5 rounded-full bg-cyan-500 opacity-75" /><span className="text-xs text-slate-400">Alto — término relevante y específico</span>
+          <div className="w-5 h-5 rounded-full bg-cyan-500 opacity-75" /><span className="text-xs text-mist">Alto — término relevante y específico</span>
         </div>
       </div>
     </div>

@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
+import { StageHeading } from '../molecules';
 import publicWorkspaceService, {
   Workspace,
   CreatePublicWorkspacePayload,
@@ -113,26 +114,24 @@ export const LaboratorioDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-white">Laboratorio</h2>
-        <p className="text-slate-400 text-sm mt-1">
-          Analiza nuevos documentos PDF usando los modelos entrenados del corpus seleccionado,
-          sin reentrenamiento — los resultados son comparables con el corpus original.
-        </p>
-      </div>
+      <StageHeading
+        stage="lab"
+        title="Laboratorio"
+        subtitle="Analiza PDFs nuevos con los modelos ya entrenados del corpus, sin reentrenarlos: los resultados son comparables con el corpus original."
+      />
 
       {/* ── Dataset + DataPreparation selectors (B1) ── */}
       {stage === 'configure' && (
-        <div className="p-4 rounded-2xl bg-slate-800/40 border border-slate-700/50 space-y-3">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Seleccionar corpus</p>
+        <div className="p-5 rounded-2xl bg-ink-900 border border-ink-700 space-y-3">
+          <p className="font-mono text-[11px] font-medium text-fog uppercase tracking-[0.14em]">Corpus de referencia</p>
           {selectorsLoading ? (
-            <p className="text-xs text-slate-500">Cargando datasets…</p>
+            <p className="text-xs text-fog">Cargando datasets…</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Dataset</label>
+                <label className="block text-xs text-mist mb-1">Dataset</label>
                 {datasets.length === 0 ? (
-                  <p className="text-xs text-amber-400">No hay datasets completados.</p>
+                  <p className="text-xs text-stage-mod">No hay datasets completados.</p>
                 ) : (
                   <select
                     value={selectedDatasetId ?? ''}
@@ -141,16 +140,16 @@ export const LaboratorioDashboard: React.FC = () => {
                       setStage('configure');
                       setWorkspace(null);
                     }}
-                    className="w-full text-xs bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    className="w-full text-sm bg-ink-850 border border-ink-600 rounded-xl px-3 py-2 text-paper transition-colors hover:border-fog/50 focus:outline-none focus:border-stage-lab/60"
                   >
                     {datasets.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
                 )}
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Preprocesamiento</label>
+                <label className="block text-xs text-mist mb-1">Preprocesamiento</label>
                 {dataPreparations.length === 0 ? (
-                  <p className="text-xs text-slate-500 italic">Sin preprocesamiento completado.</p>
+                  <p className="text-xs text-fog italic">Sin preprocesamiento completado.</p>
                 ) : (
                   <select
                     value={selectedDataPrepId ?? ''}
@@ -158,7 +157,7 @@ export const LaboratorioDashboard: React.FC = () => {
                       setSelectedDataPrepId(e.target.value ? Number(e.target.value) : null);
                       setWorkspace(null);
                     }}
-                    className="w-full text-xs bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    className="w-full text-sm bg-ink-850 border border-ink-600 rounded-xl px-3 py-2 text-paper transition-colors hover:border-fog/50 focus:outline-none focus:border-stage-lab/60"
                   >
                     <option value="">(todos)</option>
                     {dataPreparations.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
@@ -175,14 +174,14 @@ export const LaboratorioDashboard: React.FC = () => {
 
       {/* Error banner */}
       {error && (
-        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm flex items-start gap-2">
-          <span>⚠</span>
+        <div role="alert" className="p-4 rounded-xl bg-stage-lab/[0.08] border border-stage-lab/30 text-paper text-sm flex items-start gap-2.5">
+          <span aria-hidden="true" className="text-stage-lab">⚠</span>
           <span>{error}</span>
         </div>
       )}
 
       {/* Stage content */}
-      <div className="p-6 rounded-2xl bg-slate-800/30 border border-slate-700/50">
+      <div className="p-6 rounded-2xl bg-ink-900 border border-ink-700">
         {stage === 'configure' && selectedDatasetId && (
           <ConfigureStage
             datasetId={selectedDatasetId}
@@ -192,7 +191,7 @@ export const LaboratorioDashboard: React.FC = () => {
           />
         )}
         {stage === 'configure' && !selectedDatasetId && (
-          <p className="text-slate-400 text-sm text-center py-8">Selecciona un dataset para continuar.</p>
+          <p className="text-mist text-sm text-center py-8">Selecciona un dataset para continuar.</p>
         )}
         {stage === 'upload' && workspace && (
           <UploadStage

@@ -49,7 +49,7 @@ export const CooccurrenceSection: React.FC<CooccurrenceSectionProps> = ({
               setSelectedTerm(prev => prev?.text === termText ? null : term);
             }}
           />
-          <div className="mt-2 pt-3 border-t border-slate-700/40 text-xs text-slate-500 text-center">
+          <div className="mt-2 pt-3 border-t border-ink-700/40 text-xs text-fog text-center">
             Cada nodo es un término · cada arista conecta palabras que aparecen juntas en un bigrama · el grosor indica la frecuencia de co-ocurrencia
           </div>
         </ChartCard>

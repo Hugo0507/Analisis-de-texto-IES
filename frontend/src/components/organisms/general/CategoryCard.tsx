@@ -45,7 +45,7 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ cat, topics, docTopi
   }, [cat, topics, docTopics]);
 
   return (
-    // bg-slate-800 sólido — contraste predecible para todos los textos interiores
+    // bg-ink-850 sólido — contraste predecible para todos los textos interiores
     <div className={`rounded-xl border ${isFilterActive ? `${cat.borderClass} ring-2 ring-offset-2 ring-offset-slate-900` : cat.borderClass} ${cat.bgClass} transition-all duration-200`}
       style={isFilterActive ? { outlineColor: cat.color } : undefined}>
       {/* Card header */}
@@ -93,10 +93,10 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ cat, topics, docTopi
           </div>
         </div>
 
-        {/* Título: text-base (16px) + color semántico → ≥ 5.5:1 contraste sobre bg-slate-800 */}
+        {/* Título: text-base (16px) + color semántico → ≥ 5.5:1 contraste sobre bg-ink-850 */}
         <h4 className={`text-base font-semibold ${cat.textClass} mb-1.5`}>{cat.label}</h4>
         {/* Descripción: text-sm (14px) + slate-300 → ≈ 7.5:1 contraste */}
-        <p className="text-sm text-slate-300 mb-4 leading-relaxed">{cat.description}</p>
+        <p className="text-sm text-haze mb-4 leading-relaxed">{cat.description}</p>
 
         {topTerms.length > 0 ? (
           // Pills de términos — borde sólido slate-600 + texto legible slate-100
@@ -104,7 +104,7 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ cat, topics, docTopi
             {topTerms.map(term => (
               <span
                 key={term}
-                className="text-sm px-2.5 py-1 rounded-md border border-slate-600 text-slate-100 bg-slate-700/60"
+                className="text-sm px-2.5 py-1 rounded-md border border-ink-600 text-paper bg-ink-800/60"
               >
                 {term}
               </span>
@@ -112,7 +112,7 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ cat, topics, docTopi
           </div>
         ) : (
           // text-sm + slate-300 en itálica — legible, no invisible
-          <p className="text-sm text-slate-300 italic">Sin temas asignados aún</p>
+          <p className="text-sm text-haze italic">Sin temas asignados aún</p>
         )}
 
         {/* Toggle de documentos — min-h-[44px] (WCAG 2.5.5), text-sm, padding adecuado */}
@@ -132,9 +132,9 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ cat, topics, docTopi
 
       {/* Listado expandible de documentos */}
       {expanded && topDocs.length > 0 && (
-        <div className="border-t border-slate-600 px-5 pb-5 pt-4">
+        <div className="border-t border-ink-600 px-5 pb-5 pt-4">
           {/* Título sección: text-sm + slate-300 → contraste ≥ 7.5:1 */}
-          <p className="text-sm font-semibold text-slate-300 mb-3">Documentos representativos</p>
+          <p className="text-sm font-semibold text-haze mb-3">Documentos representativos</p>
           <ul className="space-y-2">
             {topDocs.map((d, i) => (
               <li key={i} className="flex items-start gap-2">
@@ -142,14 +142,14 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ cat, topics, docTopi
                 <span className={`text-sm ${cat.textClass} font-bold shrink-0`}>{i + 1}.</span>
                 {/* Nombre doc: text-sm + slate-100 → ≈ 14:1 contraste */}
                 <span
-                  className="text-sm text-slate-100 break-all leading-relaxed flex-1"
+                  className="text-sm text-paper break-all leading-relaxed flex-1"
                   title={d.document_name}
                 >
                   {d.document_name ?? `Documento ${d.document_id}`}
                 </span>
                 {(d.dominant_topic_weight ?? d.topic_weight) != null && (
                   // Peso: text-sm + slate-300 → contraste ≥ 7.5:1
-                  <span className="text-sm text-slate-300 shrink-0 ml-auto font-medium tabular-nums">
+                  <span className="text-sm text-haze shrink-0 ml-auto font-medium tabular-nums">
                     {((d.dominant_topic_weight ?? d.topic_weight ?? 0) * 100).toFixed(0)}%
                   </span>
                 )}

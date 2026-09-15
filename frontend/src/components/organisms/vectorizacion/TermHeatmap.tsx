@@ -12,7 +12,7 @@ export const TermHeatmap: React.FC<{
 }> = ({ data, onTermClick }) => {
   if (!data || data.length === 0 || data[0]?.data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[220px] text-slate-500 text-sm">
+      <div className="flex items-center justify-center h-[220px] text-fog text-sm">
         Se necesitan análisis BoW y TF-IDF para generar el heatmap
       </div>
     );

@@ -50,11 +50,11 @@ export const FileSizeHistogram: React.FC<FileSizeHistogramProps> = ({ data }) =>
                   return (
                     <div key={bin.label} className="flex-1 flex flex-col items-center gap-1 min-w-0 group relative">
                       <div
-                        className="w-full bg-cyan-400 rounded-t-sm transition-all duration-500 group-hover:bg-cyan-500"
+                        className="w-full bg-stage-prep/70 rounded-t-sm transition-all duration-500 group-hover:bg-stage-prep"
                         style={{ height: `${Math.max(heightPct, count > 0 ? 4 : 0)}%` }}
                       />
                       <div className="absolute bottom-full mb-1 hidden group-hover:flex flex-col items-center pointer-events-none z-10">
-                        <div className="bg-slate-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap">
+                        <div className="bg-ink-850 text-white text-xs rounded px-2 py-1 whitespace-nowrap">
                           {bin.label}: {count} doc{count !== 1 ? 's' : ''} ({pct}%)
                         </div>
                         <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-800" />
@@ -66,22 +66,22 @@ export const FileSizeHistogram: React.FC<FileSizeHistogramProps> = ({ data }) =>
               <div className="flex items-start gap-2 mt-1">
                 {BINS.map((bin, i) => (
                   <div key={bin.label} className="flex-1 min-w-0 text-center">
-                    <span className="text-gray-400 block truncate" style={{ fontSize: '9px' }}>{bin.label}</span>
+                    <span className="text-fog block truncate" style={{ fontSize: '9px' }}>{bin.label}</span>
                     {counts[i] > 0 && (
                       <span className="text-cyan-500 font-semibold" style={{ fontSize: '9px' }}>{counts[i]}</span>
                     )}
                   </div>
                 ))}
               </div>
-              <div className="mt-3 flex flex-wrap gap-3 border-t border-gray-100 pt-3" style={{ fontSize: '11px' }}>
-                <span className="text-gray-500">
-                  Mín: <strong className="text-gray-700">{formatFileSize(Math.min(...data.dataset!.files.map(f => f.file_size_bytes || 0).filter(s => s > 0)))}</strong>
+              <div className="mt-3 flex flex-wrap gap-3 border-t border-ink-700 pt-3" style={{ fontSize: '11px' }}>
+                <span className="text-mist">
+                  Mín: <strong className="text-paper">{formatFileSize(Math.min(...data.dataset!.files.map(f => f.file_size_bytes || 0).filter(s => s > 0)))}</strong>
                 </span>
-                <span className="text-gray-500">
-                  Máx: <strong className="text-gray-700">{formatFileSize(Math.max(...data.dataset!.files.map(f => f.file_size_bytes || 0)))}</strong>
+                <span className="text-mist">
+                  Máx: <strong className="text-paper">{formatFileSize(Math.max(...data.dataset!.files.map(f => f.file_size_bytes || 0)))}</strong>
                 </span>
-                <span className="text-gray-500">
-                  Promedio: <strong className="text-gray-700">{formatFileSize(avgBytes)}</strong>
+                <span className="text-mist">
+                  Promedio: <strong className="text-paper">{formatFileSize(avgBytes)}</strong>
                 </span>
               </div>
             </div>

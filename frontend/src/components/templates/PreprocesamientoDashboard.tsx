@@ -11,6 +11,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { DashboardGrid, MetricCardDark } from '../organisms';
+import { StageHeading } from '../molecules';
 import type { DonutChartData } from '../organisms/DonutChartViz';
 import { useFilter } from '../../contexts/FilterContext';
 import type { DatasetFile } from '../../services/datasetsService';
@@ -329,13 +330,13 @@ export const PreprocesamientoDashboard: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-            <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-16 h-16 mx-auto mb-5 rounded-2xl border border-ink-700 bg-ink-900 flex items-center justify-center">
+            <svg className="w-7 h-7 text-fog" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Selecciona un Dataset</h3>
-          <p className="text-gray-500 text-sm max-w-md">Usa el selector de Dataset en el panel lateral izquierdo.</p>
+          <h3 className="font-display text-lg font-semibold text-paper mb-1.5">Selecciona un dataset</h3>
+          <p className="text-mist text-sm max-w-md">Elígelo en el panel de filtros para ver cómo quedó preparado el corpus.</p>
         </div>
       </div>
     );
@@ -345,8 +346,8 @@ export const PreprocesamientoDashboard: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
-          <p className="text-gray-500 text-sm">Cargando datos del dataset...</p>
+          <div className="w-10 h-10 border-2 border-stage-prep/25 border-t-stage-prep rounded-full animate-spin" />
+          <p className="text-mist text-sm">Cargando datos del dataset…</p>
         </div>
       </div>
     );
@@ -356,15 +357,15 @@ export const PreprocesamientoDashboard: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-rose-100 flex items-center justify-center">
-            <svg className="w-8 h-8 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-stage-lab/10 border border-stage-lab/25 flex items-center justify-center">
+            <svg className="w-7 h-7 text-stage-lab" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <p className="text-gray-700 mb-4">{error}</p>
+          <p className="text-haze mb-4">{error}</p>
           <button
             onClick={() => refetch()}
-            className="px-4 py-2 text-sm font-medium text-white bg-emerald-500 rounded-lg hover:bg-emerald-600 transition-all"
+            className="px-4 py-2 text-sm font-medium text-paper bg-ink-850 border border-ink-600 rounded-xl hover:bg-ink-800 transition-colors"
           >
             Reintentar
           </button>
@@ -382,61 +383,60 @@ export const PreprocesamientoDashboard: React.FC = () => {
   return (
     <div className="space-y-5">
       {/* ── Page Header ── */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Preprocesamiento</h2>
-          <p className="text-gray-500 text-sm mt-1">
-            {dataset ? `Dataset: ${dataset.name}` : 'Métricas y análisis de la fase de preparación de datos'}
-          </p>
-        </div>
-        {data?.preparations && data.preparations.length > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">Preparación:</span>
+      <StageHeading
+        stage="prep"
+        title="Preprocesamiento"
+        subtitle={dataset
+          ? <>Cómo quedó preparado el corpus <span className="text-paper">{dataset.name}</span> antes de vectorizarlo.</>
+          : 'Métricas y análisis de la fase de preparación de datos.'}
+        actions={data?.preparations && data.preparations.length > 0 ? (
+          <label className="flex items-center gap-2">
+            <span className="text-xs text-mist">Preparación</span>
             <select
               value={filters.selectedPreparationId || ''}
               onChange={(e) => setSelectedPreparation(e.target.value ? Number(e.target.value) : null)}
-              className="bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-900 focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-400"
+              className="min-w-[12rem] rounded-xl border border-ink-600 bg-ink-850 px-3 py-2 text-sm text-paper transition-colors hover:border-fog/50 focus:border-stage-prep/60 focus:outline-none"
             >
               <option value="">Más reciente</option>
               {data.preparations.map((prep) => (
                 <option key={prep.id} value={prep.id}>{prep.name} ({prep.status})</option>
               ))}
             </select>
-          </div>
-        )}
-      </div>
+          </label>
+        ) : undefined}
+      />
 
       {/* ── Preparation Summary Strip (moved to top) ── */}
       {data?.selectedPreparation && prepMetrics && (
-        <div className="bg-slate-800 border border-slate-700/60 rounded-xl">
+        <div className="bg-ink-900 border border-ink-700 rounded-2xl">
           {/* Header row */}
-          <div className="px-5 py-3 border-b border-slate-700/60 flex items-center justify-between flex-wrap gap-2">
+          <div className="px-5 py-3.5 border-b border-ink-700 flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-blue-500/15 flex items-center justify-center">
-                <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-7 h-7 rounded-lg bg-ink-800 flex items-center justify-center">
+                <svg className="w-4 h-4 text-stage-prep" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
               </div>
               <div>
-                <span className="text-sm font-semibold text-white">{data.selectedPreparation.name}</span>
+                <span className="font-display text-[15px] font-semibold text-paper">{data.selectedPreparation.name}</span>
                 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${
                   data.selectedPreparation.status === 'completed'
-                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
+                    ? 'bg-stage-sum/10 text-stage-sum border border-stage-sum/20'
                     : data.selectedPreparation.status === 'processing'
-                    ? 'bg-amber-500/15 text-amber-400 border border-amber-500/20'
-                    : 'bg-slate-700 text-slate-400'
+                    ? 'bg-stage-mod/10 text-stage-mod border border-stage-mod/20'
+                    : 'bg-ink-800 text-mist border border-ink-600'
                 }`}>
                   {data.selectedPreparation.status === 'completed' ? 'Completado'
                    : data.selectedPreparation.status === 'processing' ? 'Procesando' : data.selectedPreparation.status}
                 </span>
               </div>
             </div>
-            <p className="text-xs text-slate-500">
-              Total en dataset: <span className="font-semibold text-slate-300">{dataset?.total_files || 0} archivos</span>
+            <p className="text-xs text-fog">
+              Total en el dataset: <span className="num font-medium text-paper">{dataset?.total_files || 0} archivos</span>
             </p>
           </div>
           {/* Stats pills */}
-          <div className="p-4 flex gap-3 flex-wrap">
+          <div className="p-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
             <StatPill
               label="Procesados"
               value={prepMetrics.processed}
@@ -469,17 +469,17 @@ export const PreprocesamientoDashboard: React.FC = () => {
 
       {/* ── No Preparations Warning ── */}
       {data && data.preparations.length === 0 && (
-        <div className="p-5 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-4">
-          <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-            <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="p-5 rounded-2xl bg-stage-mod/[0.06] border border-stage-mod/25 flex items-start gap-4">
+          <div className="w-9 h-9 rounded-xl bg-stage-mod/10 flex items-center justify-center flex-shrink-0">
+            <svg className="w-5 h-5 text-stage-mod" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-amber-700">Sin Preparaciones</h3>
-            <p className="text-sm text-gray-600 mt-0.5">
-              Este dataset no tiene preparaciones. Ve a{' '}
-              <a href="/admin/preparacion" className="text-amber-700 hover:underline font-medium">
+            <h3 className="text-sm font-semibold text-paper">Este dataset aún no tiene preparaciones</h3>
+            <p className="text-sm text-mist mt-0.5">
+              Crea una en{' '}
+              <a href="/admin/preparacion" className="text-stage-mod hover:underline font-medium">
                 Administración › Preparación de Datos
               </a>{' '}
               para crear una y visualizar idiomas detectados.
@@ -490,13 +490,13 @@ export const PreprocesamientoDashboard: React.FC = () => {
 
       {/* ── Cross-filter indicator ── */}
       {crossFilter && (
-        <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-200">
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-stage-prep/[0.07] border border-stage-prep/25">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            <span className="text-sm text-amber-700">
-              Filtro activo: <span className="font-medium text-amber-800">{crossFilterLabel}</span>
+            <div className="w-2 h-2 rounded-full bg-stage-prep" />
+            <span className="text-sm text-mist">
+              Filtro activo: <span className="font-medium text-paper">{crossFilterLabel}</span>
               {crossFilterState && (
-                <span className="ml-1.5 text-amber-600">
+                <span className="num ml-1.5 text-mist">
                   — {crossFilterState.fileCount} archivo{crossFilterState.fileCount !== 1 ? 's' : ''}
                 </span>
               )}
@@ -504,7 +504,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
           </div>
           <button
             onClick={clearFilter}
-            className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-amber-700 bg-amber-100 rounded-lg hover:bg-amber-200 transition-colors"
+            className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-paper border border-ink-600 bg-ink-850 rounded-lg hover:bg-ink-800 transition-colors"
           >
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

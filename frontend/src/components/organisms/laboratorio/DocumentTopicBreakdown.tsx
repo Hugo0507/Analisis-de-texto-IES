@@ -53,7 +53,7 @@ export const DocumentTopicBreakdown: React.FC<DocumentTopicBreakdownProps> = ({
             >
               {topicLabel(t.topicId)}
             </span>
-            <div className="flex-1 h-4 bg-slate-700/50 rounded overflow-hidden">
+            <div className="flex-1 h-4 bg-ink-800/50 rounded overflow-hidden">
               <div
                 className="h-full rounded"
                 style={{
@@ -64,7 +64,7 @@ export const DocumentTopicBreakdown: React.FC<DocumentTopicBreakdownProps> = ({
                 }}
               />
             </div>
-            <span className="text-xs text-slate-400 w-10 text-right shrink-0">{t.pct}%</span>
+            <span className="text-xs text-mist w-10 text-right shrink-0">{t.pct}%</span>
           </div>
         ))}
       </div>
@@ -73,12 +73,12 @@ export const DocumentTopicBreakdown: React.FC<DocumentTopicBreakdownProps> = ({
 
   if (mode === 'expanded') {
     return (
-      <div className="mt-5 pt-4 border-t border-slate-700/50 space-y-3">
-        <p className="text-xs text-slate-300 font-medium">Desglose de temas por documento</p>
+      <div className="mt-5 pt-4 border-t border-ink-700/50 space-y-3">
+        <p className="text-xs text-haze font-medium">Desglose de temas por documento</p>
         {documentTopics.map((dt, i) => (
-          <div key={i} className="p-3 rounded-xl bg-slate-900/40 border border-slate-700/40">
+          <div key={i} className="p-3 rounded-xl bg-ink-900/40 border border-ink-700/40">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-slate-200 truncate" title={docName(dt.document_index)}>
+              <span className="text-xs text-paper truncate" title={docName(dt.document_index)}>
                 📄 {docName(dt.document_index)}
               </span>
               <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 shrink-0">
@@ -103,12 +103,12 @@ export const DocumentTopicBreakdown: React.FC<DocumentTopicBreakdownProps> = ({
         return s;
       });
     return (
-      <div className="mt-5 pt-4 border-t border-slate-700/50 space-y-2">
+      <div className="mt-5 pt-4 border-t border-ink-700/50 space-y-2">
         <div className="flex items-center justify-between">
-          <p className="text-xs text-slate-300 font-medium">Desglose de temas por documento</p>
+          <p className="text-xs text-haze font-medium">Desglose de temas por documento</p>
           <button
             onClick={toggleAll}
-            className="text-xs text-slate-400 hover:text-slate-200 transition-colors"
+            className="text-xs text-mist hover:text-paper transition-colors"
           >
             {allExpanded ? 'Colapsar todos' : 'Expandir todos'}
           </button>
@@ -116,19 +116,19 @@ export const DocumentTopicBreakdown: React.FC<DocumentTopicBreakdownProps> = ({
         {documentTopics.map((dt, i) => {
           const open = expandedDocs.has(i);
           return (
-            <div key={i} className="rounded-xl bg-slate-900/40 border border-slate-700/40 overflow-hidden">
+            <div key={i} className="rounded-xl bg-ink-900/40 border border-ink-700/40 overflow-hidden">
               <button
                 onClick={() => toggle(i)}
-                className="w-full px-3 py-2 flex items-center justify-between gap-2 hover:bg-slate-700/20 transition-colors"
+                className="w-full px-3 py-2 flex items-center justify-between gap-2 hover:bg-ink-800/20 transition-colors"
               >
-                <span className="text-xs text-slate-200 truncate text-left" title={docName(dt.document_index)}>
+                <span className="text-xs text-paper truncate text-left" title={docName(dt.document_index)}>
                   📄 {docName(dt.document_index)}
                 </span>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-xs text-amber-300">
                     {topicLabel(dt.dominant_topic)} ({(dt.dominant_topic_weight * 100).toFixed(0)}%)
                   </span>
-                  <svg className={`w-3 h-3 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className={`w-3 h-3 text-mist transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
@@ -155,7 +155,7 @@ export const DocumentTopicBreakdown: React.FC<DocumentTopicBreakdownProps> = ({
   const pageItems = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
-    <div className="mt-5 pt-4 border-t border-slate-700/50 space-y-3">
+    <div className="mt-5 pt-4 border-t border-ink-700/50 space-y-3">
       <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-900/20 border border-amber-700/30">
         <span className="text-amber-400 text-sm shrink-0 mt-0.5">⚠</span>
         <p className="text-xs text-amber-200 leading-relaxed">
@@ -163,20 +163,20 @@ export const DocumentTopicBreakdown: React.FC<DocumentTopicBreakdownProps> = ({
           Para análisis detallado de corpus grandes, considera subirlos como un <strong>Dataset nuevo</strong> desde el panel de administración.
         </p>
       </div>
-      <p className="text-xs text-slate-300 font-medium">Desglose de temas por documento</p>
-      <div className="rounded-xl overflow-hidden border border-slate-700/40">
+      <p className="text-xs text-haze font-medium">Desglose de temas por documento</p>
+      <div className="rounded-xl overflow-hidden border border-ink-700/40">
         <table className="w-full text-xs">
           <thead>
-            <tr className="bg-slate-800/60">
-              <th className="text-left px-3 py-2 text-slate-400 font-medium">Documento</th>
-              <th className="text-left px-3 py-2 text-slate-400 font-medium">Tema dominante</th>
+            <tr className="bg-ink-850/60">
+              <th className="text-left px-3 py-2 text-mist font-medium">Documento</th>
+              <th className="text-left px-3 py-2 text-mist font-medium">Tema dominante</th>
               <th
-                className="text-right px-3 py-2 text-slate-400 font-medium cursor-pointer hover:text-slate-200 select-none"
+                className="text-right px-3 py-2 text-mist font-medium cursor-pointer hover:text-paper select-none"
                 onClick={() => { setSortDir(d => d === 'desc' ? 'asc' : 'desc'); setPage(0); }}
               >
                 Confianza {sortDir === 'desc' ? '↓' : '↑'}
               </th>
-              <th className="text-left px-3 py-2 text-slate-400 font-medium hidden sm:table-cell">Temas secundarios</th>
+              <th className="text-left px-3 py-2 text-mist font-medium hidden sm:table-cell">Temas secundarios</th>
             </tr>
           </thead>
           <tbody>
@@ -187,18 +187,18 @@ export const DocumentTopicBreakdown: React.FC<DocumentTopicBreakdownProps> = ({
                 .sort((a, b) => b.pct - a.pct)
                 .slice(0, 2);
               return (
-                <tr key={i} className={i % 2 === 0 ? 'bg-slate-900/20' : 'bg-slate-800/20'}>
-                  <td className="px-3 py-2 text-slate-200 max-w-[140px] truncate" title={docName(dt.document_index)}>
+                <tr key={i} className={i % 2 === 0 ? 'bg-ink-900/20' : 'bg-ink-850/20'}>
+                  <td className="px-3 py-2 text-paper max-w-[140px] truncate" title={docName(dt.document_index)}>
                     {docName(dt.document_index)}
                   </td>
                   <td className="px-3 py-2 text-amber-300">{topicLabel(dt.dominant_topic)}</td>
-                  <td className="px-3 py-2 text-right text-slate-300">
+                  <td className="px-3 py-2 text-right text-haze">
                     {(dt.dominant_topic_weight * 100).toFixed(1)}%
                   </td>
                   <td className="px-3 py-2 hidden sm:table-cell">
                     <div className="flex gap-1 flex-wrap">
                       {secondary.map(s => (
-                        <span key={s.topicId} className="px-1.5 py-0.5 rounded bg-slate-700/60 text-slate-400">
+                        <span key={s.topicId} className="px-1.5 py-0.5 rounded bg-ink-800/60 text-mist">
                           {topicLabel(s.topicId)} {s.pct}%
                         </span>
                       ))}
@@ -212,21 +212,21 @@ export const DocumentTopicBreakdown: React.FC<DocumentTopicBreakdownProps> = ({
       </div>
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-fog">
             {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, sorted.length)} de {sorted.length}
           </span>
           <div className="flex gap-2">
             <button
               onClick={() => setPage(p => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="text-xs px-2 py-1 rounded bg-slate-700/40 text-slate-300 disabled:opacity-40 hover:bg-slate-600/40 transition-colors"
+              className="text-xs px-2 py-1 rounded bg-ink-800/40 text-haze disabled:opacity-40 hover:bg-ink-700/40 transition-colors"
             >
               ← Anterior
             </button>
             <button
               onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
               disabled={page === totalPages - 1}
-              className="text-xs px-2 py-1 rounded bg-slate-700/40 text-slate-300 disabled:opacity-40 hover:bg-slate-600/40 transition-colors"
+              className="text-xs px-2 py-1 rounded bg-ink-800/40 text-haze disabled:opacity-40 hover:bg-ink-700/40 transition-colors"
             >
               Siguiente →
             </button>

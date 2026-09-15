@@ -85,13 +85,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({ data, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div className="px-6 py-5 border-b border-slate-700/50 flex items-center justify-between">
+      <div className="bg-ink-900 border border-ink-700/60 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div className="px-6 py-5 border-b border-ink-700/50 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-white flex items-center gap-2"><DownloadIcon />Exportar Datos Completos</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Se exporta el vocabulario completo, no solo los top términos</p>
+            <p className="text-xs text-mist mt-0.5">Se exporta el vocabulario completo, no solo los top términos</p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 transition-colors"><CloseIcon /></button>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-mist hover:text-white hover:bg-ink-800/50 transition-colors"><CloseIcon /></button>
         </div>
 
         <div className="px-6 py-4 space-y-2.5">
@@ -102,28 +102,28 @@ export const ExportModal: React.FC<ExportModalProps> = ({ data, onClose }) => {
             return (
               <button key={opt.id} onClick={() => available && toggle(opt.id)} disabled={!available}
                 className={`w-full flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all ${
-                  !available ? 'opacity-40 cursor-not-allowed border-slate-700/30 bg-slate-800/20'
+                  !available ? 'opacity-40 cursor-not-allowed border-ink-700/30 bg-ink-850/20'
                   : checked  ? `border ${exportColorMap[opt.color]}`
-                  : 'border-slate-700/40 bg-slate-800/20 hover:bg-slate-800/40'
+                  : 'border-ink-700/40 bg-ink-850/20 hover:bg-ink-850/40'
                 }`}
               >
                 <CheckboxIcon checked={checked && available} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span>{opt.icon}</span>
-                    <span className="text-sm font-medium text-slate-200">{opt.label}</span>
-                    {!available && <span className="text-xs text-slate-500 bg-slate-700/50 px-1.5 py-0.5 rounded">Sin datos</span>}
-                    {hint && available && <span className="text-xs text-slate-400 bg-slate-700/30 px-1.5 py-0.5 rounded">{hint}</span>}
+                    <span className="text-sm font-medium text-paper">{opt.label}</span>
+                    {!available && <span className="text-xs text-fog bg-ink-800/50 px-1.5 py-0.5 rounded">Sin datos</span>}
+                    {hint && available && <span className="text-xs text-mist bg-ink-800/30 px-1.5 py-0.5 rounded">{hint}</span>}
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{opt.desc}</p>
+                  <p className="text-xs text-mist mt-0.5 leading-relaxed">{opt.desc}</p>
                 </div>
               </button>
             );
           })}
         </div>
 
-        <div className="px-6 py-4 border-t border-slate-700/50 flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 text-sm font-medium text-slate-400 border border-slate-700/50 rounded-xl hover:bg-slate-800/40 transition-colors">Cancelar</button>
+        <div className="px-6 py-4 border-t border-ink-700/50 flex gap-3">
+          <button onClick={onClose} className="flex-1 py-2.5 text-sm font-medium text-mist border border-ink-700/50 rounded-xl hover:bg-ink-850/40 transition-colors">Cancelar</button>
           <button onClick={handleExport} disabled={selected.size === 0 || exporting}
             className="flex-1 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl hover:from-cyan-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
           >

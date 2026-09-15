@@ -1,7 +1,8 @@
 /**
  * ChartCard - Card for dashboard visualizations
  *
- * Light WCAG-compliant theme with accent colors. Supports cross-filtering interactions.
+ * Superficie oscura "tinta" del dashboard público. El acento colorea el icono y,
+ * cuando la tarjeta está activa por un filtro cruzado, el borde.
  */
 
 import React, { useRef, useCallback, useState } from 'react';
@@ -24,48 +25,41 @@ export interface ChartCardProps {
   downloadTitle?: string;
 }
 
-// Dark-theme accent palette — WCAG AA verified on bg-slate-900 (#0f172a)
-// All text variants (text-X-400) achieve ≥ 4.5:1 contrast on slate-900
+// Acentos: los text-X-400 superan 4,5:1 sobre ink-900 (#0D1424).
 const accentColorClasses = {
   emerald: {
-    gradient: 'from-emerald-400/6 to-transparent',
-    border: 'border-emerald-500',
-    glow: 'shadow-emerald-900/30',
+    border: 'border-emerald-500/70',
+    glow: 'shadow-emerald-950/40',
     text: 'text-emerald-400',
     ring: 'ring-emerald-500/25',
   },
   cyan: {
-    gradient: 'from-cyan-400/6 to-transparent',
-    border: 'border-cyan-500',
-    glow: 'shadow-cyan-900/30',
+    border: 'border-cyan-500/70',
+    glow: 'shadow-cyan-950/40',
     text: 'text-cyan-400',
     ring: 'ring-cyan-500/25',
   },
   purple: {
-    gradient: 'from-purple-400/6 to-transparent',
-    border: 'border-purple-500',
-    glow: 'shadow-purple-900/30',
+    border: 'border-purple-500/70',
+    glow: 'shadow-purple-950/40',
     text: 'text-purple-400',
     ring: 'ring-purple-500/25',
   },
   amber: {
-    gradient: 'from-amber-400/6 to-transparent',
-    border: 'border-amber-500',
-    glow: 'shadow-amber-900/30',
+    border: 'border-amber-500/70',
+    glow: 'shadow-amber-950/40',
     text: 'text-amber-400',
     ring: 'ring-amber-500/25',
   },
   rose: {
-    gradient: 'from-rose-400/6 to-transparent',
-    border: 'border-rose-500',
-    glow: 'shadow-rose-900/30',
+    border: 'border-rose-500/70',
+    glow: 'shadow-rose-950/40',
     text: 'text-rose-400',
     ring: 'ring-rose-500/25',
   },
   blue: {
-    gradient: 'from-blue-400/6 to-transparent',
-    border: 'border-blue-500',
-    glow: 'shadow-blue-900/30',
+    border: 'border-blue-500/70',
+    glow: 'shadow-blue-950/40',
     text: 'text-blue-400',
     ring: 'ring-blue-500/25',
   },
@@ -141,59 +135,48 @@ export const ChartCard: React.FC<ChartCardProps> = ({
   }, [title, downloadTitle]);
 
   return (
-    // Dark-theme card — bg-slate-900 sólido como base para contraste predecible
+    // Superficie tinta sólida: contraste predecible para gráficos y texto
     <div
       className={`
         group relative overflow-hidden rounded-2xl
-        bg-slate-900
-        border ${isActive ? colors.border : 'border-slate-700'}
-        shadow-md ${isActive ? colors.glow : ''}
-        ${isActive ? `ring-1 ${colors.ring}` : ''}
-        transition-all duration-300
-        hover:border-slate-600
+        bg-ink-900
+        border ${isActive ? colors.border : 'border-ink-700'}
+        ${isActive ? `shadow-lg ${colors.glow} ring-1 ${colors.ring}` : ''}
+        transition-colors duration-200
+        hover:border-ink-600
         ${sizeClasses[size]}
         ${className}
       `}
     >
-      {/* Tinte de color sutil (no afecta contraste — solo atmosfera) */}
-      <div
-        className={`
-          absolute inset-0
-          bg-gradient-to-br ${colors.gradient}
-          pointer-events-none
-        `}
-      />
-
       {/* Header */}
-      <div className="relative flex items-start justify-between p-5 pb-3">
-        <div className="flex items-start gap-3">
+      <div className="relative flex items-start justify-between gap-3 px-5 pt-5 pb-3">
+        <div className="flex min-w-0 items-start gap-3">
           {icon && (
-            // bg-slate-800 + color semántico del acento → icono legible y contextual
-            <div className={`p-2 rounded-lg bg-slate-800 ${colors.text}`}>
+            // El color del acento queda solo en el icono
+            <div className={`mt-0.5 shrink-0 rounded-lg bg-ink-800 p-2 ${colors.text}`}>
               {icon}
             </div>
           )}
-          <div>
-            {/* text-white sobre bg-slate-900 → ≈ 21:1 contraste */}
-            <h3 className="text-base font-semibold text-white">{title}</h3>
+          <div className="min-w-0">
+            <h3 className="font-display text-[16px] font-semibold leading-snug tracking-[-0.01em] text-paper">{title}</h3>
             {subtitle && (
-              // text-sm (14px) + text-slate-300 → ≈ 7.5:1 contraste */}
-              <p className="text-sm text-slate-300 mt-1 leading-snug">{subtitle}</p>
+              <p className="mt-0.5 text-sm leading-snug text-mist">{subtitle}</p>
             )}
           </div>
         </div>
 
-        {/* Action buttons — min 32px, icono slate-300 sobre bg-slate-900 → ≈ 7.5:1 */}
-        <div className="flex items-center gap-1">
+        {/* Acciones */}
+        <div className="flex shrink-0 items-center gap-1">
           {headerExtra && <div className="flex items-center mr-1">{headerExtra}</div>}
           {downloadable && (
             <button
               onClick={handleDownload}
               title={dlState === 'loading' ? 'Descargando…' : dlState === 'error' ? 'Sin gráfico exportable' : 'Descargar imagen'}
-              className="p-2 rounded-lg hover:bg-slate-800 transition-all opacity-0 group-hover:opacity-100 duration-200"
+              aria-label="Descargar imagen del gráfico"
+              className="p-2 rounded-lg hover:bg-ink-800 transition-opacity opacity-0 group-hover:opacity-100 focus-visible:opacity-100 duration-200"
             >
               {dlState === 'loading' ? (
-                <svg className="w-4 h-4 text-slate-300 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-mist animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               ) : dlState === 'error' ? (
@@ -201,7 +184,7 @@ export const ChartCard: React.FC<ChartCardProps> = ({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
                 </svg>
               ) : (
-                <svg className="w-4 h-4 text-slate-300 hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-mist hover:text-paper" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -211,11 +194,11 @@ export const ChartCard: React.FC<ChartCardProps> = ({
           {onRefreshClick && (
             <button
               onClick={onRefreshClick}
-              className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
+              className="p-2 rounded-lg hover:bg-ink-800 transition-colors"
               title="Actualizar"
             >
               <svg
-                className={`w-4 h-4 text-slate-300 hover:text-white ${isLoading ? 'animate-spin' : ''}`}
+                className={`w-4 h-4 text-mist hover:text-paper ${isLoading ? 'animate-spin' : ''}`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -229,11 +212,11 @@ export const ChartCard: React.FC<ChartCardProps> = ({
           {onExpandClick && (
             <button
               onClick={onExpandClick}
-              className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
+              className="p-2 rounded-lg hover:bg-ink-800 transition-colors"
               title="Expandir"
             >
               <svg
-                className="w-4 h-4 text-slate-300 hover:text-white"
+                className="w-4 h-4 text-mist hover:text-paper"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -260,7 +243,7 @@ export const ChartCard: React.FC<ChartCardProps> = ({
 
       {/* Footer */}
       {footer && (
-        <div className="relative px-5 py-3 border-t border-slate-700">
+        <div className="relative px-5 py-3 border-t border-ink-700">
           {footer}
         </div>
       )}

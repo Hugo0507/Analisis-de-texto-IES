@@ -33,7 +33,7 @@ export const SortDescIcon = () => (
   </svg>
 );
 export const CheckboxIcon = ({ checked }: { checked: boolean }) => (
-  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${checked ? 'bg-cyan-500 border-cyan-500' : 'border-gray-500 bg-transparent'}`}>
+  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${checked ? 'bg-stage-vec border-stage-vec' : 'border-fog bg-transparent'}`}>
     {checked && <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
   </div>
 );

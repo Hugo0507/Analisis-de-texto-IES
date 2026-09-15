@@ -75,7 +75,7 @@ export const UploadStage: React.FC<UploadStageProps> = ({ workspaceId, onNext, o
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-white mb-1">Sube los documentos a analizar</h3>
-        <p className="text-sm text-slate-300">Solo archivos PDF · Máximo 50 MB por archivo</p>
+        <p className="text-sm text-haze">Solo archivos PDF · Máximo 50 MB por archivo</p>
         <p className="text-sm text-amber-300 mt-1" data-testid="aviso-idioma">
           {avisoIdioma(corpusLanguage)}
         </p>
@@ -89,14 +89,14 @@ export const UploadStage: React.FC<UploadStageProps> = ({ workspaceId, onNext, o
         onClick={() => inputRef.current?.click()}
         className={`
           border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-colors
-          ${dragOver ? 'border-violet-400 bg-violet-500/10' : 'border-slate-600 hover:border-slate-400 bg-slate-800/30'}
+          ${dragOver ? 'border-violet-400 bg-violet-500/10' : 'border-ink-600 hover:border-mist bg-ink-850/30'}
         `}
       >
-        <svg className="w-10 h-10 mx-auto mb-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-10 h-10 mx-auto mb-3 text-fog" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
         </svg>
-        <p className="text-sm text-slate-300 font-medium">Arrastra PDFs aquí o haz clic para seleccionar</p>
-        <p className="text-xs text-slate-500 mt-1">Solo PDF · Máx. 50 MB c/u</p>
+        <p className="text-sm text-haze font-medium">Arrastra PDFs aquí o haz clic para seleccionar</p>
+        <p className="text-xs text-fog mt-1">Solo PDF · Máx. 50 MB c/u</p>
         <input ref={inputRef} type="file" accept="application/pdf" multiple className="hidden" onChange={e => handleFiles(e.target.files)} />
       </div>
 
@@ -104,7 +104,7 @@ export const UploadStage: React.FC<UploadStageProps> = ({ workspaceId, onNext, o
       {files.length > 0 && (
         <div className="space-y-2">
           {files.map((f, i) => (
-            <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/50 border border-slate-700/50">
+            <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-ink-850/50 border border-ink-700/50">
               <svg className="w-4 h-4 shrink-0 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
               </svg>
@@ -112,7 +112,7 @@ export const UploadStage: React.FC<UploadStageProps> = ({ workspaceId, onNext, o
                 <p className="text-xs font-medium text-white truncate">{f.name}</p>
                 {f.error && <p className="text-xs text-red-400 mt-0.5">{f.error}</p>}
               </div>
-              <span className="text-xs text-slate-500 shrink-0">{formatSize(f.size)}</span>
+              <span className="text-xs text-fog shrink-0">{formatSize(f.size)}</span>
               <span className={`text-xs font-medium shrink-0 ${f.status === 'done' ? 'text-emerald-400' : f.status === 'error' ? 'text-red-400' : 'text-amber-400'}`}>
                 {f.status === 'done' ? '✓ Listo' : f.status === 'error' ? '✕ Error' : '…'}
               </span>
@@ -124,7 +124,7 @@ export const UploadStage: React.FC<UploadStageProps> = ({ workspaceId, onNext, o
       <div className="flex gap-3 pt-2">
         <button
           onClick={onBack}
-          className="px-4 py-2.5 min-h-[44px] rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+          className="px-4 py-2.5 min-h-[44px] rounded-xl bg-ink-800 hover:bg-ink-700 text-white text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-mist focus:ring-offset-2 focus:ring-offset-slate-900"
         >
           ← Atrás
         </button>

@@ -53,13 +53,15 @@ export interface MetricCardDarkProps {
   className?: string;
 }
 
-const metricAccentColors = {
-  emerald: 'from-emerald-500 to-emerald-600',
-  cyan: 'from-cyan-500 to-cyan-600',
-  purple: 'from-purple-500 to-purple-600',
-  amber: 'from-amber-500 to-amber-600',
-  rose: 'from-rose-500 to-rose-600',
-  blue: 'from-blue-500 to-blue-600',
+// El acento se reduce a un punto junto al título: indica la naturaleza del
+// dato (correcto, descartado…) sin teñir toda la ficha.
+const metricAccentDots = {
+  emerald: 'bg-stage-sum',
+  cyan: 'bg-stage-prep',
+  purple: 'bg-stage-vec',
+  amber: 'bg-stage-mod',
+  rose: 'bg-stage-lab',
+  blue: 'bg-sky-400',
 };
 
 export const MetricCardDark: React.FC<MetricCardDarkProps> = ({
@@ -71,41 +73,44 @@ export const MetricCardDark: React.FC<MetricCardDarkProps> = ({
   accentColor = 'emerald',
   className = '',
 }) => {
+  const texto = typeof value === 'number' ? value.toLocaleString() : value;
+  // Valores textuales largos (p. ej. un nombre de modelo) bajan de tamaño
+  // para no desbordar la ficha.
+  const valorLargo = String(texto).length > 14;
+
   return (
     <div
       className={`
-        relative overflow-hidden rounded-2xl
-        bg-slate-800
-        border border-slate-700
-        p-5 transition-all duration-300
-        hover:border-slate-600 hover:shadow-lg hover:shadow-slate-900/50
+        relative flex flex-col rounded-2xl
+        bg-ink-900 border border-ink-700
+        p-5 transition-colors duration-200
+        hover:border-ink-600
         ${className}
       `}
     >
-      {/* Background gradient accent */}
-      <div
-        className={`
-          absolute top-0 right-0 w-24 h-24 opacity-10
-          bg-gradient-to-br ${metricAccentColors[accentColor]}
-          rounded-full blur-2xl -translate-y-1/2 translate-x-1/2
-        `}
-      />
-
-      <div className="relative flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-slate-400">{title}</p>
-          <p className="mt-2 text-3xl font-bold text-white tracking-tight">
-            {typeof value === 'number' ? value.toLocaleString() : value}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="flex items-center gap-2 text-sm text-mist">
+            <span aria-hidden="true" className={`h-1.5 w-1.5 shrink-0 rounded-full ${metricAccentDots[accentColor]}`} />
+            <span className="truncate">{title}</span>
+          </p>
+          <p
+            className={`
+              num mt-3 font-display font-semibold leading-none text-paper break-words
+              ${valorLargo ? 'text-xl tracking-[-0.01em]' : 'text-[28px] tracking-[-0.02em]'}
+            `}
+          >
+            {texto}
           </p>
           {subtitle && (
-            <p className="mt-1 text-sm text-slate-400">{subtitle}</p>
+            <p className="mt-2.5 text-sm leading-snug text-mist">{subtitle}</p>
           )}
           {trend && (
             <div className="flex items-center gap-1 mt-2">
               <span
                 className={`
                   inline-flex items-center text-xs font-medium
-                  ${trend.isPositive ? 'text-emerald-400' : 'text-rose-400'}
+                  ${trend.isPositive ? 'text-stage-sum' : 'text-stage-lab'}
                 `}
               >
                 <svg
@@ -123,19 +128,13 @@ export const MetricCardDark: React.FC<MetricCardDarkProps> = ({
                 </svg>
                 {Math.abs(trend.value)}%
               </span>
-              <span className="text-sm text-slate-400">vs anterior</span>
+              <span className="text-sm text-mist">vs anterior</span>
             </div>
           )}
         </div>
 
         {icon && (
-          <div
-            className={`
-              p-3 rounded-xl
-              bg-gradient-to-br ${metricAccentColors[accentColor]}
-              text-white shadow-lg
-            `}
-          >
+          <div aria-hidden="true" className="shrink-0 rounded-lg p-2 text-fog [&_svg]:h-5 [&_svg]:w-5">
             {icon}
           </div>
         )}
