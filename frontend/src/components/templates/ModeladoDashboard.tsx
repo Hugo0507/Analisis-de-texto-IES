@@ -184,7 +184,7 @@ export const ModeladoDashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 rounded-2xl bg-ink-900 border border-ink-700">
           {(data?.nerAnalyses?.length ?? 0) > 1 && (
             <div className="flex min-w-0 flex-col gap-1.5 p-1">
-              <span className="text-xs text-mist whitespace-nowrap">Entidades (NER)</span>
+              <div className="flex min-h-[22px] items-center"><span className="text-xs text-mist whitespace-nowrap">Entidades (NER)</span></div>
               <select
                 value={filters.selectedNerId ?? data?.selectedNer?.id ?? ''}
                 onChange={e => setSelectedNer(Number(e.target.value))}
@@ -199,7 +199,7 @@ export const ModeladoDashboard: React.FC = () => {
 
           {(data?.topicModelingAnalyses?.length ?? 0) > 1 && (
             <div className="flex min-w-0 flex-col gap-1.5 p-1">
-              <div className="flex min-w-0 items-center gap-2">
+              <div className="flex min-h-[22px] min-w-0 items-center gap-2">
                 <span className="text-xs text-mist whitespace-nowrap">Modelo de temas</span>
                 {topicAlgorithmDisplay && (
                   <span className={`min-w-0 truncate px-1.5 py-0.5 text-[11px] rounded-md border ${topicAlgorithmBadge}`} title={topicAlgorithmDisplay}>
@@ -221,7 +221,7 @@ export const ModeladoDashboard: React.FC = () => {
 
           {(data?.bertopicAnalyses?.length ?? 0) > 1 && (
             <div className="flex min-w-0 flex-col gap-1.5 p-1">
-              <div className="flex min-w-0 items-center gap-2">
+              <div className="flex min-h-[22px] min-w-0 items-center gap-2">
                 <span className="text-xs text-mist whitespace-nowrap">BERTopic</span>
                 {data?.selectedBertopic?.embedding_model_display && (
                   <span className="min-w-0 truncate px-1.5 py-0.5 text-[11px] rounded-md border bg-stage-mod/10 text-stage-mod border-stage-mod/25" title={data.selectedBertopic.embedding_model_display}>
@@ -246,7 +246,7 @@ export const ModeladoDashboard: React.FC = () => {
       {/* ── KPI Metrics Row (aggregate counts) ── */}
       <DashboardGrid columns={4} gap="md">
         <MetricCardDark
-          title="Análisis NER"
+          title="Análisis de entidades (NER)"
           value={data?.nerAnalyses?.length || 0}
           subtitle="Reconocimiento de entidades"
           icon={
@@ -254,10 +254,10 @@ export const ModeladoDashboard: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
             </svg>
           }
-          accentColor="purple"
+          accentColor="amber"
         />
         <MetricCardDark
-          title="Modelos de Temas"
+          title="Modelos de temas"
           value={data?.topicModelingAnalyses?.length || 0}
           subtitle="LDA / NMF / LSA / PLSA"
           icon={
@@ -265,7 +265,7 @@ export const ModeladoDashboard: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
             </svg>
           }
-          accentColor="emerald"
+          accentColor="amber"
         />
         <MetricCardDark
           title="BERTopic"
@@ -279,7 +279,7 @@ export const ModeladoDashboard: React.FC = () => {
           accentColor="amber"
         />
         <MetricCardDark
-          title="Tipos de Entidad"
+          title="Tipos de entidad"
           value={entityTypes.length || '—'}
           subtitle="Categorías NER activas"
           icon={
@@ -287,7 +287,7 @@ export const ModeladoDashboard: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
           }
-          accentColor="cyan"
+          accentColor="amber"
         />
       </DashboardGrid>
 
@@ -295,9 +295,9 @@ export const ModeladoDashboard: React.FC = () => {
       <div role="tablist" aria-label="Tipo de modelo" className="flex gap-1 p-1 rounded-2xl bg-ink-900 border border-ink-700">
         {(
           [
-            { id: 'ner',      label: 'NER',                count: data?.nerAnalyses?.length ?? 0,                  accentActive: 'bg-stage-mod/10 text-paper ring-1 ring-stage-mod/30', dot: 'bg-stage-mod/15 text-stage-mod' },
-            { id: 'topics',   label: 'Modelado de Temas',  count: data?.topicModelingAnalyses?.length ?? 0,        accentActive: 'bg-stage-mod/10 text-paper ring-1 ring-stage-mod/30', dot: 'bg-stage-mod/15 text-stage-mod' },
-            { id: 'bertopic', label: 'BERTopic',           count: data?.bertopicAnalyses?.length ?? 0,             accentActive: 'bg-stage-mod/10 text-paper ring-1 ring-stage-mod/30', dot: 'bg-stage-mod/15 text-stage-mod' },
+            { id: 'ner',      label: 'NER',                count: data?.nerAnalyses?.length ?? 0,                  accentActive: 'bg-ink-800 text-paper ring-1 ring-stage-mod/40', dot: 'bg-stage-mod/15 text-stage-mod' },
+            { id: 'topics',   label: 'Modelado de temas',  count: data?.topicModelingAnalyses?.length ?? 0,        accentActive: 'bg-ink-800 text-paper ring-1 ring-stage-mod/40', dot: 'bg-stage-mod/15 text-stage-mod' },
+            { id: 'bertopic', label: 'BERTopic',           count: data?.bertopicAnalyses?.length ?? 0,             accentActive: 'bg-ink-800 text-paper ring-1 ring-stage-mod/40', dot: 'bg-stage-mod/15 text-stage-mod' },
           ] as const
         ).map(tab => (
           <button

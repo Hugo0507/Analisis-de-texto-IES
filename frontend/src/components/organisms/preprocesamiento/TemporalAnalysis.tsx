@@ -24,7 +24,7 @@ export const TemporalAnalysis: React.FC<TemporalAnalysisProps> = ({ data }) => {
 
         return (
           <ChartCard
-            title="Distribución Temporal"
+            title="Distribución temporal"
             subtitle="Publicaciones por año (bib_year)"
             accentColor="amber"
             size="md"
@@ -36,39 +36,39 @@ export const TemporalAnalysis: React.FC<TemporalAnalysisProps> = ({ data }) => {
           >
             <div className="px-2 pb-2">
               {/* Bar chart */}
-              <div className="flex items-end gap-1 h-28 sm:h-36 pt-2">
+              <div className="flex items-stretch gap-1 h-32 sm:h-40 pt-6 border-b border-ink-700">
                 {sortedYears.map(year => {
                   const count = yearCounts[year];
                   const heightPct = (count / maxCount) * 100;
                   return (
-                    <div key={year} className="flex-1 flex flex-col items-center gap-1 min-w-0 group relative">
+                    <div key={year} className="flex-1 flex flex-col items-center justify-end h-full min-w-0 group relative">
                       <div
-                        className="w-full bg-stage-prep/70 rounded-t-sm transition-all duration-500 group-hover:bg-stage-prep"
+                        className="w-full bg-stage-prep/70 rounded-t transition-colors duration-200 group-hover:bg-stage-prep"
                         style={{ height: `${Math.max(heightPct, 4)}%` }}
                       />
                       {/* Tooltip */}
-                      <div className="absolute bottom-full mb-1 hidden group-hover:flex flex-col items-center pointer-events-none z-10">
-                        <div className="bg-ink-850 text-white text-xs rounded px-2 py-1 whitespace-nowrap">
+                      <div className="absolute bottom-full mb-1.5 hidden group-hover:flex flex-col items-center pointer-events-none z-10">
+                        <div className="num bg-ink-800 border border-ink-600 text-paper text-xs rounded-lg px-2 py-1 whitespace-nowrap shadow-lg shadow-black/40">
                           {year}: {count} doc{count !== 1 ? 's' : ''}
                         </div>
-                        <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-800" />
+                        
                       </div>
                     </div>
                   );
                 })}
               </div>
               {/* X-axis labels */}
-              <div className="flex items-start gap-1 mt-1">
+              <div className="flex items-start gap-1 mt-2">
                 {sortedYears.map(year => (
                   <div key={year} className="flex-1 min-w-0 text-center">
-                    <span className="text-xs text-fog block truncate" style={{ fontSize: sortedYears.length > 15 ? '9px' : '10px' }}>
+                    <span className={`num block truncate text-mist ${sortedYears.length > 15 ? 'text-[10px]' : 'text-[11px]'}`}>
                       {year}
                     </span>
                   </div>
                 ))}
               </div>
               {/* Summary */}
-              <div className="mt-3 flex flex-wrap gap-3 text-xs text-mist border-t border-ink-700 pt-3">
+              <div className="num mt-3 flex flex-wrap gap-x-4 gap-y-1 pt-1 text-xs text-mist">
                 <span>
                   <strong className="text-paper">{sortedYears.length}</strong> años con publicaciones
                 </span>

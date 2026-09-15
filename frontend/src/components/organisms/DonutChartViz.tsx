@@ -190,10 +190,11 @@ export const DonutChartViz: React.FC<DonutChartVizProps> = ({
       {/* Leyenda */}
       {showLegend && !enableArcLinkLabels && processedData.length > 0 && (
         <ul
-          className={`mt-3 grid max-h-[112px] gap-x-4 gap-y-1 overflow-y-auto pr-1 ${legendTwoColumns ? 'grid-cols-2' : 'grid-cols-1'}`}
+          className={`mt-3 grid h-[104px] content-start gap-x-4 gap-y-1 overflow-y-auto pr-1 ${legendTwoColumns ? 'grid-cols-2' : 'grid-cols-1'}`}
         >
           {processedData.map((d) => {
             const share = total > 0 ? (d.value / total) * 100 : 0;
+            const shareCorto = share > 0 && share < 1 ? '<1%' : `${share.toFixed(0)}%`;
             return (
               <li key={d.id} className="min-w-0">
                 <button
@@ -206,7 +207,7 @@ export const DonutChartViz: React.FC<DonutChartVizProps> = ({
                   <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: d.originalColor }} />
                   <span className="min-w-0 flex-1 truncate text-paper/90 group-hover:text-paper">{d.label}</span>
                   <span className="num shrink-0 text-mist">
-                    {legendTwoColumns ? `${share.toFixed(0)}%` : `${d.value.toLocaleString()} · ${share.toFixed(1)}%`}
+                    {legendTwoColumns ? shareCorto : `${d.value.toLocaleString()} · ${share.toFixed(1)}%`}
                   </span>
                 </button>
               </li>

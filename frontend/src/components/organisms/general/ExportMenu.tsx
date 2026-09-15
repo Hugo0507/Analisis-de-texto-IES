@@ -108,7 +108,7 @@ export const ExportMenu: React.FC<ExportMenuProps> = ({ topics, topicsByCategory
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(v => !v)}
-        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-cyan-500/20 to-violet-500/20 border border-cyan-500/40 rounded-xl hover:from-cyan-500/30 hover:to-violet-500/30 transition-all"
+        className="flex items-center gap-2 px-3.5 py-2 text-sm font-medium text-paper bg-ink-850 border border-ink-600 rounded-xl hover:bg-ink-800 transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -120,9 +120,9 @@ export const ExportMenu: React.FC<ExportMenuProps> = ({ topics, topicsByCategory
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-ink-700/60 bg-ink-900/95 backdrop-blur-sm shadow-2xl z-50 overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 w-60 rounded-xl border border-ink-600 bg-ink-850 shadow-2xl shadow-black/50 z-50 overflow-hidden">
           <div className="px-3 py-2 border-b border-ink-700/40">
-            <p className="text-xs text-mist font-medium uppercase tracking-wide">Formato de exportación</p>
+            <p className="font-mono text-[11px] text-fog font-medium uppercase tracking-[0.14em]">Formato de exportación</p>
           </div>
           {[
             { label: 'CSV completo (Excel)', ext: 'csv', desc: 'UTF-8 con BOM — compatible con Excel', action: exportAllCSV, color: 'text-emerald-300' },
@@ -132,13 +132,13 @@ export const ExportMenu: React.FC<ExportMenuProps> = ({ topics, topicsByCategory
             <button
               key={opt.ext}
               onClick={opt.action}
-              className="w-full flex items-start gap-3 px-3 py-2.5 hover:bg-ink-850/60 transition-colors text-left"
+              className="w-full flex items-start gap-3 px-3 py-2.5 hover:bg-ink-800 transition-colors text-left"
             >
               <div className={`mt-0.5 w-7 h-7 rounded-lg bg-ink-850 border border-ink-700/50 flex items-center justify-center shrink-0`}>
                 <span className={`text-xs font-bold ${opt.color}`}>.{opt.ext}</span>
               </div>
               <div>
-                <p className="text-sm text-white font-medium">{opt.label}</p>
+                <p className="text-sm text-paper font-medium">{opt.label}</p>
                 <p className="text-xs text-mist">{opt.desc}</p>
               </div>
             </button>

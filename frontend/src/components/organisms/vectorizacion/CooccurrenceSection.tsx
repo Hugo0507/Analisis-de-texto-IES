@@ -30,7 +30,7 @@ export const CooccurrenceSection: React.FC<CooccurrenceSectionProps> = ({
     <>
       {activeSection === 'cooccurrence' && (
         <ChartCard
-          title="Grafo de Co-ocurrencia"
+          title="Grafo de co-ocurrencia"
           subtitle={`${cooccurrenceData.nodes.length} términos · ${cooccurrenceData.links.length} conexiones — construido desde bigramas · grosor = frecuencia`}
           accentColor="purple"
           size="xl"

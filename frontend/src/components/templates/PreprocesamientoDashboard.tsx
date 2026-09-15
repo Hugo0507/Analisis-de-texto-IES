@@ -457,7 +457,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
               color="amber"
             />
             <StatPill
-              label="Cobertura del Dataset"
+              label="Cobertura del dataset"
               value={`${prepMetrics.coverage}%`}
               subtitle="archivos procesados / total"
               color="blue"
@@ -517,21 +517,21 @@ export const PreprocesamientoDashboard: React.FC = () => {
       {/* ── KPI Metrics Row ── */}
       <DashboardGrid columns={4} gap="md">
         <MetricCardDark
-          title="Archivos Totales"
+          title="Archivos totales"
           value={syncedMetrics.fileCount}
           subtitle={crossFilter ? 'Archivos filtrados' : 'En el dataset'}
           icon={<FileIcon />}
           accentColor="cyan"
         />
         <MetricCardDark
-          title="Tamaño Total"
+          title="Tamaño total"
           value={`${syncedMetrics.sizeMB.toFixed(1)} MB`}
           subtitle={crossFilter ? 'Volumen filtrado' : 'Volumen de datos'}
           icon={<SizeIcon />}
-          accentColor="purple"
+          accentColor="cyan"
         />
         <MetricCardDark
-          title="Total de Tokens"
+          title="Total de tokens"
           value={data?.selectedPreparation?.total_tokens != null && data.selectedPreparation.total_tokens > 0
             ? data.selectedPreparation.total_tokens.toLocaleString()
             : syncedMetrics.dominantExtension}
@@ -539,18 +539,18 @@ export const PreprocesamientoDashboard: React.FC = () => {
             ? `~${data.selectedPreparation.avg_tokens_per_doc.toLocaleString()} tokens/doc · corpus preprocesado`
             : crossFilter ? 'Más común (filtrado)' : 'Ejecuta una preparación para ver tokens'}
           icon={<ExtensionIcon />}
-          accentColor="amber"
+          accentColor="cyan"
         />
         <MetricCardDark
-          title="Idioma Predominante"
+          title="Idioma predominante"
           value={syncedMetrics.predominantLanguage}
           subtitle={
             syncedMetrics.predominantLanguage !== 'N/A'
-              ? `${syncedMetrics.predominantLanguagePercentage}% de los documentos`
+              ? `${Number(syncedMetrics.predominantLanguagePercentage).toFixed(1)}% de los documentos`
               : 'Ejecuta una preparación'
           }
           icon={<LanguageIcon />}
-          accentColor="purple"
+          accentColor="cyan"
         />
       </DashboardGrid>
 
@@ -568,7 +568,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
           accentColor="emerald"
         />
         <MetricCardDark
-          title="Duplicados Eliminados"
+          title="Duplicados eliminados"
           value={metrics?.duplicatesRemoved || 0}
           subtitle={
             prepMetrics
@@ -576,10 +576,10 @@ export const PreprocesamientoDashboard: React.FC = () => {
               : 'Archivos duplicados removidos'
           }
           icon={<DuplicateIcon />}
-          accentColor="rose"
+          accentColor="amber"
         />
         <MetricCardDark
-          title="Archivos Omitidos"
+          title="Archivos omitidos"
           value={metrics?.filesOmitted || 0}
           subtitle={
             prepMetrics
@@ -587,7 +587,7 @@ export const PreprocesamientoDashboard: React.FC = () => {
               : 'Formatos no soportados, archivos vacíos o corruptos'
           }
           icon={<SkipIcon />}
-          accentColor="blue"
+          accentColor="rose"
         />
       </DashboardGrid>
 

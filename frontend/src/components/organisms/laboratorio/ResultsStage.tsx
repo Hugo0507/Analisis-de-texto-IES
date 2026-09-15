@@ -203,7 +203,7 @@ export const ResultsStage: React.FC<ResultsStageProps> = ({ workspace, onReset, 
 
       {/* BoW */}
       {results.bow && !results.bow.error && (
-        <Section title="Bolsa de Palabras" color="#8b5cf6">
+        <Section title="Bolsa de palabras" color="#8b5cf6">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
             {[
               { label: 'Vocabulario ref.', value: results.bow.vocabulary_size.toLocaleString() },

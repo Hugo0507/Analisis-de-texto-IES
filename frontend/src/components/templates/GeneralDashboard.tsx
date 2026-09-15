@@ -259,7 +259,7 @@ export const GeneralDashboard: React.FC = () => {
     <div className="space-y-8">
 
       {/* ── Header ── */}
-      <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+      <div className="flex flex-col gap-5 2xl:flex-row 2xl:items-end 2xl:justify-between">
         <StageHeading
           stage="sum"
           title="Landscape de la TD en Educación Superior"
