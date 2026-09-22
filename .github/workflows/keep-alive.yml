@@ -1,0 +1,27 @@
+name: Mantener despierto el backend
+
+# El Space gratuito de Hugging Face se duerme tras 48 h sin tráfico y, al
+# despertar, la primera petición del dashboard tarda cerca de un minuto. Un
+# ping periódico evita que quien abra el enlace se encuentre esa espera.
+
+on:
+  schedule:
+    # Cada 6 horas
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    name: Ping al backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Llamar al health check
+        run: |
+          for intento in 1 2 3; do
+            codigo=$(curl -s -o /dev/null -w '%{http_code}' --max-time 120 \
+              https://hugo0507-analisis-ies-backend.hf.space/health/)
+            echo "Intento $intento: HTTP $codigo"
+            if [ "$codigo" = "200" ]; then exit 0; fi
+            sleep 30
+          done
+          echo "El backend no respondió 200; puede estar arrancando."
