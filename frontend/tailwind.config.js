@@ -81,6 +81,7 @@ module.exports = {
           prep: '#5CC8F0',
           vec: '#A78BFA',
           mod: '#F5B94A',
+          cls: '#A6D854',
           lab: '#F6809B',
           sum: '#3DD9A0',
         },

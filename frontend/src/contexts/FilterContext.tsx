@@ -30,6 +30,7 @@ export interface FilterState {
   selectedNerId: number | null;
   selectedTopicModelId: number | null;
   selectedBertopicId: number | null;
+  selectedLstmId: number | null;
 
   // General filters
   dateRange: DateRange;
@@ -59,6 +60,7 @@ export interface FilterContextType {
   setSelectedNer: (nerId: number | null) => void;
   setSelectedTopicModel: (topicId: number | null) => void;
   setSelectedBertopic: (bertopicId: number | null) => void;
+  setSelectedLstm: (lstmId: number | null) => void;
 
   // General filter setters
   setDateRange: (range: DateRange) => void;
@@ -90,6 +92,7 @@ const initialFilterState: FilterState = {
   selectedNerId: null,
   selectedTopicModelId: null,
   selectedBertopicId: null,
+  selectedLstmId: null,
   dateRange: { start: null, end: null },
   selectedLanguages: [],
   searchTerm: '',
@@ -166,6 +169,7 @@ export const FilterProvider: React.FC<FilterProviderProps> = ({ children }) => {
       selectedNerId: null,
       selectedTopicModelId: null,
       selectedBertopicId: null,
+      selectedLstmId: null,
     }));
   }, [datasets]);
 
@@ -201,6 +205,10 @@ export const FilterProvider: React.FC<FilterProviderProps> = ({ children }) => {
 
   const setSelectedBertopic = useCallback((bertopicId: number | null) => {
     setFilters(prev => ({ ...prev, selectedBertopicId: bertopicId }));
+  }, []);
+
+  const setSelectedLstm = useCallback((lstmId: number | null) => {
+    setFilters(prev => ({ ...prev, selectedLstmId: lstmId }));
   }, []);
 
   // General filter setters
@@ -315,6 +323,7 @@ export const FilterProvider: React.FC<FilterProviderProps> = ({ children }) => {
     setSelectedNer,
     setSelectedTopicModel,
     setSelectedBertopic,
+    setSelectedLstm,
     setDateRange,
     setSelectedLanguages,
     setSearchTerm,

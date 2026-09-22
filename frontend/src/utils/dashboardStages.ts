@@ -1,16 +1,17 @@
 /**
  * Secciones del dashboard público y su identidad visual.
  *
- * Preprocesamiento → Vectorización → Modelado son etapas en orden: cada una usa
- * lo que produjo la anterior, por eso llevan índice. Laboratorio aplica los
- * modelos a PDFs nuevos y Resumen sintetiza el OE3; no son etapas de la
- * secuencia y se muestran aparte, sin índice.
+ * Preprocesamiento → Vectorización → Modelado → Clasificación son etapas en
+ * orden: cada una usa lo que produjo la anterior (Clasificación entrena la
+ * LSTM sobre los temas o factores OE3 de Modelado), por eso llevan índice.
+ * Laboratorio aplica los modelos a PDFs nuevos y Resumen sintetiza el OE3; no
+ * son etapas de la secuencia y se muestran aparte, sin índice.
  *
  * Cada sección tiene un tono propio (colores `stage-*` de tailwind.config.js).
  * Las clases van escritas completas para que Tailwind las incluya en el CSS.
  */
 
-export type StageKey = 'prep' | 'vec' | 'mod' | 'lab' | 'sum';
+export type StageKey = 'prep' | 'vec' | 'mod' | 'cls' | 'lab' | 'sum';
 
 export interface DashboardStage {
   key: StageKey;
@@ -68,6 +69,19 @@ export const DASHBOARD_STAGES: DashboardStage[] = [
       activeTab: 'bg-ink-800 ring-1 ring-stage-mod/40',
       rule: 'via-stage-mod/60',
       dot: 'bg-stage-mod',
+    },
+  },
+  {
+    key: 'cls',
+    path: '/dashboard/clasificacion',
+    label: 'Clasificación',
+    index: '04',
+    eyebrow: 'Etapa 04',
+    tone: {
+      text: 'text-stage-cls',
+      activeTab: 'bg-ink-800 ring-1 ring-stage-cls/40',
+      rule: 'via-stage-cls/60',
+      dot: 'bg-stage-cls',
     },
   },
   {

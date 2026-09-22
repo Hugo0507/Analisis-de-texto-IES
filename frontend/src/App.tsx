@@ -14,6 +14,7 @@ import {
   PreprocesamientoDashboard,
   VectorizacionDashboard,
   ModeladoDashboard,
+  ClasificacionDashboard,
   LaboratorioDashboard,
   GeneralDashboard,
 } from './components/templates';
@@ -82,6 +83,7 @@ function App() {
             <Route path="preprocesamiento" element={<PreprocesamientoDashboard />} />
             <Route path="vectorizacion" element={<VectorizacionDashboard />} />
             <Route path="modelado" element={<ModeladoDashboard />} />
+            <Route path="clasificacion" element={<ClasificacionDashboard />} />
             <Route path="laboratorio" element={<LaboratorioDashboard />} />
             <Route path="resumen" element={<GeneralDashboard />} />
           </Route>

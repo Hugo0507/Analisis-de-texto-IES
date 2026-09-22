@@ -13,6 +13,7 @@ import publicTfIdfAnalysisService from './publicTfidfAnalysisService';
 import publicNerAnalysisService from './publicNerAnalysisService';
 import publicTopicModelingService from './publicTopicModelingService';
 import publicBertopicService from './publicBertopicService';
+import publicLstmService from './publicLstmService';
 import { porMasReciente } from '../utils/ordenAnalisis';
 
 import type { Dataset, DirectoryStats } from './datasetsService';
@@ -23,6 +24,7 @@ import type { TfIdfAnalysis, TfIdfAnalysisListItem } from './tfidfAnalysisServic
 import type { NerAnalysis, NerAnalysisListItem } from './nerAnalysisService';
 import type { TopicModeling, TopicModelingListItem } from './topicModelingService';
 import type { BERTopicAnalysis, BERTopicListItem } from './bertopicService';
+import type { LstmAnalysisListItem, LstmAnalysisDetail } from './publicLstmService';
 
 // ============================================================
 // PREPROCESSING DASHBOARD INTERFACES
@@ -110,6 +112,17 @@ export interface ModelingDashboardData {
     words: Array<{ word: string; weight: number }>;
     numDocuments: number;
   }>;
+}
+
+// ============================================================
+// CLASSIFICATION (LSTM) DASHBOARD INTERFACES
+// ============================================================
+
+export interface ClassificationDashboardData {
+  // Análisis LSTM completados del dataset, del más reciente al más antiguo
+  analyses: LstmAnalysisListItem[];
+  // Análisis mostrado: el elegido por el usuario o el más reciente
+  selected: LstmAnalysisDetail | null;
 }
 
 // ============================================================
@@ -459,6 +472,41 @@ class DashboardService {
 
   async getBertopicDetail(bertopicId: number): Promise<BERTopicAnalysis> {
     return publicBertopicService.getBERTopicById(bertopicId);
+  }
+
+  // ==========================================================
+  // CLASSIFICATION (LSTM) DATA
+  // ==========================================================
+
+  async getClassificationData(
+    datasetId: number,
+    lstmId?: number | null,
+  ): Promise<ClassificationDashboardData> {
+    try {
+      const allLstm = await publicLstmService.list(datasetId);
+
+      // Del más reciente al más antiguo: es también el orden de los selectores
+      const analyses = porMasReciente(allLstm);
+
+      // Análisis mostrado: el elegido por el usuario o el más reciente
+      // (todos los que devuelve este endpoint están completados)
+      let selected: LstmAnalysisDetail | null = null;
+      const target = lstmId
+        ? analyses.find(a => a.id === lstmId)
+        : analyses[0];
+      if (target) {
+        selected = await publicLstmService.getById(target.id);
+      }
+
+      return { analyses, selected };
+    } catch (error) {
+      console.error('Error fetching classification data:', error);
+      throw error;
+    }
+  }
+
+  async getClassificationDetail(lstmId: number): Promise<LstmAnalysisDetail> {
+    return publicLstmService.getById(lstmId);
   }
 }
 
