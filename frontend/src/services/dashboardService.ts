@@ -13,6 +13,7 @@ import publicTfIdfAnalysisService from './publicTfidfAnalysisService';
 import publicNerAnalysisService from './publicNerAnalysisService';
 import publicTopicModelingService from './publicTopicModelingService';
 import publicBertopicService from './publicBertopicService';
+import { porMasReciente } from '../utils/ordenAnalisis';
 
 import type { Dataset, DirectoryStats } from './datasetsService';
 import type { DataPreparation, DataPreparationListItem } from './dataPreparationService';
@@ -261,12 +262,12 @@ class DashboardService {
         publicTfIdfAnalysisService.getTfIdfAnalyses(datasetId),
       ]);
 
-      // Sort alphabetically by name (default selection order)
-      const bowAnalyses = [...allBow].sort((a, b) => a.name.localeCompare(b.name));
-      const ngramAnalyses = [...allNgram].sort((a, b) => a.name.localeCompare(b.name));
-      const tfidfAnalyses = [...allTfidf].sort((a, b) => a.name.localeCompare(b.name));
+      // Del más reciente al más antiguo: es también el orden de los selectores
+      const bowAnalyses = porMasReciente(allBow);
+      const ngramAnalyses = porMasReciente(allNgram);
+      const tfidfAnalyses = porMasReciente(allTfidf);
 
-      // Get selected analysis of each type (by explicit ID, or first completed alphabetically)
+      // Análisis mostrado: el elegido por el usuario o el más reciente completado
       let selectedBow: BagOfWords | null = null;
       let selectedNgram: NgramAnalysis | null = null;
       let selectedTfidf: TfIdfAnalysis | null = null;
@@ -362,12 +363,12 @@ class DashboardService {
         publicBertopicService.getBERTopicAnalyses(datasetId),
       ]);
 
-      // Sort alphabetically by name (default selection order)
-      const nerAnalysesSorted = [...allNer].sort((a, b) => a.name.localeCompare(b.name));
-      const topicAnalysesSorted = [...allTopicModeling].sort((a, b) => a.name.localeCompare(b.name));
-      const bertopicAnalysesSorted = [...allBertopic].sort((a, b) => a.name.localeCompare(b.name));
+      // Del más reciente al más antiguo: es también el orden de los selectores
+      const nerAnalysesSorted = porMasReciente(allNer);
+      const topicAnalysesSorted = porMasReciente(allTopicModeling);
+      const bertopicAnalysesSorted = porMasReciente(allBertopic);
 
-      // Get selected analysis of each type (by explicit ID, or first completed alphabetically)
+      // Análisis mostrado: el elegido por el usuario o el más reciente completado
       let selectedNer: NerAnalysis | null = null;
       let selectedTopicModeling: TopicModeling | null = null;
       let selectedBertopic: BERTopicAnalysis | null = null;

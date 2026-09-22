@@ -12,6 +12,7 @@ import publicTopicModelingService from '../../services/publicTopicModelingServic
 import publicBertopicService from '../../services/publicBertopicService';
 import publicDataPreparationService from '../../services/publicDataPreparationService';
 import { useFilter } from '../../contexts/FilterContext';
+import { masRecienteCompletado, porMasReciente } from '../../utils/ordenAnalisis';
 import type { TopicModeling, TopicModelingListItem } from '../../services/topicModelingService';
 import type { BERTopicAnalysis, BERTopicListItem } from '../../services/bertopicService';
 import type { ExecutiveSummary as ExecutiveSummaryData } from '../../services/publicTopicModelingService';
@@ -100,9 +101,9 @@ export const GeneralDashboard: React.FC = () => {
         await delay(350);
         const prepList = await publicDataPreparationService.getPreparations(filters.selectedDatasetId!);
 
-        // Sort alphabetically for consistent selection order
-        const sortedTopics  = [...rawTopicList].sort((a, b) => a.name.localeCompare(b.name));
-        const sortedBertopic = [...rawBertopicList].sort((a, b) => a.name.localeCompare(b.name));
+        // Del más reciente al más antiguo, igual que en los demás selectores
+        const sortedTopics  = porMasReciente(rawTopicList);
+        const sortedBertopic = porMasReciente(rawBertopicList);
 
         // Resolve which analysis to show: explicit ID from context, or first completed alphabetically
         const topicId   = filters.selectedTopicModelId;
@@ -114,8 +115,8 @@ export const GeneralDashboard: React.FC = () => {
           ? sortedBertopic.find(b => b.id === bertopicId)
           : sortedBertopic.find(b => b.status === 'completed');
 
-        // Use first completed preparation (sorted: most recently created from API is typically first)
-        const completedPrep = prepList.find(p => p.status === 'completed') ?? null;
+        // La preparación completada más reciente
+        const completedPrep = masRecienteCompletado(prepList) ?? null;
 
         // Sequential detail calls with delay to avoid 429
         const td = ctm ? await publicTopicModelingService.getTopicModelingById(ctm.id) : null;
