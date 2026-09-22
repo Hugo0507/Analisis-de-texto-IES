@@ -6,6 +6,7 @@ import React, { useMemo, useCallback } from 'react';
 import type { EnrichedTopic, DocumentTopicItem, ClusterTab } from './types';
 import { CAT_BY_ID } from './categories';
 import { buildClusterCSV } from './csv';
+import { contribucion, totalPesos } from './pesos';
 import { downloadFile } from '../../../utils/download';
 
 export interface ClusterCardProps {
@@ -17,7 +18,10 @@ export interface ClusterCardProps {
 
 export const ClusterCard: React.FC<ClusterCardProps> = ({ topic, docTopics, activeTab, onTabChange }) => {
   const cat = CAT_BY_ID[topic.categoryId];
-  const maxW = topic.words[0]?.weight || 1;
+  // El peso crudo cambia de escala según el algoritmo; se muestra cuánto aporta
+  // cada término al tema (ver pesos.ts).
+  const totalPeso = totalPesos(topic.words);
+  const aporteMaximo = contribucion(topic.words[0]?.weight ?? 0, totalPeso) || 1;
 
   const topicDocs = useMemo(() =>
     docTopics
@@ -90,23 +94,26 @@ export const ClusterCard: React.FC<ClusterCardProps> = ({ topic, docTopics, acti
         {/* Términos tab */}
         {activeTab === 'terms' && (
           <div className="space-y-2">
-            {topic.words.slice(0, 8).map((w, i) => (
-              <div key={i} className="flex items-center gap-2.5">
-                {/* Término: text-sm + slate-200 → ≈ 10:1 */}
-                <span className="text-sm text-paper w-28 truncate shrink-0">{w.word}</span>
-                {/* Barra de progreso: track sólido, fill con color de categoría */}
-                <div className="flex-1 h-2 bg-ink-800 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all"
-                    style={{ width: `${(w.weight / maxW) * 100}%`, backgroundColor: cat.color }}
-                  />
+            {topic.words.slice(0, 8).map((w, i) => {
+              const aporte = contribucion(w.weight, totalPeso);
+              return (
+                <div key={i} className="flex items-center gap-2.5">
+                  <span className="text-sm text-paper w-24 truncate shrink-0" title={w.word}>{w.word}</span>
+                  <div className="flex-1 h-2 bg-ink-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${Math.min((aporte / aporteMaximo) * 100, 100)}%`, backgroundColor: cat.color }}
+                    />
+                  </div>
+                  <span
+                    className="num text-sm text-haze w-12 text-right shrink-0 font-medium"
+                    title={`Aporta el ${aporte.toFixed(1)} % del peso del tema`}
+                  >
+                    {aporte.toFixed(1)}%
+                  </span>
                 </div>
-                {/* Porcentaje: text-sm + slate-300 + tabular-nums → ≈ 7.5:1 */}
-                <span className="text-sm text-haze w-9 text-right shrink-0 tabular-nums font-medium">
-                  {(w.weight * 100).toFixed(0)}%
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -147,8 +154,8 @@ export const ClusterCard: React.FC<ClusterCardProps> = ({ topic, docTopics, acti
               { label: 'Categoría OE3', value: CAT_BY_ID[topic.categoryId]?.label ?? topic.categoryId },
               { label: 'Documentos dominantes', value: topic.numDocuments > 0 ? topic.numDocuments.toLocaleString() : 'N/A' },
               { label: 'Términos en el clúster', value: topic.words.length },
-              { label: 'Peso máximo de término', value: `${(topic.words[0]?.weight * 100 ?? 0).toFixed(2)}%` },
-              { label: 'Peso mínimo de término', value: `${(topic.words[topic.words.length - 1]?.weight * 100 ?? 0).toFixed(2)}%` },
+              { label: 'Aporte del término principal', value: `${contribucion(topic.words[0]?.weight ?? 0, totalPeso).toFixed(1)}%` },
+              { label: 'Aporte del término menor', value: `${contribucion(topic.words[topic.words.length - 1]?.weight ?? 0, totalPeso).toFixed(1)}%` },
             ].map(item => (
               <div key={item.label} className="flex justify-between items-start gap-2">
                 {/* Etiqueta: text-sm + slate-300 → ≈ 7.5:1 (antes text-xs slate-400 = ≈ 3.5:1, fallaba) */}

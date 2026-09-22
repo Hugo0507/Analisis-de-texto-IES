@@ -9,6 +9,7 @@ import type { TopicModeling } from '../../../services/topicModelingService';
 import type { BERTopicAnalysis } from '../../../services/bertopicService';
 import { downloadFile } from '../../../utils/download';
 import { buildTopicsCSV, buildCategoryCSV } from './csv';
+import { contribucion, totalPesos } from './pesos';
 
 export interface ExportMenuProps {
   topics: EnrichedTopic[];
@@ -93,14 +94,17 @@ export const ExportMenu: React.FC<ExportMenuProps> = ({ topics, topicsByCategory
   const exportTSV = () => {
     setOpen(false);
     const header = ['ID', 'Etiqueta', 'Categoría', 'Fuente', 'Documentos', ...Array.from({ length: 10 }, (_, i) => `Término_${i + 1}`)].join('\t');
-    const rows = topics.map(t => [
-      t.id,
-      t.label,
-      CAT_BY_ID[t.categoryId]?.label ?? t.categoryId,
-      t.source.toUpperCase(),
-      t.numDocuments,
-      ...t.words.slice(0, 10).map(w => `${w.word}(${(w.weight * 100).toFixed(1)}%)`),
-    ].join('\t'));
+    const rows = topics.map(t => {
+      const total = totalPesos(t.words);
+      return [
+        t.id,
+        t.label,
+        CAT_BY_ID[t.categoryId]?.label ?? t.categoryId,
+        t.source.toUpperCase(),
+        t.numDocuments,
+        ...t.words.slice(0, 10).map(w => `${w.word}(${contribucion(w.weight, total).toFixed(1)}%)`),
+      ].join('\t');
+    });
     downloadFile([header, ...rows].join('\n'), `science_mapping_${datasetName.replace(/\s+/g, '_').slice(0, 30)}_${Date.now()}.tsv`, 'text/tab-separated-values');
   };
 

@@ -92,20 +92,20 @@ export const GeneralDashboard: React.FC = () => {
     async function load() {
       setIsLoading(true);
       setError(null);
-      const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
       try {
-        // Sequential calls with delay to avoid 429 on free-tier hosting
-        const rawTopicList = await publicTopicModelingService.getTopicModelings(filters.selectedDatasetId!);
-        await delay(350);
-        const rawBertopicList = await publicBertopicService.getBERTopicAnalyses(filters.selectedDatasetId!);
-        await delay(350);
-        const prepList = await publicDataPreparationService.getPreparations(filters.selectedDatasetId!);
+        // En paralelo: el límite de peticiones del backend ya lo permite y así
+        // la sección aparece en un viaje en vez de en tres.
+        const [rawTopicList, rawBertopicList, prepList] = await Promise.all([
+          publicTopicModelingService.getTopicModelings(filters.selectedDatasetId!),
+          publicBertopicService.getBERTopicAnalyses(filters.selectedDatasetId!),
+          publicDataPreparationService.getPreparations(filters.selectedDatasetId!),
+        ]);
 
         // Del más reciente al más antiguo, igual que en los demás selectores
         const sortedTopics  = porMasReciente(rawTopicList);
         const sortedBertopic = porMasReciente(rawBertopicList);
 
-        // Resolve which analysis to show: explicit ID from context, or first completed alphabetically
+        // Análisis mostrado: el elegido por el usuario o el más reciente completado
         const topicId   = filters.selectedTopicModelId;
         const bertopicId = filters.selectedBertopicId;
         const ctm = topicId
@@ -118,12 +118,12 @@ export const GeneralDashboard: React.FC = () => {
         // La preparación completada más reciente
         const completedPrep = masRecienteCompletado(prepList) ?? null;
 
-        // Sequential detail calls with delay to avoid 429
-        const td = ctm ? await publicTopicModelingService.getTopicModelingById(ctm.id) : null;
-        if (ctm) await delay(350);
-        const bd = cbt ? await publicBertopicService.getBERTopicById(cbt.id) : null;
-        if (cbt) await delay(350);
-        const prepDetail = completedPrep ? await publicDataPreparationService.getPreparation(completedPrep.id) : null;
+        // Los tres detalles en paralelo
+        const [td, bd, prepDetail] = await Promise.all([
+          ctm ? publicTopicModelingService.getTopicModelingById(ctm.id) : Promise.resolve(null),
+          cbt ? publicBertopicService.getBERTopicById(cbt.id) : Promise.resolve(null),
+          completedPrep ? publicDataPreparationService.getPreparation(completedPrep.id) : Promise.resolve(null),
+        ]);
 
         if (!cancelled) {
           setTopicList(sortedTopics);
@@ -346,7 +346,7 @@ export const GeneralDashboard: React.FC = () => {
                     <h2>Temas Identificados${enrichedTopics.length > 20 ? ' (primeros 20)' : ''}</h2>
                     <table><thead><tr><th>Tema</th><th>Categoría</th><th>Palabras clave</th><th>Docs</th></tr></thead><tbody>${topicRows}</tbody></table>
                     <h2>Metodología</h2>
-                    <p style="font-size:13px;color:#475569;line-height:1.6;">Los temas se extraen mediante modelos de modelado de temas (LDA / NMF / LSA) y BERTopic aplicados al corpus preprocesado. La clasificación en categorías factoriales se realiza automáticamente por coincidencia semántica con los descriptores del marco OE3.</p>
+                    <p style="font-size:13px;color:#475569;line-height:1.6;">Los temas se extraen mediante modelos de modelado de temas (LDA / NMF / LSA) y BERTopic aplicados al corpus preprocesado. La clasificación en categorías factoriales se hace automáticamente comparando los términos de cada tema con las palabras clave de cada factor del marco OE3.</p>
                   </body></html>`;
                   const win = window.open('', '_blank');
                   if (win) {
@@ -592,8 +592,9 @@ export const GeneralDashboard: React.FC = () => {
               Los temas se extraen mediante modelos de{' '}
               <span className="text-white font-medium">modelado de temas</span> (LDA / NMF / LSA) y{' '}
               <span className="text-white font-medium">BERTopic</span> aplicados al corpus preprocesado.
-              La clasificación en categorías factoriales se realiza automáticamente por coincidencia
-              semántica con los descriptores del marco OE3.
+              La clasificación en categorías factoriales se hace automáticamente comparando los
+              términos de cada tema con las palabras clave de cada factor del marco OE3, no por
+              interpretación semántica.
               {sourceLabel && (
                 <span className="block mt-1.5 text-haze">Fuente activa: <span className="text-white font-medium">{sourceLabel}</span></span>
               )}

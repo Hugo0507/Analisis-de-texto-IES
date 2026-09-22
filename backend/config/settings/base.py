@@ -193,7 +193,9 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/hour',
+        # El dashboard público es de solo lectura y hace varias peticiones por
+        # sección; con 100/hora un visitante se quedaba sin cupo al recorrerlo.
+        'anon': '600/hour',
         'user': '1000/hour',
         'login': '5/minute',
     },

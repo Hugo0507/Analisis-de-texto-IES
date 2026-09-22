@@ -4,23 +4,25 @@
 
 import type { EnrichedTopic, DocumentTopicItem, FactorCategory } from './types';
 import { CAT_BY_ID } from './categories';
+import { contribucion, totalPesos } from './pesos';
 
 export function toCSVRow(cells: (string | number)[]): string {
   return cells.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',');
 }
 
 export function buildTopicsCSV(topics: EnrichedTopic[]): string {
-  const header = toCSVRow(['ID', 'Etiqueta', 'Categoría', 'Fuente', 'Documentos', 'Términos principales (peso)']);
-  const rows = topics.map(t =>
-    toCSVRow([
+  const header = toCSVRow(['ID', 'Etiqueta', 'Categoría', 'Fuente', 'Documentos', 'Términos principales (aporte al tema)']);
+  const rows = topics.map(t => {
+    const total = totalPesos(t.words);
+    return toCSVRow([
       t.id,
       t.label,
       CAT_BY_ID[t.categoryId]?.label ?? t.categoryId,
       t.source.toUpperCase(),
       t.numDocuments,
-      t.words.slice(0, 8).map(w => `${w.word}(${(w.weight * 100).toFixed(1)}%)`).join('; '),
-    ])
-  );
+      t.words.slice(0, 8).map(w => `${w.word}(${contribucion(w.weight, total).toFixed(1)}%)`).join('; '),
+    ]);
+  });
   return [header, ...rows].join('\n');
 }
 
@@ -51,8 +53,8 @@ export function buildClusterCSV(topic: EnrichedTopic, docTopics: DocumentTopicIt
     toCSVRow(['Fuente', topic.source.toUpperCase()]),
     toCSVRow(['Documentos', topic.numDocuments]),
     toCSVRow(['', '']),
-    toCSVRow(['Término', 'Peso (%)']),
-    ...topic.words.map(w => toCSVRow([w.word, (w.weight * 100).toFixed(2)])),
+    toCSVRow(['Término', 'Aporte al tema (%)', 'Peso del modelo']),
+    ...topic.words.map(w => toCSVRow([w.word, contribucion(w.weight, totalPesos(topic.words)).toFixed(2), w.weight])),
     toCSVRow(['', '']),
     toCSVRow(['Documento', 'Peso del tema']),
     ...docTopics

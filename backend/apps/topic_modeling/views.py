@@ -12,6 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Count
 
 from .models import TopicModeling
+from .queries import con_tamano_de_artefactos
 from .serializers import (
     TopicModelingListSerializer,
     TopicModelingDetailSerializer,
@@ -44,7 +45,11 @@ class TopicModelingViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Filtrar por usuario actual"""
-        return TopicModeling.objects.filter(created_by=self.request.user)
+        qs = TopicModeling.objects.filter(created_by=self.request.user)
+        if self.action == 'list':
+            # Sin descargar los artefactos joblib de cada análisis
+            qs = con_tamano_de_artefactos(qs)
+        return qs
 
     def get_serializer_class(self):
         """Retornar serializer según acción"""

@@ -87,6 +87,20 @@ export const ExecutiveSummary: React.FC<ExecutiveSummaryProps> = ({
                       dangerouslySetInnerHTML={{ __html: p.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>') }}
                     />
                   ))}
+                  {/* Factores sin cubrir */}
+                  {executiveSummary.uncovered_categories && executiveSummary.uncovered_categories.length > 0 && (
+                    <p className="text-sm text-mist">
+                      Sin temas asignados:{' '}
+                      {executiveSummary.uncovered_categories.map((c, i) => (
+                        <span key={c}>
+                          {i > 0 && ', '}
+                          <span className="text-paper">{c}</span>
+                        </span>
+                      ))}
+                      .
+                    </p>
+                  )}
+
                   {/* Category distribution */}
                   {executiveSummary.category_distribution.length > 0 && (
                     <div className="mt-4 pt-3 border-t border-ink-700/40">

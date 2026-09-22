@@ -33,6 +33,12 @@ export interface ExecutiveSummary {
   coherence_score: number | null;
   perplexity_score: number | null;
   oe3_coverage: number;
+  /** Factores del marco OE3 que ningún tema cubrió. */
+  uncovered_categories?: string[];
+  /** Puesto por coherencia entre los modelos del mismo corpus. */
+  coherence_rank?: number | null;
+  models_compared?: number;
+  source_name?: string;
   category_distribution: Array<{ id: string; label: string; count: number }>;
   summary_paragraphs: string[];
   summary_markdown: string;

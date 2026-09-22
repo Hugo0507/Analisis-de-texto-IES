@@ -4,6 +4,7 @@ Modelado: NER, topic modeling y BERTopic.
 
 import logging
 
+from django.db.models import Q
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
@@ -20,6 +21,8 @@ from apps.ner_analysis.serializers import (
 )
 
 from apps.topic_modeling.models import TopicModeling
+from apps.topic_modeling.factors import OE3_CATEGORIES
+from apps.topic_modeling.queries import con_tamano_de_artefactos
 from apps.topic_modeling.serializers import (
     TopicModelingListSerializer,
     TopicModelingDetailSerializer,
@@ -30,6 +33,11 @@ from apps.bertopic.serializers import (
     BERTopicListSerializer,
     BERTopicDetailSerializer,
 )
+
+
+def _miles(n):
+    """Número con punto como separador de miles, al estilo del dashboard."""
+    return f'{n or 0:,}'.replace(',', '.')
 
 
 # ============================================================
@@ -92,6 +100,9 @@ class PublicTopicModelingViewSet(viewsets.ReadOnlyModelViewSet):
                 Q(dataset_id=dataset_id) |
                 Q(data_preparation__dataset_id=dataset_id)
             )
+        if self.action == 'list':
+            # El listado solo necesita saber si hay artefactos, no su contenido
+            qs = con_tamano_de_artefactos(qs)
         return qs
 
     def get_serializer_class(self):
@@ -153,68 +164,133 @@ class PublicTopicModelingViewSet(viewsets.ReadOnlyModelViewSet):
         sorted_cats = sorted(cat_counts.items(), key=lambda x: x[1]['count'], reverse=True)
         n_covered = len(sorted_cats)
 
-        # Top terms across all topics (by weight)
-        term_weights: dict = {}
+        # Términos más presentes: en cuántos temas aparecen entre los 5 primeros.
+        # No se suman los pesos crudos porque su escala depende del algoritmo
+        # (LDA entrega conteos y NMF/LSA/PLSA puntuaciones), así que sumarlos
+        # solo destacaba los temas más grandes.
+        presencia: dict = {}
         for t in topics:
             for w in (t.get('words') or [])[:5]:
-                word = w.get('word', '')
-                wt = float(w.get('weight', 0))
-                term_weights[word] = term_weights.get(word, 0) + wt
-        top_terms = sorted(term_weights.items(), key=lambda x: x[1], reverse=True)[:10]
-        top_terms_str = ', '.join(f'"{t[0]}"' for t in top_terms)
+                palabra = w.get('word', '')
+                if palabra:
+                    presencia[palabra] = presencia.get(palabra, 0) + 1
+        terminos = sorted(presencia.items(), key=lambda x: (-x[1], x[0]))[:10]
+        terminos_str = ', '.join(f'"{t[0]}"' for t in terminos)
+        transversales = [t for t in terminos if t[1] > 1]
 
         # Coherence quality label
         if coherence is None:
             quality_label = 'no disponible'
         elif coherence >= 0.6:
-            quality_label = 'excelente (≥ 0.6)'
+            quality_label = 'alta (≥ 0,6)'
         elif coherence >= 0.4:
-            quality_label = 'aceptable (0.4–0.6)'
+            quality_label = 'aceptable (0,4–0,6)'
         else:
-            quality_label = 'mejorable (< 0.4)'
+            quality_label = 'baja (< 0,4)'
+
+        # Posición frente a los demás modelos completados del mismo corpus
+        dataset_id = (
+            tm.data_preparation.dataset_id if tm.data_preparation_id else tm.dataset_id
+        )
+        hermanos = []
+        if dataset_id:
+            hermanos = list(
+                TopicModeling.objects.filter(status='completed')
+                .filter(
+                    Q(dataset_id=dataset_id) | Q(data_preparation__dataset_id=dataset_id)
+                )
+                .exclude(coherence_score__isnull=True)
+                .values_list('id', 'coherence_score')
+            )
+        ordenados = sorted(hermanos, key=lambda x: x[1], reverse=True)
+        posicion = next((i + 1 for i, (i_id, _) in enumerate(ordenados) if i_id == tm.id), None)
+
+        # Factores del marco OE3 que ningún tema cubrió
+        cubiertos = {c['id'] for c in cat_counts}
+        sin_cubrir = [c['label'] for c in OE3_CATEGORIES if c['id'] not in cubiertos]
 
         # Build narrative
         paragraphs = []
 
-        # P1: Corpus and method overview
+        # P1: corpus, preparación y configuración con la que se entrenó
+        origen = tm.data_preparation.name if tm.data_preparation_id else (
+            tm.dataset.name if tm.dataset_id else 'el corpus seleccionado'
+        )
         paragraphs.append(
-            f'El corpus analizado consta de {n_docs:,} documentos. Se aplicó el algoritmo '
-            f'**{algorithm}** con {n_topics} temas configurados.'
+            f'Este resumen describe **{tm.name}**: {n_topics} temas extraídos con '
+            f'**{algorithm}** sobre {_miles(n_docs)} documentos de «{origen}», con un '
+            f'vocabulario de hasta {_miles(tm.max_features)} términos '
+            f'(min_df {tm.min_df}, max_df {tm.max_df}, n-gramas {tm.ngram_min}–{tm.ngram_max}).'
         )
 
-        # P2: OE3 coverage
+        # P2: cobertura del marco OE3, con empates y factores ausentes
         if sorted_cats:
-            dominant_cat = sorted_cats[0][1]['label']
-            dominant_count = sorted_cats[0][1]['count']
-            dominant_pct = round(dominant_count / max(1, n_topics) * 100)
+            maximo = sorted_cats[0][1]['count']
+            empatadas = [v['label'] for _, v in sorted_cats if v['count'] == maximo]
+            pct = round(maximo / max(1, n_topics) * 100)
+            if len(empatadas) == 1:
+                encabezado = (
+                    f'La categoría con más temas es **{empatadas[0]}** '
+                    f'({maximo} de {n_topics}, {pct}%).'
+                )
+            else:
+                encabezado = (
+                    'Empatan como categorías con más temas '
+                    + ' y '.join(f'**{e}**' for e in empatadas)
+                    + f', con {maximo} temas cada una ({pct}% del total).'
+                )
+            resto = [
+                f'{v["label"]} ({v["count"]})'
+                for _, v in sorted_cats if v['count'] != maximo
+            ]
+            detalle = f' Le siguen: {", ".join(resto)}.' if resto else ''
+            falta = (
+                f' Ningún tema quedó clasificado en {" ni ".join(sin_cubrir)}.'
+                if sin_cubrir else ' Los seis factores del marco quedaron representados.'
+            )
             paragraphs.append(
-                f'Los {n_topics} temas identificados cubren **{n_covered}/6 factores** del marco OE3. '
-                f'La categoría más representada es **{dominant_cat}** con {dominant_count} temas '
-                f'({dominant_pct}% del total). '
-                + ('Las demás categorías identificadas son: ' + ', '.join(f'{v["label"]} ({v["count"]})'
-                   for k, v in sorted_cats[1:]) + '.' if len(sorted_cats) > 1 else '')
+                f'Los temas cubren **{n_covered} de los 6 factores** del marco OE3. '
+                f'{encabezado}{detalle}{falta} La clasificación es automática, por '
+                f'coincidencia de las palabras clave de cada factor con los términos '
+                f'de cada tema.'
             )
 
-        # P3: Key terms
-        if top_terms_str:
+        # P3: términos que atraviesan el corpus
+        if terminos_str:
+            if transversales:
+                cruce = (
+                    ' Aparecen en varios temas a la vez '
+                    + ', '.join(f'"{t[0]}" ({t[1]} temas)' for t in transversales[:3])
+                    + ', lo que indica asuntos transversales del corpus.'
+                )
+            else:
+                cruce = ' Cada uno pesa sobre todo en un único tema, sin solapamiento marcado.'
             paragraphs.append(
-                f'Los términos con mayor peso acumulado en todos los temas son: {top_terms_str}. '
-                'Estos términos reflejan los conceptos centrales de la transformación digital en IES '
-                'presentes en la literatura analizada.'
+                f'Los términos más presentes entre los cinco principales de cada tema son: '
+                f'{terminos_str}.{cruce}'
             )
 
-        # P4: Quality indicators
-        quality_parts = [f'El score de coherencia promedio es **{coherence:.3f}** ({quality_label})' if coherence is not None else 'El score de coherencia no está disponible']
+        # P4: calidad del modelo, comparada con los demás del mismo corpus
+        quality_parts = [
+            f'La coherencia C_V es **{coherence:.3f}** ({quality_label})'
+            if coherence is not None else 'La coherencia C_V no está disponible'
+        ]
         if perplexity is not None:
             quality_parts.append(f'la perplejidad del modelo es **{perplexity:.1f}**')
-        paragraphs.append('. '.join(quality_parts) + '.')
+        cierre = '. '.join(quality_parts) + '.'
+        if posicion and len(ordenados) > 1:
+            cierre += (
+                f' Entre los {len(ordenados)} modelos de temas completados de este corpus, '
+                f'ocupa el puesto **{posicion}** por coherencia.'
+            )
+        paragraphs.append(cierre)
 
         # P5: Recommendation
         if coherence is not None and coherence < 0.4:
             paragraphs.append(
-                'ℹ️ **Recomendación:** Considera ajustar el número de temas o ampliar el corpus '
-                'para mejorar la coherencia del modelo. Un valor de coherencia < 0.4 puede indicar '
-                'que los temas se superponen semánticamente.'
+                '**Recomendación:** considera ajustar el número de temas o ampliar el '
+                'corpus. Una coherencia por debajo de 0,4 suele indicar que los temas '
+                'se superponen entre sí.'
             )
 
         return Response({
@@ -225,6 +301,10 @@ class PublicTopicModelingViewSet(viewsets.ReadOnlyModelViewSet):
             'coherence_score': coherence,
             'perplexity_score': perplexity,
             'oe3_coverage': n_covered,
+            'uncovered_categories': sin_cubrir,
+            'coherence_rank': posicion,
+            'models_compared': len(ordenados),
+            'source_name': origen,
             'category_distribution': [
                 {'id': k, 'label': v['label'], 'count': v['count']}
                 for k, v in sorted_cats

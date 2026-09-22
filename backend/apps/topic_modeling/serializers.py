@@ -41,7 +41,17 @@ class TopicModelingListSerializer(serializers.ModelSerializer):
         inferencia y el unico que sobrevive a un reinicio del contenedor. Antes
         solo consultaba los ficheros en disco, asi que informaba que habia
         artefacto cuando ya no se podia inferir, y al reves.
+
+        Si la consulta anoto el tamano de los artefactos (ver queries.py), se usa
+        esa anotacion: asi el listado no descarga los binarios completos.
         """
+        tam_modelo = getattr(obj, 'tam_modelo_bin', None)
+        tam_vectorizador = getattr(obj, 'tam_vectorizador_bin', None)
+        if tam_modelo is not None and tam_vectorizador is not None:
+            return bool(tam_modelo and tam_vectorizador) or bool(
+                obj.model_artifact and obj.vectorizer_artifact
+            )
+
         return bool(
             (obj.model_artifact_bin and obj.vectorizer_artifact_bin)
             or (obj.model_artifact and obj.vectorizer_artifact)

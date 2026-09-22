@@ -36,9 +36,11 @@ class PublicDatasetViewSet(viewsets.ReadOnlyModelViewSet):
 
     permission_classes = [AllowAny]
     pagination_class = PublicAPIPagination
+    # Sin prefetch de 'files': el listado solo cuenta archivos y precargarlos
+    # traía cada fila completa, incluido el PDF guardado en file_content.
     queryset = Dataset.objects.filter(
         status='completed'
-    ).prefetch_related('files').select_related('created_by').order_by('-created_at')
+    ).select_related('created_by').order_by('-created_at')
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -49,7 +51,8 @@ class PublicDatasetViewSet(viewsets.ReadOnlyModelViewSet):
     def files(self, request, pk=None):
         """Get all files for a specific dataset."""
         dataset = self.get_object()
-        files = dataset.files.all()
+        # Sin las columnas pesadas: el serializer no las usa y pesan megabytes
+        files = dataset.files.defer('file_content', 'txt_content', 'preprocessed_text')
         serializer = DatasetFileSerializer(files, many=True)
         return Response(serializer.data)
 
@@ -57,7 +60,8 @@ class PublicDatasetViewSet(viewsets.ReadOnlyModelViewSet):
     def directory_stats(self, request, pk=None):
         """Get directory distribution statistics for a dataset."""
         dataset = self.get_object()
-        files = dataset.files.all()
+        # Solo las tres columnas que se recorren aquí
+        files = dataset.files.only('directory_name', 'original_filename', 'file_size_bytes')
 
         directory_stats = {}
         extension_totals = {}

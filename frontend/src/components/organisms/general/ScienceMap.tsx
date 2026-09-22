@@ -6,6 +6,7 @@ import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import type { EnrichedTopic, DocumentTopicItem } from './types';
 import { CAT_BY_ID, FACTOR_CATEGORIES } from './categories';
 import { downloadBlob } from '../../../utils/download';
+import { contribucion, totalPesos } from './pesos';
 
 export const CANVAS_W = 1400;
 
@@ -85,7 +86,8 @@ export const TopicPanel: React.FC<TopicPanelProps> = ({
     [docTopics, topic.id]
   );
 
-  const maxWeight = topic.words[0]?.weight ?? 1;
+  const totalPeso = totalPesos(topic.words);
+  const aporteMaximo = contribucion(topic.words[0]?.weight ?? 0, totalPeso) || 1;
   const sourceLabel = topic.source === 'lda' ? 'LDA' : 'BERTopic';
   const sourceColor = topic.source === 'lda' ? 'text-emerald-300' : 'text-violet-300';
   const sourceBg    = topic.source === 'lda' ? 'bg-emerald-500/15 border-emerald-400/40' : 'bg-violet-500/15 border-violet-400/40';
@@ -123,10 +125,13 @@ export const TopicPanel: React.FC<TopicPanelProps> = ({
           <div key={i} className="flex items-center gap-2">
             <span className="text-sm text-paper w-[90px] truncate shrink-0">{w.word}</span>
             <div className="flex-1 h-1.5 bg-ink-800 rounded-full overflow-hidden">
-              <div className="h-full rounded-full" style={{ width: `${(w.weight / maxWeight) * 100}%`, backgroundColor: cat.color }} />
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${Math.min((contribucion(w.weight, totalPeso) / aporteMaximo) * 100, 100)}%`, backgroundColor: cat.color }}
+              />
             </div>
-            <span className="text-xs text-haze w-8 text-right shrink-0 tabular-nums font-medium">
-              {(w.weight * 100).toFixed(0)}%
+            <span className="num text-xs text-haze w-11 text-right shrink-0 font-medium">
+              {contribucion(w.weight, totalPeso).toFixed(1)}%
             </span>
           </div>
         ))}
