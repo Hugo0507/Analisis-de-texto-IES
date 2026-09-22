@@ -21,6 +21,7 @@ from .modeling import (
     PublicTopicModelingViewSet,
     PublicBERTopicViewSet,
 )
+from .lstm import PublicLstmAnalysisViewSet
 from .workspace import (
     PublicWorkspaceViewSet,
     public_corpus_stopwords,
@@ -37,6 +38,7 @@ __all__ = [
     'PublicNerAnalysisViewSet',
     'PublicTopicModelingViewSet',
     'PublicBERTopicViewSet',
+    'PublicLstmAnalysisViewSet',
     'PublicWorkspaceViewSet',
     'public_corpus_stopwords',
 ]

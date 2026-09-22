@@ -18,6 +18,7 @@ from .views import (
     PublicTopicModelingViewSet,
     PublicBERTopicViewSet,
     PublicWorkspaceViewSet,
+    PublicLstmAnalysisViewSet,
     public_corpus_stopwords,
 )
 
@@ -31,6 +32,7 @@ router.register(r'tfidf-analysis', PublicTfIdfAnalysisViewSet, basename='public-
 router.register(r'ner-analysis', PublicNerAnalysisViewSet, basename='public-ner-analysis')
 router.register(r'topic-modeling', PublicTopicModelingViewSet, basename='public-topic-modeling')
 router.register(r'bertopic', PublicBERTopicViewSet, basename='public-bertopic')
+router.register(r'lstm-analysis', PublicLstmAnalysisViewSet, basename='public-lstm-analysis')
 router.register(r'workspace', PublicWorkspaceViewSet, basename='public-workspace')
 
 urlpatterns = [

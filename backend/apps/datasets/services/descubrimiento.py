@@ -203,16 +203,37 @@ def _parametros_base() -> Dict[str, str]:
     return parametros
 
 
-def _get_openalex(parametros: Dict[str, str]) -> Dict:
+def _motivo_openalex(respuesta) -> str:
+    """Código y mensaje de error de OpenAlex, sin la URL (puede llevar api_key)."""
     try:
-        respuesta = requests.get(
-            OPENALEX_WORKS, params=parametros, timeout=TIMEOUT_API,
-            headers={'User-Agent': USER_AGENT},
-        )
-    except requests.RequestException as exc:
-        raise ErrorDescubrimiento(f'No se pudo contactar OpenAlex: {exc}') from exc
-    if respuesta.status_code != 200:
-        raise ErrorDescubrimiento(f'OpenAlex respondió {respuesta.status_code}')
+        cuerpo = respuesta.json()
+        detalle = cuerpo.get('message') or cuerpo.get('error') or ''
+    except ValueError:
+        detalle = getattr(respuesta, 'text', '') or ''
+    detalle = ' '.join(str(detalle).split())[:200]
+    return f'OpenAlex respondió {respuesta.status_code}' + (f': {detalle}' if detalle else '')
+
+
+def _get_openalex(parametros: Dict[str, str]) -> Dict:
+    # 429 y 5xx suelen ser pasajeros (límite por IP compartida en el Space).
+    esperas = (2, 5, 0)
+    for espera in esperas:
+        try:
+            respuesta = requests.get(
+                OPENALEX_WORKS, params=parametros, timeout=TIMEOUT_API,
+                headers={'User-Agent': USER_AGENT},
+            )
+        except requests.RequestException as exc:
+            # Solo el tipo: el texto de la excepción incluye la URL con api_key.
+            raise ErrorDescubrimiento(
+                f'No se pudo contactar OpenAlex ({type(exc).__name__})') from exc
+        if respuesta.status_code == 200:
+            break
+        if respuesta.status_code == 429 or respuesta.status_code >= 500:
+            if espera:
+                time.sleep(espera)
+                continue
+        raise ErrorDescubrimiento(_motivo_openalex(respuesta))
     try:
         return respuesta.json()
     except ValueError as exc:

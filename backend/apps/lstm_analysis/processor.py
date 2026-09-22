@@ -346,21 +346,42 @@ def train_lstm(
     torch.manual_seed(42)
     device = torch.device('cpu')
 
+    from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+
     class LSTMClassifier(nn.Module):
+        """
+        LSTM bidireccional sobre secuencias empaquetadas.
+
+        La versión anterior leía el último estado oculto de una secuencia con
+        el relleno al final: tras ~150 pasos de relleno ese estado era casi
+        igual para cualquier texto, la pérdida se quedaba en ln(n_clases) y el
+        modelo respondía siempre la misma clase. Empaquetar hace que la LSTM
+        se detenga en la última palabra real de cada ejemplo.
+        """
+
         def __init__(self, vocab_sz, emb_dim, hid_dim, n_layers, n_cls):
             super().__init__()
             self.embedding = nn.Embedding(vocab_sz, emb_dim, padding_idx=0)
             self.lstm = nn.LSTM(
-                emb_dim, hid_dim, num_layers=n_layers,
+                emb_dim, hid_dim, num_layers=n_layers, bidirectional=True,
                 batch_first=True, dropout=0.3 if n_layers > 1 else 0.0,
             )
-            self.fc = nn.Linear(hid_dim, n_cls)
+            self.dropout = nn.Dropout(0.3)
+            # Estados finales de ambas direcciones + promedio de las salidas
+            self.fc = nn.Linear(hid_dim * 4, n_cls)
 
         def forward(self, x):
+            longitudes = (x != 0).sum(dim=1).clamp(min=1)
             emb = self.embedding(x)
-            _, (hidden, _) = self.lstm(emb)
-            out = self.fc(hidden[-1])
-            return out
+            empaquetado = pack_padded_sequence(
+                emb, longitudes.cpu(), batch_first=True, enforce_sorted=False)
+            salidas, (hidden, _) = self.lstm(empaquetado)
+            salidas, _ = pad_packed_sequence(
+                salidas, batch_first=True, total_length=x.size(1))
+            mascara = (x != 0).unsqueeze(-1).float()
+            promedio = (salidas * mascara).sum(dim=1) / longitudes.unsqueeze(-1).float()
+            finales = torch.cat([hidden[-2], hidden[-1]], dim=1)
+            return self.fc(self.dropout(torch.cat([finales, promedio], dim=1)))
 
     model = LSTMClassifier(
         vocab_size, lstm.embedding_dim, lstm.hidden_dim,
@@ -386,6 +407,7 @@ def train_lstm(
             optimizer.zero_grad()
             loss = criterion(model(xb), yb)
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
             epoch_loss += loss.item()
 

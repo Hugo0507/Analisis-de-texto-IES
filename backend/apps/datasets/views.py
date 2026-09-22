@@ -545,7 +545,8 @@ class DatasetViewSet(viewsets.ModelViewSet):
         except descubrimiento.ErrorDescubrimiento as exc:
             logger.warning('Descubrimiento falló para el dataset %s: %s', dataset.id, exc)
             return Response(
-                {'error': 'No se pudo consultar OpenAlex. Inténtalo de nuevo en unos minutos.'},
+                {'error': 'No se pudo consultar OpenAlex. Inténtalo de nuevo en unos minutos.',
+                 'detalle': str(exc)},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
