@@ -227,3 +227,31 @@ class DatasetUpdateSerializer(serializers.ModelSerializer):
             'exclusion_criteria',
             'database_sources',
         ]
+
+
+class DescubrirSerializer(serializers.Serializer):
+    """Parámetros de la búsqueda automática en OpenAlex (vista previa)."""
+
+    consulta = serializers.CharField(required=False, allow_blank=True, max_length=500)
+    desde_anio = serializers.IntegerField(required=False, allow_null=True, min_value=1900, max_value=2100)
+    hasta_anio = serializers.IntegerField(required=False, allow_null=True, min_value=1900, max_value=2100)
+    max_resultados = serializers.IntegerField(required=False, default=50, min_value=1, max_value=200)
+    idiomas = serializers.ListField(
+        child=serializers.RegexField(r'^[a-z]{2}$'),
+        required=False, allow_empty=False, max_length=10,
+    )
+
+    def validate(self, data):
+        desde, hasta = data.get('desde_anio'), data.get('hasta_anio')
+        if desde and hasta and desde > hasta:
+            raise serializers.ValidationError('desde_anio no puede ser posterior a hasta_anio')
+        return data
+
+
+class DescargarCandidatosSerializer(serializers.Serializer):
+    """Ids de OpenAlex elegidos en la vista previa."""
+
+    ids = serializers.ListField(
+        child=serializers.RegexField(r'^(?:https?://openalex\.org/)?[Ww]\d{1,15}$'),
+        allow_empty=False, max_length=200,
+    )

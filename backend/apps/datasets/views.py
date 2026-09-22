@@ -24,8 +24,11 @@ from .serializers import (
     DatasetUpdateSerializer,
     DatasetFileSerializer,
     DatasetFileUpdateSerializer,
+    DescubrirSerializer,
+    DescargarCandidatosSerializer,
 )
 from .services import DatasetProcessorService, SimpleDriveService, BibExtractorService
+from .services import descubrimiento
 from apps.core.background import run_in_background
 
 logger = logging.getLogger(__name__)
@@ -516,6 +519,89 @@ class DatasetViewSet(viewsets.ModelViewSet):
             'processing': total,
             'total': dataset.files.count(),
         })
+
+    @action(detail=True, methods=['post'], url_path='descubrir')
+    def descubrir(self, request, pk=None):
+        """
+        Vista previa de artículos candidatos encontrados en OpenAlex.
+
+        No descarga nada: devuelve cada candidato con su relevancia, si tiene
+        PDF en acceso abierto y si ya está en el dataset.
+        """
+        dataset = self.get_object()
+        entrada = DescubrirSerializer(data=request.data)
+        entrada.is_valid(raise_exception=True)
+        datos = entrada.validated_data
+
+        try:
+            candidatos = descubrimiento.buscar_candidatos(
+                consulta=datos.get('consulta'),
+                desde_anio=datos.get('desde_anio'),
+                hasta_anio=datos.get('hasta_anio'),
+                max_resultados=datos['max_resultados'],
+                idiomas=datos.get('idiomas') or ('en', 'es'),
+                dataset=dataset,
+            )
+        except descubrimiento.ErrorDescubrimiento as exc:
+            logger.warning('Descubrimiento falló para el dataset %s: %s', dataset.id, exc)
+            return Response(
+                {'error': 'No se pudo consultar OpenAlex. Inténtalo de nuevo en unos minutos.'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        return Response({
+            'consulta': (datos.get('consulta') or '').strip() or descubrimiento.CONSULTA_POR_DEFECTO,
+            'total': len(candidatos),
+            'relevantes': sum(c['relevante'] for c in candidatos),
+            'con_pdf_abierto': sum(c['pdf_abierto'] for c in candidatos),
+            'duplicados': sum(c['duplicado'] for c in candidatos),
+            'candidatos': candidatos,
+        })
+
+    @action(detail=True, methods=['post'], url_path='descargar_candidatos')
+    def descargar_candidatos(self, request, pk=None):
+        """
+        Descargar en segundo plano los PDF abiertos de los candidatos elegidos.
+
+        Recibe ids de OpenAlex; los metadatos y el enlace al PDF se vuelven a
+        pedir a OpenAlex en el servidor, nunca se toman del cliente. El
+        progreso se sigue con total_files y status del dataset.
+        """
+        dataset = self.get_object()
+        entrada = DescargarCandidatosSerializer(data=request.data)
+        entrada.is_valid(raise_exception=True)
+        ids = []
+        for valor in entrada.validated_data['ids']:
+            oid = descubrimiento.normalizar_id_openalex(valor)
+            if oid and oid not in ids:
+                ids.append(oid)
+
+        archivos_antes = DatasetFile.objects.filter(dataset=dataset).count()
+        dataset.status = 'processing'
+        dataset.save(update_fields=['status', 'updated_at'])
+        usuario = request.user
+
+        def descargar_en_segundo_plano():
+            try:
+                candidatos = descubrimiento.obtener_candidatos_por_id(ids)
+                descubrimiento.descargar_candidatos(dataset, candidatos, usuario)
+                dataset.status = 'completed'
+            except Exception:
+                logger.exception('Descarga de candidatos falló en el dataset %s', dataset.id)
+                dataset.status = 'error'
+            dataset.save(update_fields=['status', 'updated_at'])
+
+        run_in_background(descargar_en_segundo_plano,
+                          label=f'Descarga OpenAlex del dataset #{dataset.id}')
+
+        return Response({
+            'mensaje': f'Descargando en segundo plano {len(ids)} artículo(s) en acceso abierto. '
+                       f'Consulta total_files y status del dataset para ver el avance.',
+            'solicitados': len(ids),
+            'ids': ids,
+            'archivos_antes': archivos_antes,
+            'status': 'processing',
+        }, status=status.HTTP_202_ACCEPTED)
 
     @action(detail=True, methods=['get'], url_path='prisma_report')
     def prisma_report(self, request, pk=None):
