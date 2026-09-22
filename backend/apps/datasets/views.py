@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
 
+from .archivos import pdf_local
 from .models import Dataset, DatasetFile
 from .serializers import (
     DatasetSerializer,
@@ -443,10 +444,13 @@ class DatasetViewSet(viewsets.ModelViewSet):
                         original_filename=f.original_filename,
                     )
                 else:
-                    meta = extractor.extract_from_pdf(
-                        f.file_path,
-                        original_filename=f.original_filename,
-                    )
+                    # Los archivos de Drive tienen file_path "drive://…"; el PDF
+                    # real está en la copia de la base de datos.
+                    with pdf_local(f) as ruta_pdf:
+                        meta = extractor.extract_from_pdf(
+                            ruta_pdf,
+                            original_filename=f.original_filename,
+                        )
 
                 update_fields = []
                 for field in BIB_FIELDS:

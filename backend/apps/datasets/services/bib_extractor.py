@@ -11,6 +11,8 @@ No API key required — uses polite pool with User-Agent header.
 """
 import re
 import logging
+from difflib import SequenceMatcher
+
 import requests
 from pathlib import Path
 from typing import Optional
@@ -22,6 +24,32 @@ USER_AGENT = "AnalisisTransformacionDigital/1.0 (thesis-research-tool; mailto:re
 
 # DOI bare pattern: 10.XXXX/rest-of-doi
 # Works on a cleaned single-line string (newlines already removed)
+# Similitud mínima entre títulos para aceptar que CrossRef devolvió el mismo
+# artículo. Por debajo, los metadatos serían de otro trabajo.
+UMBRAL_TITULO = 0.85
+
+
+def _normalizar_titulo(titulo: str) -> str:
+    texto = re.sub(r'[^a-z0-9áéíóúñü]+', ' ', (titulo or '').lower())
+    return re.sub(r'\s+', ' ', texto).strip()
+
+
+def mismo_titulo(a: str, b: str) -> bool:
+    """
+    True si dos títulos corresponden al mismo artículo.
+
+    Tolera puntuación, mayúsculas y un subtítulo omitido (uno es prefijo del
+    otro, con al menos seis palabras en común).
+    """
+    na, nb = _normalizar_titulo(a), _normalizar_titulo(b)
+    if not na or not nb:
+        return False
+    corto, largo = sorted((na, nb), key=len)
+    if largo.startswith(corto) and len(corto.split()) >= 6:
+        return True
+    return SequenceMatcher(None, na, nb).ratio() >= UMBRAL_TITULO
+
+
 DOI_PATTERN = re.compile(r'(?:doi\.org/|doi:|DOI:|DOI\s*:\s*)?(10\.\d{4,}/[^\s"<>{}|\\^`\[\]]+)')
 
 # Publisher-specific DOI URL prefixes to strip when found in PDF text
@@ -106,8 +134,8 @@ class BibExtractorService:
             logger.info(f"[BibExtractor] Title from filename: {title_from_name[:80]}")
 
         try:
-            # Step 2: embedded PDF metadata
-            embedded = self._extract_pdf_info(file_path)
+            # Step 2: embedded PDF metadata (solo si el PDF está en disco)
+            embedded = self._extract_pdf_info(file_path) if file_path else {}
             if embedded:
                 logger.info(f"[BibExtractor] Embedded: {list(embedded.keys())}")
                 embedded_title = embedded.pop('bib_title', None)
@@ -118,12 +146,14 @@ class BibExtractorService:
 
             # Step 3: DOI from filename
             doi = metadata.get('bib_doi') or self._extract_doi_from_filename(fname)
+            doi_del_texto = False
             if doi:
                 logger.info(f"[BibExtractor] DOI from filename: {doi}")
 
             # Step 4: DOI from PDF text
-            if not doi:
+            if not doi and file_path:
                 doi = self._extract_doi_from_text(file_path)
+                doi_del_texto = bool(doi)
                 if doi:
                     logger.info(f"[BibExtractor] DOI from text: {doi}")
 
@@ -132,6 +162,16 @@ class BibExtractorService:
                 doi = self._clean_doi(doi)
                 metadata['bib_doi'] = doi
                 crossref = self._fetch_crossref(doi)
+                # El DOI hallado en el texto puede ser el de una referencia
+                # citada. Si el título de CrossRef no es el de este archivo, se
+                # descarta. Solo se comprueba cuando el nombre del archivo es un
+                # título real (no un DOI o un identificador de la editorial).
+                titulo_propio = metadata.get('bib_title', '')
+                if (crossref and doi_del_texto and len(titulo_propio.split()) >= 5
+                        and not mismo_titulo(titulo_propio, crossref.get('bib_title', ''))):
+                    logger.info(f"[BibExtractor] DOI {doi} descartado: es de otro artículo")
+                    metadata.pop('bib_doi', None)
+                    crossref = {}
                 if crossref:
                     logger.info(f"[BibExtractor] CrossRef (DOI): {list(crossref.keys())}")
                     crossref_title = crossref.pop('bib_title', None)
@@ -142,8 +182,10 @@ class BibExtractorService:
                     return metadata
 
             # Step 6: CrossRef search by title → authors/year/journal
+            # Se consulta aunque el PDF traiga autores incrustados: son los
+            # que menos aportan, y el año, la revista y el DOI solo salen de aquí.
             search_title = metadata.get('bib_title', '')
-            if search_title and not metadata.get('bib_authors'):
+            if search_title and not (metadata.get('bib_year') and metadata.get('bib_doi')):
                 crossref = self._search_crossref_by_title(search_title)
                 if crossref:
                     logger.info(f"[BibExtractor] CrossRef (title): {list(crossref.keys())}")
@@ -243,6 +285,15 @@ class BibExtractorService:
 
         # Remove trailing storage hash suffix: _a3f8b2c1 (8 hex chars)
         cleaned = re.sub(r'_[0-9a-f]{8}$', '', stem, flags=re.IGNORECASE)
+
+        # Prefijo que añade Google Drive al copiar: "Copia de …" / "Copy of …"
+        cleaned = re.sub(r'^(copia de|copy of)\s+', '', cleaned, flags=re.IGNORECASE)
+
+        # Nombre de descarga de Sage: "apellido-et-al-2022-titulo-del-articulo"
+        # o "apellido-2022-titulo". Sin quitarlo, el título no coincide con el
+        # de CrossRef y se perdían año, revista y DOI.
+        cleaned = re.sub(r'^[a-zÀ-ſ\']+(?:-et-al)?-(?:19|20)\d{2}-', '', cleaned,
+                         flags=re.IGNORECASE)
 
         # Replace underscores/dashes between word characters with spaces
         # Preserves: "4.0", "COVID-19", numbers
@@ -379,17 +430,22 @@ class BibExtractorService:
         queries = [q for q in queries if not (q in seen or seen.add(q))]
 
         for query in queries:
-            result = self._crossref_query(query)
+            result = self._crossref_query(query, titulo=title)
             if result:
                 return result
         return {}
 
-    def _crossref_query(self, query: str) -> dict:
-        """Execute a single CrossRef title query."""
+    def _crossref_query(self, query: str, titulo: str = '') -> dict:
+        """
+        Execute a single CrossRef title query.
+
+        Devuelve solo un resultado cuyo título coincida con el buscado: aceptar
+        el primero sin comprobarlo asignaba año, autores y DOI de otro artículo.
+        """
         try:
             params = {
                 'query.title': query,
-                'rows': 1,
+                'rows': 5,
                 'filter': 'type:journal-article',
                 'select': 'title,author,issued,container-title,DOI,abstract,volume,issue,page,subject',
             }
@@ -402,11 +458,16 @@ class BibExtractorService:
             if response.status_code != 200:
                 return {}
             items = response.json().get('message', {}).get('items', [])
-            if not items:
+            referencia = titulo or query
+            coincidente = next(
+                (it for it in items if mismo_titulo(referencia, (it.get('title') or [''])[0])),
+                None,
+            )
+            if not coincidente:
                 return {}
-            result = self._parse_crossref_message(items[0])
-            if items[0].get('DOI'):
-                result['bib_doi'] = items[0]['DOI']
+            result = self._parse_crossref_message(coincidente)
+            if coincidente.get('DOI'):
+                result['bib_doi'] = coincidente['DOI']
             return result
         except Exception as e:
             logger.warning(f"[BibExtractor] CrossRef query failed: {e}")
