@@ -40,6 +40,14 @@ def _miles(n):
     return f'{n or 0:,}'.replace(',', '.')
 
 
+def _decimal(n, decimales=None):
+    """Número con coma decimal, como se escribe en español."""
+    if n is None:
+        return '—'
+    texto = f'{n:.{decimales}f}' if decimales is not None else f'{n:g}'
+    return texto.replace('.', ',')
+
+
 # ============================================================
 # NER ANALYSIS
 # ============================================================
@@ -169,12 +177,20 @@ class PublicTopicModelingViewSet(viewsets.ReadOnlyModelViewSet):
         # (LDA entrega conteos y NMF/LSA/PLSA puntuaciones), así que sumarlos
         # solo destacaba los temas más grandes.
         presencia: dict = {}
+        aporte: dict = {}
         for t in topics:
-            for w in (t.get('words') or [])[:5]:
+            palabras = t.get('words') or []
+            total_tema = sum(abs(float(w.get('weight', 0) or 0)) for w in palabras) or 1
+            for w in palabras[:5]:
                 palabra = w.get('word', '')
                 if palabra:
                     presencia[palabra] = presencia.get(palabra, 0) + 1
-        terminos = sorted(presencia.items(), key=lambda x: (-x[1], x[0]))[:10]
+                    # El aporte se normaliza por tema para poder sumarlo entre
+                    # algoritmos con escalas distintas; desempata a igual presencia.
+                    aporte[palabra] = aporte.get(palabra, 0) + abs(float(w.get('weight', 0) or 0)) / total_tema
+        terminos = sorted(
+            presencia.items(), key=lambda x: (-x[1], -aporte.get(x[0], 0), x[0])
+        )[:10]
         terminos_str = ', '.join(f'"{t[0]}"' for t in terminos)
         transversales = [t for t in terminos if t[1] > 1]
 
@@ -182,11 +198,11 @@ class PublicTopicModelingViewSet(viewsets.ReadOnlyModelViewSet):
         if coherence is None:
             quality_label = 'no disponible'
         elif coherence >= 0.6:
-            quality_label = 'alta (≥ 0,6)'
+            quality_label = 'alta para el rango habitual de C_V, de 0 a 1'
         elif coherence >= 0.4:
-            quality_label = 'aceptable (0,4–0,6)'
+            quality_label = 'aceptable: está entre 0,4 y 0,6'
         else:
-            quality_label = 'baja (< 0,4)'
+            quality_label = 'baja: por debajo de 0,4'
 
         # Posición frente a los demás modelos completados del mismo corpus
         dataset_id = (
@@ -220,7 +236,8 @@ class PublicTopicModelingViewSet(viewsets.ReadOnlyModelViewSet):
             f'Este resumen describe **{tm.name}**: {n_topics} temas extraídos con '
             f'**{algorithm}** sobre {_miles(n_docs)} documentos de «{origen}», con un '
             f'vocabulario de hasta {_miles(tm.max_features)} términos '
-            f'(min_df {tm.min_df}, max_df {tm.max_df}, n-gramas {tm.ngram_min}–{tm.ngram_max}).'
+            f'(min_df {tm.min_df}, max_df {_decimal(tm.max_df)}, '
+            f'n-gramas {tm.ngram_min}–{tm.ngram_max}).'
         )
 
         # P2: cobertura del marco OE3, con empates y factores ausentes
@@ -235,7 +252,7 @@ class PublicTopicModelingViewSet(viewsets.ReadOnlyModelViewSet):
                 )
             else:
                 encabezado = (
-                    'Empatan como categorías con más temas '
+                    'Empatan como categorías con más temas: '
                     + ' y '.join(f'**{e}**' for e in empatadas)
                     + f', con {maximo} temas cada una ({pct}% del total).'
                 )
@@ -259,7 +276,7 @@ class PublicTopicModelingViewSet(viewsets.ReadOnlyModelViewSet):
         if terminos_str:
             if transversales:
                 cruce = (
-                    ' Aparecen en varios temas a la vez '
+                    ' Aparecen en varios temas a la vez: '
                     + ', '.join(f'"{t[0]}" ({t[1]} temas)' for t in transversales[:3])
                     + ', lo que indica asuntos transversales del corpus.'
                 )
@@ -272,11 +289,11 @@ class PublicTopicModelingViewSet(viewsets.ReadOnlyModelViewSet):
 
         # P4: calidad del modelo, comparada con los demás del mismo corpus
         quality_parts = [
-            f'La coherencia C_V es **{coherence:.3f}** ({quality_label})'
+            f'La coherencia C_V es **{_decimal(coherence, 3)}**, {quality_label}'
             if coherence is not None else 'La coherencia C_V no está disponible'
         ]
         if perplexity is not None:
-            quality_parts.append(f'la perplejidad del modelo es **{perplexity:.1f}**')
+            quality_parts.append(f'la perplejidad del modelo es **{_decimal(perplexity, 1)}**')
         cierre = '. '.join(quality_parts) + '.'
         if posicion and len(ordenados) > 1:
             cierre += (

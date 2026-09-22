@@ -98,7 +98,7 @@ export const ClusterCard: React.FC<ClusterCardProps> = ({ topic, docTopics, acti
               const aporte = contribucion(w.weight, totalPeso);
               return (
                 <div key={i} className="flex items-center gap-2.5">
-                  <span className="text-sm text-paper w-24 truncate shrink-0" title={w.word}>{w.word}</span>
+                  <span className="text-sm text-paper w-32 truncate shrink-0" title={w.word}>{w.word}</span>
                   <div className="flex-1 h-2 bg-ink-800 rounded-full overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all"
