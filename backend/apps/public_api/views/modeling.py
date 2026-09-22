@@ -206,7 +206,7 @@ class PublicTopicModelingViewSet(viewsets.ReadOnlyModelViewSet):
         posicion = next((i + 1 for i, (i_id, _) in enumerate(ordenados) if i_id == tm.id), None)
 
         # Factores del marco OE3 que ningún tema cubrió
-        cubiertos = {c['id'] for c in cat_counts}
+        cubiertos = set(cat_counts)
         sin_cubrir = [c['label'] for c in OE3_CATEGORIES if c['id'] not in cubiertos]
 
         # Build narrative
