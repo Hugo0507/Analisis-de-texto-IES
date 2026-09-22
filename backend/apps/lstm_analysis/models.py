@@ -100,6 +100,27 @@ class LstmAnalysis(models.Model):
     max_seq_length = models.IntegerField(default=500, verbose_name='Longitud Máxima de Secuencia')
 
     # ============================================================
+    # QUÉ SE CLASIFICA Y CON QUÉ UNIDAD
+    # ============================================================
+    # Con 255 documentos y 10 temas quedaban ~5 documentos de prueba por clase;
+    # el resultado era ruido. Dos palancas: menos clases (los 6 factores del
+    # marco OE3) y más ejemplos (fragmentos del documento en vez del documento).
+    LABELS_TOPIC = 'topic'
+    LABELS_OE3 = 'oe3'
+    LABEL_MODE_CHOICES = [
+        (LABELS_TOPIC, 'Tema dominante del modelo de temas'),
+        (LABELS_OE3, 'Factor OE3 del tema dominante'),
+    ]
+    label_mode = models.CharField(
+        max_length=10, choices=LABEL_MODE_CHOICES, default=LABELS_TOPIC,
+        verbose_name='Etiquetas',
+    )
+    fragment_words = models.PositiveIntegerField(
+        default=0, verbose_name='Palabras por fragmento',
+        help_text='0 = cada documento es un ejemplo; >0 = se parte en fragmentos de ese tamaño',
+    )
+
+    # ============================================================
     # ESTADO Y PROGRESO
     # ============================================================
     status = models.CharField(
@@ -121,6 +142,23 @@ class LstmAnalysis(models.Model):
     documents_used = models.IntegerField(default=0, verbose_name='Documentos utilizados')
     num_classes = models.IntegerField(default=0, verbose_name='Clases (temas)')
     vocab_size_actual = models.IntegerField(default=0, verbose_name='Tamaño real del vocabulario')
+
+    # Métricas honestas: F1 macro (pesa igual todas las clases) y la línea base
+    # de responder siempre la clase mayoritaria. Una exactitud alta que no supera
+    # esa línea base no demuestra aprendizaje.
+    samples_used = models.IntegerField(default=0, verbose_name='Ejemplos (fragmentos o documentos)')
+    macro_f1 = models.FloatField(null=True, blank=True, verbose_name='F1 macro por documento (test)')
+    baseline_accuracy = models.FloatField(
+        null=True, blank=True, verbose_name='Exactitud de la clase mayoritaria')
+    baseline_macro_f1 = models.FloatField(
+        null=True, blank=True, verbose_name='F1 macro de la clase mayoritaria')
+    # Las métricas principales son por documento: con fragmentos, cada documento
+    # de prueba se clasifica promediando sus fragmentos. Estas dos son el dato
+    # auxiliar por fragmento (solo cuando se fragmenta).
+    fragment_accuracy = models.FloatField(
+        null=True, blank=True, verbose_name='Exactitud por fragmento')
+    fragment_macro_f1 = models.FloatField(
+        null=True, blank=True, verbose_name='F1 macro por fragmento')
 
     # Resultados detallados (JSON)
     loss_history = models.JSONField(

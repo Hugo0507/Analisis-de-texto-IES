@@ -1,10 +1,15 @@
 """
 LSTM Processor
 
-Pipeline de 8 etapas para entrenar un clasificador LSTM de documentos por tema.
+Pipeline de 8 etapas para entrenar un clasificador LSTM de documentos.
 
 Arquitectura: Embedding -> LSTM -> Linear -> Softmax
-Entrenamiento: CrossEntropyLoss + Adam
+Entrenamiento: CrossEntropyLoss con pesos por clase + Adam
+
+Qué se clasifica: el tema dominante de cada documento o su factor OE3
+(label_mode). Unidad de entrenamiento: el documento completo o fragmentos de
+`fragment_words` palabras. La partición, las métricas y la línea base están en
+datos.py; aquí solo vive lo que necesita PyTorch.
 """
 
 import logging
@@ -17,6 +22,16 @@ from collections import Counter
 from django.utils import timezone
 from django.db import transaction
 from apps.core.background import run_in_background
+
+from .datos import (
+    dividir_por_documento,
+    etiquetas_oe3,
+    fragmentar,
+    linea_base,
+    metricas,
+    pesos_por_clase,
+    prediccion_por_documento,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +59,7 @@ def process_lstm_analysis(lstm_id: int):
 
     try:
         lstm = LstmAnalysis.objects.get(id=lstm_id)
-        logger.info(f"🔍 [LSTM] Iniciando: {lstm.name}")
+        logger.info(f"[LSTM] Iniciando: {lstm.name}")
 
         lstm.status = LstmAnalysis.STATUS_PROCESSING
         lstm.current_stage = LstmAnalysis.STAGE_LOADING_DATA
@@ -54,13 +69,12 @@ def process_lstm_analysis(lstm_id: int):
 
         t_start = time.time()
 
-        # ── ETAPA 1: CARGAR DATOS ──────────────────────────────────
-        logger.info("[LSTM] Etapa 1/8: Cargando datos y etiquetas...")
+        # ── ETAPA 1: CARGAR DOCUMENTOS Y ETIQUETAS ─────────────────
         lstm.progress_percentage = 10
         lstm.save()
 
-        texts, labels, class_names = load_data(lstm)
-        n_docs = len(texts)
+        textos_doc, etiquetas_doc, class_names = load_data(lstm)
+        n_docs = len(textos_doc)
         n_classes = len(class_names)
 
         if n_docs < 10:
@@ -68,62 +82,83 @@ def process_lstm_analysis(lstm_id: int):
                 f"Se necesitan al menos 10 documentos etiquetados. "
                 f"Solo se encontraron {n_docs}."
             )
+        # Con una sola clase (p. ej. en 'oe3' todos los temas caen en el mismo
+        # factor) no hay nada que clasificar: exactitud y línea base darían 1.0.
+        if n_classes < 2:
+            raise ValueError(
+                f"Se necesitan al menos 2 clases para clasificar. "
+                f"Solo se encontró: {class_names}."
+            )
+        logger.info(f"[LSTM] {n_docs} docs, {n_classes} clases: {class_names}")
 
-        logger.info(f"✅ [LSTM] {n_docs} docs, {n_classes} clases: {class_names}")
+        # ── ETAPA 4 (antes que el vocabulario): PARTICIÓN POR DOCUMENTO ──
+        # Se parte por documento antes de fragmentar para que ningún artículo
+        # tenga fragmentos en entrenamiento y en prueba a la vez.
+        docs_train, docs_test = dividir_por_documento(etiquetas_doc, lstm.train_split)
+        if not docs_test:
+            raise ValueError('No quedaron documentos para la prueba: hay muy pocos por clase.')
 
-        # ── ETAPA 2: CONSTRUIR VOCABULARIO ─────────────────────────
-        logger.info("[LSTM] Etapa 2/8: Construyendo vocabulario...")
+        X_train_txt, y_train, _ = construir_ejemplos(
+            docs_train, textos_doc, etiquetas_doc, lstm.fragment_words)
+        X_test_txt, y_test, doc_de_ejemplo = construir_ejemplos(
+            docs_test, textos_doc, etiquetas_doc, lstm.fragment_words)
+        logger.info(
+            f"[LSTM] Documentos train/test: {len(docs_train)}/{len(docs_test)} · "
+            f"ejemplos: {len(X_train_txt)}/{len(X_test_txt)}")
+
+        # ── ETAPA 2: VOCABULARIO (solo con entrenamiento) ──────────
         lstm.current_stage = LstmAnalysis.STAGE_BUILDING_VOCAB
         lstm.progress_percentage = 20
         lstm.save()
 
-        word2idx, vocab_size = build_vocabulary(texts, lstm.max_vocab_size)
-        logger.info(f"✅ [LSTM] Vocabulario: {vocab_size} palabras")
+        word2idx, vocab_size = build_vocabulary(X_train_txt, lstm.max_vocab_size)
 
-        # ── ETAPA 3: CODIFICAR SECUENCIAS ──────────────────────────
-        logger.info("[LSTM] Etapa 3/8: Codificando secuencias...")
+        # ── ETAPA 3: CODIFICAR ─────────────────────────────────────
         lstm.current_stage = LstmAnalysis.STAGE_ENCODING_SEQUENCES
         lstm.progress_percentage = 35
         lstm.save()
 
-        X = encode_texts(texts, word2idx, lstm.max_seq_length)
-        y = np.array(labels, dtype=np.int64)
-        logger.info(f"✅ [LSTM] Secuencias: {X.shape}, etiquetas: {y.shape}")
+        largo = max_sequence_length(lstm)
+        X_train = encode_texts(X_train_txt, word2idx, largo)
+        X_test = encode_texts(X_test_txt, word2idx, largo)
 
-        # ── ETAPA 4: PREPARAR DATASETS ─────────────────────────────
-        logger.info("[LSTM] Etapa 4/8: Preparando datasets...")
+        # ── ETAPA 5: ENTRENAR ──────────────────────────────────────
         lstm.current_stage = LstmAnalysis.STAGE_PREPARING_DATASETS
         lstm.progress_percentage = 45
         lstm.save()
-
-        X_train, X_test, y_train, y_test = split_data(X, y, lstm.train_split)
-        logger.info(f"✅ [LSTM] Train: {len(X_train)}, Test: {len(X_test)}")
-
-        # ── ETAPA 5: ENTRENAR ──────────────────────────────────────
-        logger.info("[LSTM] Etapa 5/8: Entrenando modelo LSTM...")
         lstm.current_stage = LstmAnalysis.STAGE_TRAINING
-        lstm.progress_percentage = 45
         lstm.save()
 
         model, loss_history = train_lstm(
-            lstm, X_train, y_train, vocab_size, n_classes
+            lstm, X_train, np.array(y_train, dtype=np.int64), vocab_size, n_classes,
+            pesos_por_clase(y_train, n_classes),
         )
-        logger.info(f"✅ [LSTM] Entrenamiento completo. Loss final: {loss_history[-1]:.4f}")
 
         # ── ETAPA 6: EVALUAR ───────────────────────────────────────
-        logger.info("[LSTM] Etapa 6/8: Evaluando modelo...")
         lstm.current_stage = LstmAnalysis.STAGE_EVALUATING
         lstm.progress_percentage = 92
         lstm.save()
 
-        accuracy, conf_matrix, clf_report = evaluate_model(
-            model, X_test, y_test, n_classes, class_names, lstm.batch_size
+        probabilidades = predict_proba(model, X_test, lstm.batch_size)
+        pred_ejemplo = [int(np.argmax(p)) for p in probabilidades]
+
+        # Métrica principal: por documento (con fragmentos, se promedian)
+        pred_doc = prediccion_por_documento(probabilidades, doc_de_ejemplo)
+        y_test_doc = [etiquetas_doc[d] for d in docs_test]
+        y_pred_doc = [pred_doc[d] for d in docs_test]
+        resultado_doc = metricas(y_test_doc, y_pred_doc, class_names)
+        base = linea_base([etiquetas_doc[d] for d in docs_train], y_test_doc, class_names)
+
+        resultado_fragmentos = (
+            metricas(y_test, pred_ejemplo, class_names) if lstm.fragment_words > 0 else None
         )
         t_elapsed = time.time() - t_start
-        logger.info(f"✅ [LSTM] Accuracy: {accuracy:.4f}")
+        logger.info(
+            f"[LSTM] Por documento: exactitud {resultado_doc['accuracy']:.4f}, "
+            f"F1 macro {resultado_doc['macro_f1']:.4f} · línea base "
+            f"{base['accuracy']:.4f} / {base['macro_f1']:.4f}")
 
         # ── ETAPA 7: GUARDAR ───────────────────────────────────────
-        logger.info("[LSTM] Etapa 7/8: Guardando resultados...")
         lstm.current_stage = LstmAnalysis.STAGE_SAVING_RESULTS
         lstm.progress_percentage = 97
         lstm.save()
@@ -131,14 +166,24 @@ def process_lstm_analysis(lstm_id: int):
         model_bytes = serialize_model(model)
 
         with transaction.atomic():
-            lstm.accuracy = round(float(accuracy), 4)
+            lstm.accuracy = round(float(resultado_doc['accuracy']), 4)
+            lstm.macro_f1 = round(float(resultado_doc['macro_f1']), 4)
+            lstm.baseline_accuracy = round(float(base['accuracy']), 4)
+            lstm.baseline_macro_f1 = round(float(base['macro_f1']), 4)
+            # Sin fragmentos se dejan en null de forma explícita, para no
+            # arrastrar valores de una ejecución anterior del mismo registro.
+            lstm.fragment_accuracy = lstm.fragment_macro_f1 = None
+            if resultado_fragmentos:
+                lstm.fragment_accuracy = round(float(resultado_fragmentos['accuracy']), 4)
+                lstm.fragment_macro_f1 = round(float(resultado_fragmentos['macro_f1']), 4)
             lstm.training_time_seconds = round(t_elapsed, 2)
             lstm.documents_used = n_docs
+            lstm.samples_used = len(X_train_txt) + len(X_test_txt)
             lstm.num_classes = n_classes
             lstm.vocab_size_actual = vocab_size
             lstm.loss_history = [round(float(v), 4) for v in loss_history]
-            lstm.confusion_matrix = conf_matrix
-            lstm.classification_report = clf_report
+            lstm.confusion_matrix = resultado_doc['matriz']
+            lstm.classification_report = resultado_doc['reporte']
             lstm.class_labels = class_names
             lstm.model_artifact_bin = model_bytes
             lstm.status = LstmAnalysis.STATUS_COMPLETED
@@ -147,10 +192,10 @@ def process_lstm_analysis(lstm_id: int):
             lstm.processing_completed_at = timezone.now()
             lstm.save()
 
-        logger.info(f"✅ [LSTM] Análisis completado exitosamente")
+        logger.info("[LSTM] Análisis completado")
 
     except Exception as e:
-        logger.error(f"❌ [LSTM] Error: {e}")
+        logger.error(f"[LSTM] Error: {e}")
         logger.error(traceback.format_exc())
         try:
             lstm = LstmAnalysis.objects.get(id=lstm_id)
@@ -165,57 +210,92 @@ def process_lstm_analysis(lstm_id: int):
 
 def load_data(lstm) -> Tuple[List[str], List[int], List[str]]:
     """
-    Carga textos preprocesados del DataPreparation y etiquetas del TopicModeling.
-    Retorna (textos, etiquetas_int, nombres_de_clase).
+    Textos preprocesados del DataPreparation y etiqueta de cada documento.
+
+    Con label_mode 'topic' la etiqueta es el tema dominante; con 'oe3', el
+    factor del marco OE3 al que pertenece ese tema dominante.
+
+    Retorna (textos, etiquetas_int, nombres_de_clase), un elemento por documento.
     """
     from apps.datasets.models import DatasetFile
+    from apps.topic_modeling.factors import OE3_CATEGORIES
 
     dp = lstm.data_preparation
     tm = lstm.topic_modeling
 
-    # Textos: DataPreparation → DatasetFile.preprocessed_text
-    file_ids = dp.processed_file_ids or []
-    files_qs = DatasetFile.objects.filter(id__in=file_ids)
+    # Sin duplicados: processed_file_ids se amplía con extend() al actualizar la
+    # preparación, y un id repetido sería "dos documentos" con el mismo texto que
+    # la partición podría mandar uno a entrenamiento y otro a prueba (fuga).
+    file_ids = list(dict.fromkeys(dp.processed_file_ids or []))
+    files_qs = DatasetFile.objects.filter(id__in=file_ids).only('id', 'preprocessed_text')
     text_map: Dict[int, str] = {
         f.id: f.preprocessed_text
         for f in files_qs
         if f.preprocessed_text and f.preprocessed_text.strip()
     }
 
-    # Etiquetas: TopicModeling.document_topics → dominant_topic por doc_id
-    label_map: Dict[int, int] = {}
+    # Tema dominante por documento
+    tema_de: Dict[int, int] = {}
     for entry in (tm.document_topics or []):
         doc_id = entry.get('document_id')
         dominant = entry.get('dominant_topic')
         if doc_id is not None and dominant is not None and dominant != -1:
-            label_map[doc_id] = int(dominant)
+            tema_de[doc_id] = int(dominant)
 
-    # Mapear topic_id → topic_label
-    topic_label_map: Dict[int, str] = {}
-    for topic in (tm.topics or []):
-        topic_label_map[topic['topic_id']] = topic.get('topic_label', f'Tema {topic["topic_id"]}')
+    if lstm.label_mode == lstm.LABELS_OE3:
+        factor_de_tema = etiquetas_oe3(tm.topics)
+        clave_de = {doc: factor_de_tema[t][0] for doc, t in tema_de.items() if t in factor_de_tema}
+        nombre_de = {cat['id']: cat['label'] for cat in OE3_CATEGORIES}
+        # Orden de las clases: el del marco OE3
+        orden = [cat['id'] for cat in OE3_CATEGORIES]
+    else:
+        clave_de = dict(tema_de)
+        nombre_de = {
+            t['topic_id']: t.get('topic_label', f'Tema {t["topic_id"]}') for t in (tm.topics or [])
+        }
+        orden = sorted(set(clave_de.values()))
 
-    # Intersección: solo documentos con texto Y etiqueta
     texts: List[str] = []
-    raw_labels: List[int] = []
+    claves: List = []
     for file_id in file_ids:
-        if file_id in text_map and file_id in label_map:
+        if file_id in text_map and file_id in clave_de:
             texts.append(text_map[file_id])
-            raw_labels.append(label_map[file_id])
+            claves.append(clave_de[file_id])
 
     if not texts:
         raise ValueError(
-            "No se encontraron documentos con texto Y etiqueta de tema. "
-            "Verifica que el TopicModeling y el DataPreparation usan los mismos documentos."
+            "No se encontraron documentos con texto Y etiqueta. "
+            "Verifica que el modelo de temas y la preparación usan los mismos documentos."
         )
 
-    # Reindexar etiquetas a enteros secuenciales 0..N-1
-    unique_ids = sorted(set(raw_labels))
-    id_to_idx = {tid: idx for idx, tid in enumerate(unique_ids)}
-    labels = [id_to_idx[t] for t in raw_labels]
-    class_names = [topic_label_map.get(tid, f'Tema {tid}') for tid in unique_ids]
-
+    # Solo las clases que tienen documentos, reindexadas 0..N-1
+    presentes = [c for c in orden if c in set(claves)]
+    indice = {c: i for i, c in enumerate(presentes)}
+    labels = [indice[c] for c in claves]
+    class_names = [nombre_de.get(c, str(c)) for c in presentes]
     return texts, labels, class_names
+
+
+def construir_ejemplos(
+    documentos: List[int], textos: List[str], etiquetas: List[int], palabras: int,
+) -> Tuple[List[str], List[int], List[int]]:
+    """Ejemplos (fragmentos o documentos), su etiqueta y el documento de origen."""
+    X: List[str] = []
+    y: List[int] = []
+    origen: List[int] = []
+    for d in documentos:
+        for fragmento in fragmentar(textos[d], palabras):
+            X.append(fragmento)
+            y.append(etiquetas[d])
+            origen.append(d)
+    return X, y, origen
+
+
+def max_sequence_length(lstm) -> int:
+    """Con fragmentos, la secuencia no necesita ser más larga que el fragmento."""
+    if lstm.fragment_words > 0:
+        return min(lstm.max_seq_length, lstm.fragment_words + lstm.fragment_words // 2)
+    return lstm.max_seq_length
 
 
 def build_vocabulary(texts: List[str], max_vocab_size: int) -> Tuple[Dict[str, int], int]:
@@ -250,20 +330,9 @@ def encode_texts(
     return X
 
 
-def split_data(
-    X: np.ndarray, y: np.ndarray, train_split: float, seed: int = 42
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """División aleatoria reproducible en train/test."""
-    rng = np.random.default_rng(seed)
-    idx = rng.permutation(len(X))
-    n_train = int(len(X) * train_split)
-    train_idx, test_idx = idx[:n_train], idx[n_train:]
-    return X[train_idx], X[test_idx], y[train_idx], y[test_idx]
-
-
 def train_lstm(
     lstm, X_train: np.ndarray, y_train: np.ndarray,
-    vocab_size: int, n_classes: int
+    vocab_size: int, n_classes: int, pesos: List[float],
 ) -> Tuple[Any, List[float]]:
     """
     Define y entrena el modelo LSTM con PyTorch.
@@ -274,6 +343,7 @@ def train_lstm(
     from torch.utils.data import TensorDataset, DataLoader
     from .models import LstmAnalysis
 
+    torch.manual_seed(42)
     device = torch.device('cpu')
 
     class LSTMClassifier(nn.Module):
@@ -297,13 +367,14 @@ def train_lstm(
         lstm.num_layers, n_classes,
     ).to(device)
 
-    criterion = nn.CrossEntropyLoss()
+    # Pesos inversos a la frecuencia: sin ellos el modelo aprende a responder
+    # la clase mayoritaria.
+    criterion = nn.CrossEntropyLoss(weight=torch.tensor(pesos, dtype=torch.float32))
     optimizer = torch.optim.Adam(model.parameters(), lr=lstm.learning_rate)
 
     X_t = torch.tensor(X_train, dtype=torch.long)
     y_t = torch.tensor(y_train, dtype=torch.long)
-    dataset = TensorDataset(X_t, y_t)
-    loader = DataLoader(dataset, batch_size=lstm.batch_size, shuffle=True)
+    loader = DataLoader(TensorDataset(X_t, y_t), batch_size=lstm.batch_size, shuffle=True)
 
     loss_history: List[float] = []
 
@@ -313,8 +384,7 @@ def train_lstm(
         for xb, yb in loader:
             xb, yb = xb.to(device), yb.to(device)
             optimizer.zero_grad()
-            preds = model(xb)
-            loss = criterion(preds, yb)
+            loss = criterion(model(xb), yb)
             loss.backward()
             optimizer.step()
             epoch_loss += loss.item()
@@ -335,68 +405,19 @@ def train_lstm(
     return model, loss_history
 
 
-def evaluate_model(
-    model: Any,
-    X_test: np.ndarray,
-    y_test: np.ndarray,
-    n_classes: int,
-    class_names: List[str],
-    batch_size: int,
-) -> Tuple[float, List[List[int]], Dict]:
-    """
-    Evalúa el modelo en el conjunto de test.
-    Retorna (accuracy, confusion_matrix, classification_report).
-    """
+def predict_proba(model: Any, X: np.ndarray, batch_size: int) -> np.ndarray:
+    """Probabilidades por clase (softmax) para cada ejemplo."""
     import torch
     from torch.utils.data import TensorDataset, DataLoader
 
-    device = torch.device('cpu')
     model.eval()
-
-    X_t = torch.tensor(X_test, dtype=torch.long)
-    y_t = torch.tensor(y_test, dtype=torch.long)
-    loader = DataLoader(TensorDataset(X_t, y_t), batch_size=batch_size, shuffle=False)
-
-    all_preds: List[int] = []
-    all_true: List[int] = []
-
+    loader = DataLoader(TensorDataset(torch.tensor(X, dtype=torch.long)),
+                        batch_size=batch_size, shuffle=False)
+    partes = []
     with torch.no_grad():
-        for xb, yb in loader:
-            xb = xb.to(device)
-            logits = model(xb)
-            preds = torch.argmax(logits, dim=1).cpu().tolist()
-            all_preds.extend(preds)
-            all_true.extend(yb.tolist())
-
-    # Accuracy
-    correct = sum(p == t for p, t in zip(all_preds, all_true))
-    accuracy = correct / max(len(all_true), 1)
-
-    # Confusion matrix (NxN)
-    conf_matrix = [[0] * n_classes for _ in range(n_classes)]
-    for true_i, pred_i in zip(all_true, all_preds):
-        if 0 <= true_i < n_classes and 0 <= pred_i < n_classes:
-            conf_matrix[true_i][pred_i] += 1
-
-    # Classification report por clase
-    clf_report: Dict = {}
-    for cls_idx in range(n_classes):
-        tp = conf_matrix[cls_idx][cls_idx]
-        fp = sum(conf_matrix[r][cls_idx] for r in range(n_classes) if r != cls_idx)
-        fn = sum(conf_matrix[cls_idx][c] for c in range(n_classes) if c != cls_idx)
-        precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
-        recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-        f1 = (2 * precision * recall / (precision + recall)
-              if (precision + recall) > 0 else 0.0)
-        support = sum(conf_matrix[cls_idx])
-        clf_report[class_names[cls_idx]] = {
-            'precision': round(precision, 4),
-            'recall': round(recall, 4),
-            'f1_score': round(f1, 4),
-            'support': support,
-        }
-
-    return accuracy, conf_matrix, clf_report
+        for (xb,) in loader:
+            partes.append(torch.softmax(model(xb), dim=1).cpu().numpy())
+    return np.concatenate(partes) if partes else np.zeros((0, 0))
 
 
 def serialize_model(model: Any) -> bytes:

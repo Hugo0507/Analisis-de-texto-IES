@@ -24,7 +24,8 @@ class LstmListSerializer(serializers.ModelSerializer):
             'id', 'name', 'description',
             'data_preparation', 'data_preparation_name',
             'topic_modeling', 'topic_modeling_name',
-            'num_epochs', 'accuracy',
+            'num_epochs', 'accuracy', 'macro_f1', 'baseline_macro_f1',
+            'label_mode', 'fragment_words',
             'status', 'status_display', 'progress_percentage',
             'documents_used', 'num_classes',
             'created_by_username', 'created_at',
@@ -33,6 +34,7 @@ class LstmListSerializer(serializers.ModelSerializer):
 
 class LstmDetailSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
+    label_mode_display = serializers.CharField(source='get_label_mode_display', read_only=True)
     current_stage_display = serializers.CharField(
         source='get_current_stage_display', read_only=True
     )
@@ -53,10 +55,12 @@ class LstmDetailSerializer(serializers.ModelSerializer):
             'embedding_dim', 'hidden_dim', 'num_layers',
             'num_epochs', 'learning_rate', 'batch_size',
             'train_split', 'max_vocab_size', 'max_seq_length',
+            'label_mode', 'label_mode_display', 'fragment_words',
             'status', 'status_display', 'current_stage', 'current_stage_display',
             'progress_percentage', 'error_message',
-            'accuracy', 'training_time_seconds',
-            'documents_used', 'num_classes', 'vocab_size_actual',
+            'accuracy', 'macro_f1', 'baseline_accuracy', 'baseline_macro_f1',
+            'fragment_accuracy', 'fragment_macro_f1', 'training_time_seconds',
+            'documents_used', 'samples_used', 'num_classes', 'vocab_size_actual',
             'loss_history', 'confusion_matrix', 'classification_report', 'class_labels',
             'created_at', 'updated_at', 'processing_started_at', 'processing_completed_at',
         ]
@@ -71,6 +75,7 @@ class LstmCreateSerializer(serializers.ModelSerializer):
             'embedding_dim', 'hidden_dim', 'num_layers',
             'num_epochs', 'learning_rate', 'batch_size',
             'train_split', 'max_vocab_size', 'max_seq_length',
+            'label_mode', 'fragment_words',
         ]
 
     def validate(self, data):
@@ -97,6 +102,12 @@ class LstmCreateSerializer(serializers.ModelSerializer):
         if not (1 <= num_epochs <= 200):
             raise serializers.ValidationError({
                 'num_epochs': 'Las épocas deben estar entre 1 y 200.'
+            })
+
+        fragment_words = data.get('fragment_words', 0)
+        if fragment_words and not (50 <= fragment_words <= 2000):
+            raise serializers.ValidationError({
+                'fragment_words': 'Usa 0 (documento completo) o entre 50 y 2000 palabras por fragmento.'
             })
 
         return data
