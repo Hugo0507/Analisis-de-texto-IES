@@ -5,6 +5,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import lstmService from '../services/lstmService';
+import type { LstmLabelMode } from '../services/lstmService';
 import dataPreparationService from '../services/dataPreparationService';
 import type { DataPreparationListItem } from '../services/dataPreparationService';
 import topicModelingService from '../services/topicModelingService';
@@ -21,6 +22,40 @@ const InfoBox: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     </svg>
     <span>{children}</span>
   </div>
+);
+
+const RadioOption: React.FC<{
+  name: string;
+  checked: boolean;
+  onChange: () => void;
+  title: string;
+  description: string;
+  badge?: string;
+}> = ({ name, checked, onChange, title, description, badge }) => (
+  <label
+    className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${
+      checked ? 'border-indigo-400 bg-indigo-50/60' : 'border-gray-200 hover:border-gray-300'
+    }`}
+  >
+    <input
+      type="radio"
+      name={name}
+      checked={checked}
+      onChange={onChange}
+      className="mt-0.5 accent-indigo-600"
+    />
+    <span className="flex-1">
+      <span className="flex items-center gap-2">
+        <span className="text-sm font-medium text-gray-900">{title}</span>
+        {badge && (
+          <span className="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded-full bg-indigo-100 text-indigo-700">
+            {badge}
+          </span>
+        )}
+      </span>
+      <span className="block text-xs text-gray-500 mt-0.5">{description}</span>
+    </span>
+  </label>
 );
 
 const SectionHeader: React.FC<{ number: string; title: string; subtitle?: string }> = ({ number, title, subtitle }) => (
@@ -51,6 +86,16 @@ export const LstmAnalysisCreate: React.FC = () => {
   const [description, setDescription] = useState('');
   const [dpId, setDpId] = useState<number | ''>('');
   const [tmId, setTmId] = useState<number | ''>('');
+
+  // Qué se clasifica y con qué unidad
+  const [labelMode, setLabelMode] = useState<LstmLabelMode>('oe3');
+  const [useFragments, setUseFragments] = useState(true);
+  const [fragmentWordsInput, setFragmentWordsInput] = useState('300');
+
+  const fragmentWordsValue = Number(fragmentWordsInput);
+  const fragmentWordsError = useFragments && (
+    !Number.isFinite(fragmentWordsValue) || fragmentWordsValue < 50 || fragmentWordsValue > 2000
+  );
 
   // Hyperparameters
   const [embeddingDim, setEmbeddingDim] = useState(64);
@@ -94,6 +139,10 @@ export const LstmAnalysisCreate: React.FC = () => {
     if (!name.trim()) { showError('El nombre es obligatorio'); return; }
     if (!dpId) { showError('Selecciona una Preparación de Datos'); return; }
     if (!tmId) { showError('Selecciona un Modelo de Temas'); return; }
+    if (fragmentWordsError) {
+      showError('Las palabras por fragmento deben estar entre 50 y 2000');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -111,6 +160,8 @@ export const LstmAnalysisCreate: React.FC = () => {
         train_split: trainSplit,
         max_vocab_size: maxVocabSize,
         max_seq_length: maxSeqLength,
+        label_mode: labelMode,
+        fragment_words: useFragments ? fragmentWordsValue : 0,
       });
       showSuccess('Entrenamiento LSTM iniciado');
       navigate(`/admin/modelado/lstm/${analysis.id}`);
@@ -153,7 +204,7 @@ export const LstmAnalysisCreate: React.FC = () => {
             <button
               type="submit"
               form="lstm-form"
-              disabled={isSubmitting}
+              disabled={isSubmitting || fragmentWordsError}
               className="flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-60"
             >
               {isSubmitting ? <Spinner size="sm" /> : null}
@@ -260,10 +311,93 @@ export const LstmAnalysisCreate: React.FC = () => {
           )}
         </div>
 
-        {/* ── Sección C: Arquitectura ── */}
+        {/* ── Sección C: Qué se clasifica y unidad de entrenamiento ── */}
         <div className="bg-white rounded-2xl p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
           <SectionHeader
             number="C"
+            title="Qué se Clasifica y Cómo se Entrena"
+            subtitle="Estas dos decisiones son las que más afectan la confiabilidad del resultado"
+          />
+          <div className="space-y-5">
+            <div>
+              <p className="text-sm font-medium text-gray-700 mb-2">Qué se clasifica</p>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <RadioOption
+                  name="label-mode"
+                  checked={labelMode === 'oe3'}
+                  onChange={() => setLabelMode('oe3')}
+                  title="Factor OE3 del tema dominante"
+                  description="6 factores del marco de la tesis. Menos clases, más documentos de prueba por clase."
+                  badge="Recomendado"
+                />
+                <RadioOption
+                  name="label-mode"
+                  checked={labelMode === 'topic'}
+                  onChange={() => setLabelMode('topic')}
+                  title="Tema dominante del modelo de temas"
+                  description="Uno de los temas del modelo de temas. Más clases, pero con 255 documentos quedan muy pocos ejemplos por clase."
+                />
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium text-gray-700 mb-2">Unidad de entrenamiento</p>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <RadioOption
+                  name="training-unit"
+                  checked={useFragments}
+                  onChange={() => setUseFragments(true)}
+                  title="Fragmentos de N palabras"
+                  description="Cada documento se parte en fragmentos, multiplicando los ejemplos de entrenamiento."
+                  badge="Recomendado"
+                />
+                <RadioOption
+                  name="training-unit"
+                  checked={!useFragments}
+                  onChange={() => setUseFragments(false)}
+                  title="Documento completo"
+                  description="Cada documento es un único ejemplo (equivale a 0 palabras por fragmento)."
+                />
+              </div>
+              {useFragments && (
+                <div className="mt-3 max-w-xs">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Palabras por fragmento
+                  </label>
+                  <input
+                    type="number"
+                    value={fragmentWordsInput}
+                    onChange={e => setFragmentWordsInput(e.target.value)}
+                    min={50} max={2000} step={50}
+                    className={`w-full border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 ${
+                      fragmentWordsError
+                        ? 'border-red-300 focus:ring-red-300'
+                        : 'border-gray-200 focus:ring-indigo-300'
+                    }`}
+                  />
+                  {fragmentWordsError ? (
+                    <p className="text-xs text-red-500 mt-1">Debe estar entre 50 y 2000 palabras.</p>
+                  ) : (
+                    <p className="text-xs text-gray-400 mt-1">Entre 50 y 2000 palabras (por defecto 300).</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <InfoBox>
+              Con 255 documentos y varias clases quedan muy pocos documentos de prueba por clase, así que
+              cualquier métrica es ruidosa. Los fragmentos multiplican los ejemplos disponibles, pero la
+              partición entrenamiento/prueba sigue siendo por documento: los fragmentos de un mismo artículo
+              nunca quedan repartidos entre ambos lados, y la prueba final se hace siempre con documentos
+              completos que el modelo nunca vio.
+            </InfoBox>
+          </div>
+        </div>
+
+        {/* ── Sección D: Arquitectura ── */}
+        <div className="bg-white rounded-2xl p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+          <SectionHeader
+            number="D"
             title="Arquitectura del Modelo"
             subtitle="Embedding → LSTM → Linear → Softmax"
           />
@@ -330,9 +464,9 @@ export const LstmAnalysisCreate: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Sección D: Entrenamiento ── */}
+        {/* ── Sección E: Entrenamiento ── */}
         <div className="bg-white rounded-2xl p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-          <SectionHeader number="D" title="Parámetros de Entrenamiento" />
+          <SectionHeader number="E" title="Parámetros de Entrenamiento" />
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Épocas</label>

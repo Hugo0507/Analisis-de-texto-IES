@@ -131,8 +131,19 @@ export const LstmAnalysisList: React.FC = () => {
                   <div>
                     <p className="text-xs text-gray-400">Accuracy</p>
                     <p className="text-sm font-bold text-gray-900">
-                      {a.accuracy !== null ? `${(a.accuracy * 100).toFixed(1)}%` : '—'}
+                      {a.accuracy !== null ? `${(a.accuracy * 100).toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%` : '—'}
                     </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">F1 Macro</p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {a.macro_f1 !== null ? a.macro_f1.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
+                    </p>
+                    {a.baseline_macro_f1 !== null && (
+                      <p className="text-[10px] text-gray-400">
+                        base {a.baseline_macro_f1.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <p className="text-xs text-gray-400">Épocas</p>

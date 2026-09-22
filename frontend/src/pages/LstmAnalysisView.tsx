@@ -2,11 +2,16 @@
  * LstmAnalysisView — Resultados del modelo LSTM.
  *
  * Muestra:
- * - KPIs: accuracy, tiempo de entrenamiento, documentos, temas
+ * - Métricas principales por documento (exactitud, F1 macro) contra la línea base
+ *   de responder siempre la clase mayoritaria, con un veredicto basado en F1 macro
+ * - Métricas por fragmento como dato secundario (si el análisis fragmentó documentos)
  * - Curva de aprendizaje (loss por época) — Nivo Line
- * - Matriz de confusión — Nivo HeatMap
- * - Reporte de clasificación por tema — tabla
- * - Parámetros del modelo
+ * - Matriz de confusión por documento — Nivo HeatMap
+ * - Reporte de clasificación por documento — tabla
+ * - Parámetros del modelo, incluyendo modo de etiquetas y palabras por fragmento
+ *
+ * Los análisis creados antes de estos campos llegan con valores null: cada bloque
+ * los maneja de forma segura y solo muestra lo disponible.
  */
 
 import React, { useState, useEffect } from 'react';
@@ -32,6 +37,15 @@ const KpiCard: React.FC<{
     <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">{label}</p>
     <p className={`text-2xl font-bold ${accent}`}>{value}</p>
     {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+  </div>
+);
+
+const InfoBoxNeutral: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="flex gap-2 p-4 rounded-2xl bg-gray-50 border border-gray-200 text-xs text-gray-600">
+    <svg className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span>{children}</span>
   </div>
 );
 
@@ -130,6 +144,52 @@ export const LstmAnalysisView: React.FC = () => {
     return 'text-red-500';
   };
 
+  // ── Formato de números en español ───────────────────────────────
+  const formatPercent = (value: number | null, decimals = 1): string => {
+    if (value === null || value === undefined) return '—';
+    return `${(value * 100).toLocaleString('es-ES', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    })}%`;
+  };
+
+  const formatDecimal = (value: number | null, decimals = 2): string => {
+    if (value === null || value === undefined) return '—';
+    return value.toLocaleString('es-ES', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    });
+  };
+
+  // ── Veredicto: F1 macro (por documento) contra la línea base ────
+  const hasVerdict = analysis.macro_f1 !== null && analysis.baseline_macro_f1 !== null;
+  const f1Diff = hasVerdict ? (analysis.macro_f1 as number) - (analysis.baseline_macro_f1 as number) : null;
+  const VERDICT_EPSILON = 0.005;
+  const verdict = (() => {
+    if (f1Diff === null) return null;
+    if (f1Diff > VERDICT_EPSILON) {
+      return {
+        tone: 'good' as const,
+        text: `Supera la línea base por ${formatDecimal(f1Diff)} de F1 macro.`,
+      };
+    }
+    if (f1Diff < -VERDICT_EPSILON) {
+      return {
+        tone: 'bad' as const,
+        text: 'No supera la línea base: el modelo no aprendió más que la clase mayoritaria.',
+      };
+    }
+    return {
+      tone: 'neutral' as const,
+      text: 'Empata con la línea base: el modelo no muestra una ventaja clara sobre la clase mayoritaria.',
+    };
+  })();
+  const VERDICT_STYLES = {
+    good: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-800', icon: 'text-emerald-500' },
+    bad: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800', icon: 'text-red-500' },
+    neutral: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-800', icon: 'text-amber-500' },
+  };
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F4F7FE' }}>
       {/* Header */}
@@ -202,36 +262,124 @@ export const LstmAnalysisView: React.FC = () => {
               <p className="text-xs text-gray-400 uppercase tracking-wider mb-0.5">Creado</p>
               <p className="font-medium text-gray-800">{formatDate(analysis.created_at)}</p>
             </div>
+            <div>
+              <p className="text-xs text-gray-400 uppercase tracking-wider mb-0.5">Qué se clasifica</p>
+              <p className="font-medium text-gray-800">{analysis.label_mode_display}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 uppercase tracking-wider mb-0.5">Unidad de entrenamiento</p>
+              <p className="font-medium text-gray-800">
+                {analysis.fragment_words > 0
+                  ? `Fragmentos de ${analysis.fragment_words.toLocaleString('es-ES')} palabras`
+                  : 'Documento completo'}
+              </p>
+            </div>
           </div>
         </div>
 
         {isCompleted && (
           <>
-            {/* KPIs */}
+            {/* Métricas principales — por documento vs. línea base */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <KpiCard
-                label="Accuracy (Test)"
-                value={analysis.accuracy !== null ? `${(analysis.accuracy * 100).toFixed(2)}%` : '—'}
-                sub="Exactitud en el conjunto de prueba"
+                label="Exactitud (por documento)"
+                value={formatPercent(analysis.accuracy)}
+                sub="Modelo LSTM en el conjunto de prueba"
                 accent={analysis.accuracy !== null && analysis.accuracy >= 0.7 ? 'text-emerald-600' : 'text-amber-600'}
+              />
+              <KpiCard
+                label="F1 Macro (por documento)"
+                value={formatDecimal(analysis.macro_f1)}
+                sub="Promedio simple de F1 entre clases — la métrica del veredicto"
+                accent={analysis.macro_f1 !== null ? f1Color(analysis.macro_f1) : 'text-gray-400'}
+              />
+              <KpiCard
+                label="Exactitud — Línea Base"
+                value={formatPercent(analysis.baseline_accuracy)}
+                sub="Responder siempre la clase mayoritaria"
+              />
+              <KpiCard
+                label="F1 Macro — Línea Base"
+                value={formatDecimal(analysis.baseline_macro_f1)}
+                sub="Responder siempre la clase mayoritaria"
+              />
+            </div>
+
+            {/* Veredicto */}
+            {verdict ? (
+              <div className={`flex items-start gap-3 p-5 rounded-2xl border ${VERDICT_STYLES[verdict.tone].bg} ${VERDICT_STYLES[verdict.tone].border}`}>
+                <svg className={`w-5 h-5 shrink-0 mt-0.5 ${VERDICT_STYLES[verdict.tone].icon}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {verdict.tone === 'good' ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  ) : verdict.tone === 'bad' ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  )}
+                </svg>
+                <div>
+                  <p className={`text-sm font-semibold ${VERDICT_STYLES[verdict.tone].text}`}>{verdict.text}</p>
+                  <p className={`text-xs mt-1 ${VERDICT_STYLES[verdict.tone].text} opacity-80`}>
+                    Se compara con F1 macro (no exactitud) porque promedia el desempeño entre todas las
+                    clases por igual: la exactitud puede verse bien solo por acertar la clase mayoritaria.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <InfoBoxNeutral>
+                Este análisis no tiene línea base ni F1 macro por documento (fue entrenado antes de
+                incorporar esta comparación). Solo se muestra la exactitud disponible.
+              </InfoBoxNeutral>
+            )}
+
+            {/* Métricas por fragmento (secundarias) */}
+            {(analysis.fragment_accuracy !== null || analysis.fragment_macro_f1 !== null) && (
+              <div className="bg-white p-5 rounded-2xl border border-gray-100" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">
+                  Dato secundario · Métricas por fragmento
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-400 mb-0.5">Exactitud por fragmento</p>
+                    <p className="text-lg font-bold text-gray-700">{formatPercent(analysis.fragment_accuracy)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 mb-0.5">F1 Macro por fragmento</p>
+                    <p className="text-lg font-bold text-gray-700">{formatDecimal(analysis.fragment_macro_f1)}</p>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-400 mt-3">
+                  Se calculan sobre cada fragmento por separado, antes de promediar por documento. No son
+                  comparables con las métricas principales de arriba ni con la línea base: úsalas solo como
+                  referencia de cómo se comporta el modelo a nivel de fragmento.
+                </p>
+              </div>
+            )}
+
+            {/* Datos de ejecución */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <KpiCard
+                label="Documentos Usados"
+                value={analysis.documents_used}
+                sub={`${analysis.num_classes} clases`}
+              />
+              <KpiCard
+                label="Ejemplos de Entrenamiento"
+                value={analysis.samples_used !== null ? analysis.samples_used.toLocaleString('es-ES') : '—'}
+                sub={analysis.fragment_words > 0 ? 'Fragmentos generados' : 'Uno por documento'}
               />
               <KpiCard
                 label="Tiempo de Entrenamiento"
                 value={analysis.training_time_seconds !== null
                   ? analysis.training_time_seconds >= 60
-                    ? `${(analysis.training_time_seconds / 60).toFixed(1)} min`
+                    ? `${formatDecimal(analysis.training_time_seconds / 60, 1)} min`
                     : `${analysis.training_time_seconds.toFixed(0)} s`
                   : '—'}
                 sub="Duración total del pipeline"
               />
               <KpiCard
-                label="Documentos Usados"
-                value={analysis.documents_used}
-                sub={`${analysis.num_classes} clases de temas`}
-              />
-              <KpiCard
                 label="Vocabulario"
-                value={analysis.vocab_size_actual.toLocaleString()}
+                value={analysis.vocab_size_actual.toLocaleString('es-ES')}
                 sub={`Épocas: ${analysis.num_epochs}`}
               />
             </div>
@@ -285,9 +433,10 @@ export const LstmAnalysisView: React.FC = () => {
             {/* Confusion matrix */}
             {heatmapData.length > 0 && (
               <div className="bg-white p-6 rounded-2xl" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-                <h2 className="text-base font-semibold text-gray-900 mb-1">Matriz de Confusión</h2>
+                <h2 className="text-base font-semibold text-gray-900 mb-1">Matriz de Confusión (por documento)</h2>
                 <p className="text-xs text-gray-400 mb-4">
-                  Filas = clase real · Columnas = clase predicha · La diagonal indica predicciones correctas
+                  Filas = clase real · Columnas = clase predicha · La diagonal indica predicciones correctas.
+                  Cada documento de prueba se predice promediando sus fragmentos cuando aplica.
                 </p>
                 <div style={{ height: `${Math.max(280, heatmapData.length * 48 + 80)}px` }}>
                   <ResponsiveHeatMap
@@ -335,13 +484,13 @@ export const LstmAnalysisView: React.FC = () => {
             {/* Classification report */}
             {Object.keys(analysis.classification_report).length > 0 && (
               <div className="bg-white p-6 rounded-2xl" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-                <h2 className="text-base font-semibold text-gray-900 mb-1">Reporte de Clasificación</h2>
-                <p className="text-xs text-gray-400 mb-4">Métricas de evaluación por tema en el conjunto de prueba</p>
+                <h2 className="text-base font-semibold text-gray-900 mb-1">Reporte de Clasificación (por documento)</h2>
+                <p className="text-xs text-gray-400 mb-4">Métricas de evaluación por clase en el conjunto de prueba</p>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-100">
-                        <th className="text-left py-2 pr-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tema</th>
+                        <th className="text-left py-2 pr-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Clase</th>
                         <th className="text-center py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Precisión</th>
                         <th className="text-center py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Recall</th>
                         <th className="text-center py-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">F1-Score</th>
@@ -354,10 +503,10 @@ export const LstmAnalysisView: React.FC = () => {
                           <td className="py-2.5 pr-4 text-gray-800 font-medium text-xs max-w-[240px] truncate" title={label}>
                             {label}
                           </td>
-                          <td className="text-center py-2.5 px-3 text-gray-700">{(m.precision * 100).toFixed(1)}%</td>
-                          <td className="text-center py-2.5 px-3 text-gray-700">{(m.recall * 100).toFixed(1)}%</td>
+                          <td className="text-center py-2.5 px-3 text-gray-700">{formatPercent(m.precision)}</td>
+                          <td className="text-center py-2.5 px-3 text-gray-700">{formatPercent(m.recall)}</td>
                           <td className={`text-center py-2.5 px-3 font-semibold ${f1Color(m.f1_score)}`}>
-                            {(m.f1_score * 100).toFixed(1)}%
+                            {formatPercent(m.f1_score)}
                           </td>
                           <td className="text-center py-2.5 pl-3 text-gray-500">{m.support}</td>
                         </tr>
@@ -373,14 +522,16 @@ export const LstmAnalysisView: React.FC = () => {
               <h2 className="text-base font-semibold text-gray-900 mb-4">Parámetros del Modelo</h2>
               <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
                 {[
+                  { label: 'Qué se clasifica', value: analysis.label_mode_display },
+                  { label: 'Palabras/Fragmento', value: analysis.fragment_words > 0 ? analysis.fragment_words : 'Documento completo' },
                   { label: 'Embedding Dim', value: analysis.embedding_dim },
                   { label: 'Hidden Dim', value: analysis.hidden_dim },
                   { label: 'Capas LSTM', value: analysis.num_layers },
                   { label: 'Épocas', value: analysis.num_epochs },
                   { label: 'Learning Rate', value: analysis.learning_rate },
                   { label: 'Batch Size', value: analysis.batch_size },
-                  { label: 'Train Split', value: `${(analysis.train_split * 100).toFixed(0)}%` },
-                  { label: 'Max Vocab', value: analysis.max_vocab_size.toLocaleString() },
+                  { label: 'Train Split', value: `${Math.round(analysis.train_split * 100)}%` },
+                  { label: 'Max Vocab', value: analysis.max_vocab_size.toLocaleString('es-ES') },
                   { label: 'Max Seq Len', value: analysis.max_seq_length },
                 ].map(p => (
                   <div key={p.label} className="bg-gray-50 rounded-xl p-3">

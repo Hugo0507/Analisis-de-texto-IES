@@ -6,6 +6,8 @@ import apiClient from './api';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+export type LstmLabelMode = 'topic' | 'oe3';
+
 export interface LstmListItem {
   id: number;
   name: string;
@@ -16,6 +18,10 @@ export interface LstmListItem {
   topic_modeling_name: string;
   num_epochs: number;
   accuracy: number | null;
+  macro_f1: number | null;
+  baseline_macro_f1: number | null;
+  label_mode: LstmLabelMode;
+  fragment_words: number;
   status: 'pending' | 'processing' | 'completed' | 'error';
   status_display: string;
   progress_percentage: number;
@@ -54,6 +60,10 @@ export interface LstmAnalysis {
   max_vocab_size: number;
   max_seq_length: number;
 
+  label_mode: LstmLabelMode;
+  label_mode_display: string;
+  fragment_words: number;
+
   status: 'pending' | 'processing' | 'completed' | 'error';
   status_display: string;
   current_stage: string;
@@ -61,9 +71,19 @@ export interface LstmAnalysis {
   progress_percentage: number;
   error_message: string | null;
 
+  // Métricas por documento (principales)
   accuracy: number | null;
+  macro_f1: number | null;
+  baseline_accuracy: number | null;
+  baseline_macro_f1: number | null;
+
+  // Métricas por fragmento (secundarias; null si fragment_words = 0)
+  fragment_accuracy: number | null;
+  fragment_macro_f1: number | null;
+
   training_time_seconds: number | null;
   documents_used: number;
+  samples_used: number | null;
   num_classes: number;
   vocab_size_actual: number;
 
@@ -92,6 +112,8 @@ export interface LstmCreatePayload {
   train_split?: number;
   max_vocab_size?: number;
   max_seq_length?: number;
+  label_mode?: LstmLabelMode;
+  fragment_words?: number;
 }
 
 export interface LstmProgress {
