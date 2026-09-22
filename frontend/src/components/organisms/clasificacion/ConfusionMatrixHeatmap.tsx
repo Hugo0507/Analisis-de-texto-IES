@@ -11,6 +11,18 @@ import { ChartCard } from '../../molecules';
 import { normalizarFilaMatriz } from '../../../utils/lstmMetrics';
 import { acortarEtiqueta } from './format';
 
+// Rampa de un solo tono sobre el fondo oscuro: 0 = ink-800 (se funde con la
+// tarjeta), máximo = stage-cls. Una rampa clara de nivo ("greens") pintaba los
+// ceros casi en blanco, fuera del sistema visual del dashboard.
+const RAMPA_DESDE = [0x16, 0x20, 0x38];
+const RAMPA_HASTA = [0xa6, 0xd8, 0x54];
+
+const colorDeCelda = (t: number): string => {
+  const f = Math.min(Math.max(t, 0), 1);
+  const [r, g, b] = RAMPA_DESDE.map((c, i) => Math.round(c + (RAMPA_HASTA[i] - c) * f));
+  return `rgb(${r}, ${g}, ${b})`;
+};
+
 export interface ConfusionMatrixHeatmapProps {
   confusionMatrix: number[][];
   classLabels: string[];
@@ -32,6 +44,8 @@ export const ConfusionMatrixHeatmap: React.FC<ConfusionMatrixHeatmapProps> = ({ 
     })),
     [matrizMostrada, classLabels],
   );
+
+  const maximo = Math.max(1, ...matrizMostrada.flat());
 
   if (confusionMatrix.length === 0 || classLabels.length === 0) {
     return (
@@ -73,7 +87,7 @@ export const ConfusionMatrixHeatmap: React.FC<ConfusionMatrixHeatmapProps> = ({ 
       <div style={{ height: `${alturaPx}px` }}>
         <ResponsiveHeatMap
           data={heatmapData}
-          margin={{ top: 8, right: 20, bottom: 70, left: 130 }}
+          margin={{ top: 8, right: 20, bottom: 96, left: 130 }}
           valueFormat=">-.0f"
           axisTop={null}
           axisBottom={{
@@ -81,7 +95,7 @@ export const ConfusionMatrixHeatmap: React.FC<ConfusionMatrixHeatmapProps> = ({ 
             tickRotation: -40,
             format: (v) => acortarEtiqueta(String(v), 14),
             legend: 'Predicho',
-            legendOffset: 58,
+            legendOffset: 84,
             legendPosition: 'middle',
           }}
           axisLeft={{
@@ -91,12 +105,12 @@ export const ConfusionMatrixHeatmap: React.FC<ConfusionMatrixHeatmapProps> = ({ 
             legendOffset: -118,
             legendPosition: 'middle',
           }}
-          colors={{ type: 'sequential', scheme: 'greens' }}
+          colors={(celda) => colorDeCelda((celda.value ?? 0) / maximo)}
           emptyColor="#111A2D"
           borderRadius={3}
           borderWidth={1}
           borderColor="#1F2A44"
-          labelTextColor={{ from: 'color', modifiers: [['darker', 3]] }}
+          labelTextColor={(celda) => ((celda.value ?? 0) / maximo > 0.55 ? '#080C16' : '#C2CDDC')}
           theme={{
             text: { fill: '#97A6BE', fontSize: 11, fontFamily: 'Inter, system-ui, sans-serif' },
             axis: {
@@ -117,7 +131,7 @@ export const ConfusionMatrixHeatmap: React.FC<ConfusionMatrixHeatmapProps> = ({ 
             <div className="rounded-lg border border-ink-600 bg-ink-850 px-3 py-2 text-xs text-paper shadow-xl">
               <p className="font-medium">Real: {cell.serieId}</p>
               <p>Predicho: {cell.data.x}</p>
-              <p className="mt-1 font-semibold text-purple-300">
+              <p className="mt-1 font-semibold text-stage-cls">
                 {normalizado
                   ? `${(cell.value ?? 0).toLocaleString('es-ES', { maximumFractionDigits: 1 })}%`
                   : `${(cell.value ?? 0).toLocaleString('es-ES')} documentos`}
