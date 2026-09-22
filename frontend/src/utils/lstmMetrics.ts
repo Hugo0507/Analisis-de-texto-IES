@@ -39,7 +39,7 @@ export function veredictoBaseline(
   if (diferencia > EPSILON_F1) {
     return {
       tono: 'supera',
-      texto: `Supera la línea base por ${diferencia.toFixed(3)} de F1 macro: el modelo aprendió más que responder siempre la clase mayoritaria.`,
+      texto: `Supera la línea base por ${diferencia.toLocaleString('es-ES', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} de F1 macro: el modelo aprendió más que responder siempre la clase mayoritaria.`,
     };
   }
 

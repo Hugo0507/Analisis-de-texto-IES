@@ -5,6 +5,7 @@ describe('veredictoBaseline', () => {
     const v = veredictoBaseline(0.75, 0.5);
     expect(v.tono).toBe('supera');
     expect(v.texto).toMatch(/Supera la línea base/);
+    expect(v.texto).toContain('0,250');
   });
 
   test('no supera la línea base cuando el modelo queda por debajo', () => {
