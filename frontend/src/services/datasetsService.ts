@@ -155,6 +155,54 @@ export interface DatasetStats {
   total_size_mb: number;
 }
 
+// ─── Descubrimiento automático (OpenAlex + Unpaywall) ──────────────────────
+
+export interface CandidatoDescubrimiento {
+  openalex_id: string;
+  titulo: string;
+  anio: number | null;
+  autores: string;
+  revista: string;
+  doi: string;
+  idioma: string;
+  tipo: string;
+  resumen: string;
+  acceso_abierto: boolean;
+  estado_oa: string;
+  pdf_abierto: boolean;
+  pdf_url: string;
+  licencia: string;
+  duplicado: boolean;
+  motivo_duplicado: string;
+  relevante: boolean;
+  motivo_relevancia: string;
+}
+
+export interface DescubrirParams {
+  consulta?: string;
+  desde_anio?: number;
+  hasta_anio?: number;
+  max_resultados?: number;
+  idiomas?: string[];
+}
+
+export interface DescubrirResponse {
+  consulta: string;
+  total: number;
+  relevantes: number;
+  con_pdf_abierto: number;
+  duplicados: number;
+  candidatos: CandidatoDescubrimiento[];
+}
+
+export interface DescargarCandidatosResponse {
+  mensaje: string;
+  solicitados: number;
+  ids: string[];
+  archivos_antes: number;
+  status: 'processing';
+}
+
 export interface DirectoryStatsRow {
   directory: string;
   extensions: { [key: string]: number };
@@ -557,6 +605,27 @@ class DatasetsService {
         'Content-Type': 'multipart/form-data',
       },
     });
+    return response.data;
+  }
+
+  /**
+   * Vista previa de artículos candidatos en OpenAlex (acceso abierto). No descarga nada.
+   */
+  async descubrirCandidatos(datasetId: number, params: DescubrirParams): Promise<DescubrirResponse> {
+    const response = await apiClient.post(
+      `/datasets/${datasetId}/descubrir/`,
+      params,
+      { timeout: 45000 }, // la búsqueda pagina varias veces contra OpenAlex
+    );
+    return response.data;
+  }
+
+  /**
+   * Inicia la descarga en segundo plano de los candidatos elegidos.
+   * El progreso se sigue con getDataset(): total_files y status.
+   */
+  async descargarCandidatos(datasetId: number, ids: string[]): Promise<DescargarCandidatosResponse> {
+    const response = await apiClient.post(`/datasets/${datasetId}/descargar_candidatos/`, { ids });
     return response.data;
   }
 }

@@ -19,6 +19,7 @@ import type {
   FileBibUpdate, SourceDb,
 } from '../services/datasetsService';
 import { Spinner } from '../components/atoms';
+import { DescubrimientoPanel } from '../components/DescubrimientoPanel';
 import { useToast } from '../contexts/ToastContext';
 import { usePolling } from '../hooks/usePolling';
 
@@ -234,6 +235,7 @@ export const DatasetView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingFile, setEditingFile] = useState<DatasetFile | null>(null);
   const [isExtractingMeta, setIsExtractingMeta] = useState(false);
+  const [showDiscovery, setShowDiscovery] = useState(false);
 
   // Track mount state and pending timeouts to avoid setState on unmounted component
   const mountedRef = useRef(true);
@@ -247,9 +249,12 @@ export const DatasetView: React.FC = () => {
     };
   }, []);
 
-  const loadDataset = useCallback(async () => {
+  const loadDataset = useCallback(async (silent = false) => {
     if (!id || !mountedRef.current) return;
-    setIsLoading(true);
+    // silent=true: refrescos periodicos (polling) no deben tapar la pagina
+    // con el spinner de carga inicial, o cualquier panel abierto (por ejemplo
+    // el de descubrimiento de articulos) se desmontaria cada pocos segundos.
+    if (!silent) setIsLoading(true);
     try {
       const [datasetData, dirStats] = await Promise.all([
         datasetsService.getDataset(parseInt(id)),
@@ -265,7 +270,7 @@ export const DatasetView: React.FC = () => {
         showError('Error al cargar dataset: ' + (error.response?.data?.error || error.message));
       }
     } finally {
-      if (mountedRef.current) setIsLoading(false);
+      if (mountedRef.current && !silent) setIsLoading(false);
     }
   }, [id, showError]);
 
@@ -274,7 +279,7 @@ export const DatasetView: React.FC = () => {
     loadDataset();
   }, [id, loadDataset]);
 
-  usePolling(() => loadDataset(), dataset?.status === 'processing', { intervalMs: 5000 });
+  usePolling(() => loadDataset(true), dataset?.status === 'processing', { intervalMs: 5000 });
 
   const handleExtractMetadata = async (force = false) => {
     if (!id) return;
@@ -283,9 +288,9 @@ export const DatasetView: React.FC = () => {
       const result = await datasetsService.autoExtractMetadata(parseInt(id), force);
       showSuccess(`${result.message}`);
       // Reload progressively: 5s, 15s, 30s to catch results as they arrive
-      const t1 = setTimeout(() => loadDataset(), 5000);
-      const t2 = setTimeout(() => loadDataset(), 15000);
-      const t3 = setTimeout(() => loadDataset(), 30000);
+      const t1 = setTimeout(() => loadDataset(true), 5000);
+      const t2 = setTimeout(() => loadDataset(true), 15000);
+      const t3 = setTimeout(() => loadDataset(true), 30000);
       timeoutRefs.current.push(t1, t2, t3);
     } catch {
       showError('Error al iniciar la extracción de metadatos');
@@ -410,6 +415,17 @@ export const DatasetView: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={() => setShowDiscovery(prev => !prev)}
+              aria-expanded={showDiscovery}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-white text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-50 transition-colors"
+              title="Buscar y descargar artículos en acceso abierto desde OpenAlex"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              Buscar artículos en acceso abierto
+            </button>
+            <button
               onClick={() => handleExtractMetadata(false)}
               disabled={isExtractingMeta}
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
@@ -445,6 +461,16 @@ export const DatasetView: React.FC = () => {
               <p className="text-xs text-blue-600">Esta página se actualiza automáticamente cada 5 segundos.</p>
             </div>
           </div>
+        )}
+
+        {/* Panel de descubrimiento automático */}
+        {showDiscovery && (
+          <DescubrimientoPanel
+            datasetId={dataset.id}
+            dataset={dataset}
+            onRefresh={() => loadDataset(true)}
+            onClose={() => setShowDiscovery(false)}
+          />
         )}
 
         {/* ── Info + PRISMA ────────────────────────────────────────────────── */}
