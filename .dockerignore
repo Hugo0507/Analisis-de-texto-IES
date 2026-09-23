@@ -53,5 +53,3 @@ tests/
 pytest.ini
 .coverage
 
-# Claude
-.claude/

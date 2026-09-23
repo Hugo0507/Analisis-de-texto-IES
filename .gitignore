@@ -67,7 +67,6 @@ cache/
 
 # Output
 output/
-.claude/
 
 # Contexto local (no subir a git)
 CONTEXTO_LOCAL.md
@@ -81,7 +80,5 @@ backend/graft/
 frontend/graft/
 .ignore
 
-# Configuracion local de herramientas de asistencia (no se publica)
-CLAUDE.md
+# Configuracion local del entorno de trabajo (no se publica)
 .agents/
-.claude/
